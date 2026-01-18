@@ -28,3 +28,20 @@ export const CATEGORY_COLORS: Record<Category, string> = {
   [Category.TRANSFER]: '#94a3b8',
   [Category.OTHER]: '#64748b',
 };
+
+// ===== Settings storage keys =====
+export const LS_KEYS = {
+  USERS: 'duocash_users_v1',
+  WALLETS: 'duocash_wallets_v1',
+  CURRENCY: 'duocash_currency_v1', // dự phòng
+} as const;
+
+// ===== Money formatting (VND) =====
+export function formatVnd(amount: number) {
+  const safe = Number.isFinite(amount) ? amount : 0;
+  return new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND',
+    maximumFractionDigits: 0,
+  }).format(safe);
+}
