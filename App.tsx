@@ -36,7 +36,9 @@ function App() {
   const [budgets] = useState(INITIAL_BUDGETS); // Static config for now
 
   // People (editable)
-  const [users, setUsers] = useState<User[]>(() => safeParse<User[]>(localStorage.getItem(LS_KEYS.USERS), USERS));
+  const [users, setUsers] = useState<User[]>(() =>
+    safeParse<User[]>(localStorage.getItem(LS_KEYS.USERS), USERS)
+  );
 
   // Wallet name overrides (editable)
   const [walletNameOverrides, setWalletNameOverrides] = useState<Record<string, string>>(() => {
@@ -49,7 +51,11 @@ function App() {
   });
 
   // Logic State
-  const [reflectionData, setReflectionData] = useState<{ isOpen: boolean; message: string; category: string }>({
+  const [reflectionData, setReflectionData] = useState<{
+    isOpen: boolean;
+    message: string;
+    category: string;
+  }>({
     isOpen: false,
     message: '',
     category: '',
@@ -58,25 +64,29 @@ function App() {
   useEffect(() => {
     StorageService.init();
     refreshData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const refreshData = () => {
+    // IMPORTANT: load base data only.
+    // UI will apply overrides via walletsForUI (useMemo) so we don't double-override here.
+    setWallets(StorageService.getWallets());
+    setTransactions(StorageService.getTransactions());
+    setGoals(StorageService.getGoals());
+  };
 
   const applyWalletOverrides = (baseWallets: Wallet[]) => {
     if (!walletNameOverrides || Object.keys(walletNameOverrides).length === 0) return baseWallets;
-    return baseWallets.map(w => (walletNameOverrides[w.id] ? { ...w, name: walletNameOverrides[w.id] } : w));
-  };
-
-  const refreshData = () => {
-    const baseWallets = StorageService.getWallets();
-    setWallets(applyWalletOverrides(baseWallets));
-    setTransactions(StorageService.getTransactions());
-    setGoals(StorageService.getGoals());
+    return baseWallets.map((w) =>
+      walletNameOverrides[w.id] ? { ...w, name: walletNameOverrides[w.id] } : w
+    );
   };
 
   const getSpentByCategory = (category: Category) => {
     const now = new Date();
     return transactions
-      .filter(t => t.type === TransactionType.EXPENSE && t.category === category)
-      .filter(t => {
+      .filter((t) => t.type === TransactionType.EXPENSE && t.category === category)
+      .filter((t) => {
         const d = new Date(t.date);
         return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
       })
@@ -88,7 +98,7 @@ function App() {
     refreshData();
 
     if (data.type === TransactionType.EXPENSE) {
-      const budget = budgets.find(b => b.category === data.category);
+      const budget = budgets.find((b) => b.category === data.category);
       if (budget) {
         const currentSpent = getSpentByCategory(data.category);
         const newTotal = currentSpent + data.amount;
@@ -106,13 +116,19 @@ function App() {
     }
   };
 
-  // Wallets to show (always apply overrides)
+  // Wallets for UI (always apply name overrides)
   const walletsForUI = useMemo(() => applyWalletOverrides(wallets), [wallets, walletNameOverrides]);
 
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <Dashboard wallets={walletsForUI} transactions={transactions} onOpenSettings={() => setIsSettingsOpen(true)} />;
+        return (
+          <Dashboard
+            wallets={walletsForUI}
+            transactions={transactions}
+            onOpenSettings={() => setIsSettingsOpen(true)}
+          />
+        );
       case 'budgets':
         return <BudgetView budgets={budgets} getSpent={getSpentByCategory} />;
       case 'goals':
@@ -120,7 +136,13 @@ function App() {
       case 'insights':
         return <Insights transactions={transactions} users={users} />;
       default:
-        return <Dashboard wallets={walletsForUI} transactions={transactions} onOpenSettings={() => setIsSettingsOpen(true)} />;
+        return (
+          <Dashboard
+            wallets={walletsForUI}
+            transactions={transactions}
+            onOpenSettings={() => setIsSettingsOpen(true)}
+          />
+        );
     }
   };
 
@@ -154,23 +176,20 @@ function App() {
         onSave={(nextUsers, nextWallets) => {
           setUsers(nextUsers);
 
-          // Map wallet names by id so even if StorageService overwrites later,
-          // UI still shows user's chosen names.
+          // Map wallet names by id so UI keeps chosen names even if StorageService data doesn't store rename yet.
           const map: Record<string, string> = {};
           for (const w of nextWallets) {
             map[w.id] = w.name;
           }
           setWalletNameOverrides(map);
 
-          // Also update current wallets view immediately
-          setWallets(prev => prev.map(w => (map[w.id] ? { ...w, name: map[w.id] } : w)));
+          // Update current wallets immediately for instant UI feedback
+          setWallets((prev) => prev.map((w) => (map[w.id] ? { ...w, name: map[w.id] } : w)));
         }}
         onReset={() => {
           setUsers(USERS);
           setWalletNameOverrides({});
-          // refresh from storage again (and apply no overrides)
-          const baseWallets = StorageService.getWallets();
-          setWallets(baseWallets);
+          refreshData();
         }}
       />
     </Layout>
