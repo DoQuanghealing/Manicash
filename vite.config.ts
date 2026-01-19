@@ -6,7 +6,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
 
   return {
-    base: './',   // 👈 THÊM DÒNG NÀY
+    base: "/Doucash/",   // 👈 THÊM DÒNG NÀY
 
     server: {
       port: 3000,
