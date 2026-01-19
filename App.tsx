@@ -53,12 +53,13 @@ function App() {
       refreshData();
   };
   
-  const handleUpdateFixedCosts = (newCosts: FixedCost[]) => {
-      // Not typically used for bulk replace, but good for simple CRUD
-      // We will handle specific CRUD in sub-component, this is a fallback
-  };
-  
   const handlePayFixedCost = (cost: FixedCost) => {
+      // FIX: Kiểm tra xem có ví nào không trước khi thanh toán
+      if (wallets.length === 0) {
+        alert("Bạn cần tạo ít nhất một ví tiền trước khi thanh toán hóa đơn!");
+        return;
+      }
+
       // 1. Create Transaction
       const tx: Transaction = {
           id: `tx_fix_${Date.now()}`,
@@ -66,7 +67,7 @@ function App() {
           amount: cost.amount,
           type: TransactionType.EXPENSE,
           category: Category.BILLS,
-          walletId: wallets[0]?.id || '', // Default to first wallet
+          walletId: wallets[0].id, // Đã an toàn vì check length ở trên
           description: `Thanh toán: ${cost.title}`,
           timestamp: Date.now()
       };
@@ -87,8 +88,8 @@ function App() {
       refreshData();
   };
 
+  // Helper tính chi tiêu (giữ nguyên logic)
   const getSpentByCategory = (category: Category) => {
-    // Filter for current month expense transactions
     const now = new Date();
     return transactions
       .filter(t => t.type === TransactionType.EXPENSE && t.category === category)
@@ -100,31 +101,54 @@ function App() {
   };
 
   const handleAddTransaction = async (data: Transaction) => {
-    // Save locally
+    // 1. Lưu vào Storage trước
     StorageService.addTransaction(data);
-    refreshData();
-    // Note: We do NOT close the modal here anymore to allow the form to show post-submit reflection
-    // setIsTxModalOpen(false); 
+    
+    // 2. Cập nhật giao diện (Load lại transaction mới nhất từ storage vào state)
+    // Lưu ý: refreshData() là hàm đồng bộ nhưng setState là bất đồng bộ
+    const currentTransactions = StorageService.getTransactions(); 
+    setTransactions(currentTransactions); // Cập nhật UI ngay lập tức
 
-    // Check Budget Logic
+    // 3. Logic kiểm tra ngân sách (Budget Check)
     if (data.type === TransactionType.EXPENSE) {
         const budget = budgets.find(b => b.category === data.category);
+        
         if (budget) {
-            const currentSpent = getSpentByCategory(data.category); // Note: this calculates based on state which might be stale by 1 tick, but okay for demo, ideally pass updated txs
-            // Re-calculate with new tx amount for accuracy
-            const newTotal = currentSpent + data.amount; 
-            
-            if (newTotal > budget.limit) {
-                const overage = newTotal - budget.limit;
-                // Generate AI reflection
-                const message = await GeminiService.generateReflectionPrompt(data.category, overage);
-                setReflectionData({
-                    isOpen: true,
-                    message,
-                    category: data.category
-                });
+            // FIX: Tính toán dựa trên danh sách transaction VỪA lấy từ Storage (chính xác nhất)
+            // thay vì dùng hàm getSpentByCategory đang dựa vào state cũ
+            const now = new Date();
+            const totalSpentThisMonth = currentTransactions
+                .filter(t => t.type === TransactionType.EXPENSE && t.category === data.category)
+                .filter(t => {
+                    const d = new Date(t.date);
+                    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+                })
+                .reduce((sum, t) => sum + t.amount, 0);
+
+            // Vì totalSpentThisMonth đã bao gồm transaction vừa thêm, nên so sánh trực tiếp
+            if (totalSpentThisMonth > budget.limit) {
+                const overage = totalSpentThisMonth - budget.limit;
+                
+                // Gọi AI (Gemini)
+                try {
+                    const message = await GeminiService.generateReflectionPrompt(data.category, overage);
+                    setReflectionData({
+                        isOpen: true,
+                        message,
+                        category: data.category
+                    });
+                } catch (error) {
+                    console.error("Lỗi gọi Gemini:", error);
+                }
+            } else {
+                // Nếu không vỡ ngân sách thì đóng modal luôn cho gọn (tùy bạn chọn)
+                setIsTxModalOpen(false); 
             }
+        } else {
+             setIsTxModalOpen(false);
         }
+    } else {
+        setIsTxModalOpen(false);
     }
   };
 
@@ -169,7 +193,10 @@ function App() {
         isOpen={reflectionData.isOpen}
         message={reflectionData.message}
         category={reflectionData.category}
-        onClose={() => setReflectionData({ ...reflectionData, isOpen: false })}
+        onClose={() => {
+            setReflectionData({ ...reflectionData, isOpen: false });
+            setIsTxModalOpen(false); // Đóng luôn form nhập liệu sau khi xem lời khuyên
+        }}
       />
 
       <SettingsModal 
