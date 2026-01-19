@@ -1,11 +1,20 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { Transaction, Budget, User, Goal, IncomeProject, FixedCost, FinancialReport, TransactionType } from '../types';
 
-// Ensure API Key is available
-const apiKey = process.env.API_KEY || '';
-const ai = new GoogleGenAI({ apiKey });
+// 1. Lấy API Key an toàn (Ưu tiên Vite env, fallback sang process.env)
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || '';
 
-const MODEL_NAME = 'gemini-3-flash-preview';
+// 2. Khởi tạo SDK (Dùng thư viện chuẩn GoogleGenerativeAI)
+const genAI = new GoogleGenerativeAI(apiKey);
+
+// 3. Dùng Model chuẩn, ổn định
+const MODEL_NAME = 'gemini-1.5-flash'; 
+
+// Hàm phụ trợ: Làm sạch chuỗi JSON do AI trả về (Xóa dấu ```json)
+const cleanJsonString = (text: string) => {
+  if (!text) return "{}";
+  return text.replace(/```json/g, '').replace(/```/g, '').trim();
+};
 
 export const GeminiService = {
   // Checks if we can use AI
@@ -15,11 +24,10 @@ export const GeminiService = {
     if (!apiKey) return "AI Insights unavailable (Missing API Key).";
 
     const recentTx = transactions.slice(-15);
-    // Note: AI understands raw numbers, but we mention VND context in prompt
     const txString = recentTx.map(t => `${t.date}: ${t.amount} VND on ${t.category} (${t.description})`).join('\n');
 
     const prompt = `
-      Analyze these recent financial transactions for a couple named ${users[0].name} and ${users[1].name}.
+      Analyze these recent financial transactions for a couple named ${users[0]?.name || 'User'} and ${users[1]?.name || 'Partner'}.
       Currency is Vietnamese Dong (VND). Note: 1 USD approx 25,000 VND.
       Transactions:
       ${txString}
@@ -39,19 +47,18 @@ export const GeminiService = {
     `;
 
     try {
-      const response = await ai.models.generateContent({
-        model: MODEL_NAME,
-        contents: prompt,
-      });
-      return response.text || "Đã ghi nhận thói quen chi tiêu.";
+      const model = genAI.getGenerativeModel({ model: MODEL_NAME });
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      return response.text() || "Đã ghi nhận thói quen chi tiêu.";
     } catch (e) {
-      console.error(e);
-      return "AI đang quan sát trong im lặng (Lỗi).";
+      console.error("Gemini Error:", e);
+      return "AI đang quan sát trong im lặng (Lỗi kết nối).";
     }
   },
 
   generateReflectionPrompt: async (overspentCategory: string, amountOver: number): Promise<string> => {
-    if (!apiKey) return `Overspending detected in ${overspentCategory}.`;
+    if (!apiKey) return `Cảnh báo: Bạn đã tiêu quá đà vào ${overspentCategory}.`;
 
     const prompt = `
       The user just went ${amountOver} VND over budget in the '${overspentCategory}' category.
@@ -61,17 +68,15 @@ export const GeminiService = {
     `;
 
     try {
-      const response = await ai.models.generateContent({
-        model: MODEL_NAME,
-        contents: prompt,
-      });
-      return response.text || "Đó là lựa chọn của bạn.";
+      const model = genAI.getGenerativeModel({ model: MODEL_NAME });
+      const result = await model.generateContent(prompt);
+      return result.response.text() || "Đó là lựa chọn của bạn.";
     } catch (e) {
       return "Đó là lựa chọn của bạn.";
     }
   },
 
-  generateTransactionComment: async (transaction: any): Promise<string> => {
+  generateTransactionComment: async (transaction: Transaction): Promise<string> => {
     if (!apiKey) return "";
 
     const prompt = `
@@ -81,11 +86,9 @@ export const GeminiService = {
     `;
 
     try {
-      const response = await ai.models.generateContent({
-        model: MODEL_NAME,
-        contents: prompt,
-      });
-      return response.text || "";
+      const model = genAI.getGenerativeModel({ model: MODEL_NAME });
+      const result = await model.generateContent(prompt);
+      return result.response.text() || "";
     } catch (e) {
       return "";
     }
@@ -94,25 +97,25 @@ export const GeminiService = {
   generateBadge: async (transactions: Transaction[]): Promise<{title: string, description: string}> => {
      if (!apiKey) return { title: 'Tập sự', description: 'Bắt đầu theo dõi.' };
 
-     // Simple heuristic for demo
      const prompt = `
-        Based on these transactions (in VND): ${JSON.stringify(transactions.slice(-10))}
-        Invent a creative, sarcastic achievement badge title and short description (max 10 words) in Vietnamese.
-        Tone: Dry humor.
-        Rules: NO emojis. NO exclamation marks.
-        Example: "Latte Legend: Funded the local cafe renovation."
-        Return JSON format: { "title": "...", "description": "..." }
+       Based on these transactions (in VND): ${JSON.stringify(transactions.slice(-10))}
+       Invent a creative, sarcastic achievement badge title and short description (max 10 words) in Vietnamese.
+       Tone: Dry humor.
+       Rules: NO emojis. NO exclamation marks.
+       Example: "Latte Legend: Funded the local cafe renovation."
+       Return JSON format: { "title": "...", "description": "..." }
      `;
 
       try {
-        const response = await ai.models.generateContent({
+        const model = genAI.getGenerativeModel({ 
             model: MODEL_NAME,
-            contents: prompt,
-            config: { responseMimeType: 'application/json' }
+            generationConfig: { responseMimeType: "application/json" } // Ép kiểu JSON
         });
-        const text = response.text;
-        return JSON.parse(text || '{}');
+        const result = await model.generateContent(prompt);
+        const text = cleanJsonString(result.response.text());
+        return JSON.parse(text);
       } catch (e) {
+        console.error(e);
         return { title: 'Người bí ẩn', description: 'Tiền đi đâu không ai biết.' };
       }
   },
@@ -141,12 +144,13 @@ export const GeminiService = {
       `;
 
       try {
-          const response = await ai.models.generateContent({
-              model: MODEL_NAME,
-              contents: prompt,
-              config: { responseMimeType: 'application/json' }
+          const model = genAI.getGenerativeModel({ 
+            model: MODEL_NAME,
+            generationConfig: { responseMimeType: "application/json" }
           });
-          return JSON.parse(response.text || '{}');
+          const result = await model.generateContent(prompt);
+          const text = cleanJsonString(result.response.text());
+          return JSON.parse(text);
       } catch (e) {
           console.error(e);
           return null;
@@ -161,7 +165,6 @@ export const GeminiService = {
   ): Promise<FinancialReport | null> => {
       if (!apiKey) return null;
 
-      // Prepare context data
       const now = new Date();
       const currentMonth = now.getMonth();
       const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
@@ -194,8 +197,8 @@ export const GeminiService = {
         Tasks:
         1. Calculate a "Health Score" (0-100) based on income stability, goal progress, and project execution.
         2. Analyze Income Trend (This month vs Last month).
-        3. Evaluate Project Velocity (How well are they executing income plans?).
-        4. Forecast Goals: Can they pay fixed costs? Are they on track for major goals (like buying a house)?
+        3. Evaluate Project Velocity.
+        4. Forecast Goals.
 
         Output strictly JSON:
         {
@@ -208,23 +211,24 @@ export const GeminiService = {
             "projectVelocity": {
                 "rating": "High" | "Medium" | "Low",
                 "completedProjects": number,
-                "message": "Short analysis of their hustle capability in Vietnamese"
+                "message": "Short analysis in Vietnamese"
             },
             "goalForecast": {
                 "canMeetFixedCosts": boolean,
-                "majorGoalPrediction": "Prediction about their biggest goal in Vietnamese",
+                "majorGoalPrediction": "Prediction in Vietnamese",
                 "advice": "1 sentence strategic advice in Vietnamese"
             }
         }
       `;
 
       try {
-          const response = await ai.models.generateContent({
-              model: MODEL_NAME,
-              contents: prompt,
-              config: { responseMimeType: 'application/json' }
+          const model = genAI.getGenerativeModel({ 
+            model: MODEL_NAME,
+            generationConfig: { responseMimeType: "application/json" }
           });
-          return JSON.parse(response.text || '{}');
+          const result = await model.generateContent(prompt);
+          const text = cleanJsonString(result.response.text());
+          return JSON.parse(text);
       } catch (e) {
           console.error(e);
           return null;
