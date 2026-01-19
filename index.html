@@ -14,8 +14,8 @@
               background: '#09090b',
               surface: '#18181b',
               surfaceHighlight: '#27272a',
-              primary: '#8b5cf6',
-              secondary: '#10b981',
+              primary: '#8b5cf6', // Violet
+              secondary: '#10b981', // Emerald
               danger: '#ef4444',
               warning: '#f59e0b',
             },
@@ -33,26 +33,31 @@
         font-family: 'Inter', system-ui, sans-serif;
         -webkit-tap-highlight-color: transparent;
       }
-      .no-scrollbar::-webkit-scrollbar { display: none; }
-      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-      input, select, textarea { font-size: 16px; }
-    </style>
-
-    <script type="importmap">
-    {
-      "imports": {
-        "@google/genai": "https://esm.sh/@google/genai@^1.37.0",
-        "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
-        "react/": "https://esm.sh/react@^19.2.3/",
-        "react": "https://esm.sh/react@^19.2.3",
-        "react-dom/": "https://esm.sh/react-dom@^19.2.3/"
+      /* Hide scrollbar for clean mobile UI */
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
       }
-    }
-    </script>
-  </head>
-
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+      input, select, textarea {
+        font-size: 16px; /* Prevent zoom on iOS */
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "@google/genai": "https://esm.sh/@google/genai@^1.37.0",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/"
+  }
+}
+</script>
+</head>
   <body>
     <div id="root"></div>
-    <script type="module" src="./index.tsx"></script>
   </body>
 </html>

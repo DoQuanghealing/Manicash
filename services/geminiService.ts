@@ -1,169 +1,233 @@
 import { GoogleGenAI } from "@google/genai";
-import { Transaction, User } from "../types";
+import { Transaction, Budget, User, Goal, IncomeProject, FixedCost, FinancialReport, TransactionType } from '../types';
 
-// Vite: chỉ đọc biến env qua import.meta.env với prefix VITE_
-const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY as string | undefined;
+// Ensure API Key is available
+const apiKey = process.env.API_KEY || '';
+const ai = new GoogleGenAI({ apiKey });
 
-// Nên dùng model ổn định cho nội bộ (preview dễ đổi hành vi)
-const MODEL_NAME = "gemini-2.5-flash";
-
-// Khởi tạo AI client chỉ khi có key
-const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
-
-function safeText(input: unknown): string {
-  if (typeof input !== "string") return "";
-  return input.replace(/\s+/g, " ").trim();
-}
+const MODEL_NAME = 'gemini-3-flash-preview';
 
 export const GeminiService = {
-  isAvailable: () => !!apiKey && !!ai,
+  // Checks if we can use AI
+  isAvailable: () => !!apiKey,
 
-  generateWeeklyInsight: async (
-    transactions: Transaction[],
-    users: User[]
-  ): Promise<string> => {
-    if (!ai) return "AI tạm im lặng (thiếu API key).";
-
-    // An toàn: nếu chưa đủ 2 user thì vẫn chạy
-    const name1 = users?.[0]?.name ?? "Người 1";
-    const name2 = users?.[1]?.name ?? "Người 2";
+  generateWeeklyInsight: async (transactions: Transaction[], users: User[]): Promise<string> => {
+    if (!apiKey) return "AI Insights unavailable (Missing API Key).";
 
     const recentTx = transactions.slice(-15);
-
-    // Đưa dữ liệu ngắn gọn, tránh quá dài
-    const txString = recentTx
-      .map((t) => {
-        const desc = safeText((t as any).description);
-        const line = `${t.date}: ${t.amount} - ${t.category}${desc ? ` (${desc})` : ""}`;
-        return line;
-      })
-      .join("\n");
+    // Note: AI understands raw numbers, but we mention VND context in prompt
+    const txString = recentTx.map(t => `${t.date}: ${t.amount} VND on ${t.category} (${t.description})`).join('\n');
 
     const prompt = `
-Bạn là trợ lý phản tư tài chính cho ứng dụng quản lý chi tiêu của hai vợ chồng.
+      Analyze these recent financial transactions for a couple named ${users[0].name} and ${users[1].name}.
+      Currency is Vietnamese Dong (VND). Note: 1 USD approx 25,000 VND.
+      Transactions:
+      ${txString}
 
-Bối cảnh: cặp đôi tên ${name1} và ${name2}.
-Giao dịch gần đây (mới nhất ở cuối):
-${txString}
-
-Vai trò: quan sát và phản chiếu hành vi. Không dạy đời. Không cổ vũ sáo rỗng. Không phán xét.
-Giọng điệu: trưởng thành, điềm tĩnh, hơi mỉa nhẹ, tôn trọng.
-
-Quy tắc bắt buộc:
-- Tối đa 2 câu.
-- Không đưa lời khuyên.
-- Không đặt câu hỏi.
-- Không emoji.
-- Không dấu chấm than.
-- Tránh câu sáo rỗng kiểu “cố lên”, “bạn làm được”.
-- Ưu tiên nhận xét về nhịp chi tiêu và xu hướng (ổn/ lệch/ căng).
-
-Chỉ trả về đúng nội dung 2 câu, không thêm tiêu đề.
-`.trim();
+      Act as a financial reflection assistant.
+      Role: Observer and mirror. Not a teacher. Not a cheerleader. Not a judge.
+      Tone: Mature, calm, witty, slightly sarcastic, respectful. Language: Vietnamese.
+      
+      Strict Rules:
+      1. Maximum 2 sentences.
+      2. NO advice.
+      3. NO questions.
+      4. NO emojis.
+      5. NO exclamation marks.
+      6. NO cliches.
+      7. Focus on reflecting behavior honestly.
+    `;
 
     try {
       const response = await ai.models.generateContent({
         model: MODEL_NAME,
         contents: prompt,
       });
-
-      const text = safeText((response as any).text);
-      return text || "Tiền tuần này đi khá nhanh. Kế hoạch vẫn còn, nhưng đang bị thử.";
+      return response.text || "Đã ghi nhận thói quen chi tiêu.";
     } catch (e) {
-      // Không log chi tiết nếu sợ lộ thông tin môi trường
-      return "AI đang quan sát trong im lặng (lỗi tạm thời).";
+      console.error(e);
+      return "AI đang quan sát trong im lặng (Lỗi).";
     }
   },
 
-  generateReflectionPrompt: async (
-    overspentCategory: string,
-    amountOver: number
-  ): Promise<string> => {
-    if (!ai) return `Ngân sách mục "${overspentCategory}" đang bị vượt.`;
+  generateReflectionPrompt: async (overspentCategory: string, amountOver: number): Promise<string> => {
+    if (!apiKey) return `Overspending detected in ${overspentCategory}.`;
 
     const prompt = `
-Người dùng vừa vượt ngân sách ở danh mục "${overspentCategory}" khoảng ${amountOver}.
-Hãy tạo 1 câu phản tư ngắn.
-
-Giọng: trưởng thành, điềm tĩnh, hơi mỉa nhẹ.
-Quy tắc: tối đa 20 từ. Không lời khuyên. Không câu hỏi. Không emoji. Không dấu chấm than.
-`.trim();
+      The user just went ${amountOver} VND over budget in the '${overspentCategory}' category.
+      Generate a short reflection statement in Vietnamese.
+      Tone: Mature, calm, slightly ironic.
+      Rules: Max 20 words. NO questions. NO emojis. NO exclamation marks. NO advice.
+    `;
 
     try {
       const response = await ai.models.generateContent({
         model: MODEL_NAME,
         contents: prompt,
       });
-
-      const text = safeText((response as any).text);
-      return text || "Khoản này không sai. Chỉ là nó làm mục tiêu chậm lại.";
-    } catch {
-      return "Khoản này không sai. Chỉ là nó làm mục tiêu chậm lại.";
+      return response.text || "Đó là lựa chọn của bạn.";
+    } catch (e) {
+      return "Đó là lựa chọn của bạn.";
     }
   },
 
   generateTransactionComment: async (transaction: any): Promise<string> => {
-    if (!ai) return "";
-
-    const amount = transaction?.amount ?? "";
-    const category = transaction?.category ?? "một khoản";
-    const desc = safeText(transaction?.description);
+    if (!apiKey) return "";
 
     const prompt = `
-Người dùng vừa ghi nhận một giao dịch chi tiêu: ${amount} cho "${category}"${desc ? ` (${desc})` : ""}.
-Hãy tạo 1 câu phản hồi ngắn sau khi lưu giao dịch.
-
-Giọng: trưởng thành, điềm tĩnh, hơi mỉa nhẹ.
-Quy tắc: 1 câu, tối đa 15 từ. Không emoji. Không câu hỏi. Không dấu chấm than. Không lời khuyên.
-`.trim();
+      The user just spent ${transaction.amount} VND on ${transaction.category} (${transaction.description}).
+      Generate a subtle, calm, slightly ironic, adult, one-sentence reflection in Vietnamese.
+      Rules: NO emojis. NO questions. NO exclamation marks. Max 15 words.
+    `;
 
     try {
       const response = await ai.models.generateContent({
         model: MODEL_NAME,
         contents: prompt,
       });
-
-      return safeText((response as any).text);
-    } catch {
+      return response.text || "";
+    } catch (e) {
       return "";
     }
   },
 
-  generateBadge: async (
-    transactions: Transaction[]
-  ): Promise<{ title: string; description: string }> => {
-    if (!ai) return { title: "Người mới ghi chép", description: "Ít nhất bạn đã bắt đầu." };
+  generateBadge: async (transactions: Transaction[]): Promise<{title: string, description: string}> => {
+     if (!apiKey) return { title: 'Tập sự', description: 'Bắt đầu theo dõi.' };
 
-    const sample = transactions.slice(-10);
+     // Simple heuristic for demo
+     const prompt = `
+        Based on these transactions (in VND): ${JSON.stringify(transactions.slice(-10))}
+        Invent a creative, sarcastic achievement badge title and short description (max 10 words) in Vietnamese.
+        Tone: Dry humor.
+        Rules: NO emojis. NO exclamation marks.
+        Example: "Latte Legend: Funded the local cafe renovation."
+        Return JSON format: { "title": "...", "description": "..." }
+     `;
 
-    const prompt = `
-Dựa trên 10 giao dịch gần nhất sau (JSON): ${JSON.stringify(sample)}
-Hãy tạo 1 huy hiệu thành tích (tên + mô tả ngắn).
-
-Yêu cầu:
-- Giọng: hài mỉa nhẹ, kiểu “khô”, trưởng thành.
-- Không emoji. Không dấu chấm than.
-- title: tối đa 5 từ.
-- description: tối đa 10 từ.
-Trả về đúng JSON dạng: {"title":"...","description":"..."}
-`.trim();
-
-    try {
-      const response = await ai.models.generateContent({
-        model: MODEL_NAME,
-        contents: prompt,
-        config: { responseMimeType: "application/json" },
-      });
-
-      const text = safeText((response as any).text);
-      const obj = JSON.parse(text || "{}");
-
-      // Fallback an toàn
-      const title = safeText(obj.title) || "Bậc thầy chi tiêu";
-      const description = safeText(obj.description) || "Tiền đi nhanh, bạn vẫn bình tĩnh.";
-      return { title, description };
-    } catch {
-      return { title: "Người tiêu bí ẩn", description: "Tiền đi đâu, ai cũng tò mò." };
-    }
+      try {
+        const response = await ai.models.generateContent({
+            model: MODEL_NAME,
+            contents: prompt,
+            config: { responseMimeType: 'application/json' }
+        });
+        const text = response.text;
+        return JSON.parse(text || '{}');
+      } catch (e) {
+        return { title: 'Người bí ẩn', description: 'Tiền đi đâu không ai biết.' };
+      }
   },
+
+  generateIncomePlan: async (idea: string): Promise<any> => {
+      if (!apiKey) return null;
+
+      const prompt = `
+        The user wants to increase income by: "${idea}".
+        Create a structured project plan for this.
+        Currency: VND.
+        Language: Vietnamese.
+        
+        Return valid JSON strictly matching this structure:
+        {
+            "name": "Project Name (Short & Catchy)",
+            "description": "1 sentence description",
+            "expectedIncome": number (estimate in VND),
+            "milestones": [
+                { "title": "Step 1", "daysFromNow": 1 },
+                { "title": "Step 2", "daysFromNow": 3 },
+                { "title": "Step 3", "daysFromNow": 7 }
+            ]
+        }
+        Generate 3-5 milestones.
+      `;
+
+      try {
+          const response = await ai.models.generateContent({
+              model: MODEL_NAME,
+              contents: prompt,
+              config: { responseMimeType: 'application/json' }
+          });
+          return JSON.parse(response.text || '{}');
+      } catch (e) {
+          console.error(e);
+          return null;
+      }
+  },
+
+  generateComprehensiveReport: async (
+      transactions: Transaction[], 
+      goals: Goal[], 
+      projects: IncomeProject[], 
+      fixedCosts: FixedCost[]
+  ): Promise<FinancialReport | null> => {
+      if (!apiKey) return null;
+
+      // Prepare context data
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+
+      const thisMonthIncome = transactions
+        .filter(t => t.type === TransactionType.INCOME && new Date(t.date).getMonth() === currentMonth)
+        .reduce((sum, t) => sum + t.amount, 0);
+
+      const lastMonthIncome = transactions
+        .filter(t => t.type === TransactionType.INCOME && new Date(t.date).getMonth() === lastMonth)
+        .reduce((sum, t) => sum + t.amount, 0);
+      
+      const completedProjects = projects.filter(p => p.status === 'completed').length;
+      const totalProjects = projects.length;
+
+      const summary = {
+          thisMonthIncome,
+          lastMonthIncome,
+          totalProjects,
+          completedProjects,
+          goals: goals.map(g => ({ name: g.name, current: g.currentAmount, target: g.targetAmount, deadline: g.deadline })),
+          fixedCosts: fixedCosts.map(c => ({ name: c.title, amount: c.amount, allocated: c.allocatedAmount })),
+          projectsSample: projects.slice(-5).map(p => ({ name: p.name, status: p.status, milestones: p.milestones.length }))
+      };
+
+      const prompt = `
+        Act as a Senior Financial Analyst & Life Coach. Analyze this financial data for a user in Vietnam (VND).
+        Data: ${JSON.stringify(summary)}
+
+        Tasks:
+        1. Calculate a "Health Score" (0-100) based on income stability, goal progress, and project execution.
+        2. Analyze Income Trend (This month vs Last month).
+        3. Evaluate Project Velocity (How well are they executing income plans?).
+        4. Forecast Goals: Can they pay fixed costs? Are they on track for major goals (like buying a house)?
+
+        Output strictly JSON:
+        {
+            "healthScore": number,
+            "incomeTrend": {
+                "status": "higher" | "lower" | "stable",
+                "percentage": number,
+                "message": "Short 1 sentence comment in Vietnamese"
+            },
+            "projectVelocity": {
+                "rating": "High" | "Medium" | "Low",
+                "completedProjects": number,
+                "message": "Short analysis of their hustle capability in Vietnamese"
+            },
+            "goalForecast": {
+                "canMeetFixedCosts": boolean,
+                "majorGoalPrediction": "Prediction about their biggest goal in Vietnamese",
+                "advice": "1 sentence strategic advice in Vietnamese"
+            }
+        }
+      `;
+
+      try {
+          const response = await ai.models.generateContent({
+              model: MODEL_NAME,
+              contents: prompt,
+              config: { responseMimeType: 'application/json' }
+          });
+          return JSON.parse(response.text || '{}');
+      } catch (e) {
+          console.error(e);
+          return null;
+      }
+  }
 };
