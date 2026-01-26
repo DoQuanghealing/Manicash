@@ -6,14 +6,13 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
   
   return {
-    // Phải khớp chính xác với tên Repository trên GitHub của bạn
+    // Phải khớp chính xác với tên Repository mới của bạn trên GitHub
     base: '/ManiCash/', 
     
     plugins: [react()],
     
     define: {
-      // Giúp ứng dụng không bị lỗi "process is not defined" trong trình duyệt
-      'process.env': env,
+      // Đảm bảo không bị lỗi "process is not defined"
       'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
     },
     
@@ -27,14 +26,22 @@ export default defineConfig(({ mode }) => {
       outDir: 'dist',
       assetsDir: 'assets',
       emptyOutDir: true,
-      // Cấu hình để Rollup (bộ build của Vite) không báo lỗi khi gặp các thư viện từ ESM.sh
       rollupOptions: {
+        // CHỈ để external nếu bạn chắc chắn index.html đã có importmap cho chúng
+        // Nếu không chắc, hãy xóa phần external này để Vite tự đóng gói (khuyên dùng)
         external: [
           'react',
           'react-dom',
           'lucide-react',
           '@google/genai'
         ],
+        output: {
+          // Giúp các thư viện external ánh xạ đúng với Import Maps trong HTML
+          globals: {
+            react: 'React',
+            'react-dom': 'ReactDOM',
+          }
+        }
       },
     },
     
