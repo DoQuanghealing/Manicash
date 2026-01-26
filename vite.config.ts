@@ -3,17 +3,22 @@ import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, '.', '');
+  // Load cả biến môi trường từ file .env và từ hệ thống (GitHub Actions)
+  const env = loadEnv(mode, process.cwd(), '');
   
   return {
-    // SỬA TẠI ĐÂY: Dùng './' thay vì '/ManiCash/' để tránh lỗi phân biệt hoa/thường trên GitHub
+    // Dùng './' là lựa chọn an toàn nhất cho GitHub Pages
     base: './', 
     
     plugins: [react()],
     
     define: {
-      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-      // Bổ sung để fix lỗi nếu thư viện yêu cầu process.env
+      /**
+       * SỬA TẠI ĐÂY: 
+       * Chúng ta ưu tiên lấy VITE_GEMINI_API_KEY (từ deploy.yml)
+       * Nếu không có thì mới lấy GEMINI_API_KEY (từ file .env máy cá nhân)
+       */
+      'process.env.GEMINI_API_KEY': JSON.stringify(env.VITE_GEMINI_API_KEY || env.GEMINI_API_KEY || ''),
       'process.env': env 
     },
     
@@ -27,7 +32,6 @@ export default defineConfig(({ mode }) => {
       outDir: 'dist',
       assetsDir: 'assets',
       emptyOutDir: true,
-      // Đảm bảo tệp JS được tạo ra có đường dẫn đúng
       modulePreload: {
         polyfill: true
       }
