@@ -3,36 +3,44 @@ import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ mode }) => {
-    const env = loadEnv(mode, '.', '');
+  const env = loadEnv(mode, '.', '');
+  
+  return {
+    // Phải khớp chính xác với tên Repository trên GitHub của bạn
+    base: '/ManiCash/', 
     
-    return {
-      // Sửa từ './' thành '/ManiCash/' để khớp với tên Repository mới trên GitHub.
-      // Lưu ý: ManiCash phải viết đúng hoa thường như trên GitHub.
-      base: '/ManiCash/', 
-      
-      server: {
-        port: 3000,
-        host: '0.0.0.0',
+    plugins: [react()],
+    
+    define: {
+      // Giúp ứng dụng không bị lỗi "process is not defined" trong trình duyệt
+      'process.env': env,
+      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
+    },
+    
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, './'),
       },
-      plugins: [react()],
-      define: {
-        // Đảm bảo GEMINI_API_KEY đã được thiết lập trong GitHub Secrets
-        'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
+    },
+    
+    build: {
+      outDir: 'dist',
+      assetsDir: 'assets',
+      emptyOutDir: true,
+      // Cấu hình để Rollup (bộ build của Vite) không báo lỗi khi gặp các thư viện từ ESM.sh
+      rollupOptions: {
+        external: [
+          'react',
+          'react-dom',
+          'lucide-react',
+          '@google/genai'
+        ],
       },
-      resolve: {
-        alias: {
-          // Trỏ chính xác vào thư mục root của dự án
-          '@': path.resolve(__dirname, './'),
-        }
-      },
-      build: {
-        outDir: 'dist',
-        assetsDir: 'assets',
-        // Tắt tính năng minify nếu bạn muốn dễ dàng debug lỗi màn hình trắng (tùy chọn)
-        minify: true,
-        // Đảm bảo tệp tin được build ra với đường dẫn tương đối
-        emptyOutDir: true,
-      }
-    };
+    },
+    
+    server: {
+      port: 3000,
+      host: '0.0.0.0',
+    },
+  };
 });
