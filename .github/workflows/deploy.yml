@@ -22,13 +22,12 @@ jobs:
           node-version: 20
 
       - name: Install dependencies
-        # Cài đặt thư viện mà không cần file lock
         run: npm install --legacy-peer-deps
 
       - name: Build project
-        # NẠP BIẾN MÔI TRƯỜNG TẠI ĐÂY
+        # ĐÂY LÀ PHẦN QUAN TRỌNG NHẤT ĐỂ FIX LỖI API KEY
         env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          VITE_GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           CI: false
         run: npm run build
 
