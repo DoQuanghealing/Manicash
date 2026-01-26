@@ -6,19 +6,19 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
   
   return {
-    // base phải khớp chính xác với tên repo trên GitHub
-    base: '/ManiCash/', 
+    // SỬA TẠI ĐÂY: Dùng './' thay vì '/ManiCash/' để tránh lỗi phân biệt hoa/thường trên GitHub
+    base: './', 
     
     plugins: [react()],
     
     define: {
-      // Fix lỗi "process is not defined" khi chạy trên trình duyệt
       'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
+      // Bổ sung để fix lỗi nếu thư viện yêu cầu process.env
+      'process.env': env 
     },
     
     resolve: {
       alias: {
-        // Giúp bạn import file bằng dấu @ (ví dụ: import x from '@/components/x')
         '@': path.resolve(__dirname, './'),
       },
     },
@@ -27,8 +27,10 @@ export default defineConfig(({ mode }) => {
       outDir: 'dist',
       assetsDir: 'assets',
       emptyOutDir: true,
-      // ĐÃ GỠ BỎ ROLLUPOPTIONS EXTERNAL
-      // Bây giờ Vite sẽ tự động đóng gói React và các thư viện khác vào tệp 'dist'
+      // Đảm bảo tệp JS được tạo ra có đường dẫn đúng
+      modulePreload: {
+        polyfill: true
+      }
     },
     
     server: {
