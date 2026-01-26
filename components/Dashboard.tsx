@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Wallet, Transaction, TransactionType, User } from '../types';
-import { ArrowUpRight, ArrowDownRight, Wallet as WalletIcon, Settings, Calendar, List, ShieldCheck, TrendingUp, AlertTriangle, Target, Zap, X, Sparkles, ArrowRightLeft, MoveRight } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, Wallet as WalletIcon, Settings, Calendar, List, ShieldCheck, TrendingUp, AlertTriangle, Target, Zap, X, Sparkles, ArrowRightLeft, MoveRight, PartyPopper } from 'lucide-react';
 import { CATEGORY_COLORS } from '../constants';
 import { VI } from '../constants/vi';
 import { formatVND } from '../utils/format';
@@ -22,6 +22,7 @@ export const Dashboard: React.FC<Props> = ({ wallets, transactions, users, onOpe
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [transferAmount, setTransferAmount] = useState('');
   const [missions, setMissions] = useState<any[]>([]);
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
 
   useEffect(() => {
     calculateMissions();
@@ -68,6 +69,8 @@ export const Dashboard: React.FC<Props> = ({ wallets, transactions, users, onOpe
       setTransferAmount('');
       setShowTransferModal(false);
       onRefresh();
+      setShowSuccessToast(true);
+      setTimeout(() => setShowSuccessToast(false), 3000);
     } else {
       alert("Số dư Ví chính không đủ!");
     }
@@ -82,16 +85,17 @@ export const Dashboard: React.FC<Props> = ({ wallets, transactions, users, onOpe
     const len = str.length;
     
     if (isHeader) {
-      if (len > 16) return 'text-xl';
-      if (len > 13) return 'text-2xl';
-      if (len > 11) return 'text-3xl';
-      return 'text-4xl';
+      if (len > 18) return 'text-lg';
+      if (len > 15) return 'text-xl';
+      if (len > 12) return 'text-2xl';
+      return 'text-3xl';
     }
 
+    if (len > 20) return 'text-[1.1rem] sm:text-[1.4rem]';
     if (len > 16) return 'text-[1.4rem] sm:text-[1.8rem]';
-    if (len > 14) return 'text-[1.8rem] sm:text-[2.2rem]';
-    if (len > 12) return 'text-[2.1rem] sm:text-[2.5rem]';
-    return 'text-[2.5rem] sm:text-[3rem]';
+    if (len > 13) return 'text-[1.9rem] sm:text-[2.3rem]';
+    if (len > 10) return 'text-[2.3rem] sm:text-[2.8rem]';
+    return 'text-[2.8rem] sm:text-[3.2rem]';
   };
 
   const activeBalance = activeWalletTab === 'main' ? mainWallet?.balance || 0 : backupWallet?.balance || 0;
@@ -139,20 +143,20 @@ export const Dashboard: React.FC<Props> = ({ wallets, transactions, users, onOpe
                
                <div className="relative z-10">
                     <p className="text-foreground/30 text-[11px] mb-2 font-black tracking-widest uppercase">SỐ DƯ QUẢN LÝ</p>
-                    <p className={`font-[900] tracking-tighter mb-10 leading-tight transition-all duration-500 truncate ${activeWalletTab === 'backup' ? 'text-secondary' : 'text-foreground'} ${getDynamicFontSizeClass(activeBalance)}`}>
-                        {formatVND(activeBalance)}
-                    </p>
+                    <div className="flex items-center justify-between mb-8 overflow-visible">
+                        <p className={`font-[1000] tracking-tighter leading-tight transition-all duration-500 whitespace-nowrap ${activeWalletTab === 'backup' ? 'text-secondary' : 'text-foreground'} ${getDynamicFontSizeClass(activeBalance)}`}>
+                            {formatVND(activeBalance)}
+                        </p>
+                        {activeWalletTab === 'main' && (
+                          <button 
+                            onClick={() => setShowTransferModal(true)}
+                            className="w-14 h-14 bg-primary text-white rounded-2xl flex items-center justify-center shadow-lg neon-glow-primary active:scale-90 transition-all border-2 border-primary/20"
+                          >
+                            <ArrowRightLeft size={22} />
+                          </button>
+                        )}
+                    </div>
                     
-                    {/* Action Area for Transfer */}
-                    {activeWalletTab === 'main' && (
-                      <button 
-                        onClick={() => setShowTransferModal(true)}
-                        className="mb-8 flex items-center gap-3 bg-foreground/5 hover:bg-foreground/10 text-foreground/40 hover:text-primary px-6 py-3 rounded-2xl transition-all border border-foreground/5 font-black text-[10px] uppercase tracking-widest"
-                      >
-                        <ArrowRightLeft size={16} /> TRÍCH LẬP QUỸ DỰ PHÒNG
-                      </button>
-                    )}
-
                     {/* Vertical Stacked Cards for Income/Spending */}
                     <div className="flex flex-col gap-4">
                         <div className="glass-card bg-surface/50 p-6 rounded-[2.25rem] border-0 flex justify-between items-center group/card hover:bg-secondary/5 transition-all">
@@ -184,7 +188,7 @@ export const Dashboard: React.FC<Props> = ({ wallets, transactions, users, onOpe
            <div className="glass-card w-full max-w-md rounded-[3rem] p-10 shadow-2xl animate-in slide-in-from-bottom duration-500 border-0 bg-surface">
                <div className="flex justify-between items-center mb-8">
                    <div>
-                        <h3 className="text-2xl font-[900] text-foreground tracking-tighter uppercase leading-none">TRÍCH LẬP QUỸ</h3>
+                        <h3 className="text-2xl font-[1000] text-foreground tracking-tighter uppercase leading-none">TRÍCH LẬP QUỸ</h3>
                         <p className="text-[10px] font-black text-foreground/30 uppercase tracking-widest mt-2">Ví chính → Quỹ dự phòng</p>
                    </div>
                    <button onClick={() => setShowTransferModal(false)} className="p-3 bg-foreground/5 rounded-2xl text-foreground/40 hover:bg-foreground/10 transition-all"><X size={22} /></button>
@@ -195,7 +199,7 @@ export const Dashboard: React.FC<Props> = ({ wallets, transactions, users, onOpe
                           <label className="text-[10px] font-black text-foreground/30 ml-2 tracking-widest uppercase">Số tiền chuyển (VND)</label>
                           <input 
                               type="number" required autoFocus
-                              className="w-full bg-foreground/5 text-secondary text-3xl font-[900] p-6 rounded-[2rem] focus:outline-none tracking-tighter placeholder:text-foreground/5"
+                              className="w-full bg-foreground/5 text-secondary text-4xl font-[1000] p-6 rounded-[2rem] focus:outline-none tracking-tighter placeholder:text-foreground/5"
                               placeholder="0"
                               value={transferAmount}
                               onChange={(e) => setTransferAmount(e.target.value)}
@@ -207,11 +211,18 @@ export const Dashboard: React.FC<Props> = ({ wallets, transactions, users, onOpe
                       </div>
                    </div>
 
-                   <button type="submit" className="w-full bg-primary text-white font-[900] py-6 rounded-[2rem] text-[11px] uppercase tracking-[0.3em] shadow-xl neon-glow-primary active:scale-95 transition-all flex items-center justify-center gap-3">
-                       XÁC NHẬN CHUYỂN <MoveRight size={18} />
+                   <button type="submit" className="w-full bg-primary text-white font-[1000] py-6 rounded-[2rem] text-[12px] uppercase tracking-[0.4em] shadow-xl neon-glow-primary active:scale-95 transition-all flex items-center justify-center gap-3">
+                       XÁC NHẬN CHUYỂN <MoveRight size={20} />
                    </button>
                </form>
            </div>
+        </div>
+      )}
+
+      {/* SUCCESS TOAST */}
+      {showSuccessToast && (
+        <div className="fixed top-12 left-1/2 -translate-x-1/2 z-[300] bg-secondary text-white px-8 py-4 rounded-full shadow-2xl font-[1000] text-xs uppercase tracking-[0.3em] flex items-center gap-3 animate-in slide-in-from-top duration-500">
+           <PartyPopper size={18} /> ĐÃ TRÍCH QUỸ YAHOOO!
         </div>
       )}
 

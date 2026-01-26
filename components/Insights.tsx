@@ -136,7 +136,7 @@ export const Insights: React.FC<Props> = ({ transactions, users }) => {
               return { 
                 ...m, 
                 isCompleted: newStatus,
-                completedAt: newStatus ? new Date().toISOString().split('T')[0] : undefined
+                completedAt: newStatus ? new Date().toLocaleDateString('vi-VN') : undefined
               };
           }
           return m;
@@ -227,21 +227,21 @@ export const Insights: React.FC<Props> = ({ transactions, users }) => {
                                 {project.milestones.map((m, idx) => (
                                     <div key={m.id} className="flex flex-col p-4 glass-card bg-foreground/[0.03] rounded-[1.5rem] border-0 transition-all hover:bg-foreground/[0.06]">
                                         <div className="flex items-center space-x-4">
-                                            <button onClick={() => toggleMilestoneInView(project, idx)} className={`w-7 h-7 rounded-xl flex items-center justify-center transition-all ${m.isCompleted ? 'bg-primary text-white shadow-lg shadow-primary/30' : 'border-2 border-foreground/10 text-transparent'}`}>
-                                                <CheckCircle size={16} strokeWidth={4} />
+                                            <button onClick={() => toggleMilestoneInView(project, idx)} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${m.isCompleted ? 'bg-primary text-white shadow-lg shadow-primary/30' : 'border-2 border-foreground/10 text-transparent'}`}>
+                                                <CheckCircle size={22} strokeWidth={4} />
                                             </button>
                                             <div className="flex-1">
-                                                <p className={`text-[14px] font-[800] tracking-tight ${m.isCompleted ? 'text-foreground/30 line-through' : 'text-foreground/80'} uppercase`}>{m.title}</p>
-                                                <div className="flex items-center gap-3 mt-1">
-                                                    {m.startDate && <span className="text-[9px] font-black text-foreground/20 uppercase tracking-widest">Từ: {m.startDate}</span>}
-                                                    {m.date && <span className="text-[9px] font-black text-foreground/20 uppercase tracking-widest">Hạn: {m.date}</span>}
+                                                <p className={`text-[15px] font-[800] tracking-tight ${m.isCompleted ? 'text-foreground/30 line-through' : 'text-foreground/80'} uppercase`}>{m.title}</p>
+                                                <div className="flex items-center gap-4 mt-1">
+                                                    {m.startDate && <span className="text-[9px] font-black text-foreground/25 uppercase tracking-widest">Từ: {new Date(m.startDate).toLocaleDateString('vi-VN')}</span>}
+                                                    {m.date && <span className="text-[9px] font-black text-foreground/25 uppercase tracking-widest">Hạn: {new Date(m.date).toLocaleDateString('vi-VN')}</span>}
                                                 </div>
                                             </div>
                                         </div>
                                         {m.isCompleted && m.completedAt && (
-                                            <div className="mt-2 pl-11 flex items-center gap-2">
-                                                <div className="w-1 h-1 rounded-full bg-secondary"></div>
-                                                <span className="text-[9px] font-black text-secondary uppercase tracking-widest">Hoàn thành ngày: {m.completedAt}</span>
+                                            <div className="mt-2 pl-14 flex items-center gap-2">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-secondary"></div>
+                                                <span className="text-[10px] font-black text-secondary uppercase tracking-widest">Hoàn thành: {m.completedAt}</span>
                                             </div>
                                         )}
                                     </div>
@@ -358,26 +358,29 @@ export const Insights: React.FC<Props> = ({ transactions, users }) => {
 
       {/* CELEBRATION MODAL */}
       {celebrationProject && (
-          <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/90 backdrop-blur-3xl px-8 animate-in zoom-in duration-500">
-              <div className="text-center space-y-8">
+          <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/95 backdrop-blur-3xl px-8 animate-in zoom-in duration-500">
+              <div className="text-center space-y-12 max-w-sm">
                   <div className="relative">
-                      <div className="absolute inset-0 animate-ping bg-secondary/20 rounded-full blur-3xl"></div>
-                      <div className="w-32 h-32 bg-secondary text-white rounded-[3rem] flex items-center justify-center mx-auto shadow-[0_0_50px_rgba(16,185,129,0.5)] relative z-10 animate-bounce">
-                          <PartyPopper size={64} />
+                      <div className="absolute inset-0 animate-ping bg-secondary/30 rounded-full blur-3xl scale-150"></div>
+                      <div className="w-44 h-44 bg-secondary text-white rounded-[4rem] flex items-center justify-center mx-auto shadow-[0_0_80px_rgba(16,185,129,0.8)] relative z-10 animate-bounce">
+                          <PartyPopper size={88} />
                       </div>
                   </div>
-                  <div className="space-y-4">
-                      <h2 className="text-4xl font-[900] text-foreground tracking-tighter uppercase">HOÀN THÀNH XUẤT SẮC!</h2>
-                      <p className="text-xl font-bold text-secondary uppercase tracking-tight">"{celebrationProject}"</p>
-                      <p className="text-lg font-black text-foreground/60 italic leading-relaxed uppercase tracking-widest">
-                        chúc mừng bạn đã hoàn thành nhiệm vụ.<br/>Tiền về tiền về yahooo!
-                      </p>
+                  <div className="space-y-8">
+                      <h2 className="text-5xl font-[1000] text-white tracking-tighter uppercase leading-[0.8]">YAHOOO!</h2>
+                      <div className="glass-card bg-white/10 p-8 rounded-[2.5rem] border-white/20 shadow-2xl">
+                        <p className="text-xl font-[900] text-secondary uppercase tracking-tight mb-4">"{celebrationProject}"</p>
+                        <p className="text-[18px] font-black text-white leading-relaxed uppercase tracking-widest">
+                          chúc mừng bạn đã hoàn thành nhiệm vụ.<br/>
+                          <span className="text-secondary">Tiền về tiền về yahooo</span>
+                        </p>
+                      </div>
                   </div>
                   <button 
                     onClick={() => setCelebrationProject(null)}
-                    className="bg-primary text-white px-12 py-6 rounded-[2rem] font-[900] text-[11px] uppercase tracking-[0.4em] shadow-2xl neon-glow-primary active:scale-95 transition-all"
+                    className="w-full bg-white text-secondary py-7 rounded-[2.5rem] font-[1000] text-[14px] uppercase tracking-[0.5em] shadow-2xl active:scale-95 transition-all hover:bg-secondary hover:text-white"
                   >
-                    TIẾP TỤC KIẾM TIỀN
+                    NHẬN THƯỞNG
                   </button>
               </div>
           </div>

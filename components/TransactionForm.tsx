@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { TransactionType, Category, Wallet } from '../types';
-import { X, ArrowRight, CheckCircle2, AlertCircle, TrendingUp, TrendingDown, ArrowRightLeft, Plus, ChevronDown, Wallet as WalletIcon, FileText } from 'lucide-react';
+import { X, ArrowRight, CheckCircle2, TrendingUp, TrendingDown, ArrowRightLeft, Plus, Wallet as WalletIcon, FileText, MoveRight } from 'lucide-react';
 import { GeminiService } from '../services/geminiService';
 import { StorageService } from '../services/storageService';
 import { ReflectionModal } from './ReflectionModal';
@@ -20,6 +20,7 @@ export const TransactionForm: React.FC<Props> = ({ isOpen, onClose, onSubmit, wa
   const [type, setType] = useState<TransactionType>(TransactionType.EXPENSE);
   const [category, setCategory] = useState<string>(Category.FOOD);
   const [walletId, setWalletId] = useState('');
+  const [toWalletId, setToWalletId] = useState('');
   const [reflectionMsg, setReflectionMsg] = useState<string | null>(null);
   const [isConfirming, setIsConfirming] = useState(false);
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
@@ -37,9 +38,15 @@ export const TransactionForm: React.FC<Props> = ({ isOpen, onClose, onSubmit, wa
 
   useEffect(() => {
     if (isOpen && wallets.length > 0) {
-      setWalletId(prev => (!prev || !wallets.find(w => w.id === prev) ? wallets[0].id : prev));
+      if (!walletId || !wallets.find(w => w.id === walletId)) {
+        setWalletId(wallets[0].id);
+      }
+      if (type === TransactionType.TRANSFER && (!toWalletId || toWalletId === walletId)) {
+        const otherWallet = wallets.find(w => w.id !== walletId);
+        if (otherWallet) setToWalletId(otherWallet.id);
+      }
     }
-  }, [isOpen, wallets]);
+  }, [isOpen, wallets, type, walletId]);
 
   if (!isOpen) return null;
 
@@ -48,6 +55,12 @@ export const TransactionForm: React.FC<Props> = ({ isOpen, onClose, onSubmit, wa
     if (!amount) return;
     const numericAmount = parseFloat(amount);
     const selectedWallet = wallets.find(w => w.id === walletId);
+    
+    if (type === TransactionType.TRANSFER && walletId === toWalletId) {
+      alert("Ví gửi và ví nhận phải khác nhau!");
+      return;
+    }
+
     if (selectedWallet && (type === TransactionType.EXPENSE || type === TransactionType.TRANSFER)) {
         if (numericAmount > selectedWallet.balance) {
             alert(VI.transaction.error.insufficientBalance);
@@ -60,19 +73,23 @@ export const TransactionForm: React.FC<Props> = ({ isOpen, onClose, onSubmit, wa
   const handleFinalSubmit = async () => {
     const finalWalletId = walletId || wallets[0]?.id;
     if (!finalWalletId) return;
+    
     const data = {
       amount: parseFloat(amount),
       description,
       type,
-      category: type === TransactionType.INCOME ? Category.INCOME : category,
+      category: type === TransactionType.INCOME ? Category.INCOME : (type === TransactionType.TRANSFER ? Category.TRANSFER : category),
       walletId: finalWalletId,
+      toWalletId: type === TransactionType.TRANSFER ? toWalletId : undefined,
       date: new Date().toISOString(),
       timestamp: Date.now()
     };
+    
     onSubmit(data);
     setAmount('');
     setDescription('');
     setIsConfirming(false);
+    
     if (data.type === TransactionType.EXPENSE) {
        const msg = await GeminiService.generateTransactionComment(data);
        if (msg) {
@@ -104,7 +121,8 @@ export const TransactionForm: React.FC<Props> = ({ isOpen, onClose, onSubmit, wa
   };
 
   const currentWalletName = wallets.find(w => w.id === walletId)?.name || 'Ví';
-  const displayCategory = type === TransactionType.INCOME ? VI.category['Income'] : ((VI.category as any)[category] || category);
+  const targetWalletName = wallets.find(w => w.id === toWalletId)?.name || 'Ví nhận';
+  const displayCategory = type === TransactionType.INCOME ? VI.category['Income'] : (type === TransactionType.TRANSFER ? "Chuyển khoản nội bộ" : ((VI.category as any)[category] || category));
   const numericAmount = amount ? parseFloat(amount) : 0;
 
   return (
@@ -114,7 +132,7 @@ export const TransactionForm: React.FC<Props> = ({ isOpen, onClose, onSubmit, wa
           
           <div className="flex justify-between items-center mb-8">
             <div>
-                <h2 className="text-2xl font-[900] text-foreground tracking-tighter uppercase leading-none">
+                <h2 className="text-2xl font-[1000] text-foreground tracking-tighter uppercase leading-none">
                     {isConfirming ? "XÁC NHẬN" : "GIAO DỊCH MỚI"}
                 </h2>
                 <p className="text-[10px] font-black text-foreground/30 uppercase tracking-[0.3em] mt-2">DuoCash Intelligence</p>
@@ -127,12 +145,11 @@ export const TransactionForm: React.FC<Props> = ({ isOpen, onClose, onSubmit, wa
           {!isConfirming ? (
             <form onSubmit={handlePreSubmit} className="space-y-6">
               
-              {/* Type Card Selector */}
               <div className="grid grid-cols-3 gap-3">
                 {[
                   { id: TransactionType.EXPENSE, label: 'CHI TIÊU', icon: TrendingDown, color: 'text-danger', bg: 'bg-danger/10', active: 'bg-danger text-white shadow-danger/20' },
                   { id: TransactionType.INCOME, label: 'THU NHẬP', icon: TrendingUp, color: 'text-secondary', bg: 'bg-secondary/10', active: 'bg-secondary text-white shadow-secondary/20' },
-                  { id: TransactionType.TRANSFER, label: 'CHUYỂN', icon: ArrowRightLeft, color: 'text-primary', bg: 'bg-primary/10', active: 'bg-primary text-white shadow-primary/20' },
+                  { id: TransactionType.TRANSFER, label: 'NỘI BỘ', icon: ArrowRightLeft, color: 'text-primary', bg: 'bg-primary/10', active: 'bg-primary text-white shadow-primary/20' },
                 ].map((t) => (
                   <button
                     key={t.id}
@@ -150,7 +167,6 @@ export const TransactionForm: React.FC<Props> = ({ isOpen, onClose, onSubmit, wa
                 ))}
               </div>
 
-              {/* Amount Input with Liquid Glow */}
               <div className="relative glass-card bg-foreground/[0.03] p-6 rounded-[2.5rem] border-0 shadow-inner group">
                 <p className="text-[9px] font-black text-foreground/30 uppercase tracking-[0.2em] mb-2 ml-2">Số tiền muốn nhập</p>
                 <div className="flex items-center justify-between">
@@ -160,7 +176,7 @@ export const TransactionForm: React.FC<Props> = ({ isOpen, onClose, onSubmit, wa
                       inputMode="decimal"
                       placeholder="0"
                       autoFocus
-                      className="w-full bg-transparent text-4xl font-[900] text-foreground tracking-tighter text-right focus:outline-none placeholder:text-foreground/5"
+                      className="w-full bg-transparent text-4xl font-[1000] text-foreground tracking-tighter text-right focus:outline-none placeholder:text-foreground/5"
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
                       required
@@ -169,7 +185,6 @@ export const TransactionForm: React.FC<Props> = ({ isOpen, onClose, onSubmit, wa
               </div>
 
               <div className="grid grid-cols-1 gap-4">
-                  {/* Category Selection (Custom UI) */}
                   {type === TransactionType.EXPENSE && (
                     <div className="space-y-2">
                       <label className="text-[10px] font-black text-foreground/30 ml-2 tracking-[0.2em] uppercase">Danh mục phân loại</label>
@@ -195,28 +210,64 @@ export const TransactionForm: React.FC<Props> = ({ isOpen, onClose, onSubmit, wa
                     </div>
                   )}
 
-                  {/* Wallet Selector */}
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-foreground/30 ml-2 tracking-[0.2em] uppercase">Sử dụng ví</label>
-                    <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-                        {wallets.map((w) => (
-                            <button
-                                key={w.id}
-                                type="button"
-                                onClick={() => setWalletId(w.id)}
-                                className={`flex-shrink-0 px-6 py-4 rounded-2xl border transition-all flex items-center gap-3 ${walletId === w.id ? 'bg-foreground text-background border-transparent shadow-xl' : 'bg-foreground/[0.03] border-foreground/[0.05] text-foreground/60'}`}
-                            >
-                                <WalletIcon size={16} />
-                                <div className="text-left">
-                                    <p className="text-[11px] font-[900] uppercase tracking-tight leading-none mb-1">{w.name}</p>
-                                    <p className="text-[9px] font-bold opacity-60 leading-none">{formatVND(w.balance)}</p>
-                                </div>
-                            </button>
-                        ))}
+                  {type === TransactionType.TRANSFER ? (
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-foreground/30 ml-2 tracking-[0.2em] uppercase">Từ ví (Gửi)</label>
+                        <div className="flex gap-2 overflow-x-auto no-scrollbar">
+                            {wallets.map((w) => (
+                                <button
+                                    key={w.id}
+                                    type="button"
+                                    onClick={() => setWalletId(w.id)}
+                                    className={`flex-shrink-0 px-6 py-4 rounded-2xl border transition-all flex items-center gap-3 ${walletId === w.id ? 'bg-foreground text-background border-transparent shadow-xl' : 'bg-foreground/[0.03] border-foreground/[0.05] text-foreground/60'}`}
+                                >
+                                    <WalletIcon size={16} />
+                                    <p className="text-[11px] font-[900] uppercase tracking-tight">{w.name}</p>
+                                </button>
+                            ))}
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-foreground/30 ml-2 tracking-[0.2em] uppercase">Đến ví (Nhận)</label>
+                        <div className="flex gap-2 overflow-x-auto no-scrollbar">
+                            {wallets.map((w) => (
+                                <button
+                                    key={`to-${w.id}`}
+                                    type="button"
+                                    onClick={() => setToWalletId(w.id)}
+                                    disabled={w.id === walletId}
+                                    className={`flex-shrink-0 px-6 py-4 rounded-2xl border transition-all flex items-center gap-3 ${toWalletId === w.id ? 'bg-secondary text-white border-transparent shadow-xl neon-glow-secondary' : 'bg-foreground/[0.03] border-foreground/[0.05] text-foreground/60 disabled:opacity-30'}`}
+                                >
+                                    <CheckCircle2 size={16} />
+                                    <p className="text-[11px] font-[900] uppercase tracking-tight">{w.name}</p>
+                                </button>
+                            ))}
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-foreground/30 ml-2 tracking-[0.2em] uppercase">Sử dụng ví</label>
+                      <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                          {wallets.map((w) => (
+                              <button
+                                  key={w.id}
+                                  type="button"
+                                  onClick={() => setWalletId(w.id)}
+                                  className={`flex-shrink-0 px-6 py-4 rounded-2xl border transition-all flex items-center gap-3 ${walletId === w.id ? 'bg-foreground text-background border-transparent shadow-xl' : 'bg-foreground/[0.03] border-foreground/[0.05] text-foreground/60'}`}
+                              >
+                                  <WalletIcon size={16} />
+                                  <div className="text-left">
+                                      <p className="text-[11px] font-[900] uppercase tracking-tight leading-none mb-1">{w.name}</p>
+                                      <p className="text-[9px] font-bold opacity-60 leading-none">{formatVND(w.balance)}</p>
+                                  </div>
+                              </button>
+                          ))}
+                      </div>
+                    </div>
+                  )}
 
-                  {/* Description */}
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-foreground/30 ml-2 tracking-[0.2em] uppercase">Mô tả giao dịch</label>
                     <div className="relative">
@@ -240,10 +291,8 @@ export const TransactionForm: React.FC<Props> = ({ isOpen, onClose, onSubmit, wa
               </button>
             </form>
           ) : (
-            /* --- HIGH-END DIGITAL RECEIPT CONFIRMATION --- */
             <div className="space-y-8 animate-in slide-in-from-right duration-500">
                <div className="glass-card bg-surface/95 border-0 rounded-[3rem] p-10 shadow-2xl relative overflow-hidden">
-                    {/* Receipt Decorative Notch */}
                     <div className="absolute -left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-background rounded-full"></div>
                     <div className="absolute -right-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-background rounded-full"></div>
                     
@@ -255,7 +304,7 @@ export const TransactionForm: React.FC<Props> = ({ isOpen, onClose, onSubmit, wa
                     </div>
                     
                     <div className="text-center py-6 border-y border-dashed border-foreground/10 mb-8">
-                        <p className="text-5xl font-[900] text-foreground tracking-tighter break-all">
+                        <p className="text-5xl font-[1000] text-foreground tracking-tighter break-all">
                             {formatVND(numericAmount)}
                         </p>
                     </div>
@@ -272,9 +321,19 @@ export const TransactionForm: React.FC<Props> = ({ isOpen, onClose, onSubmit, wa
                             <span className="font-[900] text-foreground uppercase tracking-tight text-sm">{displayCategory}</span>
                         </div>
                         <div className="flex justify-between items-center">
-                            <span className="text-[10px] font-black text-foreground/30 uppercase tracking-widest">Từ ví</span>
+                            <span className="text-[10px] font-black text-foreground/30 uppercase tracking-widest">
+                              {type === TransactionType.TRANSFER ? 'Từ ví' : 'Sử dụng ví'}
+                            </span>
                             <span className="font-[900] text-foreground uppercase tracking-tight text-sm">{currentWalletName}</span>
                         </div>
+                        {type === TransactionType.TRANSFER && (
+                          <div className="flex justify-between items-center">
+                              <span className="text-[10px] font-black text-foreground/30 uppercase tracking-widest">Đến ví</span>
+                              <span className="font-[900] text-secondary uppercase tracking-tight text-sm flex items-center gap-2">
+                                <MoveRight size={14} /> {targetWalletName}
+                              </span>
+                          </div>
+                        )}
                         {description && (
                             <div className="flex justify-between items-start">
                                 <span className="text-[10px] font-black text-foreground/30 uppercase tracking-widest pt-1">Mô tả</span>
@@ -289,11 +348,11 @@ export const TransactionForm: React.FC<Props> = ({ isOpen, onClose, onSubmit, wa
                        onClick={() => setIsConfirming(false)}
                        className="flex-1 py-6 glass-card bg-foreground/[0.05] text-foreground font-black rounded-[2rem] text-[10px] uppercase tracking-[0.3em] active:scale-95 transition-all border-0"
                    >
-                       {VI.transaction.confirmation.backBtn}
+                       QUAY LẠI
                    </button>
                    <button 
                        onClick={handleFinalSubmit}
-                       className="flex-[2] py-6 bg-secondary text-white rounded-[2rem] font-[900] text-[11px] uppercase tracking-[0.3em] shadow-2xl neon-glow-secondary active:scale-[0.98] transition-all flex items-center justify-center gap-3"
+                       className="flex-[2] py-6 bg-secondary text-white rounded-[2rem] font-[1000] text-[12px] uppercase tracking-[0.3em] shadow-2xl neon-glow-secondary active:scale-[0.98] transition-all flex items-center justify-center gap-3"
                    >
                        LƯU DỮ LIỆU <CheckCircle2 size={18} strokeWidth={3} />
                    </button>
@@ -304,7 +363,6 @@ export const TransactionForm: React.FC<Props> = ({ isOpen, onClose, onSubmit, wa
         </div>
       </div>
 
-      {/* NEW CATEGORY MODAL */}
       {isCatModalOpen && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 backdrop-blur-3xl px-6 animate-in zoom-in-95 duration-300">
            <div className="glass-card w-full max-w-sm rounded-[3rem] p-10 border-0 shadow-2xl bg-surface">
