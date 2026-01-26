@@ -2,7 +2,7 @@ name: Deploy App
 
 on:
   push:
-    branches: ["main"] # Chạy mỗi khi bạn push code lên branch main
+    branches: ["main"]
 
 permissions:
   contents: read
@@ -20,17 +20,21 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          # Không dùng cache ở đây vì bạn không có file package-lock.json
 
       - name: Install dependencies
-        run: npm install
+        # Dùng --legacy-peer-deps để tránh xung đột thư viện nếu có
+        run: npm install --legacy-peer-deps
 
       - name: Build project
-        run: npm run build
+        # Thêm CI=false để quá trình build không bị dừng nếu có cảnh báo (warning)
+        run: CI=false npm run build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./dist # Hoặc ./build tùy vào cấu hình app của bạn
+          # Đảm bảo đường dẫn này khớp với outDir trong vite.config.ts
+          path: ./dist
 
       - name: Deploy to GitHub Pages
         uses: actions/deploy-pages@v4
