@@ -1,10 +1,12 @@
-import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai"; // Đã sửa tên thư viện và SchemaType
+import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { Transaction, Budget, User, Goal, IncomeProject, Milestone, FixedCost, FinancialReport, TransactionType } from '../types';
 
-// Sử dụng biến môi trường chuẩn của Vite hoặc process.env tùy cấu hình
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+// Ưu tiên dùng import.meta.env cho Vite
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 const genAI = new GoogleGenerativeAI(apiKey || "");
-const ai = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); // Cập nhật model name chuẩn
+
+// Sử dụng model 1.5-flash để tốc độ phản hồi nhanh và ổn định
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 export const GeminiService = {
   isAvailable: () => !!apiKey,
@@ -16,23 +18,70 @@ export const GeminiService = {
     const txString = recentTx.map(t => `${t.date}: ${t.amount} VND on ${t.category} (${t.description})`).join('\n');
 
     const prompt = `
-      Analyze these recent financial transactions for a couple named ${users[0]?.name} and ${users[1]?.name}.
-      Transactions:
+      Phân tích các giao dịch gần đây của cặp đôi ${users[0]?.name} và ${users[1]?.name}.
+      Đơn vị tiền tệ: VND.
+      Giao dịch:
       ${txString}
-      ... (giữ nguyên phần prompt của bạn)
+
+      Vai trò: Trợ lý phản hồi tài chính trung lập.
+      Giọng điệu: Trưởng thành, điềm tĩnh, hóm hỉnh nhẹ nhàng. 
+      Quy tắc: Tối đa 2 câu. Không đưa lời khuyên. Không dùng emoji. Không dùng dấu chấm than.
     `;
 
     try {
-      const result = await ai.generateContent(prompt);
-      const response = await result.response;
-      return response.text() || "Đã ghi nhận thói quen chi tiêu.";
+      const result = await model.generateContent(prompt);
+      return result.response.text() || "Đã ghi nhận thói quen chi tiêu.";
     } catch (e) {
       console.error(e);
-      return "AI đang quan sát trong im lặng (Lỗi).";
+      return "AI đang quan sát trong im lặng.";
     }
   },
 
-  // ... Các hàm khác bạn cũng sửa cấu trúc gọi tương tự: 
-  // const result = await ai.generateContent(prompt);
-  // const response = await result.response;
+  generateBadge: async (transactions: Transaction[]): Promise<{title: string, description: string}> => {
+    if (!apiKey) return { title: 'Tập sự', description: 'Bắt đầu theo dõi.' };
+
+    const prompt = `Dựa trên giao dịch này: ${JSON.stringify(transactions.slice(-10))}. Tạo 1 danh hiệu hài hước (badge) bằng tiếng Việt. Trả về JSON format: {"title": "...", "description": "..."}`;
+
+    try {
+      const result = await model.generateContent({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: {
+          responseMimeType: "application/json",
+        }
+      });
+      return JSON.parse(result.response.text());
+    } catch (e) {
+      return { title: 'Người bí ẩn', description: 'Tiền đi đâu không ai biết.' };
+    }
+  },
+
+  generateComprehensiveReport: async (
+    transactions: Transaction[], 
+    goals: Goal[], 
+    projects: IncomeProject[], 
+    fixedCosts: FixedCost[]
+  ): Promise<FinancialReport | null> => {
+    if (!apiKey) return null;
+
+    const summary = {
+      income: transactions.filter(t => t.type === TransactionType.INCOME).reduce((sum, t) => sum + t.amount, 0),
+      goals: goals.map(g => ({ name: g.name, current: g.currentAmount, target: g.targetAmount })),
+      projects: projects.length
+    };
+
+    const prompt = `Hãy phân tích dữ liệu tài chính sau và trả về báo cáo chi tiết dạng JSON tiếng Việt: ${JSON.stringify(summary)}`;
+
+    try {
+      const result = await model.generateContent({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: {
+          responseMimeType: "application/json",
+        }
+      });
+      return JSON.parse(result.response.text());
+    } catch (e) {
+      console.error("Report Error:", e);
+      return null;
+    }
+  }
 };
