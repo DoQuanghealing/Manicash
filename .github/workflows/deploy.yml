@@ -20,15 +20,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          # Tạm thời tắt cache để tránh lỗi thiếu package-lock.json
-          # cache: 'npm' 
+          # Đã xóa dòng cache: 'npm' để tránh lỗi "lock file not found"
 
       - name: Install dependencies
-        # Sử dụng npm install thay vì npm ci vì npm ci yêu cầu phải có package-lock.json
+        # Sử dụng --no-package-lock nếu bạn thực sự không muốn quản lý file lock trên Git
         run: npm install
 
       - name: Build project
-        # Đảm bảo biến môi trường khớp với code của bạn (VITE_...)
         run: npm run build
         env:
           VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY }}
