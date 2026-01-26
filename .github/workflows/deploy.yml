@@ -22,17 +22,19 @@ jobs:
           node-version: 20
 
       - name: Install dependencies
-        # Nếu không có package-lock.json, lệnh này sẽ cài đặt dựa trên package.json
+        # Cài đặt thư viện mà không cần file lock
         run: npm install --legacy-peer-deps
 
       - name: Build project
-        # CI=false để bỏ qua các cảnh báo lặt vặt gây dừng build
-        run: CI=false npm run build
+        # NẠP BIẾN MÔI TRƯỜNG TẠI ĐÂY
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          CI: false
+        run: npm run build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Phải khớp với outDir: 'dist' trong vite.config.ts
           path: ./dist
 
       - name: Deploy to GitHub Pages
