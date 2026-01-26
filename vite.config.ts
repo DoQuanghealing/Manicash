@@ -6,18 +6,19 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
   
   return {
-    // Phải khớp chính xác với tên Repository mới của bạn trên GitHub
+    // base phải khớp chính xác với tên repo trên GitHub
     base: '/ManiCash/', 
     
     plugins: [react()],
     
     define: {
-      // Đảm bảo không bị lỗi "process is not defined"
+      // Fix lỗi "process is not defined" khi chạy trên trình duyệt
       'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
     },
     
     resolve: {
       alias: {
+        // Giúp bạn import file bằng dấu @ (ví dụ: import x from '@/components/x')
         '@': path.resolve(__dirname, './'),
       },
     },
@@ -26,23 +27,8 @@ export default defineConfig(({ mode }) => {
       outDir: 'dist',
       assetsDir: 'assets',
       emptyOutDir: true,
-      rollupOptions: {
-        // CHỈ để external nếu bạn chắc chắn index.html đã có importmap cho chúng
-        // Nếu không chắc, hãy xóa phần external này để Vite tự đóng gói (khuyên dùng)
-        external: [
-          'react',
-          'react-dom',
-          'lucide-react',
-          '@google/genai'
-        ],
-        output: {
-          // Giúp các thư viện external ánh xạ đúng với Import Maps trong HTML
-          globals: {
-            react: 'React',
-            'react-dom': 'ReactDOM',
-          }
-        }
-      },
+      // ĐÃ GỠ BỎ ROLLUPOPTIONS EXTERNAL
+      // Bây giờ Vite sẽ tự động đóng gói React và các thư viện khác vào tệp 'dist'
     },
     
     server: {
