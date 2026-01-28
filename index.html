@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <title>Manicash | Quản trị tài chính</title>
+    <title>Manicash | Quản trị tài chính thông minh</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -26,13 +26,24 @@
     </script>
 
     <style>
-      body { background-color: #020617; font-family: 'Be Vietnam Pro', sans-serif; color: white; margin: 0; }
-      .glass-card {
-        background: rgba(255, 255, 255, 0.03);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+      /* Thiết lập nền tảng để tránh hiện tượng trắng trang khi load */
+      body { 
+        background-color: #020617; 
+        font-family: 'Be Vietnam Pro', sans-serif; 
+        color: white; 
+        margin: 0; 
+        overflow-x: hidden;
       }
+
+      /* Hiệu ứng Kính mờ (Glassmorphism) */
+      .glass-card {
+        background: rgba(255, 255, 255, 0.03) !important;
+        backdrop-filter: blur(20px) !important;
+        -webkit-backdrop-filter: blur(20px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+      }
+
+      /* Đốm màu nền (Blobs) */
       .ai-bg-blob {
         position: fixed;
         width: 500px;
@@ -41,6 +52,16 @@
         z-index: -1;
         opacity: 0.2;
         border-radius: 50%;
+        pointer-events: none;
+      }
+
+      /* Animation mượt mà cho các phần tử */
+      .animate-progress {
+        animation: progress 2s ease-in-out infinite;
+      }
+      @keyframes progress {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
       }
     </style>
   </head>
@@ -49,6 +70,7 @@
     <div class="ai-bg-blob" style="background: #059669; bottom: -10%; left: -10%;"></div>
     
     <div id="root"></div>
+
     <script type="module" src="./index.tsx"></script>
   </body>
 </html>
