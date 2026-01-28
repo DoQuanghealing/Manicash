@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { AuthService } from '../services/firebase';
 import { Sparkles, ShieldCheck, Lock } from 'lucide-react';
@@ -19,61 +18,66 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center p-6 bg-background overflow-hidden">
-      {/* Background Blobs */}
-      <div className="ai-bg-blob bg-primary top-[-100px] right-[-100px] opacity-20"></div>
-      <div className="ai-bg-blob bg-secondary bottom-[-100px] left-[-100px] opacity-20"></div>
+    <div className="fixed inset-0 flex items-center justify-center p-4 bg-[#020617] overflow-hidden">
+      {/* Hiệu ứng nền Blur High-tech */}
+      <div className="absolute top-[-10%] right-[-10%] w-[300px] h-[300px] bg-purple-600/20 blur-[100px] rounded-full"></div>
+      <div className="absolute bottom-[-10%] left-[-10%] w-[300px] h-[300px] bg-emerald-600/20 blur-[100px] rounded-full"></div>
 
-      <div className="w-full max-w-sm glass-card liquid-glass rounded-[3.5rem] p-10 text-center relative z-10 border-0 shadow-2xl space-y-12">
-        <div className="space-y-4">
-          <div className="w-24 h-24 bg-gradient-to-tr from-yellow-400 to-amber-600 rounded-[2.5rem] flex items-center justify-center mx-auto shadow-2xl neon-glow-gold animate-bounce">
-            <BrandLogo size={64} color="white" />
+      <div className="w-full max-w-[340px] relative z-10 flex flex-col items-center">
+        {/* Logo Phần Header */}
+        <div className="flex flex-col items-center mb-10">
+          <div className="w-20 h-20 bg-[#facc15] rounded-3xl flex items-center justify-center shadow-[0_0_30px_rgba(250,204,21,0.3)] mb-6 animate-pulse">
+            <BrandLogo size={48} color="white" />
           </div>
-          <div className="space-y-1">
-            <h1 className="text-4xl font-[1000] text-foreground tracking-tighter uppercase leading-none">Manicash</h1>
-            <p className="text-[11px] font-[800] text-foreground/50 uppercase tracking-tight">Quản trị tài chính thông minh</p>
-          </div>
+          <h1 className="text-4xl font-black text-white tracking-tighter uppercase leading-none mb-1">Manicash</h1>
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Quản trị tài chính thông minh</p>
         </div>
 
-        <div className="space-y-4">
+        {/* Nút Đăng nhập Google - Tối ưu hiển thị */}
+        <div className="w-full space-y-4 mb-10">
           <button
             onClick={handleLogin}
             disabled={isLoading}
-            className="w-full bg-white text-black font-[1000] py-6 rounded-[2rem] shadow-2xl active:scale-95 transition-all flex items-center justify-center gap-4 text-[12px] uppercase tracking-[0.2em] relative overflow-hidden group border-0"
+            className="w-full h-16 bg-white hover:bg-gray-100 text-black font-black rounded-full shadow-2xl active:scale-95 transition-all flex items-center justify-center gap-3 text-[13px] uppercase tracking-widest relative overflow-hidden group border-0"
           >
             {isLoading ? (
               <div className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin"></div>
             ) : (
               <>
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-6 h-6" alt="Google" />
-                Kết nối với Google
+                <img 
+                  src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" 
+                  className="w-5 h-5 object-contain flex-shrink-0" 
+                  alt="Google" 
+                />
+                <span>Kết nối với Google</span>
               </>
             )}
-            <div className="absolute inset-0 bg-gold/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
           </button>
           
-          <div className="flex items-center justify-center gap-2 text-[9px] font-black text-foreground/20 uppercase tracking-widest">
-            <Lock size={10} />
-            Dữ liệu được bảo mật bởi Firebase
+          <div className="flex items-center justify-center gap-2 text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+            <Lock size={12} />
+            <span>Dữ liệu được bảo mật bởi Firebase</span>
           </div>
         </div>
 
-        <div className="glass-card bg-foreground/[0.03] p-6 rounded-[2.5rem] border-0 text-left">
-           <div className="flex items-center gap-3 text-amber-500 mb-4">
-              <ShieldCheck size={18} />
-              <span className="text-[11px] font-black uppercase tracking-widest">4 nguyên lý tài chính</span>
-           </div>
-           <ul className="text-[10px] font-bold text-foreground/50 leading-relaxed uppercase tracking-tight space-y-2">
-              <li className="flex gap-2"><span>1.</span> <span>Biết được mình dùng tiền thế nào</span></li>
-              <li className="flex gap-2"><span>2.</span> <span>Tối ưu thu nhập và chi tiêu</span></li>
-              <li className="flex gap-2"><span>3.</span> <span>Mục tiêu lớn nào khiến mình phải tăng thu nhập</span></li>
-              <li className="flex gap-2"><span>4.</span> <span>Kế hoạch tăng thu nhập là gì?</span></li>
-           </ul>
+        {/* Bảng 4 nguyên lý tài chính - Glassmorphism */}
+        <div className="w-full bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-[2.5rem] text-left mb-8">
+          <div className="flex items-center gap-3 text-amber-500 mb-4">
+            <ShieldCheck size={20} />
+            <span className="text-[11px] font-black uppercase tracking-widest">4 nguyên lý tài chính</span>
+          </div>
+          <ul className="text-[11px] font-bold text-gray-300 leading-relaxed uppercase tracking-tight space-y-3">
+            <li className="flex gap-3"><span className="text-amber-500">1.</span> <span>Biết được mình dùng tiền thế nào</span></li>
+            <li className="flex gap-3"><span className="text-amber-500">2.</span> <span>Tối ưu thu nhập và chi tiêu</span></li>
+            <li className="flex gap-3"><span className="text-amber-500">3.</span> <span>Mục tiêu lớn nào khiến mình phải tăng thu nhập</span></li>
+            <li className="flex gap-3"><span className="text-amber-500">4.</span> <span>Kế hoạch tăng thu nhập là gì?</span></li>
+          </ul>
         </div>
 
-        <div className="flex items-center justify-center gap-2 text-[9px] font-black text-foreground/20 uppercase tracking-widest">
-            <Sparkles size={12} />
-            App được tạo bởi Đỗ Dương Quang
+        {/* Footer */}
+        <div className="flex items-center justify-center gap-2 text-[10px] font-black text-gray-600 uppercase tracking-widest">
+          <Sparkles size={12} />
+          <span>App được tạo bởi Đỗ Dương Quang</span>
         </div>
       </div>
     </div>
