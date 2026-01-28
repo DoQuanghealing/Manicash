@@ -10,16 +10,44 @@
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800;900&family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     
     <style>
-      :root { --background: 248, 250, 252; --surface: 255, 255, 255; }
-      .dark { --background: 2, 6, 23; --surface: 15, 23, 42; }
-      body { background-color: rgb(var(--background)); font-family: 'Be Vietnam Pro', sans-serif; }
-      /* Giữ nguyên các phần CSS High-tech Glass Card bạn đã viết trước đó */
+      :root {
+        --background: 248, 250, 252;
+        --surface: 255, 255, 255;
+        --surface-opacity: 0.5;
+        --foreground: 15, 23, 42;
+        --border-gradient: linear-gradient(135deg, #8b5cf6, #d8b4fe, #10b981);
+      }
+      .dark {
+        --background: 2, 6, 23;
+        --surface: 15, 23, 42;
+        --surface-opacity: 0.45;
+        --foreground: 241, 245, 249;
+        --border-gradient: linear-gradient(135deg, #8b5cf6, #4c1d95, #064e3b);
+      }
+      body {
+        background-color: rgb(var(--background));
+        color: rgb(var(--foreground));
+        font-family: 'Be Vietnam Pro', 'Inter', sans-serif;
+        margin: 0;
+        overflow-x: hidden;
+      }
+      .ai-bg-blob {
+        position: fixed;
+        width: 400px;
+        height: 400px;
+        filter: blur(120px);
+        z-index: -1;
+        opacity: 0.15;
+        border-radius: 50%;
+      }
     </style>
   </head>
   <body>
-    <div class="ai-bg-blob bg-purple-500 top-[-150px] left-[-150px]"></div>
+    <div class="ai-bg-blob" style="background: #8b5cf6; top: -150px; left: -150px;"></div>
+    <div class="ai-bg-blob" style="background: #10b981; bottom: -150px; right: -150px;"></div>
+    
     <div id="root"></div>
     
-    <script type="module" src="/src/index.tsx"></script>
+    <script type="module" src="./index.tsx"></script>
   </body>
 </html>
