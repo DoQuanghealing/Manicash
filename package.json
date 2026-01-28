@@ -1,7 +1,6 @@
 {
   "name": "Manicash-future-finance",
   "version": "1.0.0",
-  "description": "Mobile-first personal finance app for couples with AI insights.",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -15,7 +14,7 @@
     "@google/generative-ai": "^0.21.0",
     "firebase": "^10.13.0",
     "clsx": "^2.1.1",
-    "tailmerge": "^1.0.0"
+    "tailwind-merge": "^2.5.2"
   },
   "devDependencies": {
     "@types/react": "^18.3.0",
