@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Transaction, User, IncomeProject, Milestone, Category, TransactionType, FinancialReport } from '../types';
 import { GeminiService } from '../services/geminiService';
@@ -42,7 +43,6 @@ export const Insights: React.FC<Props> = ({ transactions, users }) => {
   };
 
   const activeUser = users[0];
-  const userProjects = projects;
 
   const handleGenerateReport = async () => {
       setIsReportLoading(true);
@@ -190,14 +190,14 @@ export const Insights: React.FC<Props> = ({ transactions, users }) => {
 
   const renderPlanningTab = () => (
       <div className="space-y-6">
-        {userProjects.length === 0 ? (
+        {projects.length === 0 ? (
             <div className="glass-card liquid-glass rounded-[3rem] p-16 text-center border-0 shadow-xl">
                 <Calendar size={48} className="mx-auto mb-6 text-foreground/10" />
                 <p className="text-foreground/30 font-black text-xs uppercase tracking-[0.2em]">{VI.insights.noProjects}</p>
             </div>
         ) : (
             <div className="space-y-4">
-                {userProjects.map(project => {
+                {projects.map(project => {
                     const completedCount = project.milestones.filter(m => m.isCompleted).length;
                     const totalCount = project.milestones.length;
                     const progress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
@@ -238,12 +238,6 @@ export const Insights: React.FC<Props> = ({ transactions, users }) => {
                                                 </div>
                                             </div>
                                         </div>
-                                        {m.isCompleted && m.completedAt && (
-                                            <div className="mt-2 pl-14 flex items-center gap-2">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-secondary"></div>
-                                                <span className="text-[10px] font-black text-secondary uppercase tracking-widest">Hoàn thành: {m.completedAt}</span>
-                                            </div>
-                                        )}
                                     </div>
                                 ))}
                             </div>
@@ -296,7 +290,6 @@ export const Insights: React.FC<Props> = ({ transactions, users }) => {
                       </div>
                   </div>
 
-                  {/* Report Sections with Liquid Glass */}
                   <div className="glass-card liquid-glass p-8 rounded-[3rem] border-0 space-y-8 shadow-2xl bg-surface/40">
                       <div className="flex items-center gap-6">
                           <div className={`w-14 h-14 rounded-[1.5rem] flex items-center justify-center ${report.incomeTrend.status === 'higher' ? 'bg-secondary text-white neon-glow-secondary' : 'bg-danger text-white'}`}>
@@ -311,23 +304,6 @@ export const Insights: React.FC<Props> = ({ transactions, users }) => {
                           <p className="text-[15px] font-bold text-foreground/90 italic leading-relaxed uppercase tracking-tight">"{report.incomeTrend.message}"</p>
                       </div>
                   </div>
-                  
-                  <div className="glass-card liquid-glass p-8 rounded-[3rem] border-0 space-y-6 shadow-2xl bg-surface/40">
-                       <div className="flex items-center gap-6">
-                          <div className="w-14 h-14 rounded-[1.5rem] bg-amber-500 text-white shadow-lg flex items-center justify-center">
-                              <Target size={28} />
-                          </div>
-                          <div>
-                            <h4 className="font-[900] text-foreground text-sm uppercase tracking-tight">Dự báo lộ trình</h4>
-                            <p className="text-[11px] font-black text-foreground/40 uppercase tracking-[0.2em]">Kế hoạch mục tiêu</p>
-                          </div>
-                      </div>
-                      <p className="text-[14px] font-bold text-foreground/80 uppercase tracking-tight leading-relaxed">{report.goalForecast.majorGoalPrediction}</p>
-                  </div>
-
-                  <button onClick={handleGenerateReport} className="w-full py-6 text-[10px] font-black text-foreground/20 uppercase tracking-[0.4em] hover:text-primary transition-all">
-                      <Zap size={16} className="inline mr-3" /> Làm mới dữ liệu phân tích
-                  </button>
               </div>
           )}
       </div>
@@ -370,7 +346,7 @@ export const Insights: React.FC<Props> = ({ transactions, users }) => {
                       <h2 className="text-5xl font-[1000] text-white tracking-tighter uppercase leading-[0.8]">YAHOOO!</h2>
                       <div className="glass-card bg-white/10 p-8 rounded-[2.5rem] border-white/20 shadow-2xl">
                         <p className="text-xl font-[900] text-secondary uppercase tracking-tight mb-4">"{celebrationProject}"</p>
-                        <p className="text-[18px] font-black text-white leading-relaxed uppercase tracking-widest">
+                        <p className="text-[18px] font-black text-white leading-relaxed uppercase tracking-widest text-center">
                           chúc mừng bạn đã hoàn thành nhiệm vụ.<br/>
                           <span className="text-secondary">Tiền về tiền về yahooo</span>
                         </p>
@@ -421,65 +397,70 @@ export const Insights: React.FC<Props> = ({ transactions, users }) => {
           </div>
       )}
 
-      {/* EDIT MODAL */}
+      {/* EDIT MODAL - FIXED SCROLLING ISSUE */}
       {isEditOpen && (
-          <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-3xl p-6">
-              <div className="glass-card w-full max-w-md h-[85vh] sm:h-auto overflow-y-auto rounded-[3rem] p-10 shadow-2xl border-0 no-scrollbar bg-surface/90">
-                  <div className="flex justify-between items-center mb-10">
-                      <h3 className="text-2xl font-[900] text-foreground tracking-tighter uppercase">CHI TIẾT DỰ ÁN</h3>
-                      <button onClick={() => setIsEditOpen(false)} className="p-3 bg-foreground/5 rounded-2xl text-foreground hover:text-primary transition-all"><X size={24} /></button>
+          <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-3xl p-4 sm:p-6">
+              <div className="glass-card w-full max-w-md max-h-[92vh] flex flex-col rounded-[3rem] shadow-2xl border-0 bg-surface/95 overflow-hidden">
+                  
+                  {/* Fixed Header */}
+                  <div className="flex justify-between items-center p-8 pb-4 shrink-0">
+                      <h3 className="text-xl font-[1000] text-foreground tracking-tighter uppercase">CHI TIẾT DỰ ÁN</h3>
+                      <button onClick={() => setIsEditOpen(false)} className="p-2 bg-foreground/5 rounded-2xl text-foreground hover:text-primary transition-all"><X size={20} /></button>
                   </div>
-                  <div className="space-y-8">
-                      <div className="space-y-3">
-                          <label className="text-[10px] font-black text-foreground/30 ml-2 tracking-widest uppercase">Tên dự án</label>
+
+                  {/* Scrollable Content Area */}
+                  <div className="flex-1 overflow-y-auto px-8 pb-8 space-y-6 no-scrollbar">
+                      <div className="space-y-1.5">
+                          <label className="text-[9px] font-black text-foreground/30 ml-2 tracking-widest uppercase">Tên dự án</label>
                           <input 
-                              className="w-full bg-foreground/5 text-foreground p-6 rounded-[1.75rem] font-[800] focus:ring-2 focus:ring-primary focus:outline-none text-sm uppercase tracking-tight"
+                              className="w-full bg-foreground/5 text-foreground p-4 rounded-[1.5rem] font-[800] focus:ring-2 focus:ring-primary focus:outline-none text-xs uppercase tracking-tight"
                               value={editingProject.name}
                               onChange={e => setEditingProject(prev => ({...prev, name: e.target.value}))}
                           />
                       </div>
-                      <div className="space-y-3">
-                          <label className="text-[10px] font-black text-foreground/30 ml-2 tracking-widest uppercase">Kỳ vọng doanh thu (VND)</label>
+                      <div className="space-y-1.5">
+                          <label className="text-[9px] font-black text-foreground/30 ml-2 tracking-widest uppercase">Kỳ vọng doanh thu (VND)</label>
                           <input 
                               type="number"
-                              className="w-full bg-foreground/5 text-secondary text-3xl font-[900] p-6 rounded-[1.75rem] focus:outline-none tracking-tighter"
+                              className="w-full bg-foreground/5 text-secondary text-2xl font-[900] p-4 rounded-[1.5rem] focus:outline-none tracking-tighter"
                               value={editingProject.expectedIncome}
                               onChange={e => setEditingProject(prev => ({...prev, expectedIncome: Number(e.target.value)}))}
                           />
                       </div>
-                      {/* Milestones in Edit */}
-                      <div className="space-y-5 pt-6 border-t border-foreground/5">
+
+                      {/* Milestones Area */}
+                      <div className="space-y-4 pt-4 border-t border-foreground/5">
                         <div className="flex justify-between items-center">
-                            <h4 className="text-[10px] font-black text-foreground/40 uppercase tracking-[0.2em]">Các bước thực hiện</h4>
-                            <button onClick={handleAddMilestone} className="text-primary text-[10px] font-black uppercase tracking-widest bg-primary/10 px-5 py-3 rounded-2xl active:scale-95 transition-all">+ Thêm bước</button>
+                            <h4 className="text-[9px] font-black text-foreground/40 uppercase tracking-[0.2em]">Các bước thực hiện</h4>
+                            <button onClick={handleAddMilestone} className="text-primary text-[8px] font-black uppercase tracking-widest bg-primary/10 px-4 py-2 rounded-xl active:scale-95 transition-all">+ THÊM BƯỚC</button>
                         </div>
-                        <div className="space-y-4">
+                        <div className="space-y-3">
                             {editingProject.milestones?.map((m, idx) => (
-                                <div key={m.id} className="glass-card bg-foreground/5 p-6 rounded-[2rem] space-y-4 border-0 shadow-inner">
-                                    <div className="flex items-center gap-4">
+                                <div key={m.id} className="glass-card bg-foreground/5 p-4 rounded-[1.75rem] space-y-3 border-0 shadow-inner">
+                                    <div className="flex items-center gap-3">
                                         <input 
-                                            className="flex-1 bg-transparent border-0 focus:outline-none text-sm font-bold text-foreground uppercase tracking-tight"
+                                            className="flex-1 bg-transparent border-0 focus:outline-none text-xs font-bold text-foreground uppercase tracking-tight"
                                             placeholder="Tên công việc..."
                                             value={m.title}
                                             onChange={e => updateMilestone(idx, 'title', e.target.value)}
                                         />
-                                        <button onClick={() => removeMilestone(idx)} className="text-danger/40 hover:text-danger transition-all p-2"><Trash2 size={18} /></button>
+                                        <button onClick={() => removeMilestone(idx)} className="text-danger/40 hover:text-danger transition-all p-1.5"><Trash2 size={16} /></button>
                                     </div>
-                                    <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-2 gap-3">
                                         <div className="space-y-1">
-                                            <label className="text-[8px] font-black text-foreground/20 uppercase tracking-widest ml-1">Bắt đầu</label>
+                                            <label className="text-[7px] font-black text-foreground/20 uppercase tracking-widest ml-1">Bắt đầu</label>
                                             <input 
                                                 type="date"
-                                                className="w-full bg-foreground/5 border-0 rounded-xl p-2 text-[10px] font-black text-foreground focus:outline-none"
+                                                className="w-full bg-foreground/5 border-0 rounded-lg p-2 text-[9px] font-black text-foreground focus:outline-none"
                                                 value={m.startDate}
                                                 onChange={e => updateMilestone(idx, 'startDate', e.target.value)}
                                             />
                                         </div>
                                         <div className="space-y-1">
-                                            <label className="text-[8px] font-black text-foreground/20 uppercase tracking-widest ml-1">Hạn hoàn thành</label>
+                                            <label className="text-[7px] font-black text-foreground/20 uppercase tracking-widest ml-1">Hạn chót</label>
                                             <input 
                                                 type="date"
-                                                className="w-full bg-foreground/5 border-0 rounded-xl p-2 text-[10px] font-black text-foreground focus:outline-none"
+                                                className="w-full bg-foreground/5 border-0 rounded-lg p-2 text-[9px] font-black text-foreground focus:outline-none"
                                                 value={m.date}
                                                 onChange={e => updateMilestone(idx, 'date', e.target.value)}
                                             />
@@ -489,7 +470,11 @@ export const Insights: React.FC<Props> = ({ transactions, users }) => {
                             ))}
                         </div>
                       </div>
-                      <button onClick={handleSaveProject} className="w-full bg-primary text-white font-[900] py-6 rounded-[2rem] text-[11px] uppercase tracking-[0.3em] shadow-2xl neon-glow-primary mt-8 active:scale-95 transition-all">LƯU KẾ HOẠCH</button>
+
+                      {/* Fixed Button within scrollable to ensure visibility */}
+                      <button onClick={handleSaveProject} className="w-full bg-primary text-white font-[900] py-5 rounded-[1.75rem] text-[10px] uppercase tracking-[0.3em] shadow-2xl neon-glow-primary mt-4 active:scale-95 transition-all flex items-center justify-center gap-2">
+                        LƯU KẾ HOẠCH <CheckCircle size={16} />
+                      </button>
                   </div>
               </div>
           </div>

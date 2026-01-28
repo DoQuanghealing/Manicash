@@ -55,8 +55,12 @@ export const SettingsModal: React.FC<Props> = ({ isOpen, onClose, users, wallets
   };
 
   const handleLogout = async () => {
-    if (confirm("Bạn có chắc chắn muốn đăng xuất?")) {
-      await AuthService.logout();
+    if (window.confirm("Bạn có chắc chắn muốn đăng xuất tài khoản này?")) {
+      try {
+        await AuthService.logout();
+      } catch (error) {
+        console.error("Logout failed:", error);
+      }
     }
   };
 
@@ -65,10 +69,7 @@ export const SettingsModal: React.FC<Props> = ({ isOpen, onClose, users, wallets
     const projects = StorageService.getIncomeProjects();
     const completedProjects = projects.filter(p => p.status === 'completed');
 
-    // BOM for Excel/Google Sheets UTF-8 support
     let csvContent = "\uFEFF";
-    
-    // Section 1: Transactions
     csvContent += "--- NHẬT KÝ THU CHI ---\n";
     csvContent += "Ngày,Loại,Danh mục,Số tiền,Mô tả,Ví\n";
     txs.forEach(tx => {
@@ -78,10 +79,7 @@ export const SettingsModal: React.FC<Props> = ({ isOpen, onClose, users, wallets
       const walletName = wallets.find(w => w.id === tx.walletId)?.name || "";
       csvContent += `${date},${type},${cat},${tx.amount},"${tx.description || ""}",${walletName}\n`;
     });
-
     csvContent += "\n";
-    
-    // Section 2: Completed Projects
     csvContent += "--- DỰ ÁN TĂNG THU NHẬP ĐÃ HOÀN THÀNH ---\n";
     csvContent += "Tên dự án,Doanh thu thực tế,Ngày hoàn thành,Mô tả\n";
     completedProjects.forEach(p => {
@@ -145,8 +143,9 @@ export const SettingsModal: React.FC<Props> = ({ isOpen, onClose, users, wallets
                         </div>
                     </div>
                     <button 
+                      type="button"
                       onClick={handleLogout}
-                      className="w-full py-4 bg-danger/10 text-danger rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-danger hover:text-white transition-all"
+                      className="w-full py-4 bg-danger/10 text-danger rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-danger hover:text-white transition-all cursor-pointer"
                     >
                         <LogOut size={16} /> Đăng xuất tài khoản
                     </button>
@@ -157,6 +156,7 @@ export const SettingsModal: React.FC<Props> = ({ isOpen, onClose, users, wallets
             <div className="space-y-4">
                 <h3 className="text-[10px] font-black text-foreground/40 uppercase tracking-[0.3em] ml-2">Dữ liệu tài chính</h3>
                 <button
+                  type="button"
                   onClick={handleExportCSV}
                   className="w-full glass-card bg-gradient-to-r from-emerald-500/10 to-secondary/10 p-6 rounded-[2rem] border-0 shadow-inner group flex items-center gap-5 hover:scale-[1.02] active:scale-95 transition-all text-left"
                 >
@@ -242,11 +242,11 @@ export const SettingsModal: React.FC<Props> = ({ isOpen, onClose, users, wallets
             <div className="pt-10 space-y-4 border-t border-foreground/5">
                 <h3 className="text-[10px] font-black text-danger uppercase tracking-[0.3em] ml-2">Vùng nguy hiểm</h3>
                 <div className="grid grid-cols-1 gap-3 pb-6">
-                    <button onClick={() => setConfirmType('balance')} className="w-full p-6 bg-amber-500/10 rounded-[2rem] border border-amber-500/20 flex items-center gap-4">
+                    <button type="button" onClick={() => setConfirmType('balance')} className="w-full p-6 bg-amber-500/10 rounded-[2rem] border border-amber-500/20 flex items-center gap-4">
                         <div className="p-3 bg-amber-500/10 rounded-xl text-amber-500"><Eraser size={20} /></div>
                         <div><p className="text-[11px] font-black text-amber-600 uppercase tracking-widest">Reset số dư</p></div>
                     </button>
-                    <button onClick={() => setConfirmType('full')} className="w-full p-6 bg-danger/10 rounded-[2rem] border border-danger/20 flex items-center gap-4">
+                    <button type="button" onClick={() => setConfirmType('full')} className="w-full p-6 bg-danger/10 rounded-[2rem] border border-danger/20 flex items-center gap-4">
                         <div className="p-3 bg-danger/10 rounded-xl text-danger"><Trash2 size={20} /></div>
                         <div><p className="text-[11px] font-black text-danger uppercase tracking-widest">Xóa sạch toàn bộ</p></div>
                     </button>
@@ -274,8 +274,8 @@ export const SettingsModal: React.FC<Props> = ({ isOpen, onClose, users, wallets
                  <h3 className="text-2xl font-[900] text-foreground tracking-tighter uppercase">XÁC NHẬN</h3>
                  <p className="text-xs font-bold text-foreground/50 uppercase tracking-tight">Hành động này không thể hoàn tác.</p>
                  <div className="flex flex-col gap-3 pt-4">
-                    <button onClick={executeReset} className="w-full py-6 bg-danger text-white rounded-[1.75rem] font-[900] text-[11px] uppercase tracking-[0.3em]">TÔI ĐỒNG Ý</button>
-                    <button onClick={() => setConfirmType(null)} className="w-full py-5 text-foreground/40 font-black text-[10px] uppercase tracking-[0.3em]">HỦY BỎ</button>
+                    <button type="button" onClick={executeReset} className="w-full py-6 bg-danger text-white rounded-[1.75rem] font-[900] text-[11px] uppercase tracking-[0.3em]">TÔI ĐỒNG Ý</button>
+                    <button type="button" onClick={() => setConfirmType(null)} className="w-full py-5 text-foreground/40 font-black text-[10px] uppercase tracking-[0.3em]">HỦY BỎ</button>
                  </div>
               </div>
            </div>
