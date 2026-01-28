@@ -1,15 +1,25 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import App from './App';
+import React, { useEffect, useState } from 'react';
+import { AuthService } from './services/firebase';
+import LoginScreen from './components/LoginScreen'; // Màn hình đăng nhập
+import MainDashboard from './components/MainDashboard'; // Giao diện chính
 
-const rootElement = document.getElementById('root');
-if (!rootElement) {
-  throw new Error("Could not find root element to mount to");
+function App() {
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Theo dõi trạng thái đăng nhập từ Firebase
+    const unsubscribe = AuthService.onAuthChange((currentUser) => {
+      setUser(currentUser);
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  if (loading) return <div>Đang tải ứng dụng...</div>;
+
+  // Nếu chưa đăng nhập, hiện màn hình Login. Nếu rồi, hiện Dashboard riêng.
+  return user ? <MainDashboard user={user} /> : <LoginScreen />;
 }
 
-const root = ReactDOM.createRoot(rootElement);
-root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
+export default App;
