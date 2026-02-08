@@ -3,10 +3,10 @@
 <html lang="vi">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>Manicash | Trợ lý tài chính thông minh</title>
-    <!-- Font chuẩn tiếng Việt cao cấp -->
-    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800;900&family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <!-- Font chuẩn tiếng Việt cao cấp và font Truyện tranh (Patrick Hand) -->
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800;900&family=Inter:wght@400;700;900&family=Patrick+Hand&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -25,6 +25,15 @@
             },
             backdropBlur: {
               '3xl': '40px',
+            },
+            animation: {
+              'float-coin': 'float-coin 3s ease-in-out infinite',
+            },
+            keyframes: {
+              'float-coin': {
+                '0%, 100%': { transform: 'translateY(0)' },
+                '50%': { transform: 'translateY(-10px)' },
+              }
             }
           }
         }
@@ -48,11 +57,12 @@
       
       html, body {
         height: 100%;
-        height: -webkit-fill-available;
+        height: 100dvh;
         margin: 0;
         padding: 0;
-        /* Cho phép cuộn nhẹ để xử lý UI mobile nếu cần */
-        overflow-x: hidden;
+        overflow: hidden;
+        position: fixed; /* Chống cuộn toàn trang gây lỗi UI */
+        width: 100%;
       }
 
       body {
@@ -137,6 +147,11 @@
       /* Fix for safe areas on mobile */
       .pt-safe-top { padding-top: env(safe-area-inset-top); }
       .pb-safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+
+      /* Comic Font Styling */
+      .font-comic {
+        font-family: 'Patrick Hand', cursive;
+      }
     </style>
   <script type="importmap">
 {

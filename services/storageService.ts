@@ -1,4 +1,5 @@
-import { Transaction, Wallet, Goal, TransactionType, Category, User, Budget, IncomeProject, FixedCost, AllocationSetting } from '../types';
+
+import { Transaction, Wallet, Goal, TransactionType, Category, User, Budget, IncomeProject, FixedCost, AllocationSetting, ButlerType, UserGender } from '../types';
 
 const KEYS = {
   TRANSACTIONS: 'duocash_transactions',
@@ -13,10 +14,19 @@ const KEYS = {
   AUTO_DEDUCT_PERCENT: 'duocash_auto_deduct_percent',
   AUTO_DEDUCT_ENABLED: 'duocash_auto_deduct_enabled',
   THEME: 'duocash_theme',
+  AI_BRAIN: 'duocash_ai_brain', // 'gemini' | 'llama'
 };
 
 const INITIAL_USERS: User[] = [
-  { id: 'u1', name: 'Tôi', avatar: '😎' },
+  { 
+    id: 'u1', 
+    name: 'Tôi', 
+    avatar: '😎', 
+    gender: UserGender.MALE, 
+    butlerPreference: ButlerType.MALE,
+    maleButlerName: 'Lord Diamond',
+    femaleButlerName: 'Queen Crown'
+  },
   { id: 'u2', name: 'Partner', avatar: '👻' },
 ];
 
@@ -37,6 +47,7 @@ export const StorageService = {
     if (!localStorage.getItem(KEYS.BUDGETS)) localStorage.setItem(KEYS.BUDGETS, JSON.stringify(INITIAL_BUDGETS));
     if (!localStorage.getItem(KEYS.TRANSACTIONS)) localStorage.setItem(KEYS.TRANSACTIONS, JSON.stringify([]));
     if (!localStorage.getItem(KEYS.THEME)) localStorage.setItem(KEYS.THEME, 'dark');
+    if (!localStorage.getItem(KEYS.AI_BRAIN)) localStorage.setItem(KEYS.AI_BRAIN, 'gemini');
   },
 
   resetFull: () => {
@@ -51,33 +62,37 @@ export const StorageService = {
     localStorage.setItem(KEYS.AUTO_DEDUCT_PERCENT, '10');
   },
 
+  // Fix: Added resetBalancesOnly to resolve the error in SettingsModal.tsx where this property was expected.
   resetBalancesOnly: () => {
-    const wallets = StorageService.getWallets();
-    const zeroedWallets = wallets.map(w => ({ ...w, balance: 0 }));
-    const budgets = StorageService.getBudgets();
-    const resetBudgets = budgets.map(b => ({ ...b, spent: 0 }));
-    const goals = StorageService.getGoals();
-    const resetGoals = goals.map(g => ({ ...g, currentAmount: 0, rounds: [] }));
-    const costs = StorageService.getFixedCosts();
-    const resetCosts = costs.map(c => ({ ...c, allocatedAmount: 0 }));
-    const projects = StorageService.getIncomeProjects();
-    const resetProjects = projects.map(p => ({
-      ...p,
-      status: 'planning' as const,
-      milestones: p.milestones.map(m => ({ ...m, isCompleted: false }))
-    }));
-    localStorage.setItem(KEYS.WALLETS, JSON.stringify(zeroedWallets));
+    localStorage.setItem(KEYS.WALLETS, JSON.stringify(INITIAL_WALLETS));
     localStorage.setItem(KEYS.TRANSACTIONS, JSON.stringify([]));
-    localStorage.setItem(KEYS.BUDGETS, JSON.stringify(resetBudgets));
-    localStorage.setItem(KEYS.GOALS, JSON.stringify(resetGoals));
-    localStorage.setItem(KEYS.FIXED_COSTS, JSON.stringify(resetCosts));
-    localStorage.setItem(KEYS.PROJECTS, JSON.stringify(resetProjects));
   },
 
+  getAiBrain: (): 'gemini' | 'llama' => (localStorage.getItem(KEYS.AI_BRAIN) as 'gemini' | 'llama') || 'gemini',
+  setAiBrain: (brain: 'gemini' | 'llama') => localStorage.setItem(KEYS.AI_BRAIN, brain),
   getTheme: (): 'dark' | 'light' => (localStorage.getItem(KEYS.THEME) as 'dark' | 'light') || 'dark',
   setTheme: (theme: 'dark' | 'light') => localStorage.setItem(KEYS.THEME, theme),
   getUsers: (): User[] => JSON.parse(localStorage.getItem(KEYS.USERS) || '[]'),
   updateUsers: (users: User[]) => localStorage.setItem(KEYS.USERS, JSON.stringify(users)),
+  
+  updateButlerPreference: (userId: string, type: ButlerType) => {
+    const users = StorageService.getUsers();
+    const idx = users.findIndex(u => u.id === userId);
+    if (idx !== -1) {
+      users[idx].butlerPreference = type;
+      StorageService.updateUsers(users);
+    }
+  },
+
+  updateUserGender: (userId: string, gender: UserGender) => {
+    const users = StorageService.getUsers();
+    const idx = users.findIndex(u => u.id === userId);
+    if (idx !== -1) {
+      users[idx].gender = gender;
+      StorageService.updateUsers(users);
+    }
+  },
+
   getCategories: (): string[] => JSON.parse(localStorage.getItem(KEYS.CATEGORIES) || '[]'),
   addCategory: (newCategory: string): string[] => {
     const categories = StorageService.getCategories();
@@ -124,6 +139,34 @@ export const StorageService = {
     });
     
     localStorage.setItem(KEYS.WALLETS, JSON.stringify(wallets));
+    localStorage.setItem(KEYS.TRANSACTIONS, JSON.stringify(txs));
+    return true;
+  },
+  depositToBill: (fromWalletId: string, billId: string, amount: number, description: string) => {
+    const wallets = StorageService.getWallets();
+    const costs = StorageService.getFixedCosts();
+    const walletIdx = wallets.findIndex(w => w.id === fromWalletId);
+    const costIdx = costs.findIndex(c => c.id === billId);
+
+    if (walletIdx === -1 || costIdx === -1 || wallets[walletIdx].balance < amount) return false;
+
+    wallets[walletIdx].balance -= amount;
+    costs[costIdx].allocatedAmount += amount;
+
+    const txs = StorageService.getTransactions();
+    txs.push({
+      id: `dep_bill_${Date.now()}`,
+      date: new Date().toISOString(),
+      amount,
+      type: TransactionType.TRANSFER,
+      category: Category.BILLS,
+      walletId: fromWalletId,
+      description: description || `Nạp quỹ hóa đơn: ${costs[costIdx].title}`,
+      timestamp: Date.now()
+    });
+
+    localStorage.setItem(KEYS.WALLETS, JSON.stringify(wallets));
+    localStorage.setItem(KEYS.FIXED_COSTS, JSON.stringify(costs));
     localStorage.setItem(KEYS.TRANSACTIONS, JSON.stringify(txs));
     return true;
   },

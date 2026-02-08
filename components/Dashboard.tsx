@@ -1,12 +1,13 @@
 
-import React, { useState, useEffect } from 'react';
-import { Wallet, Transaction, TransactionType, User } from '../types';
-import { ArrowUpRight, ArrowDownRight, Wallet as WalletIcon, Settings, Calendar, List, ShieldCheck, TrendingUp, AlertTriangle, Target, Zap, X, Sparkles, ArrowRightLeft, MoveRight, PartyPopper } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Wallet, Transaction, TransactionType, User, ProsperityPlan, ButlerType, UserGender } from '../types';
+import { ArrowUpRight, ArrowDownRight, Wallet as WalletIcon, Settings, Calendar, List, ShieldCheck, TrendingUp, AlertTriangle, Target, Zap, X, Sparkles, ArrowRightLeft, MoveRight, PartyPopper, HeartPulse, ChevronRight, Activity, Ban, Bot, Loader2, Cpu } from 'lucide-react';
 import { CATEGORY_COLORS } from '../constants';
 import { VI } from '../constants/vi';
 import { formatVND } from '../utils/format';
 import { CalendarView } from './CalendarView';
 import { StorageService } from '../services/storageService';
+import { GeminiService } from '../services/aiService';
 
 interface Props {
   wallets: Wallet[];
@@ -16,50 +17,116 @@ interface Props {
   onRefresh: () => void;
 }
 
+// Luxurious Icon Butler Component
+const SimpleButler = ({ type }: { type: ButlerType }) => {
+  return (
+    <svg width="80" height="80" viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_10px_20px_rgba(0,0,0,0.2)]">
+      <defs>
+        <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style={{ stopColor: '#FFD700', stopOpacity: 1 }} />
+          <stop offset="100%" style={{ stopColor: '#B8860B', stopOpacity: 1 }} />
+        </linearGradient>
+        <linearGradient id="diamondGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style={{ stopColor: '#4fc3f7', stopOpacity: 1 }} />
+          <stop offset="50%" style={{ stopColor: '#0288d1', stopOpacity: 1 }} />
+          <stop offset="100%" style={{ stopColor: '#01579b', stopOpacity: 1 }} />
+        </linearGradient>
+      </defs>
+
+      {/* Base Coins for both */}
+      <ellipse cx="50" cy="80" rx="35" ry="10" fill="url(#goldGrad)" opacity="0.6" />
+      <ellipse cx="50" cy="75" rx="30" ry="8" fill="url(#goldGrad)" />
+      
+      {type === ButlerType.MALE ? (
+        <>
+          {/* Blue Diamond for Male */}
+          <path 
+            d="M50 15 L75 35 L50 70 L25 35 Z" 
+            fill="url(#diamondGrad)" 
+            stroke="#fff" 
+            strokeWidth="0.5"
+          />
+          <path d="M50 15 L60 35 L50 70 L40 35 Z" fill="rgba(255,255,255,0.3)" />
+          <path d="M25 35 L75 35 L60 25 L40 25 Z" fill="rgba(255,255,255,0.2)" />
+          {/* Sparkles */}
+          <circle cx="35" cy="25" r="1.5" fill="white" className="animate-pulse" />
+          <circle cx="65" cy="30" r="1" fill="white" className="animate-pulse" />
+        </>
+      ) : (
+        <>
+          {/* Queen Crown for Female */}
+          <path 
+            d="M25 65 L20 35 L35 45 L50 25 L65 45 L80 35 L75 65 Z" 
+            fill="url(#goldGrad)" 
+            stroke="#926B07" 
+            strokeWidth="1"
+          />
+          <rect x="25" y="60" width="50" height="5" fill="#B8860B" />
+          <circle cx="50" cy="25" r="3" fill="#E91E63" className="animate-pulse shadow-lg" />
+          <circle cx="35" cy="45" r="2" fill="#fff" className="animate-pulse" />
+          <circle cx="65" cy="45" r="2" fill="#fff" className="animate-pulse" />
+        </>
+      )}
+    </svg>
+  );
+};
+
 export const Dashboard: React.FC<Props> = ({ wallets = [], transactions = [], users = [], onOpenSettings, onRefresh }) => {
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [activeWalletTab, setActiveWalletTab] = useState<'main' | 'backup'>('main');
-  const [showMissionModal, setShowMissionModal] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [transferAmount, setTransferAmount] = useState('');
-  const [missions, setMissions] = useState<any[]>([]);
-  const [showSuccessToast, setShowSuccessToast] = useState(false);
+  
+  // Butler State
+  const activeUser = users[0];
+  const butlerType = activeUser?.butlerPreference || ButlerType.MALE;
+  const userGender = activeUser?.gender || UserGender.MALE;
+  const aiBrain = StorageService.getAiBrain();
+  
+  const butlerQuote = useMemo(() => {
+    const now = new Date();
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    const timeValue = hours * 100 + minutes; // 13:30 -> 1330
 
-  useEffect(() => {
-    calculateMissions();
-  }, [transactions]);
+    let timeKey: 'morning' | 'noon' | 'afternoon' | 'evening' = 'morning';
+
+    if (timeValue >= 0 && timeValue <= 1130) {
+      timeKey = 'morning';
+    } else if (timeValue > 1130 && timeValue <= 1330) {
+      timeKey = 'noon';
+    } else if (timeValue > 1330 && timeValue <= 1700) {
+      timeKey = 'afternoon';
+    } else {
+      timeKey = 'evening';
+    }
+
+    const availableQuotes = VI.butler.quotes[timeKey];
+    const title = userGender === UserGender.FEMALE ? VI.butler.mistressLabel : VI.butler.masterLabel;
+    const randomIdx = Math.floor(Math.random() * availableQuotes.length);
+    return availableQuotes[randomIdx].replace(/{title}/g, title);
+  }, [userGender]);
+
+  // Prosperity AI State
+  const [isProsperityOpen, setIsProsperityOpen] = useState(false);
+  const [prosperityData, setProsperityData] = useState<ProsperityPlan | null>(null);
+  const [isLoadingProsperity, setIsLoadingProsperity] = useState(false);
 
   const totalBalance = Array.isArray(wallets) ? wallets.reduce((acc, w) => acc + (w.balance || 0), 0) : 0;
   const mainWallet = wallets?.find(w => w.id === 'w1') || wallets?.[0];
   const backupWallet = wallets?.find(w => w.id === 'w2');
 
-  const currentMonth = new Date().getMonth();
-  const currentYear = new Date().getFullYear();
-  
-  const monthlyIncome = Array.isArray(transactions) ? transactions
-    .filter(t => t.type === TransactionType.INCOME && 
-            new Date(t.date).getMonth() === currentMonth && 
-            new Date(t.date).getFullYear() === currentYear)
-    .reduce((sum, t) => sum + (t.amount || 0), 0) : 0;
-
-  const monthlyExpense = Array.isArray(transactions) ? transactions
-    .filter(t => t.type === TransactionType.EXPENSE && 
-            new Date(t.date).getMonth() === currentMonth && 
-            new Date(t.date).getFullYear() === currentYear)
-    .reduce((sum, t) => sum + (t.amount || 0), 0) : 0;
-
-  const calculateMissions = () => {
-      const ms = [];
-      try {
-        const projects = StorageService.getIncomeProjects() || [];
-        projects.filter(p => p.status === 'in_progress').forEach(p => {
-            const incomplete = p.milestones?.filter(m => !m.isCompleted).length || 0;
-            if (incomplete > 0) {
-                ms.push({ type: 'project', text: `${VI.insights.project.status.in_progress}: ${incomplete} việc trong "${p.name}"` });
-            }
-        });
-      } catch (e) {}
-      setMissions(ms);
+  const handleOpenProsperity = async () => {
+      setIsProsperityOpen(true);
+      if (!prosperityData) {
+          setIsLoadingProsperity(true);
+          const costs = StorageService.getFixedCosts();
+          const projects = StorageService.getIncomeProjects();
+          const goals = StorageService.getGoals();
+          const result = await GeminiService.generateProsperityPlan(transactions, costs, projects, goals);
+          setProsperityData(result);
+          setIsLoadingProsperity(false);
+      }
   };
 
   const handleQuickTransfer = (e: React.FormEvent) => {
@@ -72,8 +139,6 @@ export const Dashboard: React.FC<Props> = ({ wallets = [], transactions = [], us
       setTransferAmount('');
       setShowTransferModal(false);
       onRefresh();
-      setShowSuccessToast(true);
-      setTimeout(() => setShowSuccessToast(false), 3000);
     } else {
       alert("Số dư Ví chính không đủ!");
     }
@@ -86,14 +151,12 @@ export const Dashboard: React.FC<Props> = ({ wallets = [], transactions = [], us
   const getDynamicFontSizeClass = (balance: number = 0, isHeader = false) => {
     const str = formatVND(balance);
     const len = str.length;
-    
     if (isHeader) {
       if (len > 18) return 'text-lg';
       if (len > 15) return 'text-xl';
       if (len > 12) return 'text-2xl';
       return 'text-3xl';
     }
-
     if (len > 20) return 'text-[1.1rem]';
     if (len > 16) return 'text-[1.4rem]';
     if (len > 13) return 'text-[1.9rem]';
@@ -106,7 +169,7 @@ export const Dashboard: React.FC<Props> = ({ wallets = [], transactions = [], us
   return (
     <div className="space-y-8 pt-8 animate-in fade-in duration-1000">
       
-      {/* Header Area - High Z-index to ensure gear is clickable */}
+      {/* Header Area */}
       <div className="flex justify-between items-center px-1 relative z-50">
         <div className="space-y-1">
           <h1 className="text-foreground/40 text-[10px] font-black tracking-[0.3em] uppercase">QUẢN TRỊ TÀI CHÍNH</h1>
@@ -121,13 +184,12 @@ export const Dashboard: React.FC<Props> = ({ wallets = [], transactions = [], us
             onOpenSettings();
           }}
           className="p-4 glass-card bg-surface/80 rounded-[1.5rem] text-primary hover:bg-primary/20 transition-all active:scale-90 border-0 shadow-xl relative z-[60] cursor-pointer"
-          aria-label="Cài đặt"
         >
           <Settings size={22} className="animate-[spin_20s_linear_infinite]" />
         </button>
       </div>
 
-      {/* Floating Gradient Wallet */}
+      {/* Floating Wallet Card */}
       <div className="space-y-6 relative z-10">
           <div className="p-1.5 glass-card bg-gradient-to-r from-primary/20 via-surface/40 to-secondary/20 rounded-[2rem] shadow-2xl border-0">
               <div className="flex relative">
@@ -148,11 +210,15 @@ export const Dashboard: React.FC<Props> = ({ wallets = [], transactions = [], us
 
           <div className={`glass-card liquid-glass rounded-[3rem] p-10 relative overflow-hidden group transition-all duration-700 border-0 shadow-2xl ${activeWalletTab === 'main' ? 'bg-gradient-to-br from-primary/20 via-surface/60 to-primary/5' : 'bg-gradient-to-br from-secondary/20 via-surface/60 to-secondary/5'}`}>
                <div className="relative z-10">
-                    <p className="text-foreground/30 text-[11px] mb-2 font-black tracking-widest uppercase">SỐ DƯ QUẢN LÝ</p>
-                    <div className="flex items-center justify-between mb-8 overflow-visible">
-                        <p className={`font-[1000] tracking-tighter leading-tight transition-all duration-500 whitespace-nowrap ${activeWalletTab === 'backup' ? 'text-secondary' : 'text-foreground'} ${getDynamicFontSizeClass(activeBalance)}`}>
-                            {formatVND(activeBalance)}
-                        </p>
+                    <div className="flex items-start justify-between">
+                        <div className="space-y-2">
+                             <p className="text-foreground/30 text-[11px] font-black tracking-widest uppercase">SỐ DƯ QUẢN LÝ</p>
+                             <div className="flex items-center overflow-visible">
+                                <p className={`font-[1000] tracking-tighter leading-tight transition-all duration-500 whitespace-nowrap ${activeWalletTab === 'backup' ? 'text-secondary' : 'text-foreground'} ${getDynamicFontSizeClass(activeBalance)}`}>
+                                    {formatVND(activeBalance)}
+                                </p>
+                             </div>
+                        </div>
                         {activeWalletTab === 'main' && mainWallet && (
                           <button 
                             onClick={() => setShowTransferModal(true)}
@@ -162,31 +228,64 @@ export const Dashboard: React.FC<Props> = ({ wallets = [], transactions = [], us
                           </button>
                         )}
                     </div>
-                    
-                    <div className="flex flex-col gap-4">
-                        <div className="glass-card bg-surface/50 p-6 rounded-[2.25rem] border-0 flex justify-between items-center group/card hover:bg-secondary/5 transition-all">
-                            <div>
-                                <span className="text-[10px] text-foreground/40 block font-black uppercase mb-1 tracking-[0.2em]">Tổng thu tháng</span>
-                                <span className="text-secondary text-2xl font-[900] tracking-tight">{formatVND(monthlyIncome)}</span>
-                            </div>
-                            <div className="w-14 h-14 rounded-2xl bg-secondary/10 text-secondary flex items-center justify-center shadow-inner group-hover/card:scale-110 transition-transform">
-                                <TrendingUp size={24} />
-                            </div>
-                        </div>
-                        <div className="glass-card bg-surface/50 p-6 rounded-[2.25rem] border-0 flex justify-between items-center group/card hover:bg-danger/5 transition-all">
-                            <div>
-                                <span className="text-[10px] text-foreground/40 block font-black uppercase mb-1 tracking-[0.2em]">Tổng chi tháng</span>
-                                <span className="text-danger text-2xl font-[900] tracking-tight">{formatVND(monthlyExpense)}</span>
-                            </div>
-                            <div className="w-14 h-14 rounded-2xl bg-danger/10 text-danger flex items-center justify-center shadow-inner group-hover/card:scale-110 transition-transform">
-                                <AlertTriangle size={24} />
-                            </div>
-                        </div>
+
+                    {/* BUTLER SECTION */}
+                    <div className="mt-8 pt-6 border-t border-foreground/5 flex items-center gap-5">
+                         <div className="shrink-0 animate-float-coin w-20 h-20 flex items-center justify-center relative overflow-visible">
+                             <SimpleButler type={butlerType} />
+                             <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-2 border-surface flex items-center justify-center shadow-lg ${aiBrain === 'llama' ? 'bg-secondary' : 'bg-primary'}`}>
+                                 {aiBrain === 'llama' ? <Cpu size={12} className="text-white" /> : <Sparkles size={12} className="text-white" />}
+                             </div>
+                         </div>
+                         <div className="flex-1">
+                             <div className="relative glass-card bg-foreground/[0.03] p-4 rounded-2xl rounded-tl-none border-0 shadow-inner group">
+                                 <p className="font-comic text-[16px] text-foreground font-bold leading-snug">
+                                     {butlerQuote}
+                                 </p>
+                                 <div className="absolute top-0 left-[-8px] w-0 h-0 border-t-[8px] border-t-transparent border-r-[8px] border-r-foreground/[0.03] border-b-[8px] border-b-transparent"></div>
+                                 <div className="absolute -bottom-2 -right-1">
+                                     <span className={`text-[7px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${aiBrain === 'llama' ? 'bg-secondary/20 text-secondary' : 'bg-primary/20 text-primary'}`}>
+                                         {aiBrain === 'llama' ? 'Llama Brain' : 'Gemini Brain'}
+                                     </span>
+                                 </div>
+                             </div>
+                         </div>
                     </div>
                </div>
           </div>
       </div>
+
+      {/* Financial Health Assessment Block */}
+      <div className="space-y-4 px-1">
+          <div className="glass-card liquid-glass p-7 rounded-[2.5rem] border-0 shadow-xl bg-gradient-to-br from-surface/50 to-background flex flex-col gap-6 relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-colors"></div>
+              
+              <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center shadow-inner">
+                          <HeartPulse size={24} />
+                      </div>
+                      <div>
+                          <h3 className="text-[10px] font-black text-foreground/40 uppercase tracking-[0.2em] mb-1">ĐÁNH GIÁ SỨC KHỎE</h3>
+                          <p className="text-sm font-[900] text-foreground uppercase tracking-tight">Ổn định & Kỳ vọng</p>
+                      </div>
+                  </div>
+                  <div className="w-12 h-12 rounded-full border-4 border-primary/20 flex items-center justify-center relative">
+                      <div className="absolute inset-0 border-4 border-primary rounded-full animate-pulse opacity-20"></div>
+                      <span className="text-[12px] font-black text-primary">85</span>
+                  </div>
+              </div>
+
+              <button 
+                onClick={handleOpenProsperity}
+                className="w-full bg-primary text-white py-5 rounded-[1.75rem] font-[1000] text-[11px] uppercase tracking-[0.3em] shadow-[0_15px_30px_rgba(139,92,246,0.4)] neon-glow-primary active:scale-95 transition-all flex items-center justify-center gap-3 border border-white/20"
+              >
+                TĂNG TỐC THỊNH VƯỢNG <Zap size={18} fill="currentColor" />
+              </button>
+          </div>
+      </div>
       
+      {/* Transaction History Block */}
       <div className="glass-card rounded-[2.5rem] overflow-hidden border-0 shadow-xl relative z-10">
         <div className="p-7 border-b border-foreground/5 flex justify-between items-center bg-foreground/[0.02]">
             <h3 className="font-black text-[10px] uppercase tracking-[0.2em] text-foreground/40">NHẬT KÝ DỮ LIỆU</h3>
@@ -234,6 +333,122 @@ export const Dashboard: React.FC<Props> = ({ wallets = [], transactions = [], us
             )}
         </div>
       </div>
+
+      {/* PROSPERITY MODAL (AI DRIVEN) */}
+      {isProsperityOpen && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-3xl p-6 overflow-hidden">
+              <div className="glass-card w-full max-md h-[90vh] flex flex-col rounded-[3.5rem] border-0 shadow-2xl bg-surface overflow-hidden relative animate-in zoom-in-95 duration-500">
+                  <div className="p-8 pb-4 flex justify-between items-center shrink-0 border-b border-foreground/5">
+                      <div>
+                          <h3 className="text-xl font-[1000] text-foreground tracking-tighter uppercase leading-none">LỘ TRÌNH THỊNH VƯỢNG</h3>
+                          <p className="text-[9px] font-black text-foreground/30 uppercase tracking-[0.4em] mt-1.5 flex items-center gap-2">
+                              <Sparkles size={10} className="text-primary" /> Mani AI Insights
+                          </p>
+                      </div>
+                      <button onClick={() => setIsProsperityOpen(false)} className="p-3 bg-foreground/5 rounded-2xl hover:bg-foreground/10 text-foreground transition-all">
+                          <X size={20} />
+                      </button>
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto no-scrollbar p-8 space-y-10 pb-20">
+                      {isLoadingProsperity ? (
+                          <div className="h-full flex flex-col items-center justify-center space-y-8 py-20">
+                              <div className="w-24 h-24 bg-primary/10 text-primary rounded-[2.5rem] flex items-center justify-center neon-glow-primary animate-pulse relative overflow-hidden">
+                                  <Zap size={48} fill="currentColor" />
+                                  <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent animate-[shimmer_2s_infinite]"></div>
+                              </div>
+                              <div className="text-center space-y-3">
+                                  <p className="text-lg font-[900] text-foreground uppercase tracking-tight">AI ĐANG QUÉT DỮ LIỆU...</p>
+                                  <p className="text-[10px] font-black text-foreground/30 uppercase tracking-widest max-w-[200px] leading-relaxed">Đang phân tích thói quen tiêu tiền vô tri của bạn</p>
+                              </div>
+                          </div>
+                      ) : prosperityData ? (
+                          <>
+                              {/* Status Card */}
+                              <div className="glass-card bg-gradient-to-br from-primary/10 to-transparent p-7 rounded-[2.5rem] border-0 text-center space-y-4">
+                                  <div className="text-5xl mb-2">{prosperityData.statusEmoji}</div>
+                                  <h4 className="text-2xl font-[1000] text-foreground tracking-tighter uppercase leading-tight">{prosperityData.statusTitle}</h4>
+                                  <div className="h-2 w-full bg-foreground/5 rounded-full overflow-hidden">
+                                      <div className="h-full bg-primary rounded-full transition-all duration-1000" style={{ width: `${prosperityData.healthScore}%` }}></div>
+                                  </div>
+                                  <p className="text-xs font-bold text-foreground/60 leading-relaxed italic">"{prosperityData.summary}"</p>
+                              </div>
+
+                              {/* Savings Section */}
+                              <div className="space-y-4">
+                                  <h5 className="text-[10px] font-black text-foreground/40 uppercase tracking-[0.3em] ml-2 flex items-center gap-2">
+                                      <TrendingUp size={12} className="text-secondary" /> CHIẾN LƯỢC TIẾT KIỆM
+                                  </h5>
+                                  <div className="space-y-3">
+                                      {prosperityData.savingsStrategies.map((s, i) => (
+                                          <div key={i} className="glass-card bg-foreground/[0.03] p-5 rounded-[1.75rem] border-0 hover:bg-secondary/5 transition-all">
+                                              <p className="text-[13px] font-[900] text-foreground uppercase tracking-tight mb-1">{s.title}</p>
+                                              <p className="text-[11px] font-bold text-foreground/40 uppercase tracking-tight leading-tight">{s.desc}</p>
+                                          </div>
+                                      ))}
+                                  </div>
+                              </div>
+
+                              {/* Income Section */}
+                              <div className="space-y-4">
+                                  <h5 className="text-[10px] font-black text-foreground/40 uppercase tracking-[0.3em] ml-2 flex items-center gap-2">
+                                      <Activity size={12} className="text-primary" /> CHIẾN LƯỢC TĂNG THU
+                                  </h5>
+                                  <div className="space-y-3">
+                                      {prosperityData.incomeStrategies.map((s, i) => (
+                                          <div key={i} className="glass-card bg-foreground/[0.03] p-5 rounded-[1.75rem] border-0 hover:bg-primary/5 transition-all">
+                                              <p className="text-[13px] font-[900] text-foreground uppercase tracking-tight mb-1">{s.title}</p>
+                                              <p className="text-[11px] font-bold text-foreground/40 uppercase tracking-tight leading-tight">{s.desc}</p>
+                                          </div>
+                                      ))}
+                                  </div>
+                              </div>
+
+                              {/* Bad Habit Section */}
+                              <div className="space-y-4">
+                                  <h5 className="text-[10px] font-black text-danger uppercase tracking-[0.3em] ml-2 flex items-center gap-2">
+                                      <Ban size={12} /> CẢI THIỆN THÓI QUEN
+                                  </h5>
+                                  <div className="glass-card bg-danger/5 border-danger/10 p-6 rounded-[2rem] border relative overflow-hidden group">
+                                      <div className="absolute top-0 right-0 p-4 text-danger opacity-10 rotate-12 group-hover:rotate-0 transition-all">
+                                          <Ban size={48} />
+                                      </div>
+                                      <p className="text-sm font-[1000] text-danger uppercase tracking-tighter mb-2">BỎ NGAY: {prosperityData.badHabitToQuit.habit}</p>
+                                      <p className="text-[11px] font-black text-danger/60 uppercase tracking-tight leading-relaxed italic">"{prosperityData.badHabitToQuit.why}"</p>
+                                  </div>
+                              </div>
+                          </>
+                      ) : (
+                          <div className="text-center py-20 text-foreground/20 font-black uppercase text-xs">KHÔNG THỂ TẢI DỮ LIỆU</div>
+                      )}
+                  </div>
+              </div>
+          </div>
+      )}
+
+      {/* Transfer Modal */}
+      {showTransferModal && (
+          <div className="fixed inset-0 z-[250] flex items-center justify-center bg-black/90 backdrop-blur-3xl p-6">
+              <div className="glass-card w-full max-sm rounded-[3rem] p-10 border-0 shadow-2xl bg-surface animate-in zoom-in-95">
+                  <div className="flex justify-between items-center mb-10">
+                      <h3 className="text-xl font-[1000] text-foreground tracking-tighter uppercase leading-none">TRÍCH LẬP QUỸ</h3>
+                      <button onClick={() => setShowTransferModal(false)} className="p-2 bg-foreground/5 rounded-xl"><X size={20} /></button>
+                  </div>
+                  <form onSubmit={handleQuickTransfer} className="space-y-8">
+                      <div className="space-y-2">
+                        <label className="text-[9px] font-black text-foreground/30 ml-2 tracking-widest uppercase">Số tiền chuyển</label>
+                        <input 
+                          type="number" autoFocus
+                          className="w-full bg-foreground/5 text-primary text-3xl font-[1000] p-6 rounded-3xl focus:outline-none tracking-tighter"
+                          value={transferAmount}
+                          onChange={(e) => setTransferAmount(e.target.value)}
+                        />
+                      </div>
+                      <button type="submit" className="w-full bg-primary text-white py-6 rounded-[2rem] font-[1000] text-[11px] uppercase tracking-[0.3em] shadow-2xl active:scale-95 transition-all">XÁC NHẬN CHUYỂN</button>
+                  </form>
+              </div>
+          </div>
+      )}
     </div>
   );
 };

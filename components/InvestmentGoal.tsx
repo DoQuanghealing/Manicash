@@ -1,8 +1,9 @@
+
 import React, { useState } from 'react';
-import { Goal, User, Wallet } from '../types';
-import { TrendingUp, Plus, Calendar, Target, Wallet as WalletIcon, X } from 'lucide-react';
+import { Goal, User, Wallet, UserGender } from '../types';
+import { TrendingUp, Plus, Calendar, Target, Wallet as WalletIcon, X, CheckCircle2, PartyPopper, Trophy, Sparkles, Star } from 'lucide-react';
 import { VI } from '../constants/vi';
-import { formatVND } from '../utils/format';
+import { formatVND, formatNumberInput, parseNumberInput } from '../utils/format';
 import { StorageService } from '../services/storageService';
 
 interface Props {
@@ -15,7 +16,9 @@ interface Props {
 export const InvestmentGoal: React.FC<Props> = ({ goals, users, wallets, onRefresh }) => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isDepositOpen, setIsDepositOpen] = useState(false);
+  const [isCelebrationOpen, setIsCelebrationOpen] = useState(false);
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
+  const [celebrationQuote, setCelebrationQuote] = useState('');
 
   // Create Goal State
   const [newName, setNewName] = useState('');
@@ -27,6 +30,9 @@ export const InvestmentGoal: React.FC<Props> = ({ goals, users, wallets, onRefre
   const [sourceWalletId, setSourceWalletId] = useState(wallets[0]?.id || '');
   const [depositNote, setDepositNote] = useState('');
 
+  const activeUser = users[0];
+  const userTitle = activeUser?.gender === UserGender.FEMALE ? "Cô chủ" : "Cậu chủ";
+
   const handleCreateGoal = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newName || !newTarget || !newDeadline) return;
@@ -34,7 +40,7 @@ export const InvestmentGoal: React.FC<Props> = ({ goals, users, wallets, onRefre
     const newGoal: Goal = {
         id: `g_${Date.now()}`,
         name: newName,
-        targetAmount: parseFloat(newTarget.replace(/\./g, '')),
+        targetAmount: parseNumberInput(newTarget),
         currentAmount: 0,
         deadline: newDeadline,
         rounds: []
@@ -60,9 +66,7 @@ export const InvestmentGoal: React.FC<Props> = ({ goals, users, wallets, onRefre
     e.preventDefault();
     if (!selectedGoalId || !depositAmount || !sourceWalletId) return;
 
-    const amount = parseFloat(depositAmount.replace(/\./g, ''));
-    
-    // Find active user based on wallet owner (simplification for demo)
+    const amount = parseNumberInput(depositAmount);
     const wallet = wallets.find(w => w.id === sourceWalletId);
     const userId = wallet?.userId || users[0].id;
 
@@ -71,6 +75,11 @@ export const InvestmentGoal: React.FC<Props> = ({ goals, users, wallets, onRefre
     if (success) {
         onRefresh();
         setIsDepositOpen(false);
+        
+        // Pick random celebration quote
+        const randomQuote = VI.goals.celebration[Math.floor(Math.random() * VI.goals.celebration.length)];
+        setCelebrationQuote(randomQuote);
+        setIsCelebrationOpen(true);
     } else {
         alert("Số dư không đủ!");
     }
@@ -85,15 +94,23 @@ export const InvestmentGoal: React.FC<Props> = ({ goals, users, wallets, onRefre
     return users.find(u => u.id === id)?.name || id;
   };
 
+  const handleTargetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewTarget(formatNumberInput(e.target.value));
+  };
+
+  const handleDepositAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setDepositAmount(formatNumberInput(e.target.value));
+  };
+
   return (
     <div className="p-6 pt-12 space-y-8 pb-32 animate-in fade-in duration-700">
       <div className="flex justify-between items-center px-1">
-        <h2 className="text-3xl font-[900] text-foreground tracking-tighter uppercase">MỤC TIÊU</h2>
+        <h2 className="text-3xl font-[1000] text-foreground tracking-tighter uppercase">MỤC TIÊU</h2>
         <button 
             onClick={() => setIsCreateOpen(true)}
-            className="flex items-center space-x-2 bg-primary text-white px-5 py-3 rounded-2xl text-[11px] font-black tracking-widest uppercase shadow-lg neon-glow-primary active:scale-95 transition-all"
+            className="flex items-center space-x-2 bg-primary text-white px-5 py-3 rounded-2xl text-[11px] font-[1000] tracking-widest uppercase shadow-lg neon-glow-primary active:scale-95 transition-all"
         >
-            <Plus size={16} strokeWidth={3} />
+            <Plus size={16} strokeWidth={4} />
             <span>TẠO MỚI</span>
         </button>
       </div>
@@ -103,7 +120,7 @@ export const InvestmentGoal: React.FC<Props> = ({ goals, users, wallets, onRefre
               <div className="w-16 h-16 bg-foreground/5 rounded-full flex items-center justify-center mx-auto mb-6">
                 <Target size={32} className="text-foreground/20" />
               </div>
-              <p className="text-foreground/40 font-black text-xs uppercase tracking-[0.2em]">{VI.goals.noGoals}</p>
+              <p className="text-foreground/30 font-black text-xs uppercase tracking-[0.2em]">{VI.goals.noGoals}</p>
           </div>
       )}
 
@@ -122,7 +139,7 @@ export const InvestmentGoal: React.FC<Props> = ({ goals, users, wallets, onRefre
                                 <TrendingUp size={28} />
                             </div>
                             <div>
-                                <h3 className="text-xl font-[900] text-foreground leading-tight uppercase tracking-tight">{goal.name}</h3>
+                                <h3 className="text-xl font-[1000] text-foreground leading-tight uppercase tracking-tight">{goal.name}</h3>
                                 <div className="flex items-center space-x-2 text-[10px] text-foreground/40 font-black uppercase tracking-widest mt-1">
                                     <Calendar size={12} />
                                     <span>{daysLeft > 0 ? `${daysLeft} NGÀY CÒN LẠI` : `HẠN: ${goal.deadline}`}</span>
@@ -133,24 +150,32 @@ export const InvestmentGoal: React.FC<Props> = ({ goals, users, wallets, onRefre
                             onClick={() => openDepositModal(goal.id)}
                             className="bg-foreground text-background w-12 h-12 rounded-2xl flex items-center justify-center shadow-xl active:scale-90 transition-all"
                         >
-                            <Plus size={22} strokeWidth={3} />
+                            <Plus size={22} strokeWidth={4} />
                         </button>
                     </div>
 
-                    <div className="flex items-end justify-between mb-3">
-                        <div>
-                            <p className="text-[10px] text-foreground/30 font-black uppercase tracking-widest mb-1">Hiện có</p>
-                            <span className="text-3xl font-[900] text-secondary tracking-tighter">{formatVND(goal.currentAmount)}</span>
-                        </div>
-                        <div className="text-right">
-                             <p className="text-[10px] text-foreground/30 font-black uppercase tracking-widest mb-1">Cần đạt</p>
-                             <span className="text-sm font-black text-foreground tracking-tight">{formatVND(goal.targetAmount)}</span>
-                        </div>
+                    <div className="mb-4">
+                        <p className="text-[10px] text-foreground/30 font-black uppercase tracking-widest mb-1">Số tiền hiện có</p>
+                        <span className="text-3xl font-[1000] text-secondary tracking-tighter">{formatVND(goal.currentAmount)}</span>
                     </div>
 
-                    <div className="h-4 bg-foreground/5 rounded-full overflow-hidden mb-8 relative border border-foreground/5 shadow-inner">
+                    <div className="h-4 bg-foreground/5 rounded-full overflow-hidden mb-3 relative border border-foreground/5 shadow-inner">
                         <div className="h-full bg-gradient-to-r from-secondary to-emerald-400 rounded-full transition-all duration-1000 shadow-[0_0_15px_rgba(16,185,129,0.3)]" style={{ width: `${percentage}%` }}></div>
                         <span className="absolute inset-0 flex items-center justify-center text-[10px] font-black text-foreground mix-blend-difference uppercase tracking-widest">{percentage}%</span>
+                    </div>
+
+                    {/* New Layout Elements: Target below bar & Congratulation line */}
+                    <div className="flex flex-col gap-2 mb-8">
+                        <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
+                            <span className="text-foreground/40">Mục tiêu cần đạt:</span>
+                            <span className="text-foreground">{formatVND(goal.targetAmount)}</span>
+                        </div>
+                        <div className="flex items-center gap-2 p-3 rounded-2xl bg-secondary/5 border border-secondary/10 animate-in fade-in slide-in-from-left duration-700">
+                            <Sparkles size={14} className="text-secondary" />
+                            <p className="text-[10px] font-black text-secondary uppercase tracking-tight">
+                                Chúc mừng {userTitle} đã hoàn thành {percentage}% mục tiêu! ✨💎🚀
+                            </p>
+                        </div>
                     </div>
 
                     <div className="space-y-4 pt-6 border-t border-foreground/5">
@@ -178,84 +203,171 @@ export const InvestmentGoal: React.FC<Props> = ({ goals, users, wallets, onRefre
 
       {/* CREATE GOAL MODAL */}
       {isCreateOpen && (
-        <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-3xl p-6">
-           <div className="glass-card w-full max-w-md rounded-[3rem] p-10 shadow-2xl animate-in slide-in-from-bottom duration-500 border-0">
-               <div className="flex justify-between items-center mb-8">
-                   <h3 className="text-2xl font-[900] text-foreground tracking-tighter">MỤC TIÊU MỚI</h3>
-                   <button onClick={() => setIsCreateOpen(false)} className="p-3 bg-foreground/5 rounded-2xl hover:text-primary transition-colors"><X size={22} /></button>
+        <div className="fixed inset-0 z-[500] flex items-center justify-center bg-black/80 backdrop-blur-3xl p-4 sm:p-6 overflow-hidden">
+           <div className="glass-card w-full max-w-md h-[88vh] flex flex-col rounded-[3rem] shadow-2xl border-0 bg-surface overflow-hidden relative animate-in zoom-in-95">
+               <div className="flex justify-between items-center p-6 pb-2 shrink-0 bg-surface/80 backdrop-blur-md z-10 border-b border-foreground/5">
+                   <h3 className="text-lg font-[1000] text-foreground tracking-tighter uppercase">MỤC TIÊU MỚI</h3>
+                   <button onClick={() => setIsCreateOpen(false)} className="p-2 bg-foreground/5 rounded-2xl hover:text-primary transition-colors"><X size={18} /></button>
                </div>
-               <form onSubmit={handleCreateGoal} className="space-y-6">
-                   <div className="space-y-2">
-                       <label className="text-[10px] font-black text-foreground/30 ml-2 tracking-widest uppercase">Tên mục tiêu</label>
+               <form onSubmit={handleCreateGoal} className="flex-1 overflow-y-auto no-scrollbar px-6 pb-72 space-y-6">
+                   <div className="mt-4 space-y-1">
+                       <label className="text-[8px] font-black text-foreground/30 ml-2 tracking-widest uppercase">Tên mục tiêu</label>
                        <input 
                           type="text" required
-                          className="w-full bg-foreground/5 text-foreground font-[800] p-4 rounded-2xl focus:ring-2 focus:ring-primary focus:outline-none transition-all"
+                          className="w-full bg-foreground/5 text-foreground font-[800] p-4 rounded-[1.25rem] focus:ring-2 focus:ring-primary focus:outline-none transition-all uppercase text-xs tracking-tight border-0 shadow-inner"
                           value={newName}
                           onChange={(e) => setNewName(e.target.value)}
                        />
                    </div>
-                   <div className="space-y-2">
-                       <label className="text-[10px] font-black text-foreground/30 ml-2 tracking-widest uppercase">Số tiền cần đạt</label>
+                   <div className="space-y-1">
+                       <label className="text-[8px] font-black text-foreground/30 ml-2 tracking-widest uppercase">Số tiền cần đạt (VND)</label>
                        <input 
-                          type="number" required
-                          className="w-full bg-foreground/5 text-secondary text-2xl font-[900] p-4 rounded-2xl focus:ring-2 focus:ring-secondary focus:outline-none"
+                          type="text"
+                          inputMode="numeric"
+                          required
+                          className="w-full bg-foreground/5 text-secondary text-2xl font-[900] p-4 rounded-[1.25rem] focus:ring-2 focus:ring-secondary focus:outline-none tracking-tighter border-0 shadow-inner"
                           value={newTarget}
-                          onChange={(e) => setNewTarget(e.target.value)}
+                          onChange={handleTargetChange}
                        />
                    </div>
-                   <div className="space-y-2">
-                       <label className="text-[10px] font-black text-foreground/30 ml-2 tracking-widest uppercase">Ngày hoàn thành</label>
+                   <div className="space-y-1">
+                       <label className="text-[8px] font-black text-foreground/30 ml-2 tracking-widest uppercase">Ngày hoàn thành</label>
                        <input 
                           type="date" required
-                          className="w-full bg-foreground/5 text-foreground font-black p-4 rounded-2xl focus:ring-2 focus:ring-primary focus:outline-none"
+                          className="w-full bg-foreground/5 text-foreground font-black p-4 rounded-[1.25rem] focus:ring-2 focus:ring-primary focus:outline-none border-0 shadow-inner"
                           value={newDeadline}
                           onChange={(e) => setNewDeadline(e.target.value)}
                        />
                    </div>
-                   <button type="submit" className="w-full bg-primary text-white font-[900] py-6 rounded-[2rem] text-[11px] uppercase tracking-[0.3em] shadow-xl neon-glow-primary">
-                       LƯU MỤC TIÊU
-                   </button>
                </form>
+               <div className="absolute bottom-[140px] left-0 right-0 px-12 z-30 pointer-events-none">
+                  <div className="w-full pointer-events-auto">
+                    <button 
+                        type="submit" 
+                        onClick={handleCreateGoal} 
+                        className="w-full bg-primary text-white font-[1000] py-3 rounded-xl text-[10px] uppercase tracking-[0.4em] shadow-[0_12px_35px_rgba(139,92,246,0.6)] neon-glow-primary active:scale-95 transition-all flex items-center justify-center gap-2 border border-white/20 backdrop-blur-xl"
+                    >
+                        LƯU MỤC TIÊU <CheckCircle2 size={14} strokeWidth={3} />
+                    </button>
+                  </div>
+               </div>
            </div>
         </div>
       )}
 
       {/* DEPOSIT MODAL */}
       {isDepositOpen && (
-        <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-3xl p-6">
-           <div className="glass-card w-full max-w-md rounded-[3rem] p-10 shadow-2xl animate-in slide-in-from-bottom duration-500 border-0">
-               <div className="flex justify-between items-center mb-8">
-                   <h3 className="text-2xl font-[900] text-foreground tracking-tighter uppercase">Nạp ngân sách</h3>
-                   <button onClick={() => setIsDepositOpen(false)} className="p-3 bg-foreground/5 rounded-2xl text-foreground/40"><X size={22} /></button>
+        <div className="fixed inset-0 z-[500] flex items-center justify-center bg-black/80 backdrop-blur-3xl p-4 sm:p-6 overflow-hidden">
+           <div className="glass-card w-full max-w-md h-[85vh] flex flex-col rounded-[3rem] shadow-2xl border-0 bg-surface overflow-hidden relative animate-in zoom-in-95">
+               <div className="flex justify-between items-center p-6 pb-2 shrink-0 bg-surface/80 backdrop-blur-md z-10 border-b border-foreground/5">
+                   <h3 className="text-lg font-[1000] text-foreground tracking-tighter uppercase">NẠP NGÂN SÁCH</h3>
+                   <button onClick={() => setIsDepositOpen(false)} className="p-2 bg-foreground/5 rounded-2xl text-foreground/40"><X size={18} /></button>
                </div>
-               <form onSubmit={handleDeposit} className="space-y-6">
-                   <div className="space-y-2">
-                       <label className="text-[10px] font-black text-foreground/30 ml-2 tracking-widest uppercase">Ví nguồn</label>
+               <form onSubmit={handleDeposit} className="flex-1 overflow-y-auto no-scrollbar px-6 pb-72 space-y-6">
+                   <div className="mt-4 space-y-1">
+                       <label className="text-[8px] font-black text-foreground/30 ml-2 tracking-widest uppercase">Ví nguồn</label>
                        <select 
                             value={sourceWalletId}
                             onChange={(e) => setSourceWalletId(e.target.value)}
-                            className="w-full bg-foreground/5 text-foreground font-black p-4 rounded-2xl focus:outline-none appearance-none"
+                            className="w-full bg-foreground/5 text-foreground font-black p-4 rounded-[1.25rem] focus:outline-none appearance-none uppercase text-xs border-0 shadow-inner"
                         >
                             {wallets.map(w => (
                                 <option key={w.id} value={w.id}>{w.name} ({formatVND(w.balance)})</option>
                             ))}
                         </select>
                    </div>
-                   <div className="space-y-2">
-                       <label className="text-[10px] font-black text-foreground/30 ml-2 tracking-widest uppercase">Số tiền nạp</label>
+                   <div className="space-y-1">
+                       <label className="text-[8px] font-black text-foreground/30 ml-2 tracking-widest uppercase">Số tiền nạp (VND)</label>
                        <input 
-                          type="number" required autoFocus
-                          className="w-full bg-foreground/5 text-secondary text-3xl font-[900] p-4 rounded-2xl focus:outline-none text-right"
+                          type="text"
+                          inputMode="numeric"
+                          required autoFocus
+                          className="w-full bg-foreground/5 text-secondary text-3xl font-[1000] p-4 rounded-[1.25rem] focus:outline-none text-right tracking-tighter border-0 shadow-inner"
                           value={depositAmount}
-                          onChange={(e) => setDepositAmount(e.target.value)}
+                          onChange={handleDepositAmountChange}
                        />
                    </div>
-                   <button type="submit" className="w-full bg-secondary text-white font-[900] py-6 rounded-[2rem] text-[11px] uppercase tracking-[0.3em] shadow-xl neon-glow-secondary">
-                       XÁC NHẬN NẠP
-                   </button>
+                   <div className="space-y-1">
+                       <label className="text-[8px] font-black text-foreground/30 ml-2 tracking-widest uppercase">Ghi chú</label>
+                       <input 
+                          type="text"
+                          placeholder="VD: Tiền thưởng tháng..."
+                          className="w-full bg-foreground/5 text-foreground font-bold p-4 rounded-[1.25rem] focus:outline-none uppercase text-xs border-0 shadow-inner"
+                          value={depositNote}
+                          onChange={(e) => setDepositNote(e.target.value)}
+                       />
+                   </div>
                </form>
+               <div className="absolute bottom-[140px] left-0 right-0 px-12 z-30 pointer-events-none">
+                  <div className="w-full pointer-events-auto">
+                    <button 
+                        type="submit" 
+                        onClick={handleDeposit} 
+                        className="w-full bg-secondary text-white font-[1000] py-3 rounded-xl text-[10px] uppercase tracking-[0.4em] shadow-[0_12px_35px_rgba(16,185,129,0.6)] neon-glow-secondary active:scale-95 transition-all flex items-center justify-center gap-2 border border-white/20 backdrop-blur-xl"
+                    >
+                        XÁC NHẬN NẠP <CheckCircle2 size={14} strokeWidth={3} />
+                    </button>
+                  </div>
+               </div>
            </div>
         </div>
+      )}
+
+      {/* RỰC RỠ CELEBRATION MODAL */}
+      {isCelebrationOpen && (
+          <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/90 backdrop-blur-3xl px-6 animate-in fade-in duration-500">
+              {/* Particle simulation background */}
+              <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                  <Star className="absolute top-[10%] left-[10%] text-gold opacity-50 animate-bounce" size={24} />
+                  <Star className="absolute top-[20%] right-[15%] text-gold opacity-30 animate-pulse" size={40} />
+                  <Star className="absolute bottom-[20%] left-[15%] text-gold opacity-40 animate-spin" size={32} />
+                  <Sparkles className="absolute top-[50%] right-[10%] text-primary opacity-50 animate-pulse" size={48} />
+              </div>
+
+              <div className="glass-card w-full max-w-sm rounded-[4rem] p-10 text-center border-0 shadow-2xl bg-gradient-to-br from-surface to-background relative overflow-hidden animate-in zoom-in-95 duration-500">
+                  {/* Neon border top accent */}
+                  <div className="absolute top-0 left-0 w-full h-2.5 bg-gradient-to-r from-primary via-secondary to-primary shadow-[0_0_20px_rgba(139,92,246,0.5)]"></div>
+                  
+                  <div className="space-y-8 relative z-10">
+                      <div className="flex justify-center items-center gap-2 h-32">
+                          <div className="w-16 h-16 bg-primary/10 text-primary rounded-2xl flex items-center justify-center shadow-lg transform -rotate-12 animate-bounce">
+                              <Trophy size={32} />
+                          </div>
+                          <div className="w-24 h-24 bg-secondary text-white rounded-[2.5rem] flex items-center justify-center shadow-2xl neon-glow-secondary z-20 animate-pulse">
+                              <PartyPopper size={52} strokeWidth={2.5} />
+                          </div>
+                          <div className="w-16 h-16 bg-gold/10 text-gold rounded-2xl flex items-center justify-center shadow-lg transform rotate-12 animate-bounce delay-300">
+                              <Star size={32} fill="currentColor" />
+                          </div>
+                      </div>
+
+                      <div className="space-y-3">
+                          <h3 className="text-[11px] font-black text-secondary uppercase tracking-[0.5em] animate-pulse">ĐẦU TƯ THÀNH CÔNG!</h3>
+                          <div className="px-2">
+                             <p className="font-comic text-2xl text-foreground font-bold leading-snug drop-shadow-sm italic">
+                                "{celebrationQuote}"
+                             </p>
+                          </div>
+                      </div>
+
+                      <div className="glass-card bg-foreground/[0.04] p-6 rounded-[2.5rem] border-0 shadow-inner">
+                          <p className="text-[9px] font-black text-foreground/30 uppercase tracking-widest mb-1">Số tiền đã nạp thêm</p>
+                          <p className="text-4xl font-[1000] text-secondary tracking-tighter drop-shadow-sm">{formatVND(parseNumberInput(depositAmount))}</p>
+                      </div>
+
+                      <button 
+                        onClick={() => setIsCelebrationOpen(false)}
+                        className="w-full bg-foreground text-background font-[1000] py-6 rounded-[2rem] text-[11px] uppercase tracking-[0.4em] shadow-2xl active:scale-95 transition-all"
+                      >
+                         TIẾP TỤC KIẾM TIỀN ✨
+                      </button>
+                  </div>
+                  
+                  {/* Decorative blobs */}
+                  <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-primary/20 rounded-full blur-3xl"></div>
+                  <div className="absolute -top-10 -left-10 w-32 h-32 bg-secondary/20 rounded-full blur-3xl"></div>
+              </div>
+          </div>
       )}
     </div>
   );

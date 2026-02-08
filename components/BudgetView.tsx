@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { Budget, Category, FixedCost, TransactionType, AllocationSetting, Wallet } from '../types';
 import { CATEGORY_COLORS } from '../constants';
 import { VI } from '../constants/vi';
-import { formatVND } from '../utils/format';
+import { formatVND, formatNumberInput, parseNumberInput } from '../utils/format';
 import { Settings2, Plus, Trash2, Save, X, Edit3, AlertTriangle, CheckCircle, Calendar, Zap, Wallet as WalletIcon, ArrowRight, Clock, Percent } from 'lucide-react';
 import { StorageService } from '../services/storageService';
 
@@ -29,7 +30,7 @@ export const BudgetView: React.FC<Props> = ({ budgets, getSpent, onUpdateBudgets
 
   // Fixed Cost Modal State
   const [isFixedModalOpen, setIsFixedModalOpen] = useState(false);
-  const [editingFixedCost, setEditingFixedCost] = useState<Partial<FixedCost> | null>(null);
+  const [editingFixedCost, setEditingFixedCost] = useState<any>(null);
 
   useEffect(() => {
     if (isEditingFlexible) {
@@ -77,18 +78,20 @@ export const BudgetView: React.FC<Props> = ({ budgets, getSpent, onUpdateBudgets
   };
 
   const handleUpdateLocalBudget = (category: Category, limit: string) => {
-    const val = parseFloat(limit) || 0;
+    const val = parseNumberInput(limit);
     setLocalBudgets(prev => prev.map(b => b.category === category ? { ...b, limit: val } : b));
   };
 
   const handleOpenFixedEdit = (cost?: FixedCost) => {
     if (cost) {
-      setEditingFixedCost({ ...cost });
+      const c: any = { ...cost };
+      c.amount = formatNumberInput(c.amount);
+      setEditingFixedCost(c);
     } else {
       setEditingFixedCost({
         id: `fc_${Date.now()}`,
         title: '',
-        amount: 0,
+        amount: '',
         allocatedAmount: 0,
         nextDueDate: new Date().toISOString().split('T')[0],
         frequencyMonths: 1,
@@ -102,7 +105,10 @@ export const BudgetView: React.FC<Props> = ({ budgets, getSpent, onUpdateBudgets
     e.preventDefault();
     if (!editingFixedCost?.title || !editingFixedCost.amount) return;
     
-    const cost = editingFixedCost as FixedCost;
+    const cost: FixedCost = {
+        ...editingFixedCost,
+        amount: parseNumberInput(editingFixedCost.amount)
+    };
     const exists = fixedCosts.find(c => c.id === cost.id);
     
     if (exists) {
@@ -130,7 +136,7 @@ export const BudgetView: React.FC<Props> = ({ budgets, getSpent, onUpdateBudgets
 
   const handleExecuteAllocation = (e: React.FormEvent) => {
     e.preventDefault();
-    const amount = parseFloat(allocationAmount);
+    const amount = parseNumberInput(allocationAmount);
     if (!amount || !allocationSource) return;
 
     const totalPerc = allocationConfig.reduce((sum, s) => sum + (s.isEnabled ? s.percentage : 0), 0);
@@ -147,6 +153,14 @@ export const BudgetView: React.FC<Props> = ({ budgets, getSpent, onUpdateBudgets
       setAllocationAmount('');
       alert(VI.budget.allocation.result);
     }
+  };
+
+  const handleAllocAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setAllocationAmount(formatNumberInput(e.target.value));
+  };
+
+  const handleFixedAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEditingFixedCost({...editingFixedCost, amount: formatNumberInput(e.target.value)});
   };
 
   const totalAllocPercentage = allocationConfig.reduce((sum, s) => sum + (s.isEnabled ? s.percentage : 0), 0);
@@ -211,9 +225,10 @@ export const BudgetView: React.FC<Props> = ({ budgets, getSpent, onUpdateBudgets
                                       {isEditingFlexible ? (
                                         <div className="flex items-center bg-foreground/5 rounded-xl px-3 py-1 border border-foreground/10">
                                           <input 
-                                            type="number" 
+                                            type="text" 
+                                            inputMode="numeric"
                                             className="w-24 bg-transparent text-[11px] font-black text-foreground focus:outline-none"
-                                            value={budget.limit}
+                                            value={formatNumberInput(budget.limit)}
                                             onChange={(e) => handleUpdateLocalBudget(budget.category, e.target.value)}
                                           />
                                           <span className="text-[10px] opacity-30 font-black">VND</span>
@@ -251,56 +266,72 @@ export const BudgetView: React.FC<Props> = ({ budgets, getSpent, onUpdateBudgets
                   <Clock size={48} className="mx-auto mb-4 text-foreground/20" />
                   <p className="text-[10px] font-black uppercase tracking-widest">Chưa có hóa đơn nào</p>
                 </div>
-              ) : fixedCosts.map(cost => (
-                  <div key={cost.id} className="glass-card liquid-glass rounded-[2.5rem] p-7 border-0 relative overflow-hidden group">
-                      <div className="flex justify-between items-start mb-6">
-                          <div className="flex-1" onClick={() => handleOpenFixedEdit(cost)}>
-                              <h3 className="font-[900] text-lg text-foreground uppercase tracking-tighter leading-none mb-2 hover:text-primary transition-colors cursor-pointer">{cost.title}</h3>
-                              <div className="flex items-center gap-2 text-[10px] font-black text-foreground/30 uppercase tracking-[0.2em]">
-                                  <Calendar size={12} />
-                                  <span>{new Date(cost.nextDueDate).toLocaleDateString('vi-VN')}</span>
-                                  <span className="mx-2">•</span>
-                                  <span>{cost.frequencyMonths} tháng / lần</span>
-                              </div>
-                          </div>
-                          <div className="text-right">
-                              <span className="text-2xl font-[900] text-foreground tracking-tighter">{formatVND(cost.amount)}</span>
-                          </div>
-                      </div>
-                      
-                      <div className="space-y-2 mb-8">
-                          <div className="flex justify-between text-[9px] font-black text-foreground/30 uppercase tracking-widest">
-                              <span>Tiến độ tích lũy</span>
-                              <span>{cost.amount > 0 ? Math.round((cost.allocatedAmount/cost.amount)*100) : 0}%</span>
-                          </div>
-                          <div className="h-2 w-full bg-foreground/5 rounded-full overflow-hidden shadow-inner">
-                              <div className="h-full bg-gradient-to-r from-primary to-indigo-400 rounded-full transition-all duration-700" style={{ width: `${cost.amount > 0 ? Math.min(100, (cost.allocatedAmount/cost.amount)*100) : 0}%` }}></div>
-                          </div>
-                      </div>
+              ) : fixedCosts.map(cost => {
+                  const progressPercentage = cost.amount > 0 ? Math.min(100, Math.round((cost.allocatedAmount / cost.amount) * 100)) : 0;
+                  return (
+                    <div key={cost.id} className="glass-card liquid-glass rounded-[2.5rem] p-7 border-0 relative overflow-hidden group">
+                        <div className="space-y-2 mb-6">
+                            {/* Dòng 1: Tên hóa đơn */}
+                            <h3 onClick={() => handleOpenFixedEdit(cost)} className="font-[1000] text-xl text-foreground uppercase tracking-tighter leading-none hover:text-primary transition-colors cursor-pointer">{cost.title}</h3>
+                            
+                            {/* Dòng 2: Số tiền */}
+                            <div>
+                                <span className="text-2xl font-[1000] text-primary tracking-tighter">{formatVND(cost.amount)}</span>
+                            </div>
 
-                      <div className="flex gap-3">
-                        <button 
-                          onClick={() => onPayFixedCost(cost)} 
-                          className="flex-[3] bg-primary text-white py-5 rounded-[1.75rem] text-[11px] font-[900] uppercase tracking-[0.3em] active:scale-95 transition-all shadow-xl neon-glow-primary flex items-center justify-center gap-3"
-                        >
-                          THANH TOÁN <ArrowRight size={16} />
-                        </button>
-                        <button 
-                          onClick={() => handleDeleteFixedCost(cost.id)}
-                          className="flex-1 bg-danger/10 text-danger py-5 rounded-[1.75rem] flex items-center justify-center active:scale-95 transition-all"
-                        >
-                          <Trash2 size={20} />
-                        </button>
-                      </div>
-                  </div>
-              ))}
+                            {/* Dòng 3: Hạn đóng tiếp theo */}
+                            <div className="flex items-center gap-2 text-[10px] font-black text-foreground/30 uppercase tracking-[0.2em]">
+                                <Calendar size={12} />
+                                <span>Hạn đóng tiếp: {new Date(cost.nextDueDate).toLocaleDateString('vi-VN')}</span>
+                            </div>
+
+                            {/* Dòng 4: Tần suất (Xanh lá) */}
+                            <div className="flex items-center gap-2 text-[10px] font-black text-secondary uppercase tracking-[0.2em] pt-1">
+                                <Clock size={12} />
+                                <span>{cost.frequencyMonths} tháng / lần</span>
+                            </div>
+                        </div>
+                        
+                        {/* Dòng 5: Tiến độ tích lũy */}
+                        <div className="space-y-2 mb-6">
+                            <div className="flex justify-between items-center text-[9px] font-black text-foreground/30 uppercase tracking-widest px-1">
+                                <span>Tiến độ tích lũy</span>
+                                <span className="text-secondary">{progressPercentage}%</span>
+                            </div>
+                            
+                            {/* Dòng 6: Thanh tích lũy (Xanh lá) */}
+                            <div className="h-2.5 w-full bg-foreground/5 rounded-full overflow-hidden shadow-inner relative">
+                                <div 
+                                    className="h-full bg-secondary rounded-full transition-all duration-700 shadow-[0_0_10px_rgba(16,185,129,0.4)]" 
+                                    style={{ width: `${progressPercentage}%` }}
+                                ></div>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3">
+                          <button 
+                            onClick={() => onPayFixedCost(cost)} 
+                            className="flex-[3] bg-primary text-white py-5 rounded-[1.75rem] text-[11px] font-[900] uppercase tracking-[0.3em] active:scale-95 transition-all shadow-xl neon-glow-primary flex items-center justify-center gap-3"
+                          >
+                            THANH TOÁN <ArrowRight size={16} />
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteFixedCost(cost.id)}
+                            className="flex-1 bg-danger/10 text-danger py-5 rounded-[1.75rem] flex items-center justify-center active:scale-95 transition-all"
+                          >
+                            <Trash2 size={20} />
+                          </button>
+                        </div>
+                    </div>
+                  );
+              })}
               <button onClick={() => handleOpenFixedEdit()} className="w-full py-7 glass-card bg-foreground/[0.02] rounded-[2.5rem] border-dashed border-foreground/20 text-foreground/30 font-black text-[10px] uppercase tracking-[0.3em] hover:bg-foreground/[0.05] transition-all border-2">
                 + THÊM HÓA ĐƠN ĐỊNH KỲ
               </button>
           </div>
       )}
 
-      {/* ALLOCATION MODAL */}
+      {/* ALLOCATION MODAL ... existing code ... */}
       {isAllocationOpen && (
         <div className="fixed inset-0 z-[220] flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-3xl p-6">
            <div className="glass-card w-full max-w-md h-[85vh] sm:h-auto flex flex-col rounded-[3rem] p-10 shadow-2xl animate-in slide-in-from-bottom duration-500 border-0 bg-surface">
@@ -316,11 +347,13 @@ export const BudgetView: React.FC<Props> = ({ budgets, getSpent, onUpdateBudgets
                       <div className="space-y-2">
                           <label className="text-[10px] font-black text-foreground/30 ml-2 tracking-widest uppercase">{VI.budget.allocation.inputLabel}</label>
                           <input 
-                              type="number" required autoFocus
+                              type="text"
+                              inputMode="numeric"
+                              required autoFocus
                               className="w-full bg-foreground/5 text-secondary text-3xl font-[900] p-6 rounded-[2rem] focus:outline-none tracking-tighter"
                               placeholder="0"
                               value={allocationAmount}
-                              onChange={(e) => setAllocationAmount(e.target.value)}
+                              onChange={handleAllocAmountChange}
                           />
                       </div>
                       <div className="space-y-2">
@@ -375,7 +408,7 @@ export const BudgetView: React.FC<Props> = ({ budgets, getSpent, onUpdateBudgets
         </div>
       )}
 
-      {/* FIXED COST EDIT MODAL */}
+      {/* FIXED COST EDIT MODAL ... existing code ... */}
       {isFixedModalOpen && editingFixedCost && (
         <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-3xl p-6">
            <div className="glass-card w-full max-w-md rounded-[3rem] p-10 shadow-2xl animate-in slide-in-from-bottom duration-500 border-0 bg-surface">
@@ -397,10 +430,12 @@ export const BudgetView: React.FC<Props> = ({ budgets, getSpent, onUpdateBudgets
                       <div className="space-y-2">
                           <label className="text-[10px] font-black text-foreground/30 ml-2 tracking-widest uppercase">Số tiền (VND)</label>
                           <input 
-                              type="number" required
+                              type="text"
+                              inputMode="numeric"
+                              required
                               className="w-full bg-foreground/5 text-secondary text-lg font-[900] p-4 rounded-2xl focus:outline-none"
                               value={editingFixedCost.amount}
-                              onChange={(e) => setEditingFixedCost({...editingFixedCost, amount: parseFloat(e.target.value) || 0})}
+                              onChange={handleFixedAmountChange}
                           />
                       </div>
                       <div className="space-y-2">

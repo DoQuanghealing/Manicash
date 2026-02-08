@@ -60,9 +60,9 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange
             <NavItem id="dashboard" icon={LayoutDashboard} label={VI.nav.dashboard} active={activeTab === 'dashboard'} onClick={() => onTabChange('dashboard')} />
             <NavItem id="budgets" icon={PieChart} label={VI.nav.budgets} active={activeTab === 'budgets'} onClick={() => onTabChange('budgets')} />
             
-            {/* The Floating Center Button - Pure Glass Gem Style */}
-            <div className="flex items-center justify-center -mt-16 relative z-[110]">
-              <div className="relative p-[1.5px] rounded-full bg-white/20 shadow-[0_15px_40px_-10px_rgba(139,92,246,0.4)] active:scale-95 transition-all">
+            {/* The Floating Center Button - Lowered position (-mt-10 instead of -mt-16) */}
+            <div className="flex items-center justify-center -mt-10 relative z-[110]">
+              <div className="relative p-[1.5px] rounded-full bg-white/20 shadow-[0_10px_30px_-5px_rgba(139,92,246,0.3)] active:scale-95 transition-all">
                 <button 
                     onClick={(e) => {
                       e.preventDefault();

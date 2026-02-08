@@ -10,12 +10,13 @@ import { ReflectionModal } from './components/ReflectionModal';
 import { SettingsModal } from './components/SettingsModal';
 import { Login } from './components/Login';
 import { StorageService } from './services/storageService';
-import { GeminiService } from './services/geminiService';
+import { GeminiService } from './services/aiService';
 import { AuthService } from './services/firebase';
 import { BrandLogo } from './components/BrandLogo';
-import { Transaction, Wallet, Goal, Category, TransactionType, User as AppUser, Budget, FixedCost } from './types';
+import { Transaction, Wallet, Goal, Category, TransactionType, User as AppUser, Budget, FixedCost, ButlerType } from './types';
 import { User as FirebaseUser } from 'firebase/auth';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { VI } from './constants/vi';
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -32,7 +33,7 @@ function App() {
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [fixedCosts, setFixedCosts] = useState<FixedCost[]>([]);
 
-  const [reflectionData, setReflectionData] = useState<{isOpen: boolean, message: string, category: string}>({
+  const [reflectionData, setReflectionData] = useState<{isOpen: boolean, message: string, category: string, title?: string, variant?: 'danger' | 'success', isLoading?: boolean}>({
     isOpen: false, message: '', category: ''
   });
 
@@ -127,25 +128,58 @@ function App() {
       .reduce((sum, t) => sum + t.amount, 0);
   };
 
-  const handleAddTransaction = async (data: any) => {
-    if (data.type === TransactionType.TRANSFER && data.toWalletId) {
-      StorageService.transferFunds(data.walletId, data.toWalletId, data.amount, data.description);
-    } else {
-      StorageService.addTransaction(data as Transaction);
-      
-      if (data.type === TransactionType.EXPENSE) {
-          const budget = budgets.find(b => b.category === data.category);
-          if (budget) {
-              const currentSpent = getSpentByCategory(data.category);
-              if (currentSpent > budget.limit) {
-                  const overage = currentSpent - budget.limit;
-                  const message = await GeminiService.generateReflectionPrompt(data.category, overage);
-                  setReflectionData({ isOpen: true, message, category: data.category });
-              }
-          }
-      }
-    }
+  const handleAddTransaction = (data: any) => {
     refreshData();
+
+    if (data && data.type === TransactionType.EXPENSE) {
+        const user = users[0];
+        const butlerName = user?.butlerPreference === ButlerType.FEMALE 
+            ? (user.femaleButlerName || "Queen Crown") 
+            : (user.maleButlerName || "Lord Diamond");
+
+        // Hiện modal ngay lập tức với thông điệp chờ để tăng cảm giác phản hồi nhanh
+        setReflectionData({
+            isOpen: true,
+            message: "Đang phân tích thói quen của Người...",
+            category: data.category,
+            variant: 'success',
+            title: butlerName,
+            isLoading: true
+        });
+
+        (async () => {
+            const budget = budgets.find(b => b.category === data.category);
+            const currentSpent = getSpentByCategory(data.category);
+            
+            if (budget && currentSpent > budget.limit) {
+                const overage = currentSpent - budget.limit;
+                const message = await GeminiService.generateReflectionPrompt(data.category, overage);
+                setReflectionData({ 
+                    isOpen: true, 
+                    message, 
+                    category: data.category, 
+                    variant: 'danger',
+                    title: VI.reflection.defaultTitle,
+                    isLoading: false
+                });
+            } else {
+                const comment = await GeminiService.generateTransactionComment(data);
+                if (comment) {
+                    setReflectionData({ 
+                        isOpen: true, 
+                        message: comment, 
+                        category: data.category, 
+                        variant: 'success',
+                        title: butlerName,
+                        isLoading: false
+                    });
+                } else {
+                    // Nếu lỗi AI, đóng modal hoặc hiện mặc định
+                    setReflectionData(prev => ({ ...prev, isOpen: false }));
+                }
+            }
+        })();
+    }
   };
 
   if (isInitialLoading) {
@@ -204,9 +238,16 @@ function App() {
         {renderContent()}
       </Layout>
       
-      {/* Modals outside of Layout to ensure they are at the top level z-index */}
       <TransactionForm isOpen={isTxModalOpen} onClose={() => setIsTxModalOpen(false)} onSubmit={handleAddTransaction} wallets={wallets} />
-      <ReflectionModal isOpen={reflectionData.isOpen} message={reflectionData.message} category={reflectionData.category} onClose={() => setReflectionData({ ...reflectionData, isOpen: false })} />
+      <ReflectionModal 
+        isOpen={reflectionData.isOpen} 
+        message={reflectionData.message} 
+        category={reflectionData.category} 
+        variant={reflectionData.variant}
+        title={reflectionData.title}
+        isLoading={reflectionData.isLoading}
+        onClose={() => setReflectionData({ ...reflectionData, isOpen: false })} 
+      />
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} users={users} wallets={wallets} onSave={handleSaveSettings} onRefresh={refreshData} currentUser={currentUser} />
     </div>
   );

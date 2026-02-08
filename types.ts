@@ -1,3 +1,4 @@
+
 export enum TransactionType {
   INCOME = 'INCOME',
   EXPENSE = 'EXPENSE',
@@ -16,10 +17,26 @@ export enum Category {
   OTHER = 'Other',
 }
 
+export enum ButlerType {
+  MALE = 'MALE',
+  FEMALE = 'FEMALE',
+}
+
+export enum UserGender {
+  MALE = 'MALE',
+  FEMALE = 'FEMALE',
+  OTHER = 'OTHER',
+}
+
 export interface User {
   id: string;
   name: string;
   avatar: string; // Emoji
+  gender?: UserGender;
+  butlerPreference?: ButlerType;
+  maleButlerName?: string;
+  femaleButlerName?: string;
+  butlerAvatarUrl?: string; // Base64 or URL of the 3D Mascot
 }
 
 export interface Wallet {
@@ -43,16 +60,16 @@ export interface Transaction {
 export interface Budget {
   category: Category;
   limit: number;
-  spent: number; // Calculated dynamically usually, but good for caching
+  spent: number;
 }
 
 export interface FixedCost {
   id: string;
   title: string;
   amount: number;
-  allocatedAmount: number; // Money set aside/saved for this bill so far
-  nextDueDate: string; // ISO Date string (The absolute deadline)
-  frequencyMonths: number; // 1 = Monthly, 6 = Every 6 months
+  allocatedAmount: number;
+  nextDueDate: string;
+  frequencyMonths: number;
   description?: string;
 }
 
@@ -76,29 +93,55 @@ export interface Goal {
 export interface Milestone {
   id: string;
   title: string;
-  startDate?: string;
-  date: string; // Expected completion date/Deadline
-  completedAt?: string; // Actual time of completion
+  startDate: string;
+  date: string; // Đây là ngày hoàn thành
+  completedAt?: string;
   isCompleted: boolean;
 }
 
 export interface IncomeProject {
   id: string;
-  userId: string; // Owner of the project
-  name: string; // e.g., "Gói Coaching Chị Phượng"
+  userId: string;
+  name: string;
   description: string;
   expectedIncome: number;
   startDate: string;
   endDate: string;
-  status: 'planning' | 'in_progress' | 'completed';
+  status: 'planning' | 'upcoming' | 'in_progress' | 'completed' | 'overdue';
   milestones: Milestone[];
 }
 
-export interface AIInsight {
-  type: 'insight' | 'badge' | 'reflection';
-  content: string;
-  icon?: string;
-  sentiment?: 'positive' | 'neutral' | 'negative' | 'sarcastic';
+export interface ProsperityPlan {
+  statusTitle: string;
+  statusEmoji: string;
+  healthScore: number;
+  summary: string;
+  savingsStrategies: { title: string; desc: string }[];
+  incomeStrategies: { title: string; desc: string }[];
+  badHabitToQuit: { habit: string; why: string };
+}
+
+export interface FinancialReport {
+  healthScore: number;
+  healthAnalysis: string;
+  incomeEfficiency: {
+    score: number;
+    bestSource: string;
+    forecast: string;
+    analysis: string;
+  };
+  budgetDiscipline: {
+    status: string;
+    trashSpending: string[];
+    varianceAnalysis: string;
+    warningMessage?: string;
+  };
+  wealthVelocity: {
+    status: string;
+    goalForecasts: { name: string; estimatedDate: string }[];
+    cutSuggestions: string[];
+  };
+  cfoAdvice: string;
 }
 
 export interface AllocationSetting {
@@ -106,23 +149,4 @@ export interface AllocationSetting {
   type: 'GOAL' | 'COST';
   percentage: number;
   isEnabled: boolean;
-}
-
-export interface FinancialReport {
-  healthScore: number; // 0-100
-  incomeTrend: {
-    status: 'higher' | 'lower' | 'stable';
-    percentage: number;
-    message: string;
-  };
-  projectVelocity: {
-    rating: 'High' | 'Medium' | 'Low';
-    completedProjects: number;
-    message: string;
-  };
-  goalForecast: {
-    canMeetFixedCosts: boolean;
-    majorGoalPrediction: string; // e.g., "Buying house delayed by 2 months"
-    advice: string;
-  };
 }

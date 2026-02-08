@@ -1,10 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
-import { User, Wallet, Transaction, IncomeProject } from '../types';
+import { User, Wallet, Transaction, IncomeProject, ButlerType, UserGender } from '../types';
 import { VI } from '../constants/vi';
-import { X, ShieldCheck, Wallet as WalletIcon, Trash2, AlertTriangle, Banknote, Sun, Moon, RefreshCw, Eraser, CheckCircle2, LogOut, Mail, User as UserIcon, FileSpreadsheet, Download } from 'lucide-react';
+import { X, ShieldCheck, Wallet as WalletIcon, Trash2, AlertTriangle, Banknote, Sun, Moon, RefreshCw, Eraser, CheckCircle2, LogOut, Mail, User as UserIcon, FileSpreadsheet, Download, Heart, Sparkles, Loader2, Key, Cpu, Zap } from 'lucide-react';
 import { StorageService } from '../services/storageService';
 import { AuthService } from '../services/firebase';
+import { formatNumberInput, parseNumberInput } from '../utils/format';
+import { GeminiService } from '../services/aiService';
+import { BUTLER_PROMPTS } from '../constants';
 
 interface Props {
   isOpen: boolean;
@@ -16,23 +19,59 @@ interface Props {
   currentUser: any; 
 }
 
+const SimpleButlerSVG = ({ type }: { type: ButlerType }) => (
+  <svg width="60" height="60" viewBox="0 0 100 100">
+    <defs>
+      <linearGradient id="goldGradSet" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style={{ stopColor: '#FFD700', stopOpacity: 1 }} />
+        <stop offset="100%" style={{ stopColor: '#B8860B', stopOpacity: 1 }} />
+      </linearGradient>
+      <linearGradient id="diamondGradSet" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style={{ stopColor: '#4fc3f7', stopOpacity: 1 }} />
+        <stop offset="100%" style={{ stopColor: '#01579b', stopOpacity: 1 }} />
+      </linearGradient>
+    </defs>
+    <ellipse cx="50" cy="85" rx="30" ry="8" fill="url(#goldGradSet)" opacity="0.6" />
+    {type === ButlerType.MALE ? (
+      <path d="M50 25 L70 40 L50 75 L30 40 Z" fill="url(#diamondGradSet)" stroke="#fff" strokeWidth="0.5" />
+    ) : (
+      <path d="M30 70 L25 45 L38 55 L50 35 L62 55 L75 45 L70 70 Z" fill="url(#goldGradSet)" stroke="#926B07" strokeWidth="1" />
+    )}
+  </svg>
+);
+
 export const SettingsModal: React.FC<Props> = ({ isOpen, onClose, users, wallets, onSave, onRefresh, currentUser }) => {
   const [userName, setUserName] = useState('');
   const [mainWalletName, setMainWalletName] = useState('');
   const [mainWalletBalance, setMainWalletBalance] = useState('');
   const [backupWalletName, setBackupWalletName] = useState('');
   const [currentTheme, setCurrentTheme] = useState<'dark' | 'light'>('dark');
+  const [userGender, setUserGender] = useState<UserGender>(UserGender.MALE);
+  const [butlerPref, setButlerPref] = useState<ButlerType>(ButlerType.MALE);
+  const [maleButlerName, setMaleButlerName] = useState('');
+  const [femaleButlerName, setFemaleButlerName] = useState('');
+  const [aiBrain, setAiBrain] = useState<'gemini' | 'llama'>('gemini');
   
   const [confirmType, setConfirmType] = useState<'balance' | 'full' | null>(null);
 
   useEffect(() => {
     if (isOpen) {
-      if (users.length > 0) setUserName(users[0].name);
+      if (users.length > 0) {
+        setUserName(users[0].name);
+        setUserGender(users[0].gender || UserGender.MALE);
+        setButlerPref(users[0].butlerPreference || ButlerType.MALE);
+        setMaleButlerName(users[0].maleButlerName || 'Lord Diamond');
+        setFemaleButlerName(users[0].femaleButlerName || 'Queen Crown');
+      }
       const w1 = wallets.find(w => w.id === 'w1') || wallets[0];
       const w2 = wallets.find(w => w.id === 'w2') || wallets[1];
-      if (w1) { setMainWalletName(w1.name); setMainWalletBalance(String(w1.balance)); }
+      if (w1) { 
+        setMainWalletName(w1.name); 
+        setMainWalletBalance(formatNumberInput(w1.balance)); 
+      }
       if (w2) setBackupWalletName(w2.name);
       setCurrentTheme(StorageService.getTheme());
+      setAiBrain(StorageService.getAiBrain());
     }
   }, [isOpen, users, wallets]);
 
@@ -41,15 +80,26 @@ export const SettingsModal: React.FC<Props> = ({ isOpen, onClose, users, wallets
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     const updatedUsers = [...users];
-    if (userName.trim()) updatedUsers[0] = { ...updatedUsers[0], name: userName.trim() };
+    if (userName.trim()) {
+      updatedUsers[0] = { 
+        ...updatedUsers[0], 
+        name: userName.trim(),
+        gender: userGender,
+        butlerPreference: butlerPref,
+        maleButlerName: maleButlerName.trim(),
+        femaleButlerName: femaleButlerName.trim()
+      };
+    }
     const updatedWallets = JSON.parse(JSON.stringify(wallets));
     const w1Idx = updatedWallets.findIndex((w: Wallet) => w.id === 'w1');
     if (w1Idx !== -1) {
         if (mainWalletName.trim()) updatedWallets[w1Idx].name = mainWalletName.trim();
-        if (mainWalletBalance.trim()) updatedWallets[w1Idx].balance = parseFloat(mainWalletBalance) || 0;
+        updatedWallets[w1Idx].balance = parseNumberInput(mainWalletBalance);
     }
     const w2Idx = updatedWallets.findIndex((w: Wallet) => w.id === 'w2');
     if (w2Idx !== -1 && backupWalletName.trim()) updatedWallets[w2Idx].name = backupWalletName.trim();
+    
+    StorageService.setAiBrain(aiBrain);
     onSave(updatedUsers, updatedWallets);
     onClose();
   };
@@ -114,6 +164,10 @@ export const SettingsModal: React.FC<Props> = ({ isOpen, onClose, users, wallets
     else document.documentElement.classList.remove('dark');
   };
 
+  const handleBalanceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setMainWalletBalance(formatNumberInput(e.target.value));
+  };
+
   return (
     <>
       <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-3xl px-6 animate-in fade-in duration-300">
@@ -127,55 +181,126 @@ export const SettingsModal: React.FC<Props> = ({ isOpen, onClose, users, wallets
           </div>
 
           <div className="flex-1 overflow-y-auto no-scrollbar px-8 py-4 space-y-10">
-            {/* User Profile Section */}
+            {/* User Info Section */}
             <div className="space-y-4">
-                <h3 className="text-[10px] font-black text-foreground/40 uppercase tracking-[0.3em] ml-2">Tài khoản kết nối</h3>
-                <div className="glass-card bg-foreground/[0.03] p-6 rounded-[2rem] border-0 shadow-inner space-y-4">
-                    <div className="flex items-center gap-4">
-                        <img 
-                          src={currentUser?.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser?.displayName}`} 
-                          className="w-12 h-12 rounded-2xl shadow-lg border-2 border-primary/20"
-                          alt="Avatar"
-                        />
-                        <div className="overflow-hidden">
-                            <p className="text-sm font-black text-foreground uppercase tracking-tight truncate">{currentUser?.displayName || 'Người dùng'}</p>
-                            <p className="text-[10px] font-bold text-foreground/30 truncate uppercase">{currentUser?.email || 'Chế độ Demo'}</p>
-                        </div>
+                <h3 className="text-[10px] font-black text-foreground/40 uppercase tracking-[0.3em] ml-2">Tài khoản</h3>
+                <div className="glass-card bg-foreground/[0.03] p-5 rounded-[2rem] border-0 shadow-inner flex items-center gap-4">
+                    <img src={currentUser?.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser?.displayName}`} className="w-10 h-10 rounded-xl" alt="User" />
+                    <div className="flex-1 min-w-0">
+                        <p className="text-[11px] font-black text-foreground uppercase truncate">{currentUser?.displayName}</p>
+                        <p className="text-[8px] font-bold text-foreground/30 truncate uppercase">{currentUser?.email}</p>
                     </div>
-                    <button 
-                      type="button"
-                      onClick={handleLogout}
-                      className="w-full py-4 bg-danger/10 text-danger rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-danger hover:text-white transition-all cursor-pointer"
-                    >
-                        <LogOut size={16} /> Đăng xuất tài khoản
-                    </button>
+                    <button onClick={handleLogout} className="p-2 text-danger/40 hover:text-danger transition-colors"><LogOut size={16} /></button>
                 </div>
             </div>
 
-            {/* Export Section */}
+            {/* AI Brain Selection */}
             <div className="space-y-4">
-                <h3 className="text-[10px] font-black text-foreground/40 uppercase tracking-[0.3em] ml-2">Dữ liệu tài chính</h3>
-                <button
-                  type="button"
-                  onClick={handleExportCSV}
-                  className="w-full glass-card bg-gradient-to-r from-emerald-500/10 to-secondary/10 p-6 rounded-[2rem] border-0 shadow-inner group flex items-center gap-5 hover:scale-[1.02] active:scale-95 transition-all text-left"
-                >
-                    <div className="w-12 h-12 rounded-2xl bg-secondary text-white flex items-center justify-center shadow-lg neon-glow-secondary">
-                        <FileSpreadsheet size={22} />
-                    </div>
-                    <div>
-                        <p className="text-[11px] font-black text-foreground uppercase tracking-widest leading-none mb-1">{VI.settings.export}</p>
-                        <p className="text-[9px] font-bold text-foreground/30 uppercase tracking-tight">{VI.settings.exportDesc}</p>
-                    </div>
-                    <Download size={16} className="ml-auto text-foreground/20 group-hover:text-secondary transition-colors" />
-                </button>
+                <h3 className="text-[10px] font-black text-foreground/40 uppercase tracking-[0.3em] ml-2">Hệ thống AI (Bộ não)</h3>
+                <div className="grid grid-cols-2 gap-3">
+                    <button 
+                        type="button"
+                        onClick={() => setAiBrain('gemini')}
+                        className={`p-5 rounded-[2.25rem] border transition-all flex flex-col items-center gap-3 relative overflow-hidden ${aiBrain === 'gemini' ? 'bg-primary/10 border-primary shadow-lg' : 'bg-foreground/5 border-foreground/5 opacity-50'}`}
+                    >
+                        <div className={`p-3 rounded-2xl ${aiBrain === 'gemini' ? 'bg-primary text-white neon-glow-primary' : 'bg-foreground/10 text-foreground/20'}`}>
+                            <Sparkles size={24} />
+                        </div>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-center leading-tight">Google Gemini<br/>(Gốc)</span>
+                        {aiBrain === 'gemini' && <div className="absolute top-2 right-2 w-1.5 h-1.5 bg-primary rounded-full animate-pulse"></div>}
+                    </button>
+                    <button 
+                        type="button"
+                        onClick={() => setAiBrain('llama')}
+                        className={`p-5 rounded-[2.25rem] border transition-all flex flex-col items-center gap-3 relative overflow-hidden ${aiBrain === 'llama' ? 'bg-secondary/10 border-secondary shadow-lg' : 'bg-foreground/5 border-foreground/5 opacity-50'}`}
+                    >
+                        <div className={`p-3 rounded-2xl ${aiBrain === 'llama' ? 'bg-secondary text-white neon-glow-secondary' : 'bg-foreground/10 text-foreground/20'}`}>
+                            <Cpu size={24} />
+                        </div>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-center leading-tight">Meta Llama<br/>(Tối ưu)</span>
+                        {aiBrain === 'llama' && <div className="absolute top-2 right-2 w-1.5 h-1.5 bg-secondary rounded-full animate-pulse"></div>}
+                    </button>
+                </div>
+                <p className="text-[8px] font-bold text-foreground/30 uppercase tracking-tight px-2 text-center">Llama dùng Groq API giúp tăng tốc độ & tiết kiệm năng lượng</p>
             </div>
 
+            {/* Persona Customization */}
+            <div className="space-y-6">
+                <h3 className="text-[10px] font-black text-foreground/40 uppercase tracking-[0.3em] ml-2">Nhân vật quản gia</h3>
+                
+                {/* User Title */}
+                <div className="space-y-3">
+                    <p className="text-[9px] font-black text-foreground/30 uppercase tracking-widest ml-2">Danh xưng của Người</p>
+                    <div className="grid grid-cols-2 gap-2">
+                        <button 
+                            type="button"
+                            onClick={() => setUserGender(UserGender.MALE)}
+                            className={`py-3 rounded-xl text-[10px] font-black uppercase border transition-all ${userGender === UserGender.MALE ? 'bg-primary text-white border-transparent' : 'bg-foreground/5 border-foreground/5 text-foreground/40'}`}
+                        >
+                            CẬU CHỦ
+                        </button>
+                        <button 
+                            type="button"
+                            onClick={() => setUserGender(UserGender.FEMALE)}
+                            className={`py-3 rounded-xl text-[10px] font-black uppercase border transition-all ${userGender === UserGender.FEMALE ? 'bg-primary text-white border-transparent' : 'bg-foreground/5 border-foreground/5 text-foreground/40'}`}
+                        >
+                            CÔ CHỦ
+                        </button>
+                    </div>
+                </div>
+
+                {/* Butler Name Customization */}
+                <div className="space-y-4 px-2">
+                    <div className="space-y-2">
+                        <label className="text-[8px] font-black text-foreground/30 tracking-widest uppercase ml-1">Tên quản gia Nam</label>
+                        <input 
+                            type="text"
+                            className="w-full bg-foreground/5 text-foreground p-3 rounded-xl font-bold focus:outline-none uppercase text-[10px]"
+                            value={maleButlerName}
+                            onChange={(e) => setMaleButlerName(e.target.value)}
+                            placeholder="VD: Lord Diamond"
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-[8px] font-black text-foreground/30 tracking-widest uppercase ml-1">Tên quản gia Nữ</label>
+                        <input 
+                            type="text"
+                            className="w-full bg-foreground/5 text-foreground p-3 rounded-xl font-bold focus:outline-none uppercase text-[10px]"
+                            value={femaleButlerName}
+                            onChange={(e) => setFemaleButlerName(e.target.value)}
+                            placeholder="VD: Queen Crown"
+                        />
+                    </div>
+                </div>
+
+                {/* Butler Selection - Luxurious Icons */}
+                <div className="space-y-3">
+                    <p className="text-[9px] font-black text-foreground/30 uppercase tracking-widest px-2">Lựa chọn biểu tượng</p>
+                    <div className="grid grid-cols-2 gap-3">
+                        {[ButlerType.MALE, ButlerType.FEMALE].map((type) => (
+                          <button 
+                              key={type}
+                              type="button"
+                              onClick={() => setButlerPref(type)}
+                              className={`flex flex-col items-center gap-3 p-5 rounded-[2.5rem] border transition-all relative overflow-hidden group ${butlerPref === type ? 'bg-secondary/10 border-secondary' : 'bg-foreground/[0.03] border-foreground/5'}`}
+                          >
+                              <div className={`w-16 h-16 flex items-center justify-center transition-all ${butlerPref === type ? 'animate-float-coin scale-110' : 'opacity-40'}`}>
+                                  <SimpleButlerSVG type={type} />
+                              </div>
+                              <span className={`text-[9px] font-black uppercase tracking-widest ${butlerPref === type ? 'text-secondary' : 'text-foreground/30'}`}>
+                                {type === ButlerType.MALE ? maleButlerName : femaleButlerName}
+                              </span>
+                          </button>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* General Settings Form Area */}
             <form onSubmit={handleSave} id="settings-form" className="space-y-8">
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-foreground/30 ml-2 tracking-widest uppercase">Tên hiển thị nội bộ</label>
-                <div className="flex items-center space-x-4 bg-foreground/5 p-5 rounded-[1.75rem] border border-foreground/5 shadow-inner">
-                    <span className="text-3xl filter drop-shadow-lg">{users[0]?.avatar || '😎'}</span>
+                <div className="flex items-center space-x-4 bg-foreground/5 p-4 rounded-[1.75rem] border border-foreground/5 shadow-inner">
                     <input
                         type="text"
                         className="w-full bg-transparent text-foreground font-black focus:outline-none uppercase text-sm tracking-tight"
@@ -218,10 +343,11 @@ export const SettingsModal: React.FC<Props> = ({ isOpen, onClose, users, wallets
                         <div className="flex items-center gap-4 border-t border-foreground/5 pt-4">
                             <Banknote size={20} className="text-primary opacity-40" />
                             <input
-                                type="number"
+                                type="text"
+                                inputMode="numeric"
                                 className="w-full bg-transparent text-foreground font-[900] text-2xl focus:outline-none tracking-tighter"
                                 value={mainWalletBalance}
-                                onChange={(e) => setMainWalletBalance(e.target.value)}
+                                onChange={handleBalanceChange}
                             />
                         </div>
                       </div>
@@ -239,17 +365,18 @@ export const SettingsModal: React.FC<Props> = ({ isOpen, onClose, users, wallets
               </div>
             </form>
 
-            <div className="pt-10 space-y-4 border-t border-foreground/5">
-                <h3 className="text-[10px] font-black text-danger uppercase tracking-[0.3em] ml-2">Vùng nguy hiểm</h3>
-                <div className="grid grid-cols-1 gap-3 pb-6">
-                    <button type="button" onClick={() => setConfirmType('balance')} className="w-full p-6 bg-amber-500/10 rounded-[2rem] border border-amber-500/20 flex items-center gap-4">
-                        <div className="p-3 bg-amber-500/10 rounded-xl text-amber-500"><Eraser size={20} /></div>
-                        <div><p className="text-[11px] font-black text-amber-600 uppercase tracking-widest">Reset số dư</p></div>
-                    </button>
-                    <button type="button" onClick={() => setConfirmType('full')} className="w-full p-6 bg-danger/10 rounded-[2rem] border border-danger/20 flex items-center gap-4">
-                        <div className="p-3 bg-danger/10 rounded-xl text-danger"><Trash2 size={20} /></div>
-                        <div><p className="text-[11px] font-black text-danger uppercase tracking-widest">Xóa sạch toàn bộ</p></div>
-                    </button>
+            {/* Export and Reset */}
+            <div className="space-y-4 pt-6 border-t border-foreground/5">
+                <h3 className="text-[10px] font-black text-foreground/40 uppercase tracking-[0.3em]">Dữ liệu</h3>
+                <button onClick={handleExportCSV} className="w-full p-5 bg-foreground/5 rounded-2xl flex items-center justify-between group">
+                    <div className="flex items-center gap-3">
+                        <FileSpreadsheet size={18} className="text-secondary" />
+                        <span className="text-[10px] font-black uppercase tracking-widest">Xuất CSV</span>
+                    </div>
+                    <Download size={16} className="text-foreground/20" />
+                </button>
+                <div className="grid grid-cols-1 gap-2">
+                    <button onClick={() => setConfirmType('balance')} className="w-full p-4 bg-danger/5 text-danger rounded-xl text-[9px] font-black uppercase tracking-widest border border-danger/10">Reset số dư</button>
                 </div>
             </div>
           </div>
