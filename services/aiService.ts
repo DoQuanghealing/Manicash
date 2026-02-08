@@ -1,19 +1,19 @@
-import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Transaction, Goal, IncomeProject, FixedCost, FinancialReport, ProsperityPlan, Budget, Wallet } from '../types';
 import { StorageService } from './storageService';
 
 // --- CẤU HÌNH HỆ THỐNG ---
 const SYSTEM_INSTRUCTION_BUTLER = "Bạn là một quản gia tài chính mỉa mai nhưng trung thành. Trả lời bằng tiếng Việt. Quan trọng: Luôn viết hoa chữ cái đầu tiên của câu, còn lại viết thường hoàn toàn. Câu thoại ngắn dưới 20 từ.";
 
-const SYSTEM_INSTRUCTION_CFO = `Bạn là Giám đốc Tài chính (CFO) ảo của Manicash. Nhiệm vụ của bạn là phân tích dữ liệu để tạo báo cáo "Sức khỏe & Thịnh vượng".
+const SYSTEM_INSTRUCTION_CFO = `Bạn là Giám đốc Tài chính (CFO) ảo của Manicash. Phân tích dữ liệu tạo báo cáo "Sức khỏe & Thịnh vượng".
 Xưng hô: gọi người dùng là "Cậu chủ" hoặc "Cô chủ".
 
 QUY TẮC TRÌNH BÀY:
-- Các đoạn văn diễn giải: Viết chữ thường hoàn toàn, chỉ viết hoa chữ cái đầu tiên của mỗi câu.
-- Nhãn quan trọng: Các từ như 'DỰ BÁO', 'CẢNH BÁO', 'BÁO ĐỘNG', 'NGUỒN TỐT NHẤT' phải viết IN HOA toàn bộ.`;
+- Các đoạn văn diễn giải: Viết chữ thường hoàn toàn, chỉ viết hoa chữ cái đầu tiên mỗi câu.
+- Nhãn quan trọng: Các từ 'DỰ BÁO', 'CẢNH BÁO', 'BÁO ĐỘNG', 'NGUỒN TỐT NHẤT' phải viết IN HOA.`;
 
-// API Keys (Ưu tiên dùng biến môi trường VITE_ để Vite nhận diện tốt nhất)
-const GEMINI_API_KEY = process.env.VITE_GEMINI_API_KEY || process.env.API_KEY || "";
+// Truy xuất API Keys an toàn qua Vite define
+const GEMINI_API_KEY = process.env.VITE_GEMINI_API_KEY || "";
 const GROQ_API_KEY = process.env.VITE_GROQ_API_KEY || "";
 
 const GROQ_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
@@ -52,12 +52,25 @@ const callGroq = async (prompt: string, system: string, isPro: boolean = false, 
     }
 };
 
+// Helper để parse JSON an toàn tránh crash app
+const safeJsonParse = (str: string | null) => {
+    if (!str) return null;
+    try {
+        // Loại bỏ Markdown nếu AI lỡ tay thêm vào
+        const cleanJson = str.replace(/```json/g, "").replace(/```/g, "").trim();
+        return JSON.parse(cleanJson);
+    } catch (e) {
+        console.error("Lỗi Parse JSON AI:", e);
+        return null;
+    }
+};
+
 // --- SERVICE EXPORT ---
 
 export const AiService = {
   isAvailable: () => !!GEMINI_API_KEY || !!GROQ_API_KEY,
 
-  // 1. Phản hồi mỉa mai cho từng giao dịch
+  // 1. Phản hồi mỉa mai (Quản gia)
   generateTransactionComment: async (transaction: any): Promise<string> => {
     const brain = StorageService.getAiBrain();
     const prompt = `Mỉa mai cực ngắn việc chi ${transaction.amount} cho ${transaction.category}. 1 câu duy nhất.`;
@@ -78,7 +91,7 @@ export const AiService = {
     } catch (error) { return ""; }
   },
 
-  // 2. Kế hoạch thịnh vượng (JSON Mode)
+  // 2. Kế hoạch thịnh vượng (CFO)
   generateProsperityPlan: async (transactions: Transaction[], fixedCosts: FixedCost[], goals: Goal[]): Promise<ProsperityPlan | null> => {
     const brain = StorageService.getAiBrain();
     const summary = {
@@ -91,7 +104,7 @@ export const AiService = {
 
     if (brain === 'llama') {
       const res = await callGroq(prompt, SYSTEM_INSTRUCTION_CFO, true, true);
-      return res ? JSON.parse(res) : null;
+      return safeJsonParse(res);
     }
 
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
@@ -102,19 +115,14 @@ export const AiService = {
 
     try {
       const result = await model.generateContent(`${SYSTEM_INSTRUCTION_CFO}\n\n${prompt}`);
-      return JSON.parse(result.response.text());
-    } catch (error) { 
-      console.error("Gemini Prosperity Error:", error);
-      return null; 
-    }
+      return safeJsonParse(result.response.text());
+    } catch (error) { return null; }
   },
 
   // 3. Báo cáo CFO toàn diện
   generateComprehensiveReport: async (
     transactions: Transaction[], 
     goals: Goal[], 
-    projects: IncomeProject[], 
-    fixedCosts: FixedCost[],
     budgets: Budget[],
     wallets: Wallet[],
     gender: 'MALE' | 'FEMALE' = 'MALE'
@@ -127,25 +135,22 @@ export const AiService = {
       goals: goals.map(g => ({ name: g.name, tar: g.targetAmount, cur: g.currentAmount }))
     };
 
-    const prompt = `Phân tích dữ liệu cho ${gender === 'FEMALE' ? 'Cô chủ' : 'Cậu chủ'} và trả về JSON FinancialReport hoàn chỉnh. Context: ${JSON.stringify(dataContext)}`;
+    const prompt = `Phân tích dữ liệu cho ${gender === 'FEMALE' ? 'Cô chủ' : 'Cậu chủ'} và trả về JSON FinancialReport. Context: ${JSON.stringify(dataContext)}`;
 
     if (brain === 'llama') {
       const res = await callGroq(prompt, SYSTEM_INSTRUCTION_CFO, true, true);
-      return res ? JSON.parse(res) : null;
+      return safeJsonParse(res);
     }
 
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-pro", // Dùng bản Pro cho phân tích sâu
+      model: "gemini-1.5-pro",
       generationConfig: { responseMimeType: "application/json" }
     });
 
     try {
       const result = await model.generateContent(`${SYSTEM_INSTRUCTION_CFO}\n\n${prompt}`);
-      return JSON.parse(result.response.text());
-    } catch (error) {
-      console.error("CFO Report Error:", error);
-      return null;
-    }
+      return safeJsonParse(result.response.text());
+    } catch (error) { return null; }
   }
 };
