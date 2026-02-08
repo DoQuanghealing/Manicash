@@ -1,0 +1,46 @@
+name: Deploy Manicash Project
+
+on:
+  push:
+    branches:
+      - main  # Đảm bảo đây đúng là tên nhánh chính của bạn
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Lấy mã nguồn từ GitHub
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 2. Thiết lập môi trường Node.js 20
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          # Xóa hoặc comment dòng cache nếu bạn vẫn gặp lỗi 'lock file not found'
+          # cache: 'npm' 
+
+      # 3. Cài đặt thư viện (Sử dụng --legacy-peer-deps nếu có xung đột phiên bản React 19)
+      - name: Install Dependencies
+        run: npm install --legacy-peer-deps
+
+      # 4. Build dự án (Bỏ qua bước Lint để tránh lỗi Exit code 127)
+      - name: Build Project
+        run: npm run build
+        env:
+          VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY }}
+          VITE_GROQ_API_KEY: ${{ secrets.VITE_GROQ_API_KEY }}
+          # Firebase config (nếu bạn dùng trực tiếp trong code)
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+
+      # 5. Triển khai lên Vercel (Hoặc nền tảng bạn đang dùng)
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v20
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prod'
+          working-directory: ./
