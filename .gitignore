@@ -7,10 +7,22 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Thư viện và Build (BẮT BUỘC)
 node_modules
 dist
 dist-ssr
 *.local
+
+# BẢO MẬT: Không bao giờ đẩy file chứa API Key lên GitHub
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Vercel/Netlify (Nếu bạn deploy lên đây)
+.vercel
+.netlify
 
 # Editor directories and files
 .vscode/*
@@ -22,3 +34,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# TypeScript
+*.tsbuildinfo
