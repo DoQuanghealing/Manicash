@@ -1,6 +1,7 @@
 import { initializeApp, getApp, getApps } from "firebase/app";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, User } from "firebase/auth";
 
+// Cấu hình lấy từ biến môi trường của Vite
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -10,13 +11,16 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
-// Khởi tạo Firebase an toàn
+// Khởi tạo Firebase an toàn để tránh lỗi khởi tạo nhiều lần trong môi trường Dev
 let auth: any = null;
-if (firebaseConfig.apiKey && getApps().length === 0) {
-  const app = initializeApp(firebaseConfig);
-  auth = getAuth(app);
-} else if (getApps().length > 0) {
-  auth = getAuth(getApp());
+try {
+  // Chỉ khởi tạo nếu có apiKey để tránh crash app khi chưa nạp Secret
+  if (firebaseConfig.apiKey) {
+    const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+    auth = getAuth(app);
+  }
+} catch (error) {
+  console.error("Firebase Init Error:", error);
 }
 
 const provider = new GoogleAuthProvider();
@@ -26,30 +30,37 @@ export const AuthService = {
   isConfigured: () => !!auth,
 
   loginWithGoogle: async () => {
-    if (!auth) throw new Error("Firebase chưa được cấu hình API Key.");
+    if (!auth) {
+      console.error("Cấu hình Firebase thiếu VITE_FIREBASE_API_KEY");
+      throw new Error("Hệ thống đăng nhập chưa sẵn sàng. Vui lòng thử lại sau.");
+    }
     
-    // Kiểm tra mạng trước khi mở popup để tránh treo
     if (!navigator.onLine) throw new Error("Không có kết nối internet.");
 
+    // Cơ chế chống treo Popup
     const timeout = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error("TIMEOUT")), 20000)
+      setTimeout(() => reject(new Error("TIMEOUT")), 25000) // Tăng lên 25s cho mạng yếu
     );
 
     try {
       const loginPromise = signInWithPopup(auth, provider);
       const result: any = await Promise.race([loginPromise, timeout]);
-      return result.user;
+      return result.user as User;
     } catch (error: any) {
-      if (error.message === "TIMEOUT") throw new Error("Phản hồi quá chậm, vui lòng thử lại.");
-      if (error.code === 'auth/popup-closed-by-user') throw new Error("Bạn đã hủy đăng nhập.");
+      if (error.message === "TIMEOUT") throw new Error("Phản hồi từ Google quá chậm.");
+      if (error.code === 'auth/popup-closed-by-user') throw new Error("Bạn đã đóng cửa sổ đăng nhập.");
+      if (error.code === 'auth/network-request-failed') throw new Error("Lỗi kết nối mạng khi xác thực.");
       throw error;
     }
   },
 
   logout: async () => {
     if (auth) {
-      await signOut(auth);
-      // Thay vì reload trang, hãy để onAuthChange xử lý UI
+      try {
+        await signOut(auth);
+      } catch (error) {
+        console.error("Lỗi đăng xuất:", error);
+      }
     }
   },
 
@@ -58,7 +69,9 @@ export const AuthService = {
       callback(null);
       return () => {};
     }
-    // Trả về hàm unsubscribe để React useEffect dọn dẹp
-    return onAuthStateChanged(auth, callback);
+    // Trả về hàm unsubscribe để dọn dẹp bộ nhớ trong React
+    return onAuthStateChanged(auth, (user) => {
+      callback(user);
+    });
   }
 };
