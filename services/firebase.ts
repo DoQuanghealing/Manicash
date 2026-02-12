@@ -1,77 +1,190 @@
-import { initializeApp, getApp, getApps } from "firebase/app";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, User } from "firebase/auth";
 
-// Cấu hình lấy từ biến môi trường của Vite
+import { initializeApp, getApp, getApps, FirebaseApp } from "firebase/app";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, Auth } from "firebase/auth";
+import { getFirestore, Firestore, doc, setDoc, getDoc, collection, addDoc, onSnapshot } from "firebase/firestore";
+
+// Lưu ý: Key này sẽ được thay thế bởi môi trường thực tế hoặc người dùng cấu hình
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
+  apiKey: "YOUR_FIREBASE_API_KEY",
+  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
 };
 
-// Khởi tạo Firebase an toàn để tránh lỗi khởi tạo nhiều lần trong môi trường Dev
-let auth: any = null;
-try {
-  // Chỉ khởi tạo nếu có apiKey để tránh crash app khi chưa nạp Secret
-  if (firebaseConfig.apiKey) {
-    const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-    auth = getAuth(app);
+let app: FirebaseApp | null = null;
+let auth: Auth | null = null;
+let db: Firestore | null = null;
+let isConfigured = false;
+
+const initFirebase = () => {
+  try {
+    if (getApps().length > 0) {
+      app = getApp();
+      auth = getAuth(app);
+      db = getFirestore(app);
+      isConfigured = true;
+      return true;
+    }
+
+    if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "YOUR_FIREBASE_API_KEY") {
+      app = initializeApp(firebaseConfig);
+      auth = getAuth(app);
+      db = getFirestore(app);
+      isConfigured = true;
+      return true;
+    }
+  } catch (error) {
+    console.warn("[Firebase Init] Chế độ Offline/Demo được kích hoạt do thiếu cấu hình.");
   }
-} catch (error) {
-  console.error("Firebase Init Error:", error);
-}
+  return false;
+};
+
+// Khởi tạo ngay lập tức
+initFirebase();
 
 const provider = new GoogleAuthProvider();
 provider.setCustomParameters({ prompt: 'select_account' });
 
+let authChangeCallback: ((user: any) => void) | null = null;
+
 export const AuthService = {
-  isConfigured: () => !!auth,
+  isConfigured: () => isConfigured,
+  
+  getDb: () => {
+    if (!isConfigured) return null;
+    if (!db) initFirebase();
+    return db;
+  },
+
+  getAuth: () => {
+    if (!isConfigured) return null;
+    if (!auth) initFirebase();
+    return auth;
+  },
+
+  checkPreConditions: () => {
+    if (!isConfigured) throw new Error("Firebase chưa được cấu hình.");
+    if (!navigator.onLine) {
+      throw new Error("NETWORK_ERROR: Không có kết nối mạng.");
+    }
+    return true;
+  },
 
   loginWithGoogle: async () => {
-    if (!auth) {
-      console.error("Cấu hình Firebase thiếu VITE_FIREBASE_API_KEY");
-      throw new Error("Hệ thống đăng nhập chưa sẵn sàng. Vui lòng thử lại sau.");
+    const currentAuth = AuthService.getAuth();
+    if (!currentAuth) {
+      throw new Error("CONFIGURATION_ERROR: Firebase chưa được cấu hình. Vui lòng kiểm tra API Key.");
     }
-    
-    if (!navigator.onLine) throw new Error("Không có kết nối internet.");
+    AuthService.checkPreConditions();
+    const result: any = await signInWithPopup(currentAuth, provider);
+    return result.user;
+  },
 
-    // Cơ chế chống treo Popup
-    const timeout = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error("TIMEOUT")), 25000) // Tăng lên 25s cho mạng yếu
-    );
-
-    try {
-      const loginPromise = signInWithPopup(auth, provider);
-      const result: any = await Promise.race([loginPromise, timeout]);
-      return result.user as User;
-    } catch (error: any) {
-      if (error.message === "TIMEOUT") throw new Error("Phản hồi từ Google quá chậm.");
-      if (error.code === 'auth/popup-closed-by-user') throw new Error("Bạn đã đóng cửa sổ đăng nhập.");
-      if (error.code === 'auth/network-request-failed') throw new Error("Lỗi kết nối mạng khi xác thực.");
-      throw error;
+  loginGuest: async () => {
+    const guestUser = {
+      uid: "guest_user_demo",
+      email: "demo@manicash.io",
+      displayName: "Người dùng Trải nghiệm",
+      photoURL: "https://api.dicebear.com/7.x/avataaars/svg?seed=Demo"
+    };
+    if (authChangeCallback) {
+      authChangeCallback(guestUser);
     }
+    return guestUser;
   },
 
   logout: async () => {
-    if (auth) {
-      try {
-        await signOut(auth);
-      } catch (error) {
-        console.error("Lỗi đăng xuất:", error);
+    const currentAuth = AuthService.getAuth();
+    if (currentAuth) await signOut(currentAuth);
+    if (authChangeCallback) authChangeCallback(null);
+    window.location.reload();
+  },
+
+  onAuthChange: (callback: (user: any) => void) => {
+    authChangeCallback = callback;
+    const currentAuth = AuthService.getAuth();
+    
+    if (!currentAuth) {
+      const timer = setTimeout(() => {
+        if (authChangeCallback) callback(null);
+      }, 500); 
+      return () => { 
+        clearTimeout(timer);
+        authChangeCallback = null; 
+      };
+    }
+
+    return onAuthStateChanged(currentAuth, (user) => {
+      callback(user);
+    });
+  },
+
+  // Hệ thống kiểm tra phiên bản
+  checkAppVersion: async (): Promise<string | null> => {
+    const database = AuthService.getDb();
+    if (!database) return null;
+    try {
+      const docRef = doc(database, "system_settings", "app_info");
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        return docSnap.data().latest_version || null;
       }
+    } catch (e) {
+      console.error("Lỗi kiểm tra phiên bản:", e);
+    }
+    return null;
+  },
+
+  logFeatureRequest: async (featureId: string, userEmail: string) => {
+    const database = AuthService.getDb();
+    if (!database) return false;
+    try {
+      await addDoc(collection(database, "feature_requests"), {
+        featureId,
+        userEmail,
+        timestamp: new Date().toISOString()
+      });
+      return true;
+    } catch (e) {
+      console.error("Error logging feature request:", e);
+      return false;
     }
   },
 
-  onAuthChange: (callback: (user: User | null) => void) => {
-    if (!auth) {
-      callback(null);
-      return () => {};
+  logFutureLead: async (tag: string, userEmail: string, userId: string) => {
+    const database = AuthService.getDb();
+    if (!database) return false;
+    try {
+      await addDoc(collection(database, "future_leads"), {
+        topic: tag,
+        email: userEmail,
+        userId: userId,
+        timestamp: new Date().toISOString()
+      });
+      return true;
+    } catch (e) {
+      console.error("Error logging future lead:", e);
+      return false;
     }
-    // Trả về hàm unsubscribe để dọn dẹp bộ nhớ trong React
-    return onAuthStateChanged(auth, (user) => {
-      callback(user);
-    });
+  },
+
+  logBehavior: async (action: string, details: any, userEmail: string, userId: string) => {
+    const database = AuthService.getDb();
+    if (!database) return false;
+    try {
+      await addDoc(collection(database, "behavior_logs"), {
+        action,
+        details,
+        email: userEmail,
+        userId: userId,
+        timestamp: new Date().toISOString()
+      });
+      return true;
+    } catch (e) {
+      console.error("Error logging behavior:", e);
+      return false;
+    }
   }
 };

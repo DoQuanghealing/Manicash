@@ -1,35 +1,44 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+
+import { GoogleGenAI, Type } from "@google/genai";
 import { Transaction, Goal, IncomeProject, FixedCost, FinancialReport, ProsperityPlan, Budget, Wallet } from '../types';
 import { StorageService } from './storageService';
 
-// --- CẤU HÌNH HỆ THỐNG ---
 const SYSTEM_INSTRUCTION_BUTLER = "Bạn là một quản gia tài chính mỉa mai nhưng trung thành. Trả lời bằng tiếng Việt. Quan trọng: Luôn viết hoa chữ cái đầu tiên của câu, còn lại viết thường hoàn toàn. Câu thoại ngắn dưới 20 từ.";
 
-const SYSTEM_INSTRUCTION_CFO = `Bạn là Giám đốc Tài chính (CFO) ảo của Manicash. Phân tích dữ liệu tạo báo cáo "Sức khỏe & Thịnh vượng".
-Xưng hô: gọi người dùng là "Cậu chủ" hoặc "Cô chủ".
+// Define the missing instruction for reflection prompts
+const SYSTEM_INSTRUCTION_REFLECTION = "Bạn là một quản gia tài chính xéo xắt và mỉa mai. Khi thấy chủ nhân tiêu tiền, hãy đưa ra một lời nhận xét cay nghiệt để họ phải suy nghĩ lại về thói quen chi tiêu của mình. Trả lời bằng tiếng Việt, ngắn gọn, súc tích.";
+
+const SYSTEM_INSTRUCTION_CFO = `Bạn là Giám đốc Tài chính (CFO) ảo của Manicash, tên là Lord Diamond. Nhiệm vụ của bạn là phân tích dữ liệu để tạo báo cáo "LỘ TRÌNH THỊNH VƯỢNG".
+Xưng hô: "Quản gia Lord Diamond" gọi người dùng là "Cậu chủ" hoặc "Cô chủ". 
 
 QUY TẮC TRÌNH BÀY:
-- Các đoạn văn diễn giải: Viết chữ thường hoàn toàn, chỉ viết hoa chữ cái đầu tiên mỗi câu.
-- Nhãn quan trọng: Các từ 'DỰ BÁO', 'CẢNH BÁO', 'BÁO ĐỘNG', 'NGUỒN TỐT NHẤT' phải viết IN HOA.`;
+- Văn phong: Mỉa mai, xéo xắt, hài hước nhưng cực kỳ thực tế về tiền bạc.
+- Cấu trúc "Nhiệm vụ": Các chiến lược phải được trình bày dưới dạng nhiệm vụ cụ thể (Nhiệm vụ 1, Nhiệm vụ 2...).
+- Các đoạn văn diễn giải: Viết chữ thường hoàn toàn, chỉ viết hoa chữ cái đầu tiên của mỗi câu.
+- Nhãn quan trọng: Các từ như 'DỰ BÁO', 'CẢNH BÁO', 'BÁO ĐỘNG', 'NHIỆM VỤ' phải viết IN HOA toàn bộ.
 
-// Truy xuất API Keys an toàn qua Vite define
-const GEMINI_API_KEY = process.env.VITE_GEMINI_API_KEY || "";
-const GROQ_API_KEY = process.env.VITE_GROQ_API_KEY || "";
+CÁCH ĐÁNH GIÁ:
+1. Chỉ số Hiệu suất Thu nhập: So sánh tiến độ dự án (milestones) với thực tế tiền vào.
+2. Chỉ số Kỷ luật Chi tiêu: Phân tích độ lệch giữa Budget và Spending. Phát hiện "chi tiêu rác".
+3. Đo lường Sức mạnh Tích lũy: Tính tỷ lệ dòng tiền vào Goals và Quỹ dự phòng.`;
 
 const GROQ_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
 const GROQ_MODEL_FAST = "llama-3.1-8b-instant";
 const GROQ_MODEL_PRO = "llama-3.3-70b-versatile";
 
-// --- HELPER FUNCTIONS ---
+const cleanJsonResponse = (text: string) => {
+    return text.replace(/```json/g, "").replace(/```/g, "").trim();
+};
 
 const callGroq = async (prompt: string, system: string, isPro: boolean = false, jsonMode: boolean = false) => {
-    if (!GROQ_API_KEY) return null;
+    const apiKey = (import.meta as any).env?.VITE_GROQ_API_KEY;
+    if (!apiKey) return null;
 
     try {
         const response = await fetch(GROQ_ENDPOINT, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${GROQ_API_KEY}`,
+                'Authorization': `Bearer ${apiKey}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
@@ -39,118 +48,289 @@ const callGroq = async (prompt: string, system: string, isPro: boolean = false, 
                     { role: "user", content: prompt }
                 ],
                 response_format: jsonMode ? { type: "json_object" } : undefined,
-                temperature: 0.6,
-                max_tokens: 2048
+                temperature: 0.8,
+                max_tokens: 1024
             })
         });
 
+        if (!response.ok) return null;
         const data = await response.json();
         return data.choices?.[0]?.message?.content || null;
     } catch (error) {
-        console.error("Groq AI Error:", error);
         return null;
     }
 };
-
-// Helper để parse JSON an toàn tránh crash app
-const safeJsonParse = (str: string | null) => {
-    if (!str) return null;
-    try {
-        // Loại bỏ Markdown nếu AI lỡ tay thêm vào
-        const cleanJson = str.replace(/```json/g, "").replace(/```/g, "").trim();
-        return JSON.parse(cleanJson);
-    } catch (e) {
-        console.error("Lỗi Parse JSON AI:", e);
-        return null;
-    }
-};
-
-// --- SERVICE EXPORT ---
 
 export const AiService = {
-  isAvailable: () => !!GEMINI_API_KEY || !!GROQ_API_KEY,
+  isAvailable: () => !!process.env.API_KEY || !!(import.meta as any).env?.VITE_GROQ_API_KEY,
 
-  // 1. Phản hồi mỉa mai (Quản gia)
   generateTransactionComment: async (transaction: any): Promise<string> => {
     const brain = StorageService.getAiBrain();
-    const prompt = `Mỉa mai cực ngắn việc chi ${transaction.amount} cho ${transaction.category}. 1 câu duy nhất.`;
+    const prompt = `Người dùng vừa chi ${transaction.amount} cho ${transaction.category}. Hãy đưa ra một lời mỉa mai ngắn gọn.`;
 
     if (brain === 'llama') {
-      return (await callGroq(prompt, SYSTEM_INSTRUCTION_BUTLER)) || "";
+        const res = await callGroq(prompt, SYSTEM_INSTRUCTION_BUTLER);
+        return res || "Lại tiêu tiền nữa rồi ạ?";
     }
 
-    const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ 
-      model: "gemini-1.5-flash",
-      systemInstruction: SYSTEM_INSTRUCTION_BUTLER 
-    });
-
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     try {
-      const result = await model.generateContent(prompt);
-      return result.response.text();
-    } catch (error) { return ""; }
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: prompt,
+        config: { 
+          systemInstruction: SYSTEM_INSTRUCTION_BUTLER,
+          thinkingConfig: { thinkingBudget: 0 },
+          maxOutputTokens: 100
+        }
+      });
+      return response.text || "Tiêu tiền giỏi thật đấy ạ.";
+    } catch (error) { return "Lại tiêu tiền à?"; }
   },
 
-  // 2. Kế hoạch thịnh vượng (CFO)
-  generateProsperityPlan: async (transactions: Transaction[], fixedCosts: FixedCost[], goals: Goal[]): Promise<ProsperityPlan | null> => {
+  generateReflectionPrompt: async (category: string, amount: number): Promise<string> => {
+    const brain = StorageService.getAiBrain();
+    const prompt = `Chi ${amount} VND cho mục ${category}. Mỉa mai tôi đi.`;
+
+    if (brain === 'llama') {
+        const res = await callGroq(prompt, SYSTEM_INSTRUCTION_REFLECTION);
+        return res || "Cậu chủ tiêu tiền như thể lá mít ngoài vườn vậy.";
+    }
+
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    try {
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: prompt,
+        config: { 
+          systemInstruction: SYSTEM_INSTRUCTION_REFLECTION,
+          thinkingConfig: { thinkingBudget: 0 },
+          maxOutputTokens: 100
+        }
+      });
+      return response.text || "Ví tiền của người đang khóc lóc thảm thiết đấy ạ.";
+    } catch (error) { 
+        return "Tiêu tiền thế này thì bao giờ mới giàu được ạ?"; 
+    }
+  },
+
+  generateProsperityPlan: async (transactions: Transaction[], fixedCosts: FixedCost[], projects: IncomeProject[], goals: Goal[]): Promise<ProsperityPlan | null> => {
     const brain = StorageService.getAiBrain();
     const summary = {
-      transactions: transactions.slice(-15).map(t => ({ cat: t.category, val: t.amount })),
+      transactions: transactions.slice(-30).map(t => ({ cat: t.category, val: t.amount, desc: t.description })),
       fixedCosts: fixedCosts.map(c => ({ title: c.title, val: c.amount })),
       goals: goals.map(g => ({ name: g.name, target: g.targetAmount, current: g.currentAmount }))
     };
 
-    const prompt = `Dữ liệu tài chính: ${JSON.stringify(summary)}. Hãy phân tích và trả về JSON ProsperityPlan: statusTitle, statusEmoji, healthScore, summary, savingsStrategies, incomeStrategies, badHabitToQuit.`;
-
+    const prompt = `Dựa trên dữ liệu tài chính của chủ nhân: ${JSON.stringify(summary)}. 
+    Hãy đóng vai Quản gia Lord Diamond mỉa mai xéo xắt nhưng cực kỳ giỏi phân tích dòng tiền để đưa ra "LỘ TRÌNH THỊNH VƯỢNG".
+    Bạn PHẢI trả về JSON theo cấu trúc sau:
+    {
+      "statusTitle": "ĐẠI PHÚ HÀO TIỀM NĂNG",
+      "statusEmoji": string,
+      "healthScore": number,
+      "summary": "Lời nhận xét tổng thể về dòng tiền của Cậu chủ/Cô chủ (xéo xắt nhưng thực tế).",
+      "savingsStrategies": [
+        { "title": "NHIỆM VỤ 1: [Tên nhiệm vụ cắt giảm]", "desc": "[Mô tả cụ thể hành động cần làm ngay hôm nay]" },
+        { "title": "NHIỆM VỤ 2: [Tên nhiệm vụ tối ưu]", "desc": "[Mô tả cụ thể hành động cần làm]" }
+      ],
+      "incomeStrategies": [
+        { "title": "GỢI Ý 1: [Tên gợi ý dấn thân tăng thu]", "desc": "[Mô tả hành động cụ thể]" },
+        { "title": "GỢI Ý 2: [Tên gợi ý kinh doanh]", "desc": "[Mô tả hành động cụ thể]" }
+      ],
+      "badHabitToQuit": { "habit": string, "why": string }
+    }`;
+    
     if (brain === 'llama') {
-      const res = await callGroq(prompt, SYSTEM_INSTRUCTION_CFO, true, true);
-      return safeJsonParse(res);
+        const res = await callGroq(prompt, SYSTEM_INSTRUCTION_CFO, true, true);
+        try {
+            return res ? JSON.parse(cleanJsonResponse(res)) : null;
+        } catch (e) {
+            return null;
+        }
     }
 
-    const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
-      generationConfig: { responseMimeType: "application/json" }
-    });
-
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     try {
-      const result = await model.generateContent(`${SYSTEM_INSTRUCTION_CFO}\n\n${prompt}`);
-      return safeJsonParse(result.response.text());
-    } catch (error) { return null; }
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: prompt,
+        config: {
+          systemInstruction: SYSTEM_INSTRUCTION_CFO,
+          thinkingConfig: { thinkingBudget: 0 },
+          maxOutputTokens: 1000,
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              statusTitle: { type: Type.STRING },
+              statusEmoji: { type: Type.STRING },
+              healthScore: { type: Type.NUMBER },
+              summary: { type: Type.STRING },
+              savingsStrategies: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: { title: { type: Type.STRING }, desc: { type: Type.STRING } }
+                }
+              },
+              incomeStrategies: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: { title: { type: Type.STRING }, desc: { type: Type.STRING } }
+                }
+              },
+              badHabitToQuit: {
+                type: Type.OBJECT,
+                properties: { habit: { type: Type.STRING }, why: { type: Type.STRING } }
+              }
+            },
+            required: ["statusTitle", "statusEmoji", "healthScore", "summary", "savingsStrategies", "incomeStrategies", "badHabitToQuit"]
+          }
+        }
+      });
+      return JSON.parse(response.text || "{}");
+    } catch (error) { 
+      return null; 
+    }
   },
 
-  // 3. Báo cáo CFO toàn diện
   generateComprehensiveReport: async (
     transactions: Transaction[], 
     goals: Goal[], 
+    projects: IncomeProject[], 
+    fixedCosts: FixedCost[],
     budgets: Budget[],
     wallets: Wallet[],
     gender: 'MALE' | 'FEMALE' = 'MALE'
   ): Promise<FinancialReport | null> => {
     const brain = StorageService.getAiBrain();
+    const today = new Date();
     const dataContext = {
+      today: today.toISOString(),
+      dayOfMonth: today.getDate(),
       wallets: wallets.map(w => ({ name: w.name, bal: w.balance })),
-      transactions: transactions.slice(-30).map(t => ({ cat: t.category, amt: t.amount })),
+      transactions: transactions.slice(-50).map(t => ({ type: t.type, cat: t.category, amt: t.amount, desc: t.description })),
       budgets: budgets.map(b => ({ cat: b.category, lim: b.limit, spent: b.spent })),
-      goals: goals.map(g => ({ name: g.name, tar: g.targetAmount, cur: g.currentAmount }))
+      goals: goals.map(g => ({ name: g.name, tar: g.targetAmount, cur: g.currentAmount, dl: g.deadline })),
+      projects: projects.map(p => ({ name: p.name, inc: p.expectedIncome, miles: p.milestones.length, done: p.milestones.filter(m => m.isCompleted).length })),
+      fixedCosts: fixedCosts.map(c => ({ title: c.title, amt: c.amount }))
     };
 
-    const prompt = `Phân tích dữ liệu cho ${gender === 'FEMALE' ? 'Cô chủ' : 'Cậu chủ'} và trả về JSON FinancialReport. Context: ${JSON.stringify(dataContext)}`;
-
+    const prompt = `Phân tích dữ liệu tài chính của ${gender === 'FEMALE' ? 'Cô chủ' : 'Cậu chủ'} và tạo báo cáo CFO dưới dạng JSON. Dữ liệu: ${JSON.stringify(dataContext)}`;
+    
     if (brain === 'llama') {
-      const res = await callGroq(prompt, SYSTEM_INSTRUCTION_CFO, true, true);
-      return safeJsonParse(res);
+        const res = await callGroq(prompt, SYSTEM_INSTRUCTION_CFO, true, true);
+        try {
+            return res ? JSON.parse(cleanJsonResponse(res)) : null;
+        } catch (e) {
+            return null;
+        }
     }
 
-    const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-pro",
-      generationConfig: { responseMimeType: "application/json" }
-    });
-
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     try {
-      const result = await model.generateContent(`${SYSTEM_INSTRUCTION_CFO}\n\n${prompt}`);
-      return safeJsonParse(result.response.text());
-    } catch (error) { return null; }
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-pro-preview',
+        contents: prompt,
+        config: {
+          systemInstruction: SYSTEM_INSTRUCTION_CFO,
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              healthScore: { type: Type.NUMBER },
+              healthAnalysis: { type: Type.STRING },
+              incomeEfficiency: {
+                type: Type.OBJECT,
+                properties: {
+                  score: { type: Type.NUMBER },
+                  bestSource: { type: Type.STRING },
+                  forecast: { type: Type.STRING },
+                  analysis: { type: Type.STRING }
+                },
+                required: ["score", "bestSource", "forecast", "analysis"]
+              },
+              budgetDiscipline: {
+                type: Type.OBJECT,
+                properties: {
+                  status: { type: Type.STRING },
+                  trashSpending: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  varianceAnalysis: { type: Type.STRING },
+                  warningMessage: { type: Type.STRING }
+                },
+                required: ["status", "trashSpending", "varianceAnalysis"]
+              },
+              wealthVelocity: {
+                type: Type.OBJECT,
+                properties: {
+                  status: { type: Type.STRING },
+                  goalForecasts: {
+                    type: Type.ARRAY,
+                    items: {
+                      type: Type.OBJECT,
+                      properties: { name: { type: Type.STRING }, estimatedDate: { type: Type.STRING } }
+                    }
+                  },
+                  cutSuggestions: { type: Type.ARRAY, items: { type: Type.STRING } }
+                },
+                required: ["status", "goalForecasts", "cutSuggestions"]
+              },
+              cfoAdvice: { type: Type.STRING }
+            },
+            required: ["healthScore", "healthAnalysis", "incomeEfficiency", "budgetDiscipline", "wealthVelocity", "cfoAdvice"]
+          }
+        }
+      });
+      return JSON.parse(response.text || "{}");
+    } catch (error) {
+      return null;
+    }
+  },
+
+  generateIncomePlan: async (idea: string): Promise<any> => {
+    const brain = StorageService.getAiBrain();
+    const prompt = `Lập kế hoạch thực thi cho ý tưởng kiếm tiền: "${idea}". Trả về JSON: { "name": string, "description": string, "expectedIncome": number, "milestones": [{ "title": string, "daysFromNow": number }] }`;
+    
+    if (brain === 'llama') {
+        const res = await callGroq(prompt, SYSTEM_INSTRUCTION_BUTLER, true, true);
+        try {
+            return res ? JSON.parse(cleanJsonResponse(res)) : null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    try {
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-pro-preview',
+        contents: prompt,
+        config: {
+          systemInstruction: SYSTEM_INSTRUCTION_BUTLER,
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              name: { type: Type.STRING },
+              description: { type: Type.STRING },
+              expectedIncome: { type: Type.NUMBER },
+              milestones: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: { title: { type: Type.STRING }, daysFromNow: { type: Type.NUMBER } }
+                }
+              }
+            },
+            required: ["name", "description", "expectedIncome", "milestones"]
+          }
+        }
+      });
+      return JSON.parse(response.text || "{}");
+    } catch (error) { 
+      return null; 
+    }
   }
 };

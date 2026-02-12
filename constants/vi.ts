@@ -6,6 +6,25 @@ export const VI = {
     goals: "Mục tiêu",
     insights: "Thu nhập",
   },
+  version: {
+    checkBtn: "Kiểm tra phiên bản",
+    checking: "Đang kiểm tra...",
+    upToDate: "Bản mới nhất",
+    outdated: "Cần cập nhật",
+    newVersionFound: "Đã có phiên bản mới. Vui lòng tải lại ứng dụng để cập nhật.",
+    quotes: [
+      "Chúc mừng! Bạn đang dùng bản mới nhất, hãy tận hưởng hành trình tăng trưởng này.",
+      "Phiên bản hoàn hảo cho một triệu phú tương lai. Bạn đang đi đúng hướng!",
+      "Hệ thống đã cập nhật tư duy thịnh vượng mới nhất. Chúc Cậu chủ gặt hái nhiều thành công.",
+      "Mọi thứ đã sẵn sàng cho những con số nhảy vọt. Bạn đang sở hữu phiên bản tối ưu nhất.",
+      "Dòng tiền luôn chảy về nơi có sự chuẩn bị tốt nhất. Manicash đã sẵn sàng phục vụ.",
+      "An toàn, bảo mật và thông minh. Phiên bản hiện tại là người bạn đồng hành tin cậy.",
+      "Sức mạnh của kỷ luật nằm trong tay bạn. Bản cập nhật mới nhất đã được áp dụng.",
+      "Không có gì ngăn cản được sự thịnh vượng khi bạn sở hữu công cụ tốt nhất hiện nay.",
+      "Chào mừng đến với kỷ nguyên tài chính mới. Bạn đang sử dụng công nghệ tiên tiến nhất.",
+      "Tài sản của bạn đang được bảo vệ bởi phiên bản Manicash mới nhất. Hãy yên tâm đầu tư."
+    ]
+  },
   butler: {
     maleName: "Lord Diamond",
     femaleName: "Queen Crown",
@@ -239,7 +258,7 @@ export const VI = {
         "Bạn thật hào phóng với bản thân! 💖 Nhưng hãy kiểm soát chi tiêu hợp lý để sớm đạt mục tiêu lớn nhé. 🎯",
         "Yêu thương bản thân là khoản đầu tư tốt nhất! ✨ Đừng quên giữ vững kỷ luật cho những kế hoạch lớn hơn. 🚀",
         "Tận hưởng niềm vui hiện tại là điều xứng đáng! 🌈 Hãy cân đối thông minh để ví tiền luôn ổn định nhé. 💰",
-        "Phần thưởng này là dành cho nỗ lực của bạn! 🏆 Hãy tiếp tục duy trì thói quen tốt để bứt phá tài chính. 🌠",
+        "Phần thưởng này là dành cho nụ lực của bạn! 🏆 Hãy tiếp tục duy trì thói quen tốt để bứt phá tài chính. 🌠",
         "Sống trọn khoảnh khắc thật tuyệt vời! 🌟 Kiểm soát dòng tiền chặt chẽ sẽ giúp bạn tiến xa và bền vững hơn. 🛤️"
       ]
     },

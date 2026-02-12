@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { AuthService } from '../services/firebase';
-import { Sparkles, ShieldCheck, AlertTriangle, X } from 'lucide-react';
+import { Sparkles, ShieldCheck, AlertTriangle, X, Zap } from 'lucide-react';
 import { BrandLogo } from './BrandLogo';
 
 export const Login: React.FC = () => {
@@ -9,39 +9,40 @@ export const Login: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const handleLogin = async () => {
-    console.log("[UI] User clicked Google Login");
     setError(null);
     setIsLoading(true);
-    
     try {
       await AuthService.loginWithGoogle();
-      console.log("[UI] Login successful");
     } catch (err: any) {
-      console.error("[UI] Login failed:", err.message);
       setError(err.message || "Đã xảy ra lỗi không xác định.");
-      
-      if (err.message.includes("CONFIGURATION_ERROR")) {
-        console.info("[UI] Missing configuration");
-      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  return (
-    <div className="fixed inset-0 flex items-center justify-center p-6 bg-background overflow-hidden">
-      {/* Background Blobs */}
-      <div className="ai-bg-blob bg-primary top-[-100px] right-[-100px] opacity-20"></div>
-      <div className="ai-bg-blob bg-secondary bottom-[-100px] left-[-100px] opacity-20"></div>
+  const handleGuestLogin = async () => {
+    setIsLoading(true);
+    // Giả lập độ trễ nạp dữ liệu
+    setTimeout(async () => {
+      await AuthService.loginGuest();
+      setIsLoading(false);
+    }, 800);
+  };
 
-      <div className="w-full max-w-sm glass-card liquid-glass rounded-[3.5rem] p-10 text-center relative z-10 border-0 shadow-2xl space-y-12 animate-in fade-in zoom-in duration-700">
+  return (
+    <div className="fixed inset-0 flex items-center justify-center p-6 bg-background overflow-hidden font-sans">
+      {/* Background Blobs - Cải thiện thẩm mỹ nền */}
+      <div className="ai-bg-blob bg-primary top-[-100px] right-[-100px] opacity-10"></div>
+      <div className="ai-bg-blob bg-secondary bottom-[-100px] left-[-100px] opacity-10"></div>
+
+      <div className="w-full max-w-sm glass-card liquid-glass rounded-[3.5rem] p-10 text-center relative z-10 border-0 shadow-2xl space-y-10 animate-in fade-in zoom-in duration-700 tracking-[0.02em]">
         
         {/* Error Toast */}
         {error && (
           <div className="absolute top-4 left-4 right-4 animate-in slide-in-from-top duration-300 z-50">
              <div className="bg-danger/90 backdrop-blur-md text-white p-4 rounded-2xl shadow-xl flex items-center gap-3">
                 <AlertTriangle size={20} className="shrink-0" />
-                <p className="text-[10px] font-black uppercase tracking-tight text-left flex-1 leading-tight">{error}</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.02em] text-left flex-1 leading-tight">{error}</p>
                 <button onClick={() => setError(null)} className="p-1 hover:bg-white/20 rounded-lg transition-all">
                   <X size={16} />
                 </button>
@@ -49,26 +50,28 @@ export const Login: React.FC = () => {
           </div>
         )}
 
-        <div className="space-y-4">
-          <div className="w-24 h-24 bg-gradient-to-tr from-yellow-400 to-amber-600 rounded-[2.5rem] flex items-center justify-center mx-auto shadow-2xl neon-glow-gold animate-bounce">
-            <BrandLogo size={64} color="white" />
+        {/* Logo & Header Section - Tăng kích thước logo 15% (w-24 -> w-28) */}
+        <div className="space-y-6 pt-2">
+          <div className="w-28 h-28 bg-gradient-to-tr from-yellow-400 to-amber-600 rounded-[2.5rem] flex items-center justify-center mx-auto shadow-xl animate-bounce">
+            <BrandLogo size={74} color="white" />
           </div>
-          <div className="space-y-1">
-            <h1 className="text-4xl font-[1000] text-foreground tracking-tighter uppercase leading-none">Manicash</h1>
-            <p className="text-[11px] font-[800] text-foreground/50 uppercase tracking-tight">Quản trị tài chính thông minh</p>
+          <div className="space-y-2">
+            <h1 className="text-4xl font-black text-foreground tracking-tighter uppercase leading-none">Manicash</h1>
+            <p className="text-[11px] font-extrabold text-foreground/50 uppercase tracking-[0.1em]">Quản trị tài chính thông minh</p>
           </div>
         </div>
 
+        {/* Buttons Section - Đồng nhất kiểu chữ và hiệu ứng đơn giản */}
         <div className="space-y-4">
           <button
             onClick={handleLogin}
             disabled={isLoading}
-            className="w-full bg-white text-black font-[1000] py-6 rounded-[2rem] shadow-2xl active:scale-95 transition-all flex items-center justify-center gap-4 text-[12px] uppercase tracking-[0.2em] relative overflow-hidden group border-0 disabled:opacity-70"
+            className="w-full bg-white text-black font-black py-6 rounded-[2rem] shadow-lg active:scale-95 transition-all flex items-center justify-center gap-4 text-[12px] uppercase tracking-[0.02em] relative overflow-hidden hover:brightness-110 border-0 disabled:opacity-70"
           >
             {isLoading ? (
               <div className="flex items-center gap-3">
                 <div className="w-5 h-5 border-3 border-black/10 border-t-black rounded-full animate-spin"></div>
-                <span className="text-[10px]">Đang xác thực...</span>
+                <span className="text-[10px]">Đang xử lý...</span>
               </div>
             ) : (
               <>
@@ -76,32 +79,34 @@ export const Login: React.FC = () => {
                 Kết nối với Google
               </>
             )}
-            <div className="absolute inset-0 bg-gold/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
           </button>
           
-          <div 
-            className="flex items-center justify-center text-[10px] font-black text-primary uppercase tracking-[0.3em] pt-2 animate-pulse cursor-pointer hover:text-primary/80 transition-colors"
-            onClick={handleLogin}
+          <button
+            onClick={handleGuestLogin}
+            disabled={isLoading}
+            className="w-full bg-primary/10 text-primary font-black py-5 rounded-[1.75rem] active:scale-95 transition-all flex items-center justify-center gap-2 text-[11px] uppercase tracking-[0.02em] border-2 border-primary/20 hover:bg-primary/20 disabled:opacity-50"
           >
-            Đăng nhập ngay
-          </div>
+            <Zap size={16} className="fill-current" /> Trải nghiệm Demo
+          </button>
         </div>
 
-        <div className="glass-card bg-foreground/[0.03] p-6 rounded-[2.5rem] border-0 text-left">
-           <div className="flex items-center gap-3 text-amber-500 mb-4">
-              <ShieldCheck size={18} />
-              <span className="text-[11px] font-black uppercase tracking-widest">4 nguyên lý tài chính</span>
+        {/* Principles Section - Tối ưu khoảng cách dòng (leading-relaxed ~ 1.6) */}
+        <div className="glass-card bg-foreground/[0.03] p-7 rounded-[2.5rem] border-0 text-left shadow-inner">
+           <div className="flex items-center gap-3 text-amber-500 mb-5">
+              <ShieldCheck size={20} />
+              <span className="text-[12px] font-black uppercase tracking-widest">4 nguyên lý tài chính</span>
            </div>
-           <ul className="text-[10px] font-bold text-foreground/50 leading-relaxed uppercase tracking-tight space-y-2">
-              <li className="flex gap-2"><span>1.</span> <span>Biết được mình dùng tiền thế nào</span></li>
-              <li className="flex gap-2"><span>2.</span> <span>Tối ưu thu nhập và chi tiêu</span></li>
-              <li className="flex gap-2"><span>3.</span> <span>Mục tiêu lớn thúc đẩy thu nhập</span></li>
-              <li className="flex gap-2"><span>4.</span> <span>Kế hoạch hành động cụ thể</span></li>
+           <ul className="text-[11px] font-bold text-foreground/60 leading-[1.65] uppercase tracking-[0.02em] space-y-3">
+              <li className="flex gap-3"><span className="text-amber-500/50">01.</span> <span>Biết được mình dùng tiền thế nào</span></li>
+              <li className="flex gap-3"><span className="text-amber-500/50">02.</span> <span>Tối ưu thu nhập và chi tiêu</span></li>
+              <li className="flex gap-3"><span className="text-amber-500/50">03.</span> <span>Mục tiêu lớn thúc đẩy thu nhập</span></li>
+              <li className="flex gap-3"><span className="text-amber-500/50">04.</span> <span>Kế hoạch hành động cụ thể</span></li>
            </ul>
         </div>
 
-        <div className="flex items-center justify-center gap-2 text-[9px] font-black text-foreground/20 uppercase tracking-widest opacity-50">
-            <Sparkles size={12} />
+        {/* Footer Text - Đẩy lên cách mép card khoảng 24px (pb-6) */}
+        <div className="flex items-center justify-center gap-2 text-[10px] font-black text-foreground/20 uppercase tracking-[0.2em] pb-6">
+            <Sparkles size={12} className="animate-pulse" />
             Manicash v1.2 • AI Core 3.0
         </div>
       </div>

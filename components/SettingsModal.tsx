@@ -2,12 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import { User, Wallet, Transaction, IncomeProject, ButlerType, UserGender } from '../types';
 import { VI } from '../constants/vi';
-import { X, ShieldCheck, Wallet as WalletIcon, Trash2, AlertTriangle, Banknote, Sun, Moon, RefreshCw, Eraser, CheckCircle2, LogOut, Mail, User as UserIcon, FileSpreadsheet, Download, Heart, Sparkles, Loader2, Key, Cpu, Zap } from 'lucide-react';
+import { X, ShieldCheck, Wallet as WalletIcon, Trash2, AlertTriangle, Banknote, Sun, Moon, RefreshCw, Eraser, CheckCircle2, LogOut, Mail, User as UserIcon, FileSpreadsheet, Download, Heart, Sparkles, Loader2, Key, Cpu, Zap, Eye, EyeOff, Info } from 'lucide-react';
 import { StorageService } from '../services/storageService';
 import { AuthService } from '../services/firebase';
 import { formatNumberInput, parseNumberInput } from '../utils/format';
-// Fix: Removed incorrect import of GeminiService which is not exported by aiService
-import { BUTLER_PROMPTS } from '../constants';
+
+const CURRENT_VERSION = "1.0.0";
 
 interface Props {
   isOpen: boolean;
@@ -46,6 +46,7 @@ export const SettingsModal: React.FC<Props> = ({ isOpen, onClose, users, wallets
   const [mainWalletBalance, setMainWalletBalance] = useState('');
   const [backupWalletName, setBackupWalletName] = useState('');
   const [currentTheme, setCurrentTheme] = useState<'dark' | 'light'>('dark');
+  const [isSimpleMode, setIsSimpleMode] = useState(false);
   const [userGender, setUserGender] = useState<UserGender>(UserGender.MALE);
   const [butlerPref, setButlerPref] = useState<ButlerType>(ButlerType.MALE);
   const [maleButlerName, setMaleButlerName] = useState('');
@@ -53,6 +54,10 @@ export const SettingsModal: React.FC<Props> = ({ isOpen, onClose, users, wallets
   const [aiBrain, setAiBrain] = useState<'gemini' | 'llama'>('gemini');
   
   const [confirmType, setConfirmType] = useState<'balance' | 'full' | null>(null);
+  
+  // Version check state
+  const [isCheckingVersion, setIsCheckingVersion] = useState(false);
+  const [versionPopup, setVersionPopup] = useState<{isOpen: boolean, type: 'up_to_date' | 'outdated', quote?: string} | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -71,6 +76,7 @@ export const SettingsModal: React.FC<Props> = ({ isOpen, onClose, users, wallets
       }
       if (w2) setBackupWalletName(w2.name);
       setCurrentTheme(StorageService.getTheme());
+      setIsSimpleMode(StorageService.getSimpleMode());
       setAiBrain(StorageService.getAiBrain());
     }
   }, [isOpen, users, wallets]);
@@ -102,6 +108,19 @@ export const SettingsModal: React.FC<Props> = ({ isOpen, onClose, users, wallets
     StorageService.setAiBrain(aiBrain);
     onSave(updatedUsers, updatedWallets);
     onClose();
+  };
+
+  const handleVersionCheck = async () => {
+    setIsCheckingVersion(true);
+    const latest = await AuthService.checkAppVersion();
+    setIsCheckingVersion(false);
+
+    if (latest && latest !== CURRENT_VERSION) {
+      setVersionPopup({ isOpen: true, type: 'outdated' });
+    } else {
+      const randomQuote = VI.version.quotes[Math.floor(Math.random() * VI.version.quotes.length)];
+      setVersionPopup({ isOpen: true, type: 'up_to_date', quote: randomQuote });
+    }
   };
 
   const handleLogout = async () => {
@@ -164,6 +183,14 @@ export const SettingsModal: React.FC<Props> = ({ isOpen, onClose, users, wallets
     else document.documentElement.classList.remove('dark');
   };
 
+  const toggleSimpleMode = () => {
+    const newVal = !isSimpleMode;
+    setIsSimpleMode(newVal);
+    StorageService.setSimpleMode(newVal);
+    if (newVal) document.documentElement.classList.add('simple-mode');
+    else document.documentElement.classList.remove('simple-mode');
+  };
+
   const handleBalanceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setMainWalletBalance(formatNumberInput(e.target.value));
   };
@@ -221,78 +248,42 @@ export const SettingsModal: React.FC<Props> = ({ isOpen, onClose, users, wallets
                         {aiBrain === 'llama' && <div className="absolute top-2 right-2 w-1.5 h-1.5 bg-secondary rounded-full animate-pulse"></div>}
                     </button>
                 </div>
-                <p className="text-[8px] font-bold text-foreground/30 uppercase tracking-tight px-2 text-center">Llama dùng Groq API giúp tăng tốc độ & tiết kiệm năng lượng</p>
             </div>
 
-            {/* Persona Customization */}
-            <div className="space-y-6">
-                <h3 className="text-[10px] font-black text-foreground/40 uppercase tracking-[0.3em] ml-2">Nhân vật quản gia</h3>
-                
-                {/* User Title */}
+            {/* Chế độ hiển thị & Hiệu năng */}
+            <div className="space-y-4">
+                <h3 className="text-[10px] font-black text-foreground/40 uppercase tracking-[0.3em] ml-2">Hiển thị & Hiệu năng</h3>
                 <div className="space-y-3">
-                    <p className="text-[9px] font-black text-foreground/30 uppercase tracking-widest ml-2">Danh xưng của Người</p>
-                    <div className="grid grid-cols-2 gap-2">
-                        <button 
-                            type="button"
-                            onClick={() => setUserGender(UserGender.MALE)}
-                            className={`py-3 rounded-xl text-[10px] font-black uppercase border transition-all ${userGender === UserGender.MALE ? 'bg-primary text-white border-transparent' : 'bg-foreground/5 border-foreground/5 text-foreground/40'}`}
-                        >
-                            CẬU CHỦ
-                        </button>
-                        <button 
-                            type="button"
-                            onClick={() => setUserGender(UserGender.FEMALE)}
-                            className={`py-3 rounded-xl text-[10px] font-black uppercase border transition-all ${userGender === UserGender.FEMALE ? 'bg-primary text-white border-transparent' : 'bg-foreground/5 border-foreground/5 text-foreground/40'}`}
-                        >
-                            CÔ CHỦ
-                        </button>
-                    </div>
-                </div>
+                  <button
+                    type="button"
+                    onClick={toggleTheme}
+                    className={`w-full flex items-center justify-between p-5 rounded-[1.75rem] border transition-all ${currentTheme === 'dark' ? 'bg-primary/10 border-primary/20' : 'bg-secondary/10 border-secondary/20'}`}
+                  >
+                      <div className="flex items-center gap-4">
+                          {currentTheme === 'dark' ? <Moon size={18} className="text-primary" /> : <Sun size={18} className="text-secondary" />}
+                          <span className="font-black text-foreground uppercase tracking-widest text-[10px]">{currentTheme === 'dark' ? 'CHẾ ĐỘ TỐI' : 'CHẾ ĐỘ SÁNG'}</span>
+                      </div>
+                      <div className={`w-12 h-6 rounded-full relative transition-all ${currentTheme === 'dark' ? 'bg-primary' : 'bg-secondary'}`}>
+                          <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${currentTheme === 'dark' ? 'left-7' : 'left-1'}`}></div>
+                      </div>
+                  </button>
 
-                {/* Butler Name Customization */}
-                <div className="space-y-4 px-2">
-                    <div className="space-y-2">
-                        <label className="text-[8px] font-black text-foreground/30 tracking-widest uppercase ml-1">Tên quản gia Nam</label>
-                        <input 
-                            type="text"
-                            className="w-full bg-foreground/5 text-foreground p-3 rounded-xl font-bold focus:outline-none uppercase text-[10px]"
-                            value={maleButlerName}
-                            onChange={(e) => setMaleButlerName(e.target.value)}
-                            placeholder="VD: Lord Diamond"
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <label className="text-[8px] font-black text-foreground/30 tracking-widest uppercase ml-1">Tên quản gia Nữ</label>
-                        <input 
-                            type="text"
-                            className="w-full bg-foreground/5 text-foreground p-3 rounded-xl font-bold focus:outline-none uppercase text-[10px]"
-                            value={femaleButlerName}
-                            onChange={(e) => setFemaleButlerName(e.target.value)}
-                            placeholder="VD: Queen Crown"
-                        />
-                    </div>
-                </div>
-
-                {/* Butler Selection - Luxurious Icons */}
-                <div className="space-y-3">
-                    <p className="text-[9px] font-black text-foreground/30 uppercase tracking-widest px-2">Lựa chọn biểu tượng</p>
-                    <div className="grid grid-cols-2 gap-3">
-                        {[ButlerType.MALE, ButlerType.FEMALE].map((type) => (
-                          <button 
-                              key={type}
-                              type="button"
-                              onClick={() => setButlerPref(type)}
-                              className={`flex flex-col items-center gap-3 p-5 rounded-[2.5rem] border transition-all relative overflow-hidden group ${butlerPref === type ? 'bg-secondary/10 border-secondary' : 'bg-foreground/[0.03] border-foreground/5'}`}
-                          >
-                              <div className={`w-16 h-16 flex items-center justify-center transition-all ${butlerPref === type ? 'animate-float-coin scale-110' : 'opacity-40'}`}>
-                                  <SimpleButlerSVG type={type} />
-                              </div>
-                              <span className={`text-[9px] font-black uppercase tracking-widest ${butlerPref === type ? 'text-secondary' : 'text-foreground/30'}`}>
-                                {type === ButlerType.MALE ? maleButlerName : femaleButlerName}
-                              </span>
-                          </button>
-                        ))}
-                    </div>
+                  <button
+                    type="button"
+                    onClick={toggleSimpleMode}
+                    className={`w-full flex items-center justify-between p-5 rounded-[1.75rem] border transition-all ${isSimpleMode ? 'bg-amber-500/10 border-amber-500/20' : 'bg-foreground/5 border-foreground/5'}`}
+                  >
+                      <div className="flex items-center gap-4">
+                          {isSimpleMode ? <EyeOff size={18} className="text-amber-500" /> : <Eye size={18} className="text-foreground/30" />}
+                          <div className="text-left">
+                            <span className="font-black text-foreground uppercase tracking-widest text-[10px]">CHẾ ĐỘ ĐƠN GIẢN</span>
+                            <p className="text-[7px] font-bold text-foreground/30 uppercase">Tắt Blur & Animation</p>
+                          </div>
+                      </div>
+                      <div className={`w-12 h-6 rounded-full relative transition-all ${isSimpleMode ? 'bg-amber-500' : 'bg-foreground/20'}`}>
+                          <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${isSimpleMode ? 'left-7' : 'left-1'}`}></div>
+                      </div>
+                  </button>
                 </div>
             </div>
 
@@ -308,23 +299,6 @@ export const SettingsModal: React.FC<Props> = ({ isOpen, onClose, users, wallets
                         onChange={(e) => setUserName(e.target.value)}
                     />
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                  <label className="text-[10px] font-black text-foreground/30 ml-2 tracking-widest uppercase">Giao diện</label>
-                  <button
-                    type="button"
-                    onClick={toggleTheme}
-                    className={`w-full flex items-center justify-between p-6 rounded-[2rem] border transition-all ${currentTheme === 'dark' ? 'bg-primary/10 border-primary/20 shadow-lg' : 'bg-secondary/10 border-secondary/20 shadow-lg'}`}
-                  >
-                      <div className="flex items-center gap-4">
-                          {currentTheme === 'dark' ? <Moon size={22} className="text-primary" /> : <Sun size={22} className="text-secondary" />}
-                          <span className="font-black text-foreground uppercase tracking-widest text-[11px]">{currentTheme === 'dark' ? 'DARK MODE' : 'LIGHT MODE'}</span>
-                      </div>
-                      <div className={`w-14 h-7 rounded-full relative transition-all ${currentTheme === 'dark' ? 'bg-primary' : 'bg-secondary'}`}>
-                          <div className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-all shadow-md ${currentTheme === 'dark' ? 'left-8' : 'left-1'}`}></div>
-                      </div>
-                  </button>
               </div>
 
               <div className="space-y-6 pt-2 border-t border-foreground/5">
@@ -351,23 +325,30 @@ export const SettingsModal: React.FC<Props> = ({ isOpen, onClose, users, wallets
                             />
                         </div>
                       </div>
-
-                      <div className="bg-foreground/[0.03] p-6 rounded-[2rem] border border-foreground/5 shadow-inner flex items-center justify-between">
-                        <label className="text-[9px] font-black text-foreground/20 uppercase tracking-widest">Ví dự trữ</label>
-                        <input
-                            type="text"
-                            className="bg-transparent text-foreground font-[900] text-right focus:outline-none uppercase text-sm tracking-tight"
-                            value={backupWalletName}
-                            onChange={(e) => setBackupWalletName(e.target.value)}
-                        />
-                      </div>
                   </div>
               </div>
             </form>
 
-            {/* Export and Reset */}
+            {/* Export, Reset and VERSION CHECK */}
             <div className="space-y-4 pt-6 border-t border-foreground/5">
-                <h3 className="text-[10px] font-black text-foreground/40 uppercase tracking-[0.3em]">Dữ liệu</h3>
+                <h3 className="text-[10px] font-black text-foreground/40 uppercase tracking-[0.3em]">Dữ liệu & Hệ thống</h3>
+                
+                {/* Version Check Button */}
+                <button 
+                  onClick={handleVersionCheck} 
+                  disabled={isCheckingVersion}
+                  className="w-full p-5 bg-primary/10 rounded-2xl flex items-center justify-between group border border-primary/20"
+                >
+                    <div className="flex items-center gap-3 text-primary">
+                        {isCheckingVersion ? <Loader2 size={18} className="animate-spin" /> : <RefreshCw size={18} />}
+                        <div className="text-left">
+                            <span className="text-[10px] font-black uppercase tracking-widest">{VI.version.checkBtn}</span>
+                            <p className="text-[8px] font-bold opacity-60 uppercase">Phiên bản {CURRENT_VERSION}</p>
+                        </div>
+                    </div>
+                    <Info size={16} className="text-primary opacity-30" />
+                </button>
+
                 <button onClick={handleExportCSV} className="w-full p-5 bg-foreground/5 rounded-2xl flex items-center justify-between group">
                     <div className="flex items-center gap-3">
                         <FileSpreadsheet size={18} className="text-secondary" />
@@ -375,6 +356,7 @@ export const SettingsModal: React.FC<Props> = ({ isOpen, onClose, users, wallets
                     </div>
                     <Download size={16} className="text-foreground/20" />
                 </button>
+                
                 <div className="grid grid-cols-1 gap-2">
                     <button onClick={() => setConfirmType('balance')} className="w-full p-4 bg-danger/5 text-danger rounded-xl text-[9px] font-black uppercase tracking-widest border border-danger/10">Reset số dư</button>
                 </div>
@@ -392,6 +374,42 @@ export const SettingsModal: React.FC<Props> = ({ isOpen, onClose, users, wallets
           </div>
         </div>
       </div>
+
+      {/* VERSION NOTIFICATION POPUP */}
+      {versionPopup && versionPopup.isOpen && (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/80 backdrop-blur-xl px-8 animate-in fade-in zoom-in duration-300">
+            <div className="glass-card w-full max-w-sm rounded-[3rem] p-10 border-0 shadow-2xl bg-surface/90 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-6">
+                    <button onClick={() => setVersionPopup(null)} className="text-foreground/30 hover:text-foreground"><X size={20}/></button>
+                </div>
+                
+                <div className="text-center space-y-8">
+                    <div className={`w-20 h-20 rounded-[2.25rem] flex items-center justify-center mx-auto shadow-xl ${versionPopup.type === 'up_to_date' ? 'bg-[#00FF7F]/10 text-[#00FF7F]' : 'bg-warning/10 text-warning'}`}>
+                        {versionPopup.type === 'up_to_date' ? <CheckCircle2 size={40} /> : <RefreshCw size={40} className="animate-spin-slow" />}
+                    </div>
+                    
+                    <div className="space-y-4">
+                        <h3 className={`text-2xl font-black tracking-tighter uppercase ${versionPopup.type === 'up_to_date' ? 'text-[#00FF7F]' : 'text-warning'}`}>
+                            {versionPopup.type === 'up_to_date' ? VI.version.upToDate : VI.version.outdated}
+                        </h3>
+                        
+                        <div className="glass-card bg-foreground/[0.03] p-6 rounded-[2rem] border-0 shadow-inner">
+                            <p className={`font-comic text-xl leading-relaxed italic ${versionPopup.type === 'up_to_date' ? 'text-foreground' : 'text-foreground/70'}`}>
+                                {versionPopup.type === 'up_to_date' ? `"${versionPopup.quote}"` : VI.version.newVersionFound}
+                            </p>
+                        </div>
+                    </div>
+
+                    <button 
+                        onClick={() => versionPopup.type === 'up_to_date' ? setVersionPopup(null) : window.location.reload()}
+                        className={`w-full py-5 rounded-[2rem] font-[1000] text-[11px] uppercase tracking-[0.3em] shadow-xl transition-all active:scale-95 ${versionPopup.type === 'up_to_date' ? 'bg-[#00FF7F] text-white' : 'bg-warning text-white'}`}
+                    >
+                        {versionPopup.type === 'up_to_date' ? 'Đã hiểu' : 'Tải lại ngay'}
+                    </button>
+                </div>
+            </div>
+        </div>
+      )}
 
       {confirmType && (
         <div className="fixed inset-0 z-[250] flex items-center justify-center bg-black/95 backdrop-blur-xl px-8 animate-in zoom-in-95 duration-300">

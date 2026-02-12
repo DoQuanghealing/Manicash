@@ -49,6 +49,7 @@ export interface Wallet {
 export interface Transaction {
   id: string;
   date: string; // ISO Date string
+  createdAt?: string; // Thời gian chính xác lưu lên server
   amount: number;
   type: TransactionType;
   category: Category;
