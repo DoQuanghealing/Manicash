@@ -1,21 +1,20 @@
-name: Deploy Manicash to Vercel
+name: Deploy Manicash
 
 on:
   push:
     branches:
-      - main # Đảm bảo tên nhánh này trùng với nhánh chính trên GitHub của bạn
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18'
+          node-version: '20' # NÂNG CẤP LÊN BẢN 20 ĐỂ KHỚP VỚI VERCEL
 
       - name: Install Dependencies
         run: npm install
@@ -23,15 +22,10 @@ jobs:
       - name: Build Project
         run: npm run build
         env:
-          # Kết nối các biến từ GitHub Secrets vào quá trình Build
           VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
-          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
           VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
-          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
-          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
-          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
-          VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY }}
           VITE_GROQ_API_KEY: ${{ secrets.VITE_GROQ_API_KEY }}
+          # Thêm các biến khác nếu cậu chủ có dùng...
 
       - name: Deploy to Vercel
         uses: amondnet/vercel-action@v20
@@ -39,4 +33,4 @@ jobs:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: '--prod'
+          vercel-args: '--prod --yes' # THÊM --yes ĐỂ QUẢN GIA TỰ QUYẾT LUÔN, KHÔNG HỎI LẠI
