@@ -27,8 +27,7 @@ const initFirebase = () => {
       return true;
     }
 
-    // Chỉ khởi tạo khi có API Key hợp lệ
-    if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "YOUR_FIREBASE_API_KEY") {
+    if (firebaseConfig.apiKey) {
       app = initializeApp(firebaseConfig);
       auth = getAuth(app);
       db = getFirestore(app);
@@ -36,12 +35,11 @@ const initFirebase = () => {
       return true;
     }
   } catch (error) {
-    console.warn("[Firebase Init] Quản gia đang chạy chế độ Offline do cấu hình lỗi.");
+    console.warn("[Firebase Init] Chế độ Offline được kích hoạt.");
   }
   return false;
 };
 
-// Khởi tạo ngay lập tức
 initFirebase();
 
 const provider = new GoogleAuthProvider();
@@ -65,16 +63,14 @@ export const AuthService = {
   },
 
   checkPreConditions: () => {
-    if (!isConfigured) throw new Error("Thưa cậu chủ, Firebase chưa được cấu hình.");
-    if (!navigator.onLine) {
-      throw new Error("Lỗi mạng: Quản gia không thể liên lạc với máy chủ.");
-    }
+    if (!isConfigured) throw new Error("Firebase chưa được cấu hình.");
+    if (!navigator.onLine) throw new Error("Không có kết nối mạng.");
     return true;
   },
 
   loginWithGoogle: async () => {
     const currentAuth = AuthService.getAuth();
-    if (!currentAuth) throw new Error("Lỗi cấu hình: Thiếu API Key.");
+    if (!currentAuth) throw new Error("Thiếu API Key.");
     AuthService.checkPreConditions();
     const result: any = await signInWithPopup(currentAuth, provider);
     return result.user;
@@ -101,71 +97,61 @@ export const AuthService = {
   onAuthChange: (callback: (user: any) => void) => {
     authChangeCallback = callback;
     const currentAuth = AuthService.getAuth();
-    
     if (!currentAuth) {
-      const timer = setTimeout(() => {
-        if (authChangeCallback) callback(null);
-      }, 500); 
-      return () => { 
-        clearTimeout(timer);
-        authChangeCallback = null; 
-      };
+      const timer = setTimeout(() => { if (authChangeCallback) callback(null); }, 500); 
+      return () => { clearTimeout(timer); authChangeCallback = null; };
     }
-
-    return onAuthStateChanged(currentAuth, (user) => {
-      callback(user);
-    });
+    return onAuthStateChanged(currentAuth, (user) => { callback(user); });
   },
 
-  // Hệ thống kiểm tra phiên bản
   checkAppVersion: async (): Promise<string | null> => {
     const database = AuthService.getDb();
     if (!database) return null;
     try {
       const docRef = doc(database, "system_settings", "app_info");
       const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        return docSnap.data().latest_version || null;
-      }
-    } catch (e) {
-      console.error("Quản gia không check được version:", e);
-    }
+      if (docSnap.exists()) return docSnap.data().latest_version || null;
+    } catch (e) { console.error("Lỗi check version:", e); }
     return null;
   },
 
-  // Hệ thống log hành vi để AI phân tích
-  logBehavior: async (action: string, details: any, userEmail: string, userId: string) => {
+  // KHÔI PHỤC HÀM NÀY ĐỂ FIX LỖI BUILD
+  logFutureLead: async (tag: string, userEmail: string, userId: string) => {
     const database = AuthService.getDb();
     if (!database) return false;
     try {
-      await addDoc(collection(database, "behavior_logs"), {
-        action,
-        details,
+      await addDoc(collection(database, "future_leads"), {
+        topic: tag,
         email: userEmail,
         userId: userId,
         timestamp: new Date().toISOString()
       });
       return true;
     } catch (e) {
-      console.error("Lỗi log hành vi:", e);
+      console.error("Lỗi log future lead:", e);
       return false;
     }
   },
 
-  // Log yêu cầu tính năng mới
+  logBehavior: async (action: string, details: any, userEmail: string, userId: string) => {
+    const database = AuthService.getDb();
+    if (!database) return false;
+    try {
+      await addDoc(collection(database, "behavior_logs"), {
+        action, details, email: userEmail, userId: userId, timestamp: new Date().toISOString()
+      });
+      return true;
+    } catch (e) { return false; }
+  },
+
   logFeatureRequest: async (featureId: string, userEmail: string) => {
     const database = AuthService.getDb();
     if (!database) return false;
     try {
       await addDoc(collection(database, "feature_requests"), {
-        featureId,
-        userEmail,
-        timestamp: new Date().toISOString()
+        featureId, userEmail, timestamp: new Date().toISOString()
       });
       return true;
-    } catch (e) {
-      console.error("Lỗi log feature request:", e);
-      return false;
-    }
+    } catch (e) { return false; }
   }
 };
