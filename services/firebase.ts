@@ -1,16 +1,15 @@
-
 import { initializeApp, getApp, getApps, FirebaseApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, Auth } from "firebase/auth";
-import { getFirestore, Firestore, doc, setDoc, getDoc, collection, addDoc, onSnapshot } from "firebase/firestore";
+import { getFirestore, Firestore, doc, getDoc, collection, addDoc } from "firebase/firestore";
 
-// Lưu ý: Key này sẽ được thay thế bởi môi trường thực tế hoặc người dùng cấu hình
+// Tự động lấy cấu hình từ môi trường Vercel/GitHub
 const firebaseConfig = {
-  apiKey: "YOUR_FIREBASE_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
 let app: FirebaseApp | null = null;
@@ -28,6 +27,7 @@ const initFirebase = () => {
       return true;
     }
 
+    // Chỉ khởi tạo khi có API Key hợp lệ
     if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "YOUR_FIREBASE_API_KEY") {
       app = initializeApp(firebaseConfig);
       auth = getAuth(app);
@@ -36,7 +36,7 @@ const initFirebase = () => {
       return true;
     }
   } catch (error) {
-    console.warn("[Firebase Init] Chế độ Offline/Demo được kích hoạt do thiếu cấu hình.");
+    console.warn("[Firebase Init] Quản gia đang chạy chế độ Offline do cấu hình lỗi.");
   }
   return false;
 };
@@ -65,18 +65,16 @@ export const AuthService = {
   },
 
   checkPreConditions: () => {
-    if (!isConfigured) throw new Error("Firebase chưa được cấu hình.");
+    if (!isConfigured) throw new Error("Thưa cậu chủ, Firebase chưa được cấu hình.");
     if (!navigator.onLine) {
-      throw new Error("NETWORK_ERROR: Không có kết nối mạng.");
+      throw new Error("Lỗi mạng: Quản gia không thể liên lạc với máy chủ.");
     }
     return true;
   },
 
   loginWithGoogle: async () => {
     const currentAuth = AuthService.getAuth();
-    if (!currentAuth) {
-      throw new Error("CONFIGURATION_ERROR: Firebase chưa được cấu hình. Vui lòng kiểm tra API Key.");
-    }
+    if (!currentAuth) throw new Error("Lỗi cấu hình: Thiếu API Key.");
     AuthService.checkPreConditions();
     const result: any = await signInWithPopup(currentAuth, provider);
     return result.user;
@@ -86,12 +84,10 @@ export const AuthService = {
     const guestUser = {
       uid: "guest_user_demo",
       email: "demo@manicash.io",
-      displayName: "Người dùng Trải nghiệm",
+      displayName: "Cậu chủ Trải nghiệm",
       photoURL: "https://api.dicebear.com/7.x/avataaars/svg?seed=Demo"
     };
-    if (authChangeCallback) {
-      authChangeCallback(guestUser);
-    }
+    if (authChangeCallback) authChangeCallback(guestUser);
     return guestUser;
   },
 
@@ -132,44 +128,12 @@ export const AuthService = {
         return docSnap.data().latest_version || null;
       }
     } catch (e) {
-      console.error("Lỗi kiểm tra phiên bản:", e);
+      console.error("Quản gia không check được version:", e);
     }
     return null;
   },
 
-  logFeatureRequest: async (featureId: string, userEmail: string) => {
-    const database = AuthService.getDb();
-    if (!database) return false;
-    try {
-      await addDoc(collection(database, "feature_requests"), {
-        featureId,
-        userEmail,
-        timestamp: new Date().toISOString()
-      });
-      return true;
-    } catch (e) {
-      console.error("Error logging feature request:", e);
-      return false;
-    }
-  },
-
-  logFutureLead: async (tag: string, userEmail: string, userId: string) => {
-    const database = AuthService.getDb();
-    if (!database) return false;
-    try {
-      await addDoc(collection(database, "future_leads"), {
-        topic: tag,
-        email: userEmail,
-        userId: userId,
-        timestamp: new Date().toISOString()
-      });
-      return true;
-    } catch (e) {
-      console.error("Error logging future lead:", e);
-      return false;
-    }
-  },
-
+  // Hệ thống log hành vi để AI phân tích
   logBehavior: async (action: string, details: any, userEmail: string, userId: string) => {
     const database = AuthService.getDb();
     if (!database) return false;
@@ -183,7 +147,24 @@ export const AuthService = {
       });
       return true;
     } catch (e) {
-      console.error("Error logging behavior:", e);
+      console.error("Lỗi log hành vi:", e);
+      return false;
+    }
+  },
+
+  // Log yêu cầu tính năng mới
+  logFeatureRequest: async (featureId: string, userEmail: string) => {
+    const database = AuthService.getDb();
+    if (!database) return false;
+    try {
+      await addDoc(collection(database, "feature_requests"), {
+        featureId,
+        userEmail,
+        timestamp: new Date().toISOString()
+      });
+      return true;
+    } catch (e) {
+      console.error("Lỗi log feature request:", e);
       return false;
     }
   }
