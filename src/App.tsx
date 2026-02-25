@@ -32,6 +32,8 @@ function App() {
   const [bootError, setBootError] = useState<string | null>(null);
   const [updateRegistration, setUpdateRegistration] = useState<ServiceWorkerRegistration | null>(null);
   
+  const [isBypassed, setIsBypassed] = useState(false);
+  
   const [wallets, setWallets] = useState<Wallet[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
@@ -57,6 +59,7 @@ function App() {
           setIsDataSyncing(true);
           StorageService.init();
           await StorageService.loadFromCloud(user.uid);
+          await StorageService.checkNewMonth();
           refreshData();
           applyInitialPreferences();
           setIsDataSyncing(false);
@@ -73,6 +76,14 @@ function App() {
       setIsInitialLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    if (isBypassed) {
+      StorageService.init();
+      refreshData();
+      applyInitialPreferences();
+    }
+  }, [isBypassed]);
 
   const handleUpdateApp = () => {
     if (updateRegistration && updateRegistration.waiting) {
@@ -168,8 +179,8 @@ function App() {
     if (data && data.type === TransactionType.EXPENSE) {
         const user = users[0];
         const butlerName = user?.butlerPreference === ButlerType.FEMALE 
-            ? (user.femaleButlerName || "Queen Crown") 
-            : (user.maleButlerName || "Lord Diamond");
+            ? (user.femaleButlerName || VI.butler.femaleName) 
+            : (user.maleButlerName || VI.butler.maleName);
 
         const sarcasmMessage = getRandomSarcasm(data.category);
         const budget = budgets.find(b => b.category === data.category);
@@ -220,7 +231,9 @@ function App() {
     );
   }
 
-  if (!currentUser) return <Login />;
+  if (!currentUser && !isBypassed) return <Login onBypass={() => setIsBypassed(true)} />;
+
+  const displayUser = currentUser || { uid: 'guest', email: 'guest@example.com' };
 
   return (
     <div className="bg-background text-foreground h-full transition-colors duration-300 relative">
@@ -276,13 +289,13 @@ function App() {
         isLoading={reflectionData.isLoading}
         onClose={() => setReflectionData({ ...reflectionData, isOpen: false })} 
       />
-      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} users={users} wallets={wallets} onSave={handleSaveSettings} onRefresh={refreshData} currentUser={currentUser} />
+      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} users={users} wallets={wallets} onSave={handleSaveSettings} onRefresh={refreshData} currentUser={displayUser} />
       
       <FutureRoadmap 
         isOpen={isFutureModalOpen} 
         onClose={() => setIsFutureModalOpen(false)} 
-        userEmail={currentUser.email || ''} 
-        userId={currentUser.uid}
+        userEmail={displayUser.email || ''} 
+        userId={displayUser.uid}
       />
     </div>
   );

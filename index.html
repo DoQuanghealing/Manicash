@@ -1,16 +1,14 @@
+
 <!DOCTYPE html>
 <html lang="vi">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>Manicash | Trợ lý tài chính thông minh</title>
-    
+    <!-- Favicon -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💰</text></svg>">
-    
+    <!-- Font chuẩn tiếng Việt cao cấp -->
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800;900&family=Patrick+Hand&display=swap" rel="stylesheet">
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-
     <style>
       :root {
         --background: 248, 250, 252;
@@ -26,16 +24,28 @@
       }
       
       html, body {
+        height: 100%;
         height: 100dvh;
         margin: 0;
         padding: 0;
         overflow: hidden;
         position: fixed;
         width: 100%;
+      }
+
+      body {
         background-color: rgb(var(--background));
         color: rgb(var(--foreground));
         font-family: 'Inter', 'Be Vietnam Pro', sans-serif;
+        line-height: 1.4;
+        letter-spacing: 0.02em;
         -webkit-tap-highlight-color: transparent;
+      }
+
+      /* Tối ưu typography cho các thẻ tiêu đề */
+      h1, h2, h3, h4, h5, h6 {
+        letter-spacing: -0.01em;
+        line-height: 1.3;
       }
 
       #root {
@@ -44,16 +54,20 @@
         flex-direction: column;
       }
 
-      /* Glass Card đặc trưng của Manicash */
+      /* Glass Card & UI Elements */
       .glass-card {
+        position: relative;
         background: linear-gradient(135deg, rgba(var(--surface), 0.7), rgba(var(--surface), 0.3));
         backdrop-filter: blur(40px) saturate(200%);
         -webkit-backdrop-filter: blur(40px) saturate(200%);
         border-radius: 2rem;
         box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(var(--surface), 0.2);
       }
+      .dark .glass-card {
+        box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
+      }
 
-      /* Shake Animation cho gã quản gia mỉa mai */
+      /* Shake Animation cho mỉa mai */
       @keyframes sarcasm-shake {
         0%, 100% { transform: translateX(0); }
         10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
@@ -63,7 +77,11 @@
         animation: sarcasm-shake 0.6s cubic-bezier(.36,.07,.19,.97) both;
       }
 
-      /* Pháo hoa xanh lá khi tiết kiệm thành công */
+      /* Hiệu ứng pháo hoa giấy xanh lá */
+      @keyframes confetti-fall {
+        0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
+        100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+      }
       .confetti {
         position: fixed;
         width: 8px;
@@ -71,14 +89,19 @@
         background-color: #10b981;
         top: -20px;
         z-index: 1000;
+        border-radius: 2px;
         animation: confetti-fall 4s linear forwards;
       }
-      @keyframes confetti-fall {
-        0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
-        100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+
+      /* Sửa lỗi dính chữ trong input/button */
+      input, select, textarea, button {
+        letter-spacing: inherit;
+        font-family: inherit;
       }
 
-      /* Đốm màu AI bay lơ lửng */
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      
       .ai-bg-blob {
         position: fixed;
         width: 400px;
@@ -97,14 +120,31 @@
 
       .pt-safe-top { padding-top: env(safe-area-inset-top); }
       .pb-safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
-    </style>
-  </head>
-  <body>
-    <div class="ai-bg-blob bg-purple-500 top-[-150px] left-[-150px]"></div>
-    <div class="ai-bg-blob bg-emerald-500 bottom-[-150px] right-[-150px]"></div>
-    
-    <div id="root"></div>
+      
+      /* Rank Glows */
+      .neon-glow-iron { box-shadow: 0 0 15px rgba(148, 163, 184, 0.4); }
+      .neon-glow-bronze { box-shadow: 0 0 15px rgba(194, 65, 12, 0.4); }
+      .neon-glow-silver { box-shadow: 0 0 15px rgba(203, 213, 225, 0.4); }
+      .neon-glow-gold { box-shadow: 0 0 20px rgba(255, 215, 0, 0.5); }
+      .neon-glow-platinum { box-shadow: 0 0 20px rgba(34, 211, 238, 0.5); }
+      .neon-glow-emerald { box-shadow: 0 0 20px rgba(52, 211, 153, 0.5); }
+      .neon-glow-diamond { box-shadow: 0 0 25px rgba(96, 165, 250, 0.6); }
 
-    <script type="module" src="/index.tsx"></script>
+      /* Simple Mode Overrides */
+      .simple-mode .glass-card {
+        background: rgba(var(--surface), 0.95) !important;
+        backdrop-filter: none !important;
+      }
+      
+      /* Responsive Typography for small devices like iPhone 7 Plus */
+      @media (max-width: 414px) {
+        body {
+          font-size: 14px;
+          line-height: 1.5;
+        }
+      }
+    </style>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

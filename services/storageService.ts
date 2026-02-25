@@ -1,5 +1,5 @@
 
-import { Transaction, Wallet, Goal, TransactionType, Category, User, Budget, IncomeProject, FixedCost, AllocationSetting, ButlerType, UserGender } from '../types';
+import { Transaction, Wallet, Goal, TransactionType, Category, User, Budget, IncomeProject, FixedCost, AllocationSetting, ButlerType, UserGender, CompletedPlan, GamificationState, Rank } from '../types';
 import { AuthService } from './firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { DataGuard } from '../utils/dataGuard';
@@ -19,6 +19,9 @@ const KEYS = {
   THEME: 'duocash_theme',
   SIMPLE_MODE: 'duocash_simple_mode',
   AI_BRAIN: 'duocash_ai_brain',
+  COMPLETED_PROJECTS: 'duocash_completed_projects',
+  GAMIFICATION: 'duocash_gamification',
+  LAST_MONTH_CHECK: 'duocash_last_month_check',
 };
 
 const INITIAL_USERS: User[] = [
@@ -124,6 +127,37 @@ export const StorageService = {
     if (!localStorage.getItem(KEYS.GOALS)) localStorage.setItem(KEYS.GOALS, JSON.stringify([]));
     if (!localStorage.getItem(KEYS.ALLOCATION_CONFIG)) localStorage.setItem(KEYS.ALLOCATION_CONFIG, JSON.stringify([]));
     if (!localStorage.getItem(KEYS.PROJECTS)) localStorage.setItem(KEYS.PROJECTS, JSON.stringify([]));
+    if (!localStorage.getItem(KEYS.COMPLETED_PROJECTS)) localStorage.setItem(KEYS.COMPLETED_PROJECTS, JSON.stringify([]));
+    if (!localStorage.getItem(KEYS.GAMIFICATION)) localStorage.setItem(KEYS.GAMIFICATION, JSON.stringify({ points: 0, rank: Rank.IRON, lastUpdated: new Date().toISOString() }));
+    
+    StorageService.cleanExpiredProjects();
+  },
+
+  checkNewMonth: async () => {
+    const lastCheck = localStorage.getItem(KEYS.LAST_MONTH_CHECK);
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${now.getMonth() + 1}`;
+
+    if (lastCheck && lastCheck !== currentMonth) {
+      const budgets = StorageService.getBudgets();
+      const updatedBudgets = budgets.map(b => {
+        const debt = b.carryoverDebt || 0;
+        // NewBudget = BaseLimit - OverspendingFromLastMonth
+        const newLimit = Math.max(0, b.limit - debt);
+        return {
+          ...b,
+          limit: newLimit,
+          spent: 0,
+          carryoverDebt: 0
+        };
+      });
+      
+      localStorage.setItem(KEYS.BUDGETS, JSON.stringify(updatedBudgets));
+      localStorage.setItem(KEYS.LAST_MONTH_CHECK, currentMonth);
+      await StorageService.syncToCloud();
+    } else if (!lastCheck) {
+      localStorage.setItem(KEYS.LAST_MONTH_CHECK, currentMonth);
+    }
   },
 
   saveAndSync: async (key: string, value: any) => {
@@ -142,6 +176,8 @@ export const StorageService = {
     localStorage.setItem(KEYS.AUTO_DEDUCT_ENABLED, 'false');
     localStorage.setItem(KEYS.ALLOCATION_CONFIG, JSON.stringify([]));
     localStorage.setItem(KEYS.AUTO_DEDUCT_PERCENT, '10');
+    localStorage.setItem(KEYS.COMPLETED_PROJECTS, JSON.stringify([]));
+    localStorage.setItem(KEYS.GAMIFICATION, JSON.stringify({ points: 0, rank: Rank.IRON, lastUpdated: new Date().toISOString() }));
     await StorageService.syncToCloud();
   },
 
@@ -459,5 +495,48 @@ export const StorageService = {
       return true;
     }
     return false;
+  },
+
+  getCompletedProjects: (): CompletedPlan[] => {
+    try {
+      const data = JSON.parse(localStorage.getItem(KEYS.COMPLETED_PROJECTS) || '[]');
+      return Array.isArray(data) ? data.map(DataGuard.sanitizeCompletedPlan) : [];
+    } catch { return []; }
+  },
+
+  addCompletedProject: async (cp: CompletedPlan) => {
+    const cps = StorageService.getCompletedProjects();
+    cps.push(DataGuard.sanitizeCompletedPlan(cp));
+    await StorageService.saveAndSync(KEYS.COMPLETED_PROJECTS, cps);
+  },
+
+  getGamificationState: (): GamificationState => {
+    try {
+      const data = JSON.parse(localStorage.getItem(KEYS.GAMIFICATION) || '{}');
+      return DataGuard.sanitizeGamification(data);
+    } catch { 
+      return { points: 0, rank: Rank.IRON, lastUpdated: new Date().toISOString() }; 
+    }
+  },
+
+  updateGamificationState: async (gs: GamificationState) => {
+    await StorageService.saveAndSync(KEYS.GAMIFICATION, DataGuard.sanitizeGamification(gs));
+  },
+
+  cleanExpiredProjects: () => {
+    const cps = StorageService.getCompletedProjects();
+    const now = new Date();
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(now.getMonth() - 1);
+
+    const filtered = cps.filter(cp => {
+      const completedDate = new Date(cp.completedAt);
+      return completedDate >= oneMonthAgo;
+    });
+
+    if (filtered.length !== cps.length) {
+      localStorage.setItem(KEYS.COMPLETED_PROJECTS, JSON.stringify(filtered));
+      StorageService.syncToCloud();
+    }
   }
 };

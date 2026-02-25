@@ -1,5 +1,5 @@
 
-import { Transaction, Budget, Wallet, Goal, FixedCost, IncomeProject, Category, TransactionType } from '../types';
+import { Transaction, Budget, Wallet, Goal, FixedCost, IncomeProject, Category, TransactionType, CompletedPlan, GamificationState, Rank } from '../types';
 
 export const DataGuard = {
   // Ép kiểu số an toàn
@@ -26,6 +26,7 @@ export const DataGuard = {
     category: b?.category || Category.OTHER,
     limit: Math.max(0, DataGuard.asNumber(b?.limit)),
     spent: Math.max(0, DataGuard.asNumber(b?.spent)),
+    carryoverDebt: DataGuard.asNumber(b?.carryoverDebt, 0),
   }),
 
   // Làm sạch Ví
@@ -80,5 +81,21 @@ export const DataGuard = {
       date: String(m?.date || ''),
       isCompleted: Boolean(m?.isCompleted)
     })) : []
+  }),
+
+  // Làm sạch Kế hoạch đã hoàn thành
+  sanitizeCompletedPlan: (cp: any): CompletedPlan => ({
+    id: String(cp?.id || `cp_${Date.now()}`),
+    name: String(cp?.name || 'Kế hoạch đã xong'),
+    earnedAmount: Math.max(0, DataGuard.asNumber(cp?.earnedAmount)),
+    completedAt: cp?.completedAt || new Date().toISOString(),
+    pointsAwarded: Math.max(0, DataGuard.asNumber(cp?.pointsAwarded))
+  }),
+
+  // Làm sạch Trạng thái Gamification
+  sanitizeGamification: (gs: any): GamificationState => ({
+    points: Math.max(0, DataGuard.asNumber(gs?.points)),
+    rank: gs?.rank || Rank.IRON,
+    lastUpdated: gs?.lastUpdated || new Date().toISOString()
   })
 };

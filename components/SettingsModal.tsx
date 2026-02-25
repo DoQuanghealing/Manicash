@@ -19,25 +19,62 @@ interface Props {
   currentUser: any; 
 }
 
-const SimpleButlerSVG = ({ type }: { type: ButlerType }) => (
-  <svg width="60" height="60" viewBox="0 0 100 100">
-    <defs>
-      <linearGradient id="goldGradSet" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" style={{ stopColor: '#FFD700', stopOpacity: 1 }} />
-        <stop offset="100%" style={{ stopColor: '#B8860B', stopOpacity: 1 }} />
-      </linearGradient>
-      <linearGradient id="diamondGradSet" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" style={{ stopColor: '#4fc3f7', stopOpacity: 1 }} />
-        <stop offset="100%" style={{ stopColor: '#01579b', stopOpacity: 1 }} />
-      </linearGradient>
-    </defs>
-    <ellipse cx="50" cy="85" rx="30" ry="8" fill="url(#goldGradSet)" opacity="0.6" />
-    {type === ButlerType.MALE ? (
-      <path d="M50 25 L70 40 L50 75 L30 40 Z" fill="url(#diamondGradSet)" stroke="#fff" strokeWidth="0.5" />
-    ) : (
-      <path d="M30 70 L25 45 L38 55 L50 35 L62 55 L75 45 L70 70 Z" fill="url(#goldGradSet)" stroke="#926B07" strokeWidth="1" />
+const SimpleButlerSVG = ({ type, isActive }: { type: ButlerType, isActive?: boolean }) => (
+  <div className={`relative transition-all duration-500 ${isActive ? 'scale-110' : 'scale-90 opacity-40'}`}>
+    <svg width="80" height="80" viewBox="0 0 100 100" className="drop-shadow-2xl">
+      <defs>
+        <linearGradient id="goldGradSet" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style={{ stopColor: '#FFD700', stopOpacity: 1 }} />
+          <stop offset="100%" style={{ stopColor: '#B8860B', stopOpacity: 1 }} />
+        </linearGradient>
+        <linearGradient id="diamondGradSet" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style={{ stopColor: '#4fc3f7', stopOpacity: 1 }} />
+          <stop offset="100%" style={{ stopColor: '#01579b', stopOpacity: 1 }} />
+        </linearGradient>
+        <filter id="glow">
+          <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+          <feMerge>
+            <feMergeNode in="coloredBlur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+      </defs>
+      <ellipse cx="50" cy="85" rx="35" ry="10" fill="url(#goldGradSet)" opacity="0.3" />
+      {type === ButlerType.MALE ? (
+        <g filter={isActive ? "url(#glow)" : ""}>
+          {/* Suit/Tuxedo body */}
+          <path d="M50 20 L80 45 L70 85 L30 85 L20 45 Z" fill="#1a1a1a" stroke="#333" strokeWidth="1" />
+          {/* Shirt */}
+          <path d="M50 20 L60 35 L50 50 L40 35 Z" fill="#fff" />
+          {/* Bowtie */}
+          <path d="M45 35 L55 35 L52 40 L55 45 L45 45 L48 40 Z" fill="#000" />
+          {/* Head */}
+          <circle cx="50" cy="15" r="10" fill="#f5d0c5" />
+          {/* Hair */}
+          <path d="M40 12 Q50 2 60 12 L60 15 Q50 10 40 15 Z" fill="#2c1e1a" />
+        </g>
+      ) : (
+        <g filter={isActive ? "url(#glow)" : ""}>
+          {/* Dress body */}
+          <path d="M50 20 L85 85 L15 85 Z" fill="url(#goldGradSet)" stroke="#926B07" strokeWidth="1" />
+          {/* Waist */}
+          <rect x="40" y="45" width="20" height="5" fill="#fff" opacity="0.5" />
+          {/* Head */}
+          <circle cx="50" cy="15" r="10" fill="#f5d0c5" />
+          {/* Long Hair */}
+          <path d="M40 15 Q30 30 35 50 M60 15 Q70 30 65 50" stroke="#4a3728" strokeWidth="8" fill="none" strokeLinecap="round" />
+          <path d="M40 12 Q50 2 60 12" fill="#4a3728" />
+          {/* Crown */}
+          <path d="M42 5 L50 -2 L58 5 L50 2 Z" fill="#FFD700" />
+        </g>
+      )}
+    </svg>
+    {isActive && (
+      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2">
+        <div className="w-2 h-2 bg-primary rounded-full animate-ping"></div>
+      </div>
     )}
-  </svg>
+  </div>
 );
 
 export const SettingsModal: React.FC<Props> = ({ isOpen, onClose, users, wallets, onSave, onRefresh, currentUser }) => {
@@ -246,6 +283,53 @@ export const SettingsModal: React.FC<Props> = ({ isOpen, onClose, users, wallets
                         </div>
                         <span className="text-[9px] font-black uppercase tracking-widest text-center leading-tight">Meta Llama<br/>(Tối ưu)</span>
                         {aiBrain === 'llama' && <div className="absolute top-2 right-2 w-1.5 h-1.5 bg-secondary rounded-full animate-pulse"></div>}
+                    </button>
+                </div>
+            </div>
+
+            {/* Butler Selection */}
+            <div className="space-y-6">
+                <h3 className="text-[10px] font-black text-foreground/40 uppercase tracking-[0.3em] ml-2">Quản gia riêng</h3>
+                <div className="grid grid-cols-2 gap-4">
+                    <button 
+                        type="button"
+                        onClick={() => setButlerPref(ButlerType.MALE)}
+                        className={`p-6 rounded-[2.5rem] border transition-all flex flex-col items-center gap-4 relative overflow-hidden ${butlerPref === ButlerType.MALE ? 'bg-primary/10 border-primary shadow-xl' : 'bg-foreground/5 border-foreground/5 opacity-40'}`}
+                    >
+                        <SimpleButlerSVG type={ButlerType.MALE} isActive={butlerPref === ButlerType.MALE} />
+                        <div className="text-center space-y-1">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-foreground">QUẢN GIA NAM</span>
+                            <div className="flex items-center gap-1 justify-center">
+                                <input 
+                                    type="text"
+                                    value={maleButlerName}
+                                    onChange={(e) => setMaleButlerName(e.target.value)}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="bg-transparent text-[9px] font-bold text-primary text-center focus:outline-none border-b border-primary/20 w-full max-w-[80px]"
+                                    placeholder="Tên..."
+                                />
+                            </div>
+                        </div>
+                    </button>
+                    <button 
+                        type="button"
+                        onClick={() => setButlerPref(ButlerType.FEMALE)}
+                        className={`p-6 rounded-[2.5rem] border transition-all flex flex-col items-center gap-4 relative overflow-hidden ${butlerPref === ButlerType.FEMALE ? 'bg-gold/10 border-gold shadow-xl' : 'bg-foreground/5 border-foreground/5 opacity-40'}`}
+                    >
+                        <SimpleButlerSVG type={ButlerType.FEMALE} isActive={butlerPref === ButlerType.FEMALE} />
+                        <div className="text-center space-y-1">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-foreground">QUẢN GIA NỮ</span>
+                            <div className="flex items-center gap-1 justify-center">
+                                <input 
+                                    type="text"
+                                    value={femaleButlerName}
+                                    onChange={(e) => setFemaleButlerName(e.target.value)}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="bg-transparent text-[9px] font-bold text-gold text-center focus:outline-none border-b border-gold/20 w-full max-w-[80px]"
+                                    placeholder="Tên..."
+                                />
+                            </div>
+                        </div>
                     </button>
                 </div>
             </div>

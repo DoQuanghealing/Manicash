@@ -1,5 +1,7 @@
 
-import { Category, User, Wallet, Budget } from './types';
+import { Category, User, Wallet, Budget } from '../types';
+import { VI } from './vi';
+import { getRandomSarcasm, SARCASM_DATA } from './sarcasm';
 
 export const USERS: User[] = [
   { id: 'u1', name: 'Alex', avatar: ' Foxes' },
@@ -34,3 +36,5 @@ export const BUTLER_PROMPTS = {
   MALE: "3D high-quality render of a male financial butler mascot, waist-up view. Character design: friendly, professional, modern tech-savvy style. He wears a sleek deep purple vest over a crisp white shirt, matching the app's brand colors. Short, neat hairstyle, wearing a stylish monocle or thin-frame glasses. One hand making a \"thumb up\" gesture or holding a floating holographic coin. Art style: Pixar-style 3D, soft cinematic lighting, vibrant colors. Background: Pure white or transparent. High-end fintech UI aesthetic, 4k resolution, clean edges.",
   FEMALE: "3D high-quality render of a female financial butler mascot, waist-up view. Character design: elegant, trustworthy, and modern. She wears a professional tailored suit in navy and purple accents, with a neat ponytail or a sophisticated bun. Friendly facial expression with a confident smile. Accessories: a small glowing ear-piece or a digital tablet showing a profit chart. Art style: Minimalist 3D isometric render, soft shadows, vibrant neon highlights. Background: Pure white or transparent. Premium mobile app mascot style, clean composition, 4k resolution."
 };
+
+export { VI, getRandomSarcasm, SARCASM_DATA };

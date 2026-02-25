@@ -1,11 +1,11 @@
 
 import React, { useEffect, useState } from 'react';
-import { Transaction, User, IncomeProject, Milestone, Category, TransactionType, FinancialReport, Budget, Wallet, FixedCost, Goal } from '../types';
+import { Transaction, User, IncomeProject, Milestone, Category, TransactionType, FinancialReport, Budget, Wallet, FixedCost, Goal, CompletedPlan, GamificationState, Rank } from '../types';
 import { AiService } from '../services/aiService';
 import { StorageService } from '../services/storageService';
 import { VI } from '../constants/vi';
 import { formatVND, formatNumberInput, parseNumberInput } from '../utils/format';
-import { Sparkles, Plus, Calendar, Trash2, ArrowRight, Wallet as WalletIcon, CheckCircle, TrendingUp, Activity, Target, Zap, AlertTriangle, X, PartyPopper, Clock, AlertCircle, ShieldAlert, Rocket, Ban, Loader2, Gauge, BarChart, LineChart, ChevronRight, CheckSquare, Square, Coins, Trophy, Star, Gift, Diamond } from 'lucide-react';
+import { Sparkles, Plus, Calendar, Trash2, ArrowRight, Wallet as WalletIcon, CheckCircle, TrendingUp, Activity, Target, Zap, AlertTriangle, X, PartyPopper, Clock, AlertCircle, ShieldAlert, Rocket, Ban, Loader2, Gauge, BarChart, LineChart, ChevronRight, CheckSquare, Square, Coins, Trophy, Star, Gift, Diamond, Medal, History, Award, HelpCircle } from 'lucide-react';
 
 interface Props {
   transactions: Transaction[];
@@ -40,7 +40,17 @@ export const Insights: React.FC<Props> = ({ transactions, users }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [editingProject, setEditingProject] = useState<any>({ milestones: [] });
 
-  useEffect(() => { loadProjects(); }, [users]);
+  const [completedHistory, setCompletedHistory] = useState<CompletedPlan[]>([]);
+  const [gamification, setGamification] = useState<GamificationState>({ points: 0, rank: Rank.IRON, lastUpdated: new Date().toISOString() });
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [showRankUp, setShowRankUp] = useState<{old: Rank, new: Rank} | null>(null);
+
+  useEffect(() => { 
+    loadProjects(); 
+    setCompletedHistory(StorageService.getCompletedProjects());
+    setGamification(StorageService.getGamificationState());
+  }, [users]);
 
   const loadProjects = () => { setProjects(StorageService.getIncomeProjects()); };
 
@@ -55,6 +65,7 @@ export const Insights: React.FC<Props> = ({ transactions, users }) => {
         StorageService.getFixedCosts(), 
         StorageService.getBudgets(), 
         StorageService.getWallets(), 
+        gamification,
         activeUser.gender as any
       );
       setReport(result);
@@ -82,7 +93,7 @@ export const Insights: React.FC<Props> = ({ transactions, users }) => {
     }
   };
 
-  const handleCollectIncome = () => {
+  const handleCollectIncome = async () => {
     if (!celebratingProject) return;
 
     const tx: Transaction = {
@@ -97,6 +108,60 @@ export const Insights: React.FC<Props> = ({ transactions, users }) => {
         timestamp: Date.now()
     };
     StorageService.addTransaction(tx);
+
+    // Calculate points
+    const basePoints = Math.floor(celebratingProject.expectedIncome / 10000);
+    const milestoneBonus = celebratingProject.milestones.length * 50;
+    let totalPoints = basePoints + milestoneBonus;
+
+    const today = new Date().toISOString().split('T')[0];
+    if (celebratingProject.endDate && today <= celebratingProject.endDate) {
+      totalPoints = Math.floor(totalPoints * 1.2);
+    }
+
+    // Save to history
+    const completedPlan: CompletedPlan = {
+      id: celebratingProject.id,
+      name: celebratingProject.name,
+      earnedAmount: celebratingProject.expectedIncome,
+      completedAt: new Date().toISOString(),
+      pointsAwarded: totalPoints
+    };
+    await StorageService.addCompletedProject(completedPlan);
+
+    // Update Gamification
+    const newState = { ...gamification };
+    const oldRank = newState.rank;
+    newState.points += totalPoints;
+    newState.lastUpdated = new Date().toISOString();
+    
+    // Rank logic
+    const thresholds = {
+      [Rank.IRON]: 0,
+      [Rank.BRONZE]: 500,
+      [Rank.SILVER]: 1500,
+      [Rank.GOLD]: 4000,
+      [Rank.PLATINUM]: 10000,
+      [Rank.EMERALD]: 25000,
+      [Rank.DIAMOND]: 60000,
+    };
+
+    let newRank = Rank.IRON;
+    if (newState.points >= thresholds[Rank.DIAMOND]) newRank = Rank.DIAMOND;
+    else if (newState.points >= thresholds[Rank.EMERALD]) newRank = Rank.EMERALD;
+    else if (newState.points >= thresholds[Rank.PLATINUM]) newRank = Rank.PLATINUM;
+    else if (newState.points >= thresholds[Rank.GOLD]) newRank = Rank.GOLD;
+    else if (newState.points >= thresholds[Rank.SILVER]) newRank = Rank.SILVER;
+    else if (newState.points >= thresholds[Rank.BRONZE]) newRank = Rank.BRONZE;
+
+    if (newRank !== oldRank) {
+      newState.rank = newRank;
+      setShowRankUp({ old: oldRank, new: newRank });
+    }
+    
+    await StorageService.updateGamificationState(newState);
+    setGamification(newState);
+    setCompletedHistory(StorageService.getCompletedProjects());
 
     const updatedProj = { ...celebratingProject, status: 'completed' as const };
     StorageService.updateIncomeProject(updatedProj);
@@ -191,8 +256,89 @@ export const Insights: React.FC<Props> = ({ transactions, users }) => {
       }
   };
 
-  const renderPlanningTab = () => (
-      <div className="space-y-6">
+  const renderPlanningTab = () => {
+    const RANK_THRESHOLDS: Record<Rank, number> = {
+      [Rank.IRON]: 0,
+      [Rank.BRONZE]: 500,
+      [Rank.SILVER]: 1500,
+      [Rank.GOLD]: 4000,
+      [Rank.PLATINUM]: 10000,
+      [Rank.EMERALD]: 25000,
+      [Rank.DIAMOND]: 60000,
+    };
+
+    const NEXT_RANK_MAP: Record<Rank, Rank | null> = {
+      [Rank.IRON]: Rank.BRONZE,
+      [Rank.BRONZE]: Rank.SILVER,
+      [Rank.SILVER]: Rank.GOLD,
+      [Rank.GOLD]: Rank.PLATINUM,
+      [Rank.PLATINUM]: Rank.EMERALD,
+      [Rank.EMERALD]: Rank.DIAMOND,
+      [Rank.DIAMOND]: null,
+    };
+
+    const currentXP = gamification.points;
+    const minXP = RANK_THRESHOLDS[gamification.rank];
+    const nextRank = NEXT_RANK_MAP[gamification.rank];
+    const maxXP = nextRank ? RANK_THRESHOLDS[nextRank] : currentXP;
+    const progressPercent = nextRank ? Math.min(100, Math.max(0, ((currentXP - minXP) / (maxXP - minXP)) * 100)) : 100;
+
+    return (
+      <div className="space-y-4">
+        {/* Rank Display */}
+        <div className="glass-card bg-gradient-to-r from-primary/10 via-surface/40 to-secondary/10 p-6 rounded-[2.5rem] border-0 shadow-xl group overflow-hidden relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
+            
+            <div className="flex items-center justify-between relative z-10 mb-4">
+                <div className="flex items-center gap-4">
+                    <div className={`w-16 h-16 rounded-2xl flex items-center justify-center shadow-2xl neon-glow-${gamification.rank.toLowerCase()} transform group-hover:rotate-12 transition-transform duration-500 bg-surface`}>
+                        {gamification.rank === Rank.IRON && <Medal size={32} className="text-slate-400" />}
+                        {gamification.rank === Rank.BRONZE && <Medal size={32} className="text-orange-600" />}
+                        {gamification.rank === Rank.SILVER && <Medal size={32} className="text-slate-300" />}
+                        {gamification.rank === Rank.GOLD && <Medal size={32} className="text-gold" />}
+                        {gamification.rank === Rank.PLATINUM && <Award size={32} className="text-cyan-400" />}
+                        {gamification.rank === Rank.EMERALD && <Award size={32} className="text-emerald-400" />}
+                        {gamification.rank === Rank.DIAMOND && <Diamond size={32} className="text-blue-400 animate-pulse" />}
+                    </div>
+                    <div>
+                        <h4 className="text-[10px] font-black text-foreground/40 uppercase tracking-[0.3em]">Hạng hiện tại</h4>
+                        <p className="text-xl font-[1000] text-foreground uppercase tracking-tight leading-none mb-1">{gamification.rank}</p>
+                        <div className="flex items-center gap-2">
+                            <p className="text-[10px] font-bold text-primary uppercase tracking-widest">{gamification.points} XP</p>
+                            <button onClick={() => setIsHelpOpen(true)} className="text-foreground/20 hover:text-primary transition-colors">
+                                <HelpCircle size={12} />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <button 
+                  onClick={() => setIsHistoryOpen(true)}
+                  className="p-4 bg-surface/80 rounded-2xl text-foreground/40 hover:text-primary transition-all active:scale-90 shadow-lg"
+                >
+                    <History size={20} />
+                </button>
+            </div>
+
+            {/* XP Progress Bar */}
+            <div className="relative z-10 space-y-2">
+                <div className="flex justify-between items-end text-[9px] font-black uppercase tracking-widest">
+                    <span className="text-foreground/30">Tiến trình thăng hạng</span>
+                    <span className="text-primary">{nextRank ? `${Math.floor(progressPercent)}%` : 'MAX LEVEL'}</span>
+                </div>
+                <div className="h-2.5 w-full bg-foreground/5 rounded-full overflow-hidden shadow-inner relative">
+                    <div 
+                      className={`h-full transition-all duration-1000 ease-out bg-gradient-to-r from-primary via-purple-500 to-secondary shadow-[0_0_12px_rgba(139,92,246,0.3)]`} 
+                      style={{ width: `${progressPercent}%` }}
+                    ></div>
+                </div>
+                {nextRank && (
+                    <p className="text-[8px] font-bold text-foreground/20 uppercase tracking-widest text-right">
+                        Cần thêm {maxXP - currentXP} XP để lên {nextRank}
+                    </p>
+                )}
+            </div>
+        </div>
+
         {projects.length === 0 ? (
             <div className="glass-card liquid-glass rounded-[3rem] p-16 text-center border-0 shadow-xl">
                 <Calendar size={48} className="mx-auto mb-6 text-warning" />
@@ -205,13 +351,50 @@ export const Insights: React.FC<Props> = ({ transactions, users }) => {
                     const totalCount = project.milestones.length;
                     const progress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
                     const currentStatus = calculateStatus(project);
+
+                    if (currentStatus === 'completed') {
+                        const basePoints = Math.floor(project.expectedIncome / 10000);
+                        const milestoneBonus = project.milestones.length * 50;
+                        let totalPoints = basePoints + milestoneBonus;
+                        const today = new Date().toISOString().split('T')[0];
+                        const isEarly = project.endDate && today <= project.endDate;
+                        if (isEarly) totalPoints = Math.floor(totalPoints * 1.2);
+
+                        return (
+                            <div key={project.id} className="glass-card bg-secondary/5 border-2 border-secondary/20 rounded-[2rem] p-5 relative overflow-hidden animate-in fade-in slide-in-from-right duration-500">
+                                <div className="flex items-center justify-between gap-4">
+                                    <div className="flex-1 min-w-0">
+                                        <h3 className="text-[14px] font-[1000] text-foreground uppercase tracking-tight truncate mb-1">{project.name}</h3>
+                                        <div className="flex items-center gap-3">
+                                            <p className="text-secondary text-[12px] font-black tracking-tighter flex items-center gap-1">
+                                                <Coins size={12} /> {formatVND(project.expectedIncome)}
+                                            </p>
+                                            <span className="text-foreground/20 text-[10px]">•</span>
+                                            <p className="text-foreground/40 text-[9px] font-bold uppercase tracking-tight">Xong: {project.endDate}</p>
+                                        </div>
+                                    </div>
+                                    <div className="text-right shrink-0 space-y-1.5">
+                                        <div className="bg-secondary text-white text-[7px] px-3 py-1 rounded-full font-black uppercase tracking-[0.2em] inline-block">ĐÃ HOÀN THÀNH</div>
+                                        <div className="flex items-center gap-1 text-primary justify-end">
+                                            <Zap size={14} fill="currentColor" />
+                                            <span className="text-lg font-black tracking-tighter">+{totalPoints}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button 
+                                    onClick={() => handleOpenEdit(project)}
+                                    className="absolute inset-0 w-full h-full opacity-0 z-10"
+                                />
+                            </div>
+                        );
+                    }
+
                     return (
                         <div key={project.id} className="glass-card liquid-glass rounded-[2.5rem] p-7 border-0 relative group shadow-2xl bg-gradient-to-br from-surface/80 to-background overflow-hidden animate-in fade-in duration-500">
                             <div className="flex justify-between items-start mb-4">
                                 <div className="space-y-1 flex-1">
                                     <h3 className="text-xl font-[1000] text-foreground uppercase tracking-tighter leading-tight cursor-pointer hover:text-primary transition-colors flex items-center gap-2" onClick={() => handleOpenEdit(project)}>
                                       {project.name}
-                                      {currentStatus === 'completed' && <Star size={18} className="text-gold fill-gold animate-pulse" />}
                                     </h3>
                                     <p className="text-secondary text-lg font-[1000] tracking-tighter flex items-center gap-1.5">
                                       <Diamond size={16} className="text-primary animate-pulse" />
@@ -219,7 +402,6 @@ export const Insights: React.FC<Props> = ({ transactions, users }) => {
                                     </p>
                                 </div>
                                 <div className={`text-[8px] px-3 py-1 rounded-full uppercase font-black tracking-[0.15em] shadow-md shrink-0 ${
-                                    currentStatus === 'completed' ? 'bg-secondary text-white' : 
                                     currentStatus === 'overdue' ? 'bg-danger text-white' : 
                                     'bg-primary text-white'
                                 }`}>
@@ -282,7 +464,8 @@ export const Insights: React.FC<Props> = ({ transactions, users }) => {
             </span>
         </button>
       </div>
-  );
+    );
+  };
 
   const renderReportTab = () => (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -356,6 +539,31 @@ export const Insights: React.FC<Props> = ({ transactions, users }) => {
 
           <div className="glass-card bg-surface/50 p-7 rounded-[2.5rem] border-0 shadow-lg space-y-4">
             <div className="flex items-center gap-4">
+              <div className="w-10 h-10 bg-warning/10 text-warning rounded-xl flex items-center justify-center">
+                <Trophy size={20} />
+              </div>
+              <h4 className="text-[11px] font-black text-foreground uppercase tracking-widest">Đánh giá thăng hạng</h4>
+            </div>
+            <div className="space-y-4">
+              <div className="p-4 bg-warning/5 rounded-2xl border border-warning/10 space-y-3">
+                <div className="space-y-1">
+                  <p className="text-[9px] font-black text-warning uppercase tracking-widest">Tốc độ thăng hạng:</p>
+                  <p className="text-[11px] font-bold text-foreground/80 uppercase leading-tight">{report.gamificationInsights?.rankVelocity}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[9px] font-black text-warning uppercase tracking-widest">Thu nhập vs Mục tiêu:</p>
+                  <p className="text-[11px] font-bold text-foreground/80 uppercase leading-tight">{report.gamificationInsights?.incomeVsGoals}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[9px] font-black text-warning uppercase tracking-widest">Kỹ năng thực thi:</p>
+                  <p className="text-[11px] font-bold text-foreground/80 uppercase leading-tight">{report.gamificationInsights?.domainExpertise}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="glass-card bg-surface/50 p-7 rounded-[2.5rem] border-0 shadow-lg space-y-4">
+            <div className="flex items-center gap-4">
               <div className="w-10 h-10 bg-primary/10 text-primary rounded-xl flex items-center justify-center">
                 <Zap size={20} />
               </div>
@@ -381,7 +589,7 @@ export const Insights: React.FC<Props> = ({ transactions, users }) => {
   );
 
   return (
-    <div className="p-6 pt-12 space-y-8 pb-32 animate-in fade-in duration-700">
+    <div className="p-6 pt-12 space-y-6 pb-32 animate-in fade-in duration-700">
       <div className="flex justify-between items-center px-1">
         <h2 className="text-3xl font-[900] text-foreground tracking-tighter uppercase flex items-center gap-4">
           <Sparkles className="text-primary animate-pulse" size={32} />
@@ -400,6 +608,167 @@ export const Insights: React.FC<Props> = ({ transactions, users }) => {
       </div>
 
       {activeTab === 'planning' ? renderPlanningTab() : renderReportTab()}
+
+      {/* Rank Help Modal */}
+      {isHelpOpen && (
+          <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/90 backdrop-blur-3xl p-6 pb-[100px] overflow-hidden">
+              <div className="glass-card w-full max-w-[380px] rounded-[2.5rem] border-0 shadow-2xl bg-surface overflow-hidden animate-in zoom-in-95 duration-500 relative flex flex-col max-h-[80vh]">
+                  <div className="p-4 px-6 flex justify-between items-center shrink-0 border-b border-foreground/5">
+                      <h3 className="text-[10px] font-black text-orange-500 uppercase tracking-[0.2em] whitespace-nowrap">HƯỚNG DẪN THĂNG HẠNG</h3>
+                      <button onClick={() => setIsHelpOpen(false)} className="p-2 bg-foreground/5 rounded-xl text-foreground/40 hover:text-primary transition-all"><X size={18} /></button>
+                  </div>
+                  <div className="flex-1 overflow-y-auto p-8 space-y-8 no-scrollbar">
+                      <div className="space-y-4">
+                          <h4 className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">1. CÁC CẤP BẬC DANH VỌNG</h4>
+                          <div className="space-y-2">
+                              {[
+                                  { rank: Rank.IRON, xp: '0 XP', color: 'text-slate-400' },
+                                  { rank: Rank.BRONZE, xp: '500 XP', color: 'text-orange-600' },
+                                  { rank: Rank.SILVER, xp: '1,500 XP', color: 'text-slate-300' },
+                                  { rank: Rank.GOLD, xp: '4,000 XP', color: 'text-gold' },
+                                  { rank: Rank.PLATINUM, xp: '10,000 XP', color: 'text-cyan-400' },
+                                  { rank: Rank.EMERALD, xp: '25,000 XP', color: 'text-emerald-400' },
+                                  { rank: Rank.DIAMOND, xp: '60,000 XP', color: 'text-blue-400' },
+                              ].map((r, i) => (
+                                  <div key={i} className="flex justify-between items-center p-3 bg-foreground/[0.03] rounded-2xl border border-foreground/5">
+                                      <span className={`text-[12px] font-black uppercase tracking-tight ${r.color}`}>{r.rank}</span>
+                                      <span className="text-[11px] font-bold text-foreground/40 uppercase tracking-widest">{r.xp}</span>
+                                  </div>
+                              ))}
+                          </div>
+                      </div>
+
+                      <div className="space-y-4">
+                          <h4 className="text-[10px] font-black text-secondary uppercase tracking-[0.2em]">2. CÁCH KIẾM ĐIỂM KINH NGHIỆM (XP)</h4>
+                          <div className="space-y-3">
+                              <div className="flex gap-4 items-start">
+                                  <div className="w-8 h-8 bg-secondary/10 text-secondary rounded-lg flex items-center justify-center shrink-0"><Coins size={16} /></div>
+                                  <p className="text-[11px] font-bold text-foreground/60 leading-relaxed uppercase tracking-tight">Mỗi <span className="text-secondary">1.000.000 VND</span> thu nhập hoàn thành tương đương <span className="text-secondary">100 XP</span>.</p>
+                              </div>
+                              <div className="flex gap-4 items-start">
+                                  <div className="w-8 h-8 bg-primary/10 text-primary rounded-lg flex items-center justify-center shrink-0"><Zap size={16} /></div>
+                                  <p className="text-[11px] font-bold text-foreground/60 leading-relaxed uppercase tracking-tight">Hoàn thành dự án <span className="text-primary">SỚM HƠN</span> thời hạn sẽ được thưởng thêm <span className="text-primary">20% TỔNG XP</span>.</p>
+                              </div>
+                              <div className="flex gap-4 items-start">
+                                  <div className="w-8 h-8 bg-warning/10 text-warning rounded-lg flex items-center justify-center shrink-0"><Trophy size={16} /></div>
+                                  <p className="text-[11px] font-bold text-foreground/60 leading-relaxed uppercase tracking-tight">Mỗi <span className="text-warning">ĐẦU VIỆC (MILESTONE)</span> trong dự án mang lại <span className="text-warning">50 XP</span> khi hoàn thành dự án.</p>
+                              </div>
+                          </div>
+                      </div>
+
+                      <div className="pt-4">
+                          <button onClick={() => setIsHelpOpen(false)} className="w-full bg-foreground text-background font-black py-5 rounded-[2rem] text-[11px] uppercase tracking-[0.3em] shadow-xl active:scale-95 transition-all">ĐÃ HIỂU THƯA QUẢN GIA</button>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      )}
+
+      {/* Completed History Modal */}
+      {isHistoryOpen && (
+          <div className="fixed inset-0 z-[600] flex items-center justify-center bg-black/90 backdrop-blur-3xl p-4 overflow-hidden">
+              <div className="glass-card w-full max-w-[420px] h-[80vh] flex flex-col rounded-[3.5rem] border-0 shadow-2xl bg-surface overflow-hidden animate-in zoom-in-95 duration-500 relative">
+                  <div className="p-8 pb-4 flex justify-between items-center shrink-0 border-b border-foreground/5 bg-surface/80 backdrop-blur-md z-10">
+                      <div>
+                          <h3 className="text-xl font-black text-foreground tracking-tight uppercase leading-none">LỊCH SỬ VINH QUANG</h3>
+                          <p className="text-[9px] font-bold text-foreground/30 uppercase tracking-[0.3em] mt-1.5 flex items-center gap-2">
+                              <Clock size={12} className="text-primary" /> Lưu trữ trong 30 ngày
+                          </p>
+                      </div>
+                      <button onClick={() => setIsHistoryOpen(false)} className="p-3 bg-foreground/5 rounded-2xl hover:bg-foreground/10 text-foreground transition-all"><X size={20} /></button>
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto no-scrollbar p-6 space-y-4">
+                      {completedHistory.length === 0 ? (
+                          <div className="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-20 py-20">
+                              <History size={48} />
+                              <p className="text-[10px] font-black uppercase tracking-widest">Chưa có chiến tích nào</p>
+                          </div>
+                      ) : (
+                          completedHistory.sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()).map(cp => (
+                              <div key={cp.id} className="glass-card bg-foreground/[0.03] p-6 rounded-[2.25rem] border-0 flex items-center justify-between group hover:bg-foreground/[0.06] transition-all">
+                                  <div className="space-y-1">
+                                      <p className="text-[13px] font-[1000] text-foreground uppercase tracking-tight">{cp.name}</p>
+                                      <p className="text-[10px] font-bold text-secondary uppercase tracking-widest">+{formatVND(cp.earnedAmount)}</p>
+                                      <p className="text-[8px] font-medium text-foreground/30 uppercase tracking-widest">{new Date(cp.completedAt).toLocaleDateString('vi-VN')}</p>
+                                  </div>
+                                  <div className="text-right">
+                                      <div className="flex items-center gap-1 text-primary">
+                                          <Zap size={14} fill="currentColor" />
+                                          <span className="text-lg font-black tracking-tighter">+{cp.pointsAwarded}</span>
+                                      </div>
+                                      <p className="text-[8px] font-black text-foreground/20 uppercase tracking-widest">EXP</p>
+                                  </div>
+                              </div>
+                          ))
+                      )}
+                  </div>
+
+                  <div className="p-8 bg-surface/90 backdrop-blur-md border-t border-foreground/5">
+                      <button 
+                        onClick={() => setIsHistoryOpen(false)}
+                        className="w-full bg-primary text-white font-[1000] py-5 rounded-[2rem] text-[11px] uppercase tracking-[0.3em] shadow-xl active:scale-95 transition-all"
+                      >
+                         ĐÓNG DANH SÁCH
+                      </button>
+                  </div>
+              </div>
+          </div>
+      )}
+
+      {/* Rank Up Modal */}
+      {showRankUp && (
+          <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/95 backdrop-blur-3xl p-6 animate-in fade-in duration-700">
+              <div className="glass-card w-full max-w-[400px] rounded-[4rem] p-12 text-center border-0 shadow-2xl bg-gradient-to-br from-primary/20 via-surface to-background relative overflow-hidden animate-in zoom-in-95 duration-700">
+                  <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-5"></div>
+                  <div className="space-y-10 relative z-10">
+                      <div className="relative h-48 flex items-center justify-center">
+                          <div className="absolute inset-0 bg-primary/20 rounded-full blur-[60px] animate-pulse"></div>
+                          <div className="w-32 h-32 bg-surface rounded-[2.5rem] flex items-center justify-center shadow-2xl neon-glow-primary animate-bounce relative z-20">
+                              {showRankUp.new === Rank.BRONZE && <Medal size={64} className="text-orange-600" />}
+                              {showRankUp.new === Rank.SILVER && <Medal size={64} className="text-slate-300" />}
+                              {showRankUp.new === Rank.GOLD && <Medal size={64} className="text-gold" />}
+                              {showRankUp.new === Rank.PLATINUM && <Award size={64} className="text-cyan-400" />}
+                              {showRankUp.new === Rank.EMERALD && <Award size={64} className="text-emerald-400" />}
+                              {showRankUp.new === Rank.DIAMOND && <Diamond size={64} className="text-blue-400 animate-pulse" />}
+                          </div>
+                          {/* Particles/Confetti effect would go here */}
+                      </div>
+
+                      <div className="space-y-4">
+                          <div className="inline-block px-6 py-2 rounded-full bg-primary/10 border border-primary/20 mb-2">
+                             <h3 className="text-[12px] font-black text-primary uppercase tracking-[0.6em] animate-pulse">THĂNG HẠNG!</h3>
+                          </div>
+                          <h4 className="text-4xl font-[1000] text-foreground tracking-tighter uppercase leading-tight drop-shadow-xl">
+                            {showRankUp.new}
+                          </h4>
+                          <p className="text-foreground/40 text-[11px] font-bold uppercase tracking-[0.2em] max-w-[200px] mx-auto leading-relaxed">
+                            Người đã vượt qua giới hạn của bản thân. Đế chế tài chính đang lớn mạnh!
+                          </p>
+                      </div>
+
+                      <div className="flex items-center justify-center gap-6 py-4">
+                          <div className="text-center opacity-40">
+                              <p className="text-[8px] font-black uppercase tracking-widest mb-1">Từ</p>
+                              <p className="text-sm font-black uppercase">{showRankUp.old}</p>
+                          </div>
+                          <ArrowRight className="text-primary" size={24} />
+                          <div className="text-center">
+                              <p className="text-[8px] font-black uppercase tracking-widest mb-1 text-primary">Đến</p>
+                              <p className="text-lg font-black uppercase text-primary">{showRankUp.new}</p>
+                          </div>
+                      </div>
+
+                      <button 
+                        onClick={() => setShowRankUp(null)}
+                        className="w-full bg-primary text-white font-[1000] py-6 rounded-[2.25rem] text-[12px] uppercase tracking-[0.4em] shadow-[0_25px_50px_rgba(139,92,246,0.5)] neon-glow-primary active:scale-95 transition-all border border-white/20"
+                      >
+                         TIẾP TỤC CHINH PHỤC
+                      </button>
+                  </div>
+              </div>
+          </div>
+      )}
 
       {celebratingProject && (
           <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/90 backdrop-blur-3xl p-6">

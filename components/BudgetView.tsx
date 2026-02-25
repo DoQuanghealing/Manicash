@@ -200,14 +200,21 @@ export const BudgetView: React.FC<Props> = ({ budgets, getSpent, onUpdateBudgets
                                     </div>
                                 </div>
                                 {!isEditingFlexible && (
-                                  <div className="text-right">
-                                      <span className={`text-xl font-black tracking-tight ${percentage > 90 ? 'text-danger' : percentage > 70 ? 'text-warning' : 'text-foreground'}`}>{percentage}%</span>
+                                  <div className="flex flex-col items-end">
+                                      <span className={`text-xl font-black tracking-tight ${percentage > 90 || budget.carryoverDebt ? 'text-danger' : percentage > 70 ? 'text-warning' : 'text-foreground'}`}>{percentage}%</span>
+                                      {budget.carryoverDebt && budget.carryoverDebt > 0 && (
+                                        <span className="text-[9px] font-black text-danger uppercase tracking-tighter animate-pulse">Nợ: {formatVND(budget.carryoverDebt)}</span>
+                                      )}
                                   </div>
                                 )}
                             </div>
                             {!isEditingFlexible && (
                               <div className="h-3 w-full bg-foreground/5 rounded-full overflow-hidden shadow-inner relative">
-                                  <div className="h-full rounded-full transition-all duration-1000 shadow-lg" style={{ width: `${percentage}%`, backgroundColor: color }}></div>
+                                  <div className="h-full rounded-full transition-all duration-1000 shadow-lg" style={{ 
+                                    width: `${percentage}%`, 
+                                    backgroundColor: budget.carryoverDebt ? '#ff4444' : color,
+                                    boxShadow: budget.carryoverDebt ? '0 0 10px rgba(255, 68, 68, 0.5)' : 'none'
+                                  }}></div>
                               </div>
                             )}
                         </div>

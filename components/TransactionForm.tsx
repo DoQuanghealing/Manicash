@@ -20,7 +20,7 @@ const analytics = {
     }
 };
 
-const LordDiamondAvatar = () => (
+const ButlerAvatar = ({ type }: { type: ButlerType }) => (
   <div className="relative w-24 h-24 mx-auto mb-4 group">
     <div className="absolute inset-0 bg-[#00FF7F]/20 rounded-full blur-xl group-hover:bg-[#00FF7F]/40 transition-all duration-500 animate-pulse"></div>
     <div className="relative bg-white/10 backdrop-blur-md border-2 border-[#00FF7F]/30 rounded-full w-full h-full flex items-center justify-center overflow-hidden shadow-[0_0_20px_rgba(0,255,127,0.2)]">
@@ -30,10 +30,23 @@ const LordDiamondAvatar = () => (
             <stop offset="0%" style={{ stopColor: '#4fc3f7', stopOpacity: 1 }} />
             <stop offset="100%" style={{ stopColor: '#01579b', stopOpacity: 1 }} />
           </linearGradient>
+          <linearGradient id="goldGradConfirm" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style={{ stopColor: '#FFD700', stopOpacity: 1 }} />
+            <stop offset="100%" style={{ stopColor: '#B8860B', stopOpacity: 1 }} />
+          </linearGradient>
         </defs>
-        <path d="M50 15 L75 35 L50 70 L25 35 Z" fill="url(#butlerGrad)" stroke="#fff" strokeWidth="0.5" />
-        <path d="M50 15 L60 35 L50 70 L40 35 Z" fill="rgba(255,255,255,0.3)" />
-        <path d="M25 35 L75 35 L60 25 L40 25 Z" fill="rgba(255,255,255,0.2)" />
+        {type === ButlerType.MALE ? (
+          <>
+            <path d="M50 15 L75 35 L50 70 L25 35 Z" fill="url(#butlerGrad)" stroke="#fff" strokeWidth="0.5" />
+            <path d="M50 15 L60 35 L50 70 L40 35 Z" fill="rgba(255,255,255,0.3)" />
+            <path d="M25 35 L75 35 L60 25 L40 25 Z" fill="rgba(255,255,255,0.2)" />
+          </>
+        ) : (
+          <>
+            <path d="M25 65 L20 35 L35 45 L50 25 L65 45 L80 35 L75 65 Z" fill="url(#goldGradConfirm)" stroke="#926B07" strokeWidth="1" />
+            <rect x="25" y="60" width="50" height="5" fill="#B8860B" />
+          </>
+        )}
         <circle cx="35" cy="25" r="1.5" fill="#00FF7F" className="animate-pulse" />
         <circle cx="65" cy="30" r="1" fill="#00FF7F" className="animate-pulse" />
       </svg>
@@ -55,11 +68,17 @@ export const TransactionForm: React.FC<Props> = ({ isOpen, onClose, onSubmit, wa
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
   const [fixedCosts, setFixedCosts] = useState<FixedCost[]>([]);
   const [isCatModalOpen, setIsCatModalOpen] = useState(false);
+  const [isBudgetGuardOpen, setIsBudgetGuardOpen] = useState(false);
+  const [budgetGuardInfo, setBudgetGuardInfo] = useState<{ category: string; excess: number; limit: number } | null>(null);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [randomMsg, setRandomMsg] = useState('');
 
   const activeUser = StorageService.getUsers()[0];
   const userTitle = activeUser?.gender === UserGender.FEMALE ? VI.butler.mistressLabel : VI.butler.masterLabel;
+  const butlerType = activeUser?.butlerPreference || ButlerType.MALE;
+  const butlerName = butlerType === ButlerType.MALE 
+    ? (activeUser?.maleButlerName || VI.butler.maleName) 
+    : (activeUser?.femaleButlerName || VI.butler.femaleName);
 
   useEffect(() => {
     if (isOpen) {
@@ -117,6 +136,20 @@ export const TransactionForm: React.FC<Props> = ({ isOpen, onClose, onSubmit, wa
 
     // Chọn câu thoại mỉa mai ngẫu nhiên từ Lord Diamond
     if (type === TransactionType.EXPENSE) {
+      const budgets = StorageService.getBudgets();
+      const budget = budgets.find(b => b.category === category);
+      if (budget && budget.limit > 0) {
+        const spent = StorageService.getTransactions()
+          .filter(t => t.type === TransactionType.EXPENSE && t.category === category)
+          .reduce((sum, t) => sum + t.amount, 0);
+        
+        const totalSpent = spent + numericAmount;
+        if (totalSpent > budget.limit) {
+          setBudgetGuardInfo({ category, excess: totalSpent - budget.limit, limit: budget.limit });
+          setIsBudgetGuardOpen(true);
+          return;
+        }
+      }
       setRandomMsg(getRandomSarcasm(category));
     } else if (type === TransactionType.INCOME) {
       const msgs = VI.transaction.confirmation.incomeMessages;
@@ -155,6 +188,14 @@ export const TransactionForm: React.FC<Props> = ({ isOpen, onClose, onSubmit, wa
       } else if (type === TransactionType.TRANSFER && internalMode === 'wallet') {
           StorageService.transferFunds(finalWalletId, toWalletId, numericAmountValue, description);
       } else {
+          if (type === TransactionType.EXPENSE && budgetGuardInfo) {
+              const budgets = StorageService.getBudgets();
+              const bIdx = budgets.findIndex(b => b.category === budgetGuardInfo.category);
+              if (bIdx !== -1) {
+                  budgets[bIdx].carryoverDebt = (budgets[bIdx].carryoverDebt || 0) + budgetGuardInfo.excess;
+                  StorageService.updateBudgets(budgets);
+              }
+          }
           StorageService.addTransaction(txData);
       }
       
@@ -184,7 +225,7 @@ export const TransactionForm: React.FC<Props> = ({ isOpen, onClose, onSubmit, wa
           <div className="flex justify-between items-center mb-8">
             <div>
                 <h2 className="text-xl font-black text-foreground tracking-tight uppercase leading-none">
-                    {isConfirming ? "Xác nhận từ Lord Diamond" : "Giao dịch mới"}
+                    {isConfirming ? `Xác nhận từ ${butlerName}` : "Giao dịch mới"}
                 </h2>
                 <p className="text-[10px] font-bold text-foreground/30 uppercase tracking-[0.2em] mt-1.5">Mani Intelligence Core</p>
             </div>
@@ -311,7 +352,7 @@ export const TransactionForm: React.FC<Props> = ({ isOpen, onClose, onSubmit, wa
           ) : (
             /* Confirmation Screen - UPGRADED TO LORD DIAMOND GLASSMORPHISM */
             <div className="space-y-8 animate-in zoom-in-95 fade-in duration-500 pb-4">
-               <LordDiamondAvatar />
+               <ButlerAvatar type={butlerType} />
                
                <div className="relative glass-card bg-white/10 backdrop-blur-2xl border-2 border-[#00FF7F]/40 rounded-[3rem] p-8 shadow-[0_20px_60px_rgba(0,255,127,0.15)] overflow-hidden">
                     {/* Decorative Glow */}
@@ -320,7 +361,7 @@ export const TransactionForm: React.FC<Props> = ({ isOpen, onClose, onSubmit, wa
                     <div className="text-center space-y-6 relative z-10">
                         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#00FF7F]/10 border border-[#00FF7F]/30 mb-2">
                              <MessageCircle size={14} className="text-[#00FF7F]" />
-                             <span className="text-[#00FF7F] font-black text-[10px] uppercase tracking-[0.2em]">Lord Diamond says:</span>
+                             <span className="text-[#00FF7F] font-black text-[10px] uppercase tracking-[0.2em]">{butlerName} says:</span>
                         </div>
                         
                         <div className="p-6 bg-white/5 rounded-[2.5rem] border border-white/10 shadow-inner">
@@ -387,6 +428,53 @@ export const TransactionForm: React.FC<Props> = ({ isOpen, onClose, onSubmit, wa
                       <button type="submit" disabled={!newCategoryName.trim()} className="flex-[2] py-5 rounded-2xl font-black text-[11px] text-white bg-primary shadow-xl neon-glow-primary uppercase tracking-widest disabled:opacity-50">Tạo</button>
                   </div>
               </form>
+           </div>
+        </div>
+      )}
+
+      {/* SMART BUDGET GUARD MODAL */}
+      {isBudgetGuardOpen && budgetGuardInfo && (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/95 backdrop-blur-3xl px-6 animate-in fade-in duration-300">
+           <div className="w-full max-w-sm glass-card rounded-[3rem] p-10 border-2 border-danger/30 shadow-[0_0_50px_rgba(239,68,68,0.2)] bg-surface text-center space-y-8">
+              <div className="w-24 h-24 bg-danger/10 text-danger rounded-[2.5rem] flex items-center justify-center mx-auto neon-glow-danger animate-bounce">
+                  <ShieldCheck size={48} />
+              </div>
+              
+              <div className="space-y-4">
+                  <h3 className="text-xl font-black text-danger tracking-tight uppercase">CẢNH BÁO HẠN MỨC</h3>
+                  <p className="text-[15px] font-bold text-foreground/80 leading-relaxed italic px-2">
+                      "Cậu chủ ơi, khoản này sẽ khiến mục <span className="text-primary">{(VI.category as any)[budgetGuardInfo.category] || budgetGuardInfo.category}</span> vượt hạn mức <span className="text-danger">{formatVND(budgetGuardInfo.limit)}</span>. 
+                      Đây là nhu cầu thiết yếu hay chỉ là cảm xúc nhất thời? Nếu tiếp tục, ngân sách tháng sau sẽ bị thắt chặt lại để bù đắp."
+                  </p>
+              </div>
+
+              <div className="p-5 bg-danger/5 rounded-2xl border border-danger/10">
+                  <p className="text-[10px] font-black text-danger/40 uppercase tracking-widest mb-1">Số tiền vượt mức</p>
+                  <p className="text-2xl font-black text-danger tracking-tighter">{formatVND(budgetGuardInfo.excess)}</p>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                  <button 
+                    onClick={() => {
+                        setIsBudgetGuardOpen(false);
+                        setBudgetGuardInfo(null);
+                    }}
+                    className="w-full py-5 rounded-2xl font-black text-[12px] text-foreground bg-foreground/5 uppercase tracking-widest hover:bg-foreground/10 transition-all"
+                  >
+                    Huỷ bỏ (Giữ an toàn)
+                  </button>
+                  <button 
+                    onClick={() => {
+                        setIsBudgetGuardOpen(false);
+                        // Tiếp tục flow xác nhận
+                        setRandomMsg(getRandomSarcasm(category));
+                        setIsConfirming(true);
+                    }}
+                    className="w-full py-5 rounded-2xl font-black text-[12px] text-white bg-danger shadow-xl neon-glow-danger uppercase tracking-widest active:scale-95 transition-all"
+                  >
+                    Vẫn chi tiêu (Chấp nhận nợ)
+                  </button>
+              </div>
            </div>
         </div>
       )}

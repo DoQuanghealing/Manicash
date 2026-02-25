@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Wallet, Transaction, TransactionType, User, ProsperityPlan, ButlerType, UserGender, Category } from '../types';
-import { ArrowUpRight, ArrowDownRight, Wallet as WalletIcon, Settings, Calendar, List, ShieldCheck, TrendingUp, AlertTriangle, Target, Zap, X, Sparkles, ArrowRightLeft, MoveRight, PartyPopper, HeartPulse, ChevronRight, Activity, Ban, Bot, Loader2, Cpu, Rocket, CheckCircle2, Trophy, Coins, ArrowRight, Clock, MessageSquareQuote } from 'lucide-react';
+import { Wallet, Transaction, TransactionType, User, ProsperityPlan, ButlerType, UserGender, Category, Rank } from '../types';
+import { ArrowUpRight, ArrowDownRight, Wallet as WalletIcon, Settings, Calendar, List, ShieldCheck, TrendingUp, AlertTriangle, Target, Zap, X, Sparkles, ArrowRightLeft, MoveRight, PartyPopper, HeartPulse, ChevronRight, Activity, Ban, Bot, Loader2, Cpu, Rocket, CheckCircle2, Trophy, Coins, ArrowRight, Clock, MessageSquareQuote, Medal, Award, Diamond } from 'lucide-react';
 import { CATEGORY_COLORS } from '../constants';
 import { VI } from '../constants/vi';
 import { formatVND, formatNumberInput, parseNumberInput } from '../utils/format';
@@ -22,38 +22,50 @@ interface Props {
 
 const SimpleButler = ({ type }: { type: ButlerType }) => {
   return (
-    <svg width="80" height="80" viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_10px_20px_rgba(0,0,0,0.2)]">
-      <defs>
-        <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" style={{ stopColor: '#FFD700', stopOpacity: 1 }} />
-          <stop offset="100%" style={{ stopColor: '#B8860B', stopOpacity: 1 }} />
-        </linearGradient>
-        <linearGradient id="diamondGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" style={{ stopColor: '#4fc3f7', stopOpacity: 1 }} />
-          <stop offset="50%" style={{ stopColor: '#0288d1', stopOpacity: 1 }} />
-          <stop offset="100%" style={{ stopColor: '#01579b', stopOpacity: 1 }} />
-        </linearGradient>
-      </defs>
-      <ellipse cx="50" cy="80" rx="35" ry="10" fill="url(#goldGrad)" opacity="0.6" />
-      <ellipse cx="50" cy="75" rx="30" ry="8" fill="url(#goldGrad)" />
-      {type === ButlerType.MALE ? (
-        <>
-          <path d="M50 15 L75 35 L50 70 L25 35 Z" fill="url(#diamondGrad)" stroke="#fff" strokeWidth="0.5" />
-          <path d="M50 15 L60 35 L50 70 L40 35 Z" fill="rgba(255,255,255,0.3)" />
-          <path d="M25 35 L75 35 L60 25 L40 25 Z" fill="rgba(255,255,255,0.2)" />
-          <circle cx="35" cy="25" r="1.5" fill="white" className="animate-pulse" />
-          <circle cx="65" cy="30" r="1" fill="white" className="animate-pulse" />
-        </>
-      ) : (
-        <>
-          <path d="M25 65 L20 35 L35 45 L50 25 L65 45 L80 35 L75 65 Z" fill="url(#goldGrad)" stroke="#926B07" strokeWidth="1" />
-          <rect x="25" y="60" width="50" height="5" fill="#B8860B" />
-          <circle cx="50" cy="25" r="3" fill="#E91E63" className="animate-pulse shadow-lg" />
-          <circle cx="35" cy="45" r="2" fill="#fff" className="animate-pulse" />
-          <circle cx="65" cy="45" r="2" fill="#fff" className="animate-pulse" />
-        </>
-      )}
-    </svg>
+    <div className="w-full h-full relative group">
+      <svg width="80" height="80" viewBox="0 0 100 100" className="w-full h-full drop-shadow-2xl transition-transform duration-500 group-hover:scale-110">
+        <defs>
+          <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style={{ stopColor: '#FFD700', stopOpacity: 1 }} />
+            <stop offset="100%" style={{ stopColor: '#B8860B', stopOpacity: 1 }} />
+          </linearGradient>
+          <linearGradient id="diamondGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style={{ stopColor: '#4fc3f7', stopOpacity: 1 }} />
+            <stop offset="50%" style={{ stopColor: '#0288d1', stopOpacity: 1 }} />
+            <stop offset="100%" style={{ stopColor: '#01579b', stopOpacity: 1 }} />
+          </linearGradient>
+        </defs>
+        <ellipse cx="50" cy="85" rx="35" ry="10" fill="url(#goldGrad)" opacity="0.3" />
+        {type === ButlerType.MALE ? (
+          <g>
+            {/* Suit/Tuxedo body */}
+            <path d="M50 20 L80 45 L70 85 L30 85 L20 45 Z" fill="#1a1a1a" stroke="#333" strokeWidth="1" />
+            {/* Shirt */}
+            <path d="M50 20 L60 35 L50 50 L40 35 Z" fill="#fff" />
+            {/* Bowtie */}
+            <path d="M45 35 L55 35 L52 40 L55 45 L45 45 L48 40 Z" fill="#000" />
+            {/* Head */}
+            <circle cx="50" cy="15" r="10" fill="#f5d0c5" />
+            {/* Hair */}
+            <path d="M40 12 Q50 2 60 12 L60 15 Q50 10 40 15 Z" fill="#2c1e1a" />
+          </g>
+        ) : (
+          <g>
+            {/* Dress body */}
+            <path d="M50 20 L85 85 L15 85 Z" fill="url(#goldGrad)" stroke="#926B07" strokeWidth="1" />
+            {/* Waist */}
+            <rect x="40" y="45" width="20" height="5" fill="#fff" opacity="0.5" />
+            {/* Head */}
+            <circle cx="50" cy="15" r="10" fill="#f5d0c5" />
+            {/* Long Hair */}
+            <path d="M40 15 Q30 30 35 50 M60 15 Q70 30 65 50" stroke="#4a3728" strokeWidth="8" fill="none" strokeLinecap="round" />
+            <path d="M40 12 Q50 2 60 12" fill="#4a3728" />
+            {/* Crown */}
+            <path d="M42 5 L50 -2 L58 5 L50 2 Z" fill="#FFD700" />
+          </g>
+        )}
+      </svg>
+    </div>
   );
 };
 
@@ -69,6 +81,9 @@ export const Dashboard: React.FC<Props> = ({ wallets = [], transactions = [], us
 
   const activeUser = users[0];
   const butlerType = activeUser?.butlerPreference || ButlerType.MALE;
+  const butlerName = butlerType === ButlerType.MALE 
+    ? (activeUser?.maleButlerName || VI.butler.maleName) 
+    : (activeUser?.femaleButlerName || VI.butler.femaleName);
   const userGender = activeUser?.gender || UserGender.MALE;
   const aiBrain = StorageService.getAiBrain();
   
@@ -191,15 +206,27 @@ export const Dashboard: React.FC<Props> = ({ wallets = [], transactions = [], us
   };
 
   const activeBalance = activeWalletTab === 'main' ? DataGuard.asNumber(mainWallet?.balance) : DataGuard.asNumber(backupWallet?.balance);
+  const gamification = StorageService.getGamificationState();
 
   return (
     <div className="space-y-8 pt-8 animate-in fade-in duration-1000">
       <div className="flex justify-between items-center px-1 relative z-50">
-        <div className="space-y-1">
-          <h1 className="text-foreground/40 text-[10px] font-extrabold tracking-[0.2em] uppercase leading-relaxed">Quản trị tài chính</h1>
-          <div className={`font-black text-foreground tracking-tight filter drop-shadow-sm transition-all duration-300 ${getDynamicFontSizeClass(totalBalance, true)}`}>
-            {formatVND(totalBalance)}
-          </div>
+        <div className="flex items-center gap-4">
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-lg neon-glow-${gamification.rank.toLowerCase()} bg-surface shrink-0`}>
+                {gamification.rank === Rank.IRON && <Medal size={24} className="text-slate-400" />}
+                {gamification.rank === Rank.BRONZE && <Medal size={24} className="text-orange-600" />}
+                {gamification.rank === Rank.SILVER && <Medal size={24} className="text-slate-300" />}
+                {gamification.rank === Rank.GOLD && <Medal size={24} className="text-gold" />}
+                {gamification.rank === Rank.PLATINUM && <Award size={24} className="text-cyan-400" />}
+                {gamification.rank === Rank.EMERALD && <Award size={24} className="text-emerald-400" />}
+                {gamification.rank === Rank.DIAMOND && <Diamond size={24} className="text-blue-400 animate-pulse" />}
+            </div>
+            <div className="space-y-1">
+              <h1 className="text-foreground/40 text-[10px] font-extrabold tracking-[0.2em] uppercase leading-relaxed">Quản trị tài chính</h1>
+              <div className={`font-black text-foreground tracking-tight filter drop-shadow-sm transition-all duration-300 ${getDynamicFontSizeClass(totalBalance, true)}`}>
+                {formatVND(totalBalance)}
+              </div>
+            </div>
         </div>
         <div className="flex items-center gap-3">
             <button onClick={onOpenFuture} className="p-4 glass-card bg-primary/10 rounded-[1.5rem] text-primary hover:bg-primary/20 transition-all active:scale-90 border-0 shadow-xl relative z-[60]">
@@ -247,6 +274,10 @@ export const Dashboard: React.FC<Props> = ({ wallets = [], transactions = [], us
                          </div>
                          <div className="flex-1">
                              <div className="relative glass-card bg-foreground/[0.03] p-4 rounded-2xl rounded-tl-none border-0 shadow-inner group">
+                                 <div className="flex items-center gap-2 mb-1">
+                                     <span className="text-[8px] font-black text-primary uppercase tracking-[0.2em]">{butlerName}</span>
+                                     <div className="h-[1px] flex-1 bg-primary/10"></div>
+                                 </div>
                                  <p className="font-comic text-[16px] text-foreground font-bold leading-relaxed">{butlerQuote}</p>
                                  <div className="absolute top-0 left-[-8px] w-0 h-0 border-t-[8px] border-t-transparent border-r-[8px] border-r-foreground/[0.03] border-b-[8px] border-b-transparent"></div>
                                  <div className="absolute -bottom-2 -right-1">
@@ -276,8 +307,8 @@ export const Dashboard: React.FC<Props> = ({ wallets = [], transactions = [], us
                       <span className="text-[14px] font-black text-primary">85</span>
                   </div>
               </div>
-              <button onClick={handleOpenProsperity} className="w-full bg-primary text-white py-5 rounded-[1.75rem] font-extrabold text-[12px] uppercase tracking-refined shadow-[0_15px_30px_rgba(139,92,246,0.3)] neon-glow-primary active:scale-95 transition-all flex items-center justify-center gap-3 border border-white/20">
-                Tăng tốc thịnh vượng <Zap size={18} fill="currentColor" />
+              <button onClick={handleOpenProsperity} className="w-full bg-primary text-white py-3 rounded-[1.5rem] font-extrabold text-[10px] uppercase tracking-refined shadow-[0_10px_20px_rgba(139,92,246,0.3)] neon-glow-primary active:scale-95 transition-all flex items-center justify-center gap-3 border border-white/20">
+                Tăng tốc thịnh vượng <Zap size={16} fill="currentColor" />
               </button>
           </div>
       </div>
@@ -294,13 +325,13 @@ export const Dashboard: React.FC<Props> = ({ wallets = [], transactions = [], us
                       <div>
                           <h3 className="text-xl font-black text-foreground tracking-tight uppercase leading-none">LỘ TRÌNH THỊNH VƯỢNG</h3>
                           <p className="text-[9px] font-bold text-foreground/30 uppercase tracking-[0.3em] mt-1.5 flex items-center gap-2">
-                              <Bot size={12} className="text-primary" /> Lord Diamond Analysis
+                              <Bot size={12} className="text-primary" /> {butlerName} Analysis
                           </p>
                       </div>
                       <button onClick={() => setIsProsperityOpen(false)} className="p-3 bg-foreground/5 rounded-2xl hover:bg-foreground/10 text-foreground transition-all"><X size={20} /></button>
                   </div>
 
-                  <div className="flex-1 overflow-y-auto no-scrollbar p-6 sm:p-8 space-y-12 pb-32">
+                  <div className="flex-1 overflow-y-auto no-scrollbar p-6 sm:p-8 space-y-12 pb-12">
                       {isLoadingProsperity ? (
                           <div className="h-full flex flex-col items-center justify-center space-y-8 py-20">
                               <div className="w-24 h-24 bg-primary/10 text-primary rounded-[2.5rem] flex items-center justify-center neon-glow-primary animate-pulse">
@@ -328,45 +359,37 @@ export const Dashboard: React.FC<Props> = ({ wallets = [], transactions = [], us
                                     </div>
                                   </div>
 
-                                  <div className="relative p-5 bg-foreground/[0.03] rounded-2xl border border-foreground/5">
-                                      <MessageSquareQuote size={18} className="absolute -top-3 -left-3 text-primary opacity-40" />
-                                      <p className="font-comic text-[16px] text-foreground font-bold leading-relaxed italic">
-                                          "{prosperityData.summary}"
-                                      </p>
+                                  <div className="relative p-5 bg-foreground/[0.03] rounded-2xl border border-foreground/5 space-y-4">
+                                      <div className="space-y-1">
+                                          <p className="text-[9px] font-black text-primary uppercase tracking-widest">Góp ý thu chi:</p>
+                                          <p className="font-comic text-[14px] text-foreground font-bold leading-relaxed italic">
+                                              "{prosperityData.spendingVsIncomeFeedback}"
+                                          </p>
+                                      </div>
+                                      <div className="h-[1px] bg-foreground/5"></div>
+                                      <div className="space-y-1">
+                                          <p className="text-[9px] font-black text-secondary uppercase tracking-widest">Ghi nhận thu nhập:</p>
+                                          <p className="font-comic text-[14px] text-foreground font-bold leading-relaxed italic">
+                                              "{prosperityData.incomeRecognition}"
+                                          </p>
+                                      </div>
                                   </div>
                               </div>
 
-                              {/* BLOCK 1: NHIỆM VỤ CẮT GIẢM */}
+                              {/* BLOCK 1: NHIỆM VỤ HÀNG NGÀY */}
                               <div className="space-y-6">
                                   <div className="flex items-center gap-4 ml-2">
-                                      <div className="w-10 h-10 bg-danger/10 text-danger rounded-xl flex items-center justify-center shadow-inner">
+                                      <div className="w-10 h-10 bg-primary/10 text-primary rounded-xl flex items-center justify-center shadow-inner">
                                           <Target size={20} />
                                       </div>
-                                      <h5 className="text-[11px] font-black text-foreground/40 uppercase tracking-[0.2em]">ĐẠI PHÚ HÀO TIỀM NĂNG (TỐI ƯU CHI)</h5>
+                                      <h5 className="text-[11px] font-black text-foreground/40 uppercase tracking-[0.2em]">3 NHIỆM VỤ CHIẾN LƯỢC</h5>
                                   </div>
                                   <div className="space-y-4">
-                                      {prosperityData.savingsStrategies.map((s, i) => (
-                                          <div key={i} className="glass-card bg-foreground/[0.04] p-6 rounded-[2.25rem] border-0 border-l-4 border-danger/20 hover:border-danger transition-all group">
-                                              <p className="text-[13px] font-[1000] text-primary uppercase tracking-tight mb-2 group-hover:text-danger transition-colors">{s.title}</p>
-                                              <p className="text-[12px] font-medium text-foreground/60 leading-relaxed tracking-tight">{s.desc}</p>
-                                          </div>
-                                      ))}
-                                  </div>
-                              </div>
-
-                              {/* BLOCK 2: CHIẾN LƯỢC TĂNG TỐC */}
-                              <div className="space-y-6">
-                                  <div className="flex items-center gap-4 ml-2">
-                                      <div className="w-10 h-10 bg-secondary/10 text-secondary rounded-xl flex items-center justify-center shadow-inner">
-                                          <TrendingUp size={20} />
-                                      </div>
-                                      <h5 className="text-[11px] font-black text-foreground/40 uppercase tracking-[0.2em]">CHIẾN LƯỢC TIẾT KIỆM & TĂNG TỐC (TĂNG THU)</h5>
-                                  </div>
-                                  <div className="space-y-4">
-                                      {prosperityData.incomeStrategies.map((s, i) => (
-                                          <div key={i} className="glass-card bg-foreground/[0.04] p-6 rounded-[2.25rem] border-0 border-l-4 border-secondary/20 hover:border-secondary transition-all group">
-                                              <p className="text-[13px] font-[1000] text-primary uppercase tracking-tight mb-2 group-hover:text-secondary transition-colors">{s.title}</p>
-                                              <p className="text-[12px] font-medium text-foreground/60 leading-relaxed tracking-tight">{s.desc}</p>
+                                      {prosperityData.dailyTasks.map((s, i) => (
+                                          <div key={i} className="glass-card bg-surface border border-foreground/5 p-6 rounded-[2rem] shadow-sm hover:shadow-md transition-all group relative overflow-hidden">
+                                              <div className="absolute top-0 left-0 w-1 h-full bg-primary/20 group-hover:bg-primary transition-all"></div>
+                                              <p className="text-[14px] font-black text-foreground uppercase tracking-tight mb-2">{s.title}</p>
+                                              <p className="text-[12px] font-medium text-foreground/50 leading-relaxed">{s.desc}</p>
                                           </div>
                                       ))}
                                   </div>
@@ -374,27 +397,27 @@ export const Dashboard: React.FC<Props> = ({ wallets = [], transactions = [], us
 
                               {/* Bad Habit Alert */}
                               {prosperityData.badHabitToQuit && (
-                                <div className="p-6 bg-warning/10 rounded-[2.5rem] border border-warning/20 flex gap-4 items-start">
-                                    <AlertTriangle size={24} className="text-warning shrink-0 mt-1" />
+                                <div className="p-6 bg-warning/5 rounded-[2.5rem] border border-warning/10 flex gap-4 items-start">
+                                    <AlertTriangle size={20} className="text-warning shrink-0 mt-1" />
                                     <div className="space-y-1">
-                                        <p className="text-[11px] font-black text-warning uppercase tracking-widest">BÁO ĐỘNG THÓI QUEN</p>
+                                        <p className="text-[10px] font-black text-warning uppercase tracking-widest">BÁO ĐỘNG THÓI QUEN</p>
                                         <p className="text-[13px] font-bold text-foreground/80">{prosperityData.badHabitToQuit.habit}</p>
                                         <p className="text-[11px] font-medium text-foreground/40 leading-relaxed-tight italic">{prosperityData.badHabitToQuit.why}</p>
                                     </div>
                                 </div>
                               )}
+
+                              {/* Action Button moved inside scroll */}
+                              <div className="pt-4 pb-4">
+                                  <button 
+                                    onClick={() => setIsProsperityOpen(false)}
+                                    className="w-full bg-primary text-white font-black py-4 rounded-2xl text-[11px] uppercase tracking-[0.3em] active:scale-95 transition-all shadow-xl neon-glow-primary border border-white/10"
+                                  >
+                                     TUÂN LỆNH QUẢN GIA ✨
+                                  </button>
+                              </div>
                           </>
                       ) : null}
-                  </div>
-
-                  {/* Modal Footer Action */}
-                  <div className="absolute bottom-0 left-0 right-0 p-8 bg-surface/90 backdrop-blur-md border-t border-foreground/5 z-[300]">
-                      <button 
-                        onClick={() => setIsProsperityOpen(false)}
-                        className="w-full bg-primary text-white font-[1000] py-6 rounded-[2.25rem] text-[12px] uppercase tracking-[0.4em] shadow-2xl neon-glow-primary active:scale-95 transition-all border border-white/20"
-                      >
-                         TUÂN LỆNH QUẢN GIA ✨
-                      </button>
                   </div>
               </div>
           </div>
