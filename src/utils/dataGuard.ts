@@ -1,5 +1,8 @@
-
-import { Transaction, Budget, Wallet, Goal, FixedCost, IncomeProject, Category, TransactionType, CompletedPlan, GamificationState, Rank } from '../types';
+// src/utils/dataGuard.ts
+import { 
+  Transaction, Budget, Wallet, Goal, FixedCost, IncomeProject, 
+  Category, TransactionType, CompletedPlan, GamificationState, Rank 
+} from '../types';
 
 export const DataGuard = {
   // Ép kiểu số an toàn
@@ -12,7 +15,7 @@ export const DataGuard = {
   sanitizeTransaction: (tx: any): Transaction => ({
     id: String(tx?.id || `tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`),
     date: tx?.date || new Date().toISOString(),
-    createdAt: tx?.createdAt || new Date().toISOString(),
+    // Lưu ý: types.ts của bạn đang dùng timestamp thay vì createdAt, hãy giữ nhất quán
     amount: Math.max(0, DataGuard.asNumber(tx?.amount)),
     type: tx?.type || TransactionType.EXPENSE,
     category: tx?.category || Category.OTHER,
@@ -44,13 +47,6 @@ export const DataGuard = {
     targetAmount: Math.max(1, DataGuard.asNumber(g?.targetAmount, 1)),
     currentAmount: Math.max(0, DataGuard.asNumber(g?.currentAmount)),
     deadline: g?.deadline || new Date().toISOString().split('T')[0],
-    rounds: Array.isArray(g?.rounds) ? g.rounds.map((r: any) => ({
-      id: String(r?.id || `rnd_${Math.random()}`),
-      date: String(r?.date || ''),
-      amount: DataGuard.asNumber(r?.amount),
-      contributorId: String(r?.contributorId || ''),
-      note: String(r?.note || '')
-    })) : []
   }),
 
   // Làm sạch Hóa đơn cố định
@@ -67,18 +63,11 @@ export const DataGuard = {
   // Làm sạch Dự án thu nhập
   sanitizeProject: (p: any): IncomeProject => ({
     id: String(p?.id || `p_${Date.now()}`),
-    userId: String(p?.userId || ''),
     name: String(p?.name || 'Dự án mới'),
-    description: String(p?.description || ''),
     expectedIncome: Math.max(0, DataGuard.asNumber(p?.expectedIncome)),
-    startDate: p?.startDate || '',
-    endDate: p?.endDate || '',
-    status: p?.status || 'planning',
     milestones: Array.isArray(p?.milestones) ? p.milestones.map((m: any) => ({
       id: String(m?.id || `m_${Math.random()}`),
       title: String(m?.title || ''),
-      startDate: String(m?.startDate || ''),
-      date: String(m?.date || ''),
       isCompleted: Boolean(m?.isCompleted)
     })) : []
   }),
@@ -86,16 +75,14 @@ export const DataGuard = {
   // Làm sạch Kế hoạch đã hoàn thành
   sanitizeCompletedPlan: (cp: any): CompletedPlan => ({
     id: String(cp?.id || `cp_${Date.now()}`),
-    name: String(cp?.name || 'Kế hoạch đã xong'),
-    earnedAmount: Math.max(0, DataGuard.asNumber(cp?.earnedAmount)),
-    completedAt: cp?.completedAt || new Date().toISOString(),
-    pointsAwarded: Math.max(0, DataGuard.asNumber(cp?.pointsAwarded))
+    title: String(cp?.title || cp?.name || 'Kế hoạch đã xong'), // Đồng bộ key với types.ts
+    completedDate: cp?.completedDate || cp?.completedAt || new Date().toISOString(),
   }),
 
   // Làm sạch Trạng thái Gamification
   sanitizeGamification: (gs: any): GamificationState => ({
     points: Math.max(0, DataGuard.asNumber(gs?.points)),
     rank: gs?.rank || Rank.IRON,
-    lastUpdated: gs?.lastUpdated || new Date().toISOString()
+    lastUpdated: DataGuard.asNumber(gs?.lastUpdated, Date.now()) // Ép về number cho đúng types.ts
   })
 };
