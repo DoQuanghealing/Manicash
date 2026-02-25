@@ -22,7 +22,12 @@ export enum ButlerType {
   FEMALE = 'FEMALE'
 }
 
-// Thêm định nghĩa Rank mà DataGuard đang tìm
+// Thêm UserGender để sửa lỗi ở storageService.ts
+export enum UserGender {
+  MALE = 'MALE',
+  FEMALE = 'FEMALE'
+}
+
 export enum Rank {
   IRON = 'IRON',
   BRONZE = 'BRONZE',
@@ -58,6 +63,7 @@ export interface User {
   butlerPreference?: ButlerType;
   maleButlerName?: string;
   femaleButlerName?: string;
+  gender?: UserGender; // Thêm trường này cho đồng bộ
 }
 
 export interface Budget {
