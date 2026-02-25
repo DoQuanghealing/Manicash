@@ -1,4 +1,5 @@
 // src/types.ts
+
 export enum Category {
   FOOD = 'FOOD',
   TRANSPORT = 'TRANSPORT',
@@ -19,6 +20,17 @@ export enum TransactionType {
 export enum ButlerType {
   MALE = 'MALE',
   FEMALE = 'FEMALE'
+}
+
+// Thêm định nghĩa Rank mà DataGuard đang tìm
+export enum Rank {
+  IRON = 'IRON',
+  BRONZE = 'BRONZE',
+  SILVER = 'SILVER',
+  GOLD = 'GOLD',
+  PLATINUM = 'PLATINUM',
+  EMERALD = 'EMERALD',
+  DIAMOND = 'DIAMOND'
 }
 
 export interface Transaction {
@@ -52,21 +64,51 @@ export interface Budget {
   category: Category;
   limit: number;
   spent: number;
+  carryoverDebt?: number;
 }
 
 export interface FixedCost {
+  id: string;
   title: string;
   amount: number;
   nextDueDate: string;
   frequencyMonths: number;
   allocatedAmount: number;
+  description?: string;
 }
 
 export interface Goal {
+  id: string;
   name: string;
   targetAmount: number;
   currentAmount: number;
   deadline?: string;
+}
+
+export interface IncomeProject {
+  id: string;
+  name: string;
+  expectedIncome: number;
+  milestones: Array<{ id: string; title: string; isCompleted: boolean }>;
+}
+
+export interface GamificationState {
+  points: number;
+  rank: Rank;
+  lastUpdated: number;
+}
+
+export interface CompletedPlan {
+  id: string;
+  title: string;
+  completedDate: string;
+}
+
+export interface AllocationSetting {
+  itemId: string;
+  type: 'COST' | 'GOAL';
+  percentage: number;
+  isEnabled: boolean;
 }
 
 export interface ProsperityPlan {
@@ -82,6 +124,9 @@ export interface ProsperityPlan {
 export interface FinancialReport {
   healthScore: number;
   healthAnalysis: string;
+  incomeEfficiency: any;
+  budgetDiscipline: any;
+  wealthVelocity: any;
+  gamificationInsights: any;
   cfoAdvice: string;
-  // Các trường khác tương ứng với AI response...
 }
