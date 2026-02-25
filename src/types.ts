@@ -1,5 +1,8 @@
 // src/types.ts
 
+/**
+ * ENUMS - Các danh mục cố định
+ */
 export enum Category {
   FOOD = 'FOOD',
   TRANSPORT = 'TRANSPORT',
@@ -22,7 +25,6 @@ export enum ButlerType {
   FEMALE = 'FEMALE'
 }
 
-// Thêm UserGender để sửa lỗi ở storageService.ts
 export enum UserGender {
   MALE = 'MALE',
   FEMALE = 'FEMALE'
@@ -38,15 +40,18 @@ export enum Rank {
   DIAMOND = 'DIAMOND'
 }
 
-export interface Transaction {
+/**
+ * INTERFACES - Cấu trúc dữ liệu
+ */
+
+export interface User {
   id: string;
-  date: string;
-  amount: number;
-  type: TransactionType;
-  category: Category;
-  walletId: string;
-  description: string;
-  timestamp: number;
+  name: string;
+  avatar: string;
+  gender?: UserGender;
+  butlerPreference: ButlerType; // Chọn Lord hay Queen
+  maleButlerName?: string;      // Tên tùy chỉnh cho Lord
+  femaleButlerName?: string;    // Tên tùy chỉnh cho Queen
 }
 
 export interface Wallet {
@@ -56,14 +61,16 @@ export interface Wallet {
   balance: number;
 }
 
-export interface User {
+export interface Transaction {
   id: string;
-  name: string;
-  avatar: string;
-  butlerPreference?: ButlerType;
-  maleButlerName?: string;
-  femaleButlerName?: string;
-  gender?: UserGender; // Thêm trường này cho đồng bộ
+  date: string;
+  amount: number;
+  type: TransactionType;
+  category: Category;
+  walletId: string;
+  description: string;
+  timestamp: number;
+  createdAt?: string;
 }
 
 export interface Budget {
@@ -89,13 +96,24 @@ export interface Goal {
   targetAmount: number;
   currentAmount: number;
   deadline?: string;
+  rounds?: Array<{
+    id: string;
+    date: string;
+    amount: number;
+    contributorId: string;
+    note: string;
+  }>;
 }
 
 export interface IncomeProject {
   id: string;
   name: string;
   expectedIncome: number;
-  milestones: Array<{ id: string; title: string; isCompleted: boolean }>;
+  milestones: Array<{
+    id: string;
+    title: string;
+    isCompleted: boolean;
+  }>;
 }
 
 export interface GamificationState {
@@ -116,6 +134,10 @@ export interface AllocationSetting {
   percentage: number;
   isEnabled: boolean;
 }
+
+/**
+ * AI & REPORTS - Các cấu trúc phản hồi từ AI
+ */
 
 export interface ProsperityPlan {
   statusTitle: string;
