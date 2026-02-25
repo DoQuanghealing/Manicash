@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
 import { AuthService } from '../services/firebase';
-import { Sparkles, ShieldCheck, AlertTriangle, X, Zap } from 'lucide-react';
+import { Sparkles, ShieldCheck, AlertTriangle, X } from 'lucide-react';
 import { BrandLogo } from './BrandLogo';
 
 export const Login: React.FC = () => {
@@ -20,18 +19,9 @@ export const Login: React.FC = () => {
     }
   };
 
-  const handleGuestLogin = async () => {
-    setIsLoading(true);
-    // Giả lập độ trễ nạp dữ liệu
-    setTimeout(async () => {
-      await AuthService.loginGuest();
-      setIsLoading(false);
-    }, 800);
-  };
-
   return (
     <div className="fixed inset-0 flex items-center justify-center p-6 bg-background overflow-hidden font-sans">
-      {/* Background Blobs - Cải thiện thẩm mỹ nền */}
+      {/* Background Blobs */}
       <div className="ai-bg-blob bg-primary top-[-100px] right-[-100px] opacity-10"></div>
       <div className="ai-bg-blob bg-secondary bottom-[-100px] left-[-100px] opacity-10"></div>
 
@@ -50,7 +40,7 @@ export const Login: React.FC = () => {
           </div>
         )}
 
-        {/* Logo & Header Section - Tăng kích thước logo 15% (w-24 -> w-28) */}
+        {/* Logo & Header Section */}
         <div className="space-y-6 pt-2">
           <div className="w-28 h-28 bg-gradient-to-tr from-yellow-400 to-amber-600 rounded-[2.5rem] flex items-center justify-center mx-auto shadow-xl animate-bounce">
             <BrandLogo size={74} color="white" />
@@ -61,7 +51,7 @@ export const Login: React.FC = () => {
           </div>
         </div>
 
-        {/* Buttons Section - Đồng nhất kiểu chữ và hiệu ứng đơn giản */}
+        {/* Buttons Section - Chỉ còn Google Login */}
         <div className="space-y-4">
           <button
             onClick={handleLogin}
@@ -71,7 +61,7 @@ export const Login: React.FC = () => {
             {isLoading ? (
               <div className="flex items-center gap-3">
                 <div className="w-5 h-5 border-3 border-black/10 border-t-black rounded-full animate-spin"></div>
-                <span className="text-[10px]">Đang xử lý...</span>
+                <span className="text-[10px]">Đang kết nối...</span>
               </div>
             ) : (
               <>
@@ -81,16 +71,12 @@ export const Login: React.FC = () => {
             )}
           </button>
           
-          <button
-            onClick={handleGuestLogin}
-            disabled={isLoading}
-            className="w-full bg-primary/10 text-primary font-black py-5 rounded-[1.75rem] active:scale-95 transition-all flex items-center justify-center gap-2 text-[11px] uppercase tracking-[0.02em] border-2 border-primary/20 hover:bg-primary/20 disabled:opacity-50"
-          >
-            <Zap size={16} className="fill-current" /> Trải nghiệm Demo
-          </button>
+          <p className="text-[9px] font-bold text-foreground/30 uppercase tracking-widest">
+            Dữ liệu của bạn được bảo mật bởi Firebase
+          </p>
         </div>
 
-        {/* Principles Section - Tối ưu khoảng cách dòng (leading-relaxed ~ 1.6) */}
+        {/* Principles Section */}
         <div className="glass-card bg-foreground/[0.03] p-7 rounded-[2.5rem] border-0 text-left shadow-inner">
            <div className="flex items-center gap-3 text-amber-500 mb-5">
               <ShieldCheck size={20} />
@@ -104,7 +90,7 @@ export const Login: React.FC = () => {
            </ul>
         </div>
 
-        {/* Footer Text - Đẩy lên cách mép card khoảng 24px (pb-6) */}
+        {/* Footer Text */}
         <div className="flex items-center justify-center gap-2 text-[10px] font-black text-foreground/20 uppercase tracking-[0.2em] pb-6">
             <Sparkles size={12} className="animate-pulse" />
             Manicash v1.2 • AI Core 3.0
