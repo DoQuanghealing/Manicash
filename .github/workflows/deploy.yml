@@ -1,4 +1,4 @@
-name: Manicash
+name: Deploy Manicash Alpha
 
 on:
   push:
@@ -26,10 +26,11 @@ jobs:
         run: npm install
 
       - name: Build project
-        # Lệnh này giúp Vite hiểu app nằm trong sub-folder của GitHub Pages
+        # Thêm base để chạy đúng trên GitHub Pages
         run: npx vite build --base=/Manicash/ 
         env:
           VITE_GROQ_API_KEY: ${{ secrets.VITE_GROQ_API_KEY }}
+          # Thêm các biến Firebase nếu cần ở đây
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
