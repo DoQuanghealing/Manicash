@@ -35,6 +35,11 @@ function App() {
   const [isBypassed, setIsBypassed] = useState(false);
   
   const [wallets, setWallets] = useState<Wallet[]>([]);
+  
+  useEffect(() => {
+    console.log("[App] Wallets state updated:", wallets);
+  }, [wallets]);
+
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [users, setUsers] = useState<AppUser[]>([]);
@@ -53,6 +58,7 @@ function App() {
 
     try {
       const unsubscribe = AuthService.onAuthChange(async (user) => {
+        console.log("[App] Auth state changed:", user ? user.email : "No user");
         setCurrentUser(user);
         
         if (user) {
@@ -79,6 +85,7 @@ function App() {
 
   useEffect(() => {
     if (isBypassed) {
+      console.log("[App] Login bypassed, initializing data...");
       StorageService.init();
       refreshData();
       applyInitialPreferences();
@@ -102,24 +109,31 @@ function App() {
     else document.documentElement.classList.remove('simple-mode');
   };
 
-  const refreshData = () => {
+  const refreshData = async () => {
     try {
       // DATA GUARD INTEGRATION: Clean everything before putting in state
       const rawWallets = StorageService.getWallets();
+      console.log(`[App] Raw wallets from StorageService: ${rawWallets.length} items`, rawWallets);
       setWallets(rawWallets.map(DataGuard.sanitizeWallet));
 
       const rawTxs = StorageService.getTransactions();
+      console.log(`[App] Raw transactions from StorageService: ${rawTxs.length} items`, rawTxs);
       setTransactions(rawTxs.map(DataGuard.sanitizeTransaction));
 
       const rawGoals = StorageService.getGoals();
+      console.log(`[App] Raw goals from StorageService: ${rawGoals.length} items`, rawGoals);
       setGoals(rawGoals.map(DataGuard.sanitizeGoal));
 
-      setUsers(StorageService.getUsers());
+      const usersFromStorage = StorageService.getUsers();
+      console.log("[App] Users from StorageService:", usersFromStorage);
+      setUsers(usersFromStorage);
 
       const rawBudgets = StorageService.getBudgets();
+      console.log(`[App] Raw budgets from StorageService: ${rawBudgets.length} items`, rawBudgets);
       setBudgets(rawBudgets.map(DataGuard.sanitizeBudget));
 
       const rawCosts = StorageService.getFixedCosts();
+      console.log(`[App] Raw costs from StorageService: ${rawCosts.length} items`, rawCosts);
       setFixedCosts(rawCosts.map(DataGuard.sanitizeFixedCost));
     } catch (e) {
       console.error("Data refresh error:", e);
@@ -129,9 +143,11 @@ function App() {
   };
 
   const handleSaveSettings = async (updatedUsers: AppUser[], updatedWallets: Wallet[]) => {
+    console.log("[App] Saving settings, updated wallets:", updatedWallets);
     await StorageService.updateUsers(updatedUsers);
     await StorageService.updateWallets(updatedWallets);
-    refreshData();
+    console.log("[App] Settings saved, refreshing data...");
+    await refreshData();
   };
 
   const handleUpdateBudgets = async (newBudgets: Budget[]) => {
@@ -174,9 +190,12 @@ function App() {
   };
 
   const handleAddTransaction = async (data: any) => {
-    refreshData();
+    console.log("[APP] Received tx:", data);
+    try {
+      console.log("[APP] Calling StorageService...");
+      await refreshData();
 
-    if (data && data.type === TransactionType.EXPENSE) {
+      if (data && data.type === TransactionType.EXPENSE) {
         const user = users[0];
         const butlerName = user?.butlerPreference === ButlerType.FEMALE 
             ? (user.femaleButlerName || VI.butler.femaleName) 
@@ -195,6 +214,10 @@ function App() {
             title: isOver ? VI.reflection.defaultTitle : butlerName,
             isLoading: false
         });
+      }
+    } catch (e) {
+      console.error("FULL ERROR in handleAddTransaction:", e);
+      throw e;
     }
   };
 

@@ -3,8 +3,14 @@ import { Rank } from '../types';
 
 export const DataGuard = {
   asNumber(value: any, fallback = 0): number {
-    const n = typeof value === "number" ? value : Number(value);
-    return Number.isFinite(n) ? n : fallback;
+    if (typeof value === "number") return Number.isFinite(value) ? value : fallback;
+    if (typeof value === "string") {
+      // Strip everything except digits and minus sign
+      const cleaned = value.replace(/[^\d-]/g, "");
+      const n = parseInt(cleaned, 10);
+      return isNaN(n) ? fallback : n;
+    }
+    return fallback;
   },
 
   sanitizeWallet(w: any) {
@@ -13,7 +19,7 @@ export const DataGuard = {
       ...w,
       id: String(w.id ?? ""),
       name: String(w.name ?? w.title ?? "Ví"),
-      balance: this.asNumber(w.balance ?? w.amount ?? 0),
+      balance: DataGuard.asNumber(w.balance ?? w.amount ?? 0),
     };
   },
 
@@ -23,8 +29,8 @@ export const DataGuard = {
       ...t,
       id: String(t.id ?? `tx_${Date.now()}`),
       date: String(t.date ?? new Date().toISOString()),
-      amount: this.asNumber(t.amount ?? 0),
-      timestamp: this.asNumber(t.timestamp ?? Date.now()),
+      amount: DataGuard.asNumber(t.amount ?? 0),
+      timestamp: DataGuard.asNumber(t.timestamp ?? Date.now()),
       description: String(t.description ?? ""),
       walletId: String(t.walletId ?? ""),
     };
@@ -35,8 +41,8 @@ export const DataGuard = {
     return {
       ...g,
       id: String(g.id ?? `goal_${Date.now()}`),
-      targetAmount: this.asNumber(g.targetAmount ?? g.target ?? 0),
-      currentAmount: this.asNumber(g.currentAmount ?? g.current ?? 0),
+      targetAmount: DataGuard.asNumber(g.targetAmount ?? g.target ?? 0),
+      currentAmount: DataGuard.asNumber(g.currentAmount ?? g.current ?? 0),
       title: String(g.title ?? g.name ?? "Mục tiêu"),
     };
   },
@@ -46,7 +52,7 @@ export const DataGuard = {
     return {
       ...b,
       id: String(b.id ?? `budget_${Date.now()}`),
-      limit: this.asNumber(b.limit ?? 0),
+      limit: DataGuard.asNumber(b.limit ?? 0),
     };
   },
 
@@ -55,9 +61,9 @@ export const DataGuard = {
     return {
       ...c,
       id: String(c.id ?? `cost_${Date.now()}`),
-      amount: this.asNumber(c.amount ?? 0),
-      frequencyMonths: this.asNumber(c.frequencyMonths ?? 1, 1),
-      allocatedAmount: this.asNumber(c.allocatedAmount ?? 0),
+      amount: DataGuard.asNumber(c.amount ?? 0),
+      frequencyMonths: DataGuard.asNumber(c.frequencyMonths ?? 1, 1),
+      allocatedAmount: DataGuard.asNumber(c.allocatedAmount ?? 0),
       nextDueDate: String(c.nextDueDate ?? new Date().toISOString().slice(0, 10)),
       title: String(c.title ?? "Chi phí cố định"),
     };
@@ -69,7 +75,7 @@ export const DataGuard = {
       ...p,
       id: String(p.id ?? `proj_${Date.now()}`),
       name: String(p.name ?? ""),
-      expectedIncome: this.asNumber(p.expectedIncome ?? 0),
+      expectedIncome: DataGuard.asNumber(p.expectedIncome ?? 0),
       milestones: Array.isArray(p.milestones) ? p.milestones.map((m: any) => ({
         ...m,
         id: String(m.id ?? `m_${Date.now()}`),
@@ -85,8 +91,8 @@ export const DataGuard = {
       ...cp,
       id: String(cp.id ?? `cp_${Date.now()}`),
       name: String(cp.name ?? ""),
-      earnedAmount: this.asNumber(cp.earnedAmount ?? 0),
-      pointsAwarded: this.asNumber(cp.pointsAwarded ?? 0),
+      earnedAmount: DataGuard.asNumber(cp.earnedAmount ?? 0),
+      pointsAwarded: DataGuard.asNumber(cp.pointsAwarded ?? 0),
       completedAt: String(cp.completedAt ?? new Date().toISOString())
     };
   },
@@ -94,7 +100,7 @@ export const DataGuard = {
   sanitizeGamification(g: any) {
     if (!g) return { points: 0, rank: Rank.IRON, lastUpdated: new Date().toISOString() };
     return {
-      points: this.asNumber(g.points ?? 0),
+      points: DataGuard.asNumber(g.points ?? 0),
       rank: (g.rank as Rank) || Rank.IRON,
       lastUpdated: String(g.lastUpdated ?? new Date().toISOString())
     };

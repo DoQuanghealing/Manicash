@@ -107,12 +107,22 @@ export const Dashboard: React.FC<Props> = ({ wallets = [], transactions = [], us
   const [isLoadingProsperity, setIsLoadingProsperity] = useState(false);
   const [currentBrainForData, setCurrentBrainForData] = useState<'gemini' | 'llama' | null>(null);
 
-  const totalBalance = Array.isArray(wallets)
-    ? wallets.reduce((acc, w) => acc + DataGuard.asNumber(w.balance), 0)
-    : 0;
+  const totalBalance = useMemo(() => {
+    const total = Array.isArray(wallets)
+      ? wallets.reduce((acc, w) => acc + DataGuard.asNumber(w.balance), 0)
+      : 0;
+    console.log("[Dashboard] Calculated total balance:", total, "from wallets:", wallets);
+    return total;
+  }, [wallets]);
 
-  const mainWallet = wallets?.find(w => w.id === 'w1') || wallets?.[0];
-  const backupWallet = wallets?.find(w => w.id === 'w2');
+  const mainWallet = useMemo(() => wallets?.find(w => w.id === 'w1') || wallets?.[0], [wallets]);
+  const backupWallet = useMemo(() => wallets?.find(w => w.id === 'w2'), [wallets]);
+
+  useEffect(() => {
+    // Đảm bảo dữ liệu luôn mới nhất khi vào Dashboard
+    console.log("[Dashboard] Refreshing data, current wallets:", wallets);
+    onRefresh();
+  }, []);
 
   const handleOpenProsperity = async () => {
     setIsProsperityOpen(true);
@@ -159,7 +169,7 @@ export const Dashboard: React.FC<Props> = ({ wallets = [], transactions = [], us
       return;
     }
 
-    const success = StorageService.transferFunds(mainWallet.id, 'w2', numericAmount, 'Trích lập quỹ thủ công');
+    const success = await StorageService.transferFunds(mainWallet.id, 'w2', numericAmount, 'Trích lập quỹ thủ công');
     if (success) {
       const currentUser = AuthService.getAuth()?.currentUser;
       if (currentUser) {
@@ -211,6 +221,7 @@ export const Dashboard: React.FC<Props> = ({ wallets = [], transactions = [], us
   };
 
   const activeBalance = activeWalletTab === 'main' ? DataGuard.asNumber(mainWallet?.balance) : DataGuard.asNumber(backupWallet?.balance);
+  console.log("[Dashboard] Active balance:", activeBalance, "Active tab:", activeWalletTab, "Main wallet balance:", mainWallet?.balance);
   const gamification = StorageService.getGamificationState();
 
   return (

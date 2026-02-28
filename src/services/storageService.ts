@@ -125,6 +125,7 @@ export const StorageService = {
   },
 
   init: () => {
+    console.log("[Storage] Initializing storage...");
     if (!localStorage.getItem(KEYS.USERS)) localStorage.setItem(KEYS.USERS, JSON.stringify(INITIAL_USERS));
     if (!localStorage.getItem(KEYS.WALLETS)) localStorage.setItem(KEYS.WALLETS, JSON.stringify(INITIAL_WALLETS));
     if (!localStorage.getItem(KEYS.CATEGORIES)) localStorage.setItem(KEYS.CATEGORIES, JSON.stringify(Object.values(Category)));
@@ -172,11 +173,13 @@ export const StorageService = {
 
   saveAndSync: async (key: string, value: any) => {
     const stringVal = typeof value === 'string' ? value : JSON.stringify(value);
+    console.log(`[Storage] saveAndSync key: ${key}, value length: ${stringVal.length}`);
     localStorage.setItem(key, stringVal);
     
     // Chỉ đồng bộ nếu có mạng và Firebase đã sẵn sàng
+    // KHÔNG dùng await ở đây để tránh treo UI khi mạng chậm
     if (navigator.onLine && AuthService.isConfigured()) {
-        await StorageService.syncToCloud();
+        StorageService.syncToCloud().catch(err => console.warn("[Storage] Sync failed in background:", err));
     }
   },
 
@@ -209,8 +212,10 @@ export const StorageService = {
   setSimpleMode: async (enabled: boolean) => StorageService.saveAndSync(KEYS.SIMPLE_MODE, String(enabled)),
   getUsers: (): User[] => {
     try {
-      const data = JSON.parse(localStorage.getItem(KEYS.USERS) || '[]');
-      return Array.isArray(data) ? data : INITIAL_USERS;
+      const raw = localStorage.getItem(KEYS.USERS);
+      const data = JSON.parse(raw || 'null');
+      if (Array.isArray(data) && data.length > 0) return data;
+      return INITIAL_USERS;
     } catch { return INITIAL_USERS; }
   },
   updateUsers: async (users: User[]) => StorageService.saveAndSync(KEYS.USERS, users),
@@ -246,29 +251,55 @@ export const StorageService = {
     } catch { return []; }
   },
   addTransaction: async (tx: Transaction) => {
-    const txs = StorageService.getTransactions();
-    const cleanTx = DataGuard.sanitizeTransaction(tx);
-    
-    txs.push(cleanTx);
-    localStorage.setItem(KEYS.TRANSACTIONS, JSON.stringify(txs));
-    
-    const wallets = StorageService.getWallets();
-    const wallet = wallets.find(w => w.id === cleanTx.walletId);
-    if (wallet) {
-      if (cleanTx.type === TransactionType.INCOME) wallet.balance += cleanTx.amount;
-      else wallet.balance -= cleanTx.amount;
-      localStorage.setItem(KEYS.WALLETS, JSON.stringify(wallets));
+    console.log("[SS] addTransaction start");
+    try {
+      const txs = StorageService.getTransactions();
+      const cleanTx = DataGuard.sanitizeTransaction(tx);
+      const amount = DataGuard.asNumber(cleanTx.amount);
+      
+      txs.push(cleanTx);
+      console.log("[Storage] Saving transactions:", txs);
+      localStorage.setItem(KEYS.TRANSACTIONS, JSON.stringify(txs));
+      
+      const wallets = StorageService.getWallets();
+      console.log("[SS] wallets before:", wallets);
+      const wallet = wallets.find(w => w.id === cleanTx.walletId);
+      if (wallet) {
+        const currentBalance = DataGuard.asNumber(wallet.balance);
+        if (cleanTx.type === TransactionType.INCOME) {
+          wallet.balance = currentBalance + amount;
+        } else {
+          wallet.balance = currentBalance - amount;
+        }
+        console.log("[SS] wallets after:", wallets);
+        localStorage.setItem(KEYS.WALLETS, JSON.stringify(wallets));
+      }
+      // Không await để UI cập nhật ngay lập tức
+      if (navigator.onLine && AuthService.isConfigured()) {
+        StorageService.syncToCloud().catch(err => console.warn("[Storage] Sync failed in background:", err));
+      }
+    } catch (e) {
+      console.error("FULL ERROR in addTransaction:", e);
+      throw e;
     }
-    await StorageService.syncToCloud();
   },
 
   getWallets: (): Wallet[] => {
     try {
-      const data = JSON.parse(localStorage.getItem(KEYS.WALLETS) || '[]');
-      return Array.isArray(data) ? data.map(DataGuard.sanitizeWallet) : INITIAL_WALLETS;
-    } catch { return INITIAL_WALLETS; }
+      const raw = localStorage.getItem(KEYS.WALLETS);
+      const data = JSON.parse(raw || 'null');
+      if (Array.isArray(data) && data.length > 0) {
+          return data.map(DataGuard.sanitizeWallet);
+      }
+      return INITIAL_WALLETS;
+    } catch { 
+      return INITIAL_WALLETS; 
+    }
   },
-  updateWallets: async (wallets: Wallet[]) => StorageService.saveAndSync(KEYS.WALLETS, wallets),
+  updateWallets: async (wallets: Wallet[]) => {
+    console.log("[Storage] Updating wallets:", wallets);
+    return StorageService.saveAndSync(KEYS.WALLETS, wallets);
+  },
   
   getGoals: (): Goal[] => {
     try {
@@ -325,8 +356,12 @@ export const StorageService = {
 
   getBudgets: (): Budget[] => {
     try {
-      const data = JSON.parse(localStorage.getItem(KEYS.BUDGETS) || '[]');
-      return Array.isArray(data) ? data.map(DataGuard.sanitizeBudget) : INITIAL_BUDGETS;
+      const raw = localStorage.getItem(KEYS.BUDGETS);
+      const data = JSON.parse(raw || 'null');
+      if (Array.isArray(data) && data.length > 0) {
+          return data.map(DataGuard.sanitizeBudget);
+      }
+      return INITIAL_BUDGETS;
     } catch { return INITIAL_BUDGETS; }
   },
   updateBudgets: async (budgets: Budget[]) => StorageService.saveAndSync(KEYS.BUDGETS, budgets),
@@ -373,70 +408,90 @@ export const StorageService = {
     await StorageService.saveAndSync(KEYS.FIXED_COSTS, updated);
   },
 
-  depositToBill: (walletId: string, billId: string, amount: number, description: string): boolean => {
-    const wallets = StorageService.getWallets();
-    const wallet = wallets.find(w => w.id === walletId);
-    const costs = StorageService.getFixedCosts();
-    const cost = costs.find(c => c.id === billId);
+  depositToBill: async (walletId: string, billId: string, amount: number, description: string): Promise<boolean> => {
+    console.log("[SS] depositToBill start", { walletId, billId, amount });
+    try {
+      const numAmount = DataGuard.asNumber(amount);
+      const wallets = StorageService.getWallets();
+      console.log("[SS] wallets before:", wallets);
+      const wallet = wallets.find(w => w.id === walletId);
+      const costs = StorageService.getFixedCosts();
+      const cost = costs.find(c => c.id === billId);
 
-    if (wallet && cost && wallet.balance >= amount) {
-      wallet.balance -= amount;
-      cost.allocatedAmount += amount;
+      if (wallet && cost && DataGuard.asNumber(wallet.balance) >= numAmount) {
+        wallet.balance = DataGuard.asNumber(wallet.balance) - numAmount;
+        cost.allocatedAmount = DataGuard.asNumber(cost.allocatedAmount) + numAmount;
+        console.log("[SS] wallets after:", wallets);
 
-      const tx: Transaction = {
-        id: `tx_bill_dep_${Date.now()}`,
-        date: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-        amount,
-        type: TransactionType.TRANSFER,
-        category: Category.BILLS,
-        walletId: walletId,
-        description: description || `Nạp quỹ hóa đơn: ${cost.title}`,
-        timestamp: Date.now()
-      };
+        const tx: Transaction = {
+          id: `tx_bill_dep_${Date.now()}`,
+          date: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+          amount: numAmount,
+          type: TransactionType.TRANSFER,
+          category: Category.BILLS,
+          walletId: walletId,
+          description: description || `Nạp quỹ hóa đơn: ${cost.title}`,
+          timestamp: Date.now()
+        };
 
-      const txs = StorageService.getTransactions();
-      txs.push(tx);
+        const txs = StorageService.getTransactions();
+        txs.push(tx);
 
-      localStorage.setItem(KEYS.TRANSACTIONS, JSON.stringify(txs));
-      localStorage.setItem(KEYS.WALLETS, JSON.stringify(wallets));
-      localStorage.setItem(KEYS.FIXED_COSTS, JSON.stringify(costs));
-      StorageService.syncToCloud();
-      return true;
+        localStorage.setItem(KEYS.TRANSACTIONS, JSON.stringify(txs));
+        localStorage.setItem(KEYS.WALLETS, JSON.stringify(wallets));
+        localStorage.setItem(KEYS.FIXED_COSTS, JSON.stringify(costs));
+        await StorageService.syncToCloud();
+        return true;
+      }
+      console.log("[SS] depositToBill failed: wallet or cost not found or insufficient balance", { wallet: !!wallet, cost: !!cost, balance: wallet?.balance });
+      return false;
+    } catch (e) {
+      console.error("FULL ERROR in depositToBill:", e);
+      throw e;
     }
-    return false;
   },
 
-  transferFunds: (fromId: string, toId: string, amount: number, description: string): boolean => {
-    const wallets = StorageService.getWallets();
-    const fromW = wallets.find(w => w.id === fromId);
-    const toW = wallets.find(w => w.id === toId);
-    
-    if (fromW && toW && fromW.balance >= amount) {
-      fromW.balance -= amount;
-      toW.balance += amount;
+  transferFunds: async (fromId: string, toId: string, amount: number, description: string): Promise<boolean> => {
+    console.log("[SS] transferFunds start", { fromId, toId, amount });
+    try {
+      const numAmount = DataGuard.asNumber(amount);
+      const wallets = StorageService.getWallets();
+      console.log("[SS] wallets before:", wallets);
+      const fromW = wallets.find(w => w.id === fromId);
+      const toW = wallets.find(w => w.id === toId);
       
-      const tx: Transaction = {
-        id: `tx_trf_${Date.now()}`,
-        date: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-        amount,
-        type: TransactionType.TRANSFER,
-        category: Category.TRANSFER,
-        walletId: fromId,
-        description: description || `Chuyển tiền tới ${toW.name}`,
-        timestamp: Date.now()
-      };
-      
-      const txs = StorageService.getTransactions();
-      txs.push(tx);
-      
-      localStorage.setItem(KEYS.TRANSACTIONS, JSON.stringify(txs));
-      localStorage.setItem(KEYS.WALLETS, JSON.stringify(wallets));
-      StorageService.syncToCloud();
-      return true;
+      if (fromW && toW && DataGuard.asNumber(fromW.balance) >= numAmount) {
+        fromW.balance = DataGuard.asNumber(fromW.balance) - numAmount;
+        toW.balance = DataGuard.asNumber(toW.balance) + numAmount;
+        console.log("[SS] wallets after:", wallets);
+        
+        const tx: Transaction = {
+          id: `tx_trf_${Date.now()}`,
+          date: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+          amount: numAmount,
+          type: TransactionType.TRANSFER,
+          category: Category.TRANSFER,
+          walletId: fromId,
+          description: description || `Chuyển tiền tới ${toW.name}`,
+          timestamp: Date.now()
+        };
+        
+        const txs = StorageService.getTransactions();
+        txs.push(tx);
+        
+        localStorage.setItem(KEYS.TRANSACTIONS, JSON.stringify(txs));
+        localStorage.setItem(KEYS.WALLETS, JSON.stringify(wallets));
+        await StorageService.syncToCloud();
+        return true;
+      }
+      console.log("[SS] transferFunds failed: wallets not found or insufficient balance", { fromW: !!fromW, toW: !!toW, balance: fromW?.balance });
+      return false;
+    } catch (e) {
+      console.error("FULL ERROR in transferFunds:", e);
+      throw e;
     }
-    return false;
   },
 
   getAllocationConfig: (): AllocationSetting[] => {

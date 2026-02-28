@@ -79,8 +79,9 @@ const SimpleButlerSVG = ({ type, isActive }: { type: ButlerType, isActive?: bool
 
 export const SettingsModal: React.FC<Props> = ({ isOpen, onClose, users, wallets, onSave, onRefresh, currentUser }) => {
   const [userName, setUserName] = useState('');
-  const [mainWalletName, setMainWalletName] = useState('');
   const [mainWalletBalance, setMainWalletBalance] = useState('');
+  const [backupWalletBalance, setBackupWalletBalance] = useState('');
+  const [mainWalletName, setMainWalletName] = useState('');
   const [backupWalletName, setBackupWalletName] = useState('');
   const [currentTheme, setCurrentTheme] = useState<'dark' | 'light'>('dark');
   const [isSimpleMode, setIsSimpleMode] = useState(false);
@@ -111,7 +112,10 @@ export const SettingsModal: React.FC<Props> = ({ isOpen, onClose, users, wallets
         setMainWalletName(w1.name); 
         setMainWalletBalance(formatNumberInput(w1.balance)); 
       }
-      if (w2) setBackupWalletName(w2.name);
+      if (w2) {
+        setBackupWalletName(w2.name);
+        setBackupWalletBalance(formatNumberInput(w2.balance));
+      }
       setCurrentTheme(StorageService.getTheme());
       setIsSimpleMode(StorageService.getSimpleMode());
       setAiBrain(StorageService.getAiBrain());
@@ -120,7 +124,7 @@ export const SettingsModal: React.FC<Props> = ({ isOpen, onClose, users, wallets
 
   if (!isOpen) return null;
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     const updatedUsers = [...users];
     if (userName.trim()) {
@@ -134,16 +138,20 @@ export const SettingsModal: React.FC<Props> = ({ isOpen, onClose, users, wallets
       };
     }
     const updatedWallets = JSON.parse(JSON.stringify(wallets));
+    console.log("[Settings] Saving settings, current wallets in state:", wallets);
     const w1Idx = updatedWallets.findIndex((w: Wallet) => w.id === 'w1');
     if (w1Idx !== -1) {
         if (mainWalletName.trim()) updatedWallets[w1Idx].name = mainWalletName.trim();
         updatedWallets[w1Idx].balance = parseNumberInput(mainWalletBalance);
     }
     const w2Idx = updatedWallets.findIndex((w: Wallet) => w.id === 'w2');
-    if (w2Idx !== -1 && backupWalletName.trim()) updatedWallets[w2Idx].name = backupWalletName.trim();
+    if (w2Idx !== -1) {
+        if (backupWalletName.trim()) updatedWallets[w2Idx].name = backupWalletName.trim();
+        updatedWallets[w2Idx].balance = parseNumberInput(backupWalletBalance);
+    }
     
     StorageService.setAiBrain(aiBrain);
-    onSave(updatedUsers, updatedWallets);
+    await onSave(updatedUsers, updatedWallets);
     onClose();
   };
 
@@ -405,7 +413,29 @@ export const SettingsModal: React.FC<Props> = ({ isOpen, onClose, users, wallets
                                 inputMode="numeric"
                                 className="w-full bg-transparent text-foreground font-[900] text-2xl focus:outline-none tracking-tighter"
                                 value={mainWalletBalance}
-                                onChange={handleBalanceChange}
+                                onChange={(e) => setMainWalletBalance(formatNumberInput(e.target.value))}
+                            />
+                        </div>
+                      </div>
+
+                      <div className="bg-foreground/[0.03] p-6 rounded-[2rem] border border-foreground/5 space-y-4 shadow-inner">
+                        <div className="flex justify-between items-center">
+                          <label className="text-[9px] font-black text-foreground/20 uppercase tracking-widest">Ví dự phòng</label>
+                          <input
+                              type="text"
+                              className="bg-transparent text-foreground font-[900] text-right focus:outline-none text-xs uppercase"
+                              value={backupWalletName}
+                              onChange={(e) => setBackupWalletName(e.target.value)}
+                          />
+                        </div>
+                        <div className="flex items-center gap-4 border-t border-foreground/5 pt-4">
+                            <Banknote size={20} className="text-secondary opacity-40" />
+                            <input
+                                type="text"
+                                inputMode="numeric"
+                                className="w-full bg-transparent text-foreground font-[900] text-2xl focus:outline-none tracking-tighter"
+                                value={backupWalletBalance}
+                                onChange={(e) => setBackupWalletBalance(formatNumberInput(e.target.value))}
                             />
                         </div>
                       </div>

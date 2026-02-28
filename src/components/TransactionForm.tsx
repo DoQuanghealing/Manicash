@@ -161,7 +161,8 @@ export const TransactionForm: React.FC<Props> = ({ isOpen, onClose, onSubmit, wa
     setIsConfirming(true);
   };
 
-  const handleFinalSubmit = () => {
+  const handleFinalSubmit = async () => {
+    console.log("[TF] Click confirm");
     if (isSubmitting) return;
     
     setIsSubmitting(true);
@@ -182,28 +183,33 @@ export const TransactionForm: React.FC<Props> = ({ isOpen, onClose, onSubmit, wa
       timestamp: Date.now()
     };
 
+    console.log("[TF] Sending data:", txData);
+
     try {
       if (type === TransactionType.TRANSFER && internalMode === 'bill') {
-          StorageService.depositToBill(finalWalletId, toBillId, numericAmountValue, description);
+          await StorageService.depositToBill(finalWalletId, toBillId, numericAmountValue, description);
       } else if (type === TransactionType.TRANSFER && internalMode === 'wallet') {
-          StorageService.transferFunds(finalWalletId, toWalletId, numericAmountValue, description);
+          await StorageService.transferFunds(finalWalletId, toWalletId, numericAmountValue, description);
       } else {
           if (type === TransactionType.EXPENSE && budgetGuardInfo) {
               const budgets = StorageService.getBudgets();
               const bIdx = budgets.findIndex(b => b.category === budgetGuardInfo.category);
               if (bIdx !== -1) {
                   budgets[bIdx].carryoverDebt = (budgets[bIdx].carryoverDebt || 0) + budgetGuardInfo.excess;
-                  StorageService.updateBudgets(budgets);
+                  await StorageService.updateBudgets(budgets);
               }
           }
-          StorageService.addTransaction(txData);
+          await StorageService.addTransaction(txData);
       }
       
-      onSubmit(txData); 
+      // Gọi onSubmit để App cập nhật state
+      await onSubmit(txData); 
+      // Đóng modal ngay lập tức để tránh cảm giác bị kẹt
       onClose();
     } catch (err) {
-      console.error("Final submit error:", err);
+      console.error("FULL ERROR in handleFinalSubmit:", err);
       alert("Đã xảy ra lỗi khi lưu giao dịch.");
+      throw err;
     } finally {
       setIsSubmitting(false);
     }

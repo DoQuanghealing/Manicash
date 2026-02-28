@@ -31,10 +31,9 @@ const cleanJsonResponse = (text: string) => {
 };
 
 const callGroq = async (prompt: string, system: string, isPro: boolean = false, jsonMode: boolean = false) => {
-    // Try to get API key from process.env (AI Studio secrets) or import.meta.env (Vite)
-    const apiKey = process.env.GROQ_API_KEY || (import.meta as any).env?.VITE_GROQ_API_KEY;
+    const apiKey = import.meta.env.VITE_GROQ_API_KEY;
     if (!apiKey) {
-        console.warn("GROQ_API_KEY is missing. Please add it to secrets.");
+        console.warn("VITE_GROQ_API_KEY is missing.");
         return null;
     }
 
@@ -66,7 +65,7 @@ const callGroq = async (prompt: string, system: string, isPro: boolean = false, 
 };
 
 export const AiService = {
-  isAvailable: () => !!process.env.GEMINI_API_KEY || !!process.env.GROQ_API_KEY || !!(import.meta as any).env?.VITE_GROQ_API_KEY,
+  isAvailable: () => !!import.meta.env.VITE_GEMINI_API_KEY || !!import.meta.env.VITE_GROQ_API_KEY,
 
   generateTransactionComment: async (transaction: any): Promise<string> => {
     const brain = StorageService.getAiBrain();
@@ -77,8 +76,10 @@ export const AiService = {
         return res || "Lại tiêu tiền nữa rồi ạ?";
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) return "Cần cấu hình API Key để dùng AI.";
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error("Missing VITE_GEMINI_API_KEY");
+    }
 
     const ai = new GoogleGenAI({ apiKey });
     try {
@@ -104,8 +105,10 @@ export const AiService = {
         return res || "Cậu chủ tiêu tiền như thể lá mít ngoài vườn vậy.";
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) return "Cần cấu hình API Key.";
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error("Missing VITE_GEMINI_API_KEY");
+    }
 
     const ai = new GoogleGenAI({ apiKey });
     try {
@@ -160,8 +163,10 @@ export const AiService = {
         }
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) return null;
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error("Missing VITE_GEMINI_API_KEY");
+    }
 
     const ai = new GoogleGenAI({ apiKey });
     try {
@@ -250,8 +255,10 @@ export const AiService = {
         }
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) return null;
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error("Missing VITE_GEMINI_API_KEY");
+    }
 
     const ai = new GoogleGenAI({ apiKey });
     try {
@@ -335,8 +342,10 @@ export const AiService = {
         }
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) return null;
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error("Missing VITE_GEMINI_API_KEY");
+    }
 
     const ai = new GoogleGenAI({ apiKey });
     try {
