@@ -48,13 +48,15 @@ const INITIAL_BUDGETS: Budget[] = Object.values(Category)
 
 export const StorageService = {
   syncToCloud: async () => {
+    if (!navigator.onLine) return;
+    
     const db = AuthService.getDb();
     const auth = AuthService.getAuth();
     if (!db || !auth) return;
 
-    const user = auth.currentUser || (AuthService as any).lastUid; 
-    const uid = typeof user === 'string' ? user : user?.uid;
-    if (!uid) return;
+    const user = auth.currentUser;
+    if (!user) return;
+    const uid = user.uid;
 
     const data: any = {};
     Object.values(KEYS).forEach(key => {
@@ -70,16 +72,17 @@ export const StorageService = {
         await setDoc(doc(db, "userData", uid), {
             ...data,
             lastSynced: new Date().toISOString()
-        });
+        }, { merge: true });
     } catch (e) {
-        console.error("[Storage] Lỗi đồng bộ:", e);
+        console.warn("[Storage] Tạm thời không thể đồng bộ lên Cloud:", e);
     }
   },
 
   loadFromCloud: async (uid: string) => {
+    if (!navigator.onLine) return false;
+    
     const db = AuthService.getDb();
     if (!db || !uid) return false;
-    (AuthService as any).lastUid = uid;
 
     try {
         const docRef = doc(db, "userData", uid);
@@ -90,6 +93,9 @@ export const StorageService = {
             Object.entries(data).forEach(([key, value]) => {
                 if (key === 'lastSynced') return;
                 
+                // Chỉ ghi đè vào localStorage nếu dữ liệu Cloud tồn tại và hợp lệ
+                if (value === null || value === undefined) return;
+
                 // DATA GUARD INTEGRATION: Sanitize arrays from cloud
                 let cleanedValue = value;
                 try {
@@ -104,6 +110,10 @@ export const StorageService = {
                 }
 
                 const stringVal = typeof cleanedValue === 'string' ? cleanedValue : JSON.stringify(cleanedValue);
+                
+                // Ưu tiên dữ liệu local: Nếu local đã có dữ liệu và cloud cũ hơn (giả định), 
+                // hoặc đơn giản là không muốn ghi đè mù quáng.
+                // Ở đây chúng ta ghi đè vì đây là hàm "loadFromCloud" chủ động.
                 localStorage.setItem(key, stringVal);
             });
             return true;
@@ -163,7 +173,11 @@ export const StorageService = {
   saveAndSync: async (key: string, value: any) => {
     const stringVal = typeof value === 'string' ? value : JSON.stringify(value);
     localStorage.setItem(key, stringVal);
-    await StorageService.syncToCloud();
+    
+    // Chỉ đồng bộ nếu có mạng và Firebase đã sẵn sàng
+    if (navigator.onLine && AuthService.isConfigured()) {
+        await StorageService.syncToCloud();
+    }
   },
 
   resetFull: async () => {

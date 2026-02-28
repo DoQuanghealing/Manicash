@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { Wallet, Transaction, TransactionType, User, ProsperityPlan, ButlerType, UserGender, Category, Rank } from '../types';
 import { ArrowUpRight, ArrowDownRight, Wallet as WalletIcon, Settings, Calendar, List, ShieldCheck, TrendingUp, AlertTriangle, Target, Zap, X, Sparkles, ArrowRightLeft, MoveRight, PartyPopper, HeartPulse, ChevronRight, Activity, Ban, Bot, Loader2, Cpu, Rocket, CheckCircle2, Trophy, Coins, ArrowRight, Clock, MessageSquareQuote, Medal, Award, Diamond } from 'lucide-react';
@@ -74,19 +73,19 @@ export const Dashboard: React.FC<Props> = ({ wallets = [], transactions = [], us
   const [activeWalletTab, setActiveWalletTab] = useState<'main' | 'backup'>('main');
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [transferAmount, setTransferAmount] = useState('');
-  
+
   const [isAllocationSuccessOpen, setIsAllocationSuccessOpen] = useState(false);
   const [allocationSuccessQuote, setAllocationSuccessQuote] = useState('');
   const [successAmount, setSuccessAmount] = useState(0);
 
   const activeUser = users[0];
   const butlerType = activeUser?.butlerPreference || ButlerType.MALE;
-  const butlerName = butlerType === ButlerType.MALE 
-    ? (activeUser?.maleButlerName || VI.butler.maleName) 
+  const butlerName = butlerType === ButlerType.MALE
+    ? (activeUser?.maleButlerName || VI.butler.maleName)
     : (activeUser?.femaleButlerName || VI.butler.femaleName);
   const userGender = activeUser?.gender || UserGender.MALE;
   const aiBrain = StorageService.getAiBrain();
-  
+
   const butlerQuote = useMemo(() => {
     const now = new Date();
     const hours = now.getHours();
@@ -108,22 +107,22 @@ export const Dashboard: React.FC<Props> = ({ wallets = [], transactions = [], us
   const [isLoadingProsperity, setIsLoadingProsperity] = useState(false);
   const [currentBrainForData, setCurrentBrainForData] = useState<'gemini' | 'llama' | null>(null);
 
-  const totalBalance = Array.isArray(wallets) 
-    ? wallets.reduce((acc, w) => acc + DataGuard.asNumber(w.balance), 0) 
+  const totalBalance = Array.isArray(wallets)
+    ? wallets.reduce((acc, w) => acc + DataGuard.asNumber(w.balance), 0)
     : 0;
 
   const mainWallet = wallets?.find(w => w.id === 'w1') || wallets?.[0];
   const backupWallet = wallets?.find(w => w.id === 'w2');
 
   const handleOpenProsperity = async () => {
-      setIsProsperityOpen(true);
-      if (!prosperityData || currentBrainForData !== aiBrain) {
-          setIsLoadingProsperity(true);
-          const result = await AiService.generateProsperityPlan(transactions, StorageService.getFixedCosts(), StorageService.getIncomeProjects(), StorageService.getGoals());
-          setProsperityData(result);
-          setCurrentBrainForData(aiBrain);
-          setIsLoadingProsperity(false);
-      }
+    setIsProsperityOpen(true);
+    if (!prosperityData || currentBrainForData !== aiBrain) {
+      setIsLoadingProsperity(true);
+      const result = await AiService.generateProsperityPlan(transactions, StorageService.getFixedCosts(), StorageService.getIncomeProjects(), StorageService.getGoals());
+      setProsperityData(result);
+      setCurrentBrainForData(aiBrain);
+      setIsLoadingProsperity(false);
+    }
   };
 
   const createConfetti = () => {
@@ -144,16 +143,22 @@ export const Dashboard: React.FC<Props> = ({ wallets = [], transactions = [], us
 
   const handleQuickTransfer = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanAmount = transferAmount.replace(/\./g, '');
-    const numericAmount = parseFloat(cleanAmount);
+
+    // ✅ FIX: parse theo chuẩn toàn app (không dùng replace + parseFloat)
+    const numericAmount = parseNumberInput(transferAmount);
+
     if (!numericAmount || numericAmount <= 0 || !mainWallet) {
-        alert("Vui lòng nhập số tiền hợp lệ!");
-        return;
+      alert("Vui lòng nhập số tiền hợp lệ!");
+      return;
     }
-    if (numericAmount > mainWallet.balance) {
-        alert("Số dư Ví chính không đủ để thực hiện trích lập!");
-        return;
+
+    // ✅ FIX: so sánh số dư an toàn (tránh balance dạng string/dirty)
+    const mainBalance = DataGuard.asNumber(mainWallet.balance);
+    if (numericAmount > mainBalance) {
+      alert("Số dư Ví chính không đủ để thực hiện trích lập!");
+      return;
     }
+
     const success = StorageService.transferFunds(mainWallet.id, 'w2', numericAmount, 'Trích lập quỹ thủ công');
     if (success) {
       const currentUser = AuthService.getAuth()?.currentUser;
@@ -185,8 +190,8 @@ export const Dashboard: React.FC<Props> = ({ wallets = [], transactions = [], us
     }
   };
 
-  const recentTransactions = Array.isArray(transactions) 
-    ? [...transactions].sort((a, b) => DataGuard.asNumber(b.timestamp) - DataGuard.asNumber(a.timestamp)).slice(0, 15) 
+  const recentTransactions = Array.isArray(transactions)
+    ? [...transactions].sort((a, b) => DataGuard.asNumber(b.timestamp) - DataGuard.asNumber(a.timestamp)).slice(0, 15)
     : [];
 
   const getDynamicFontSizeClass = (balance: number = 0, isHeader = false) => {
@@ -212,353 +217,358 @@ export const Dashboard: React.FC<Props> = ({ wallets = [], transactions = [], us
     <div className="space-y-8 pt-8 animate-in fade-in duration-1000">
       <div className="flex justify-between items-center px-1 relative z-50">
         <div className="flex items-center gap-4">
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-lg neon-glow-${gamification.rank.toLowerCase()} bg-surface shrink-0`}>
-                {gamification.rank === Rank.IRON && <Medal size={24} className="text-slate-400" />}
-                {gamification.rank === Rank.BRONZE && <Medal size={24} className="text-orange-600" />}
-                {gamification.rank === Rank.SILVER && <Medal size={24} className="text-slate-300" />}
-                {gamification.rank === Rank.GOLD && <Medal size={24} className="text-gold" />}
-                {gamification.rank === Rank.PLATINUM && <Award size={24} className="text-cyan-400" />}
-                {gamification.rank === Rank.EMERALD && <Award size={24} className="text-emerald-400" />}
-                {gamification.rank === Rank.DIAMOND && <Diamond size={24} className="text-blue-400 animate-pulse" />}
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-lg neon-glow-${gamification.rank.toLowerCase()} bg-surface shrink-0 relative group`}>
+            {gamification.rank === Rank.IRON && <Medal size={24} className="text-slate-400" />}
+            {gamification.rank === Rank.BRONZE && <Medal size={24} className="text-orange-600" />}
+            {gamification.rank === Rank.SILVER && <Medal size={24} className="text-slate-300" />}
+            {gamification.rank === Rank.GOLD && <Medal size={24} className="text-gold" />}
+            {gamification.rank === Rank.PLATINUM && <Award size={24} className="text-cyan-400" />}
+            {gamification.rank === Rank.EMERALD && <Award size={24} className="text-emerald-400" />}
+            {gamification.rank === Rank.DIAMOND && <Diamond size={24} className="text-blue-400 animate-pulse" />}
+
+            {/* XP Circle Overlay */}
+            <div className="absolute -top-1 -right-1 w-5 h-5 bg-primary rounded-full flex items-center justify-center border-2 border-surface shadow-lg">
+              <Zap size={10} className="text-white fill-current" />
             </div>
-            <div className="space-y-1">
-              <h1 className="text-foreground/40 text-[10px] font-extrabold tracking-[0.2em] uppercase leading-relaxed">Quản trị tài chính</h1>
-              <div className={`font-black text-foreground tracking-tight filter drop-shadow-sm transition-all duration-300 ${getDynamicFontSizeClass(totalBalance, true)}`}>
-                {formatVND(totalBalance)}
-              </div>
+          </div>
+          <div className="space-y-1">
+            <h1 className="text-foreground/40 text-[10px] font-extrabold tracking-[0.2em] uppercase leading-relaxed">Quản trị tài chính</h1>
+            <div className={`font-black text-foreground tracking-tight filter drop-shadow-sm transition-all duration-300 ${getDynamicFontSizeClass(totalBalance, true)}`}>
+              {formatVND(totalBalance)}
             </div>
+          </div>
         </div>
         <div className="flex items-center gap-3">
-            <button onClick={onOpenFuture} className="p-4 glass-card bg-primary/10 rounded-[1.5rem] text-primary hover:bg-primary/20 transition-all active:scale-90 border-0 shadow-xl relative z-[60]">
-              <Rocket size={22} className="animate-pulse" />
-            </button>
-            <button onClick={onOpenSettings} className="p-4 glass-card bg-surface/80 rounded-[1.5rem] text-foreground/40 hover:text-primary transition-all active:scale-90 border-0 shadow-xl relative z-[60]">
-              <Settings size={22} className="animate-[spin_20s_linear_infinite]" />
-            </button>
+          <button onClick={onOpenFuture} className="p-4 glass-card bg-primary/10 rounded-[1.5rem] text-primary hover:bg-primary/20 transition-all active:scale-90 border-0 shadow-xl relative z-[60]">
+            <Rocket size={22} className="animate-pulse" />
+          </button>
+          <button onClick={onOpenSettings} className="p-4 glass-card bg-surface/80 rounded-[1.5rem] text-foreground/40 hover:text-primary transition-all active:scale-90 border-0 shadow-xl relative z-[60]">
+            <Settings size={22} className="animate-[spin_20s_linear_infinite]" />
+          </button>
         </div>
       </div>
 
       <div className="space-y-6 relative z-10">
-          <div className="p-1.5 glass-card bg-gradient-to-r from-primary/20 via-surface/40 to-secondary/20 rounded-[2rem] shadow-2xl border-0">
-              <div className="flex relative">
-                  <button onClick={() => setActiveWalletTab('main')} className={`relative z-10 flex-1 py-4 text-[11px] font-bold rounded-[1.5rem] transition-all uppercase tracking-refined flex items-center justify-center gap-3 ${activeWalletTab === 'main' ? 'bg-primary text-white shadow-xl neon-glow-primary' : 'text-foreground/40 hover:text-foreground/60'}`}>
-                      <WalletIcon size={14} /> {mainWallet?.name?.toUpperCase() || 'VÍ CHÍNH'}
-                  </button>
-                  <button onClick={() => setActiveWalletTab('backup')} className={`relative z-10 flex-1 py-4 text-[11px] font-bold rounded-[1.5rem] transition-all uppercase tracking-refined flex items-center justify-center gap-3 ${activeWalletTab === 'backup' ? 'bg-secondary text-white shadow-xl neon-glow-secondary' : 'text-foreground/40 hover:text-foreground/60'}`}>
-                      <ShieldCheck size={14} /> {backupWallet?.name?.toUpperCase() || "DỰ PHÒNG"}
-                  </button>
-              </div>
+        <div className="p-1.5 glass-card bg-gradient-to-r from-primary/20 via-surface/40 to-secondary/20 rounded-[2rem] shadow-2xl border-0">
+          <div className="flex relative">
+            <button onClick={() => setActiveWalletTab('main')} className={`relative z-10 flex-1 py-4 text-[11px] font-bold rounded-[1.5rem] transition-all uppercase tracking-refined flex items-center justify-center gap-3 ${activeWalletTab === 'main' ? 'bg-primary text-white shadow-xl neon-glow-primary' : 'text-foreground/40 hover:text-foreground/60'}`}>
+              <WalletIcon size={14} /> {mainWallet?.name?.toUpperCase() || 'VÍ CHÍNH'}
+            </button>
+            <button onClick={() => setActiveWalletTab('backup')} className={`relative z-10 flex-1 py-4 text-[11px] font-bold rounded-[1.5rem] transition-all uppercase tracking-refined flex items-center justify-center gap-3 ${activeWalletTab === 'backup' ? 'bg-secondary text-white shadow-xl neon-glow-secondary' : 'text-foreground/40 hover:text-foreground/60'}`}>
+              <ShieldCheck size={14} /> {backupWallet?.name?.toUpperCase() || "DỰ PHÒNG"}
+            </button>
           </div>
+        </div>
 
-          <div className={`glass-card liquid-glass rounded-[3rem] p-10 relative overflow-hidden group transition-all duration-700 border-0 shadow-2xl ${activeWalletTab === 'main' ? 'bg-gradient-to-br from-primary/20 via-surface/60 to-primary/5' : 'bg-gradient-to-br from-secondary/20 via-surface/60 to-secondary/5'}`}>
-               <div className="relative z-10">
-                    <div className="flex items-start justify-between">
-                        <div className="space-y-2">
-                             <p className="text-foreground/30 text-[11px] font-bold tracking-[0.1em] uppercase">Số dư quản lý</p>
-                             <p className={`font-black tracking-tight leading-tight transition-all duration-500 whitespace-nowrap ${activeWalletTab === 'backup' ? 'text-secondary' : 'text-foreground'} ${getDynamicFontSizeClass(activeBalance)}`}>
-                                 {formatVND(activeBalance)}
-                             </p>
-                        </div>
-                        {activeWalletTab === 'main' && (
-                          <button onClick={() => setShowTransferModal(true)} className="w-14 h-14 bg-primary text-white rounded-2xl flex items-center justify-center shadow-lg neon-glow-primary active:scale-95 transition-all border-2 border-primary/20">
-                            <ArrowRightLeft size={22} />
-                          </button>
-                        )}
-                    </div>
-                    <div className="mt-8 pt-6 border-t border-foreground/5 flex items-center gap-5">
-                         <div className="shrink-0 animate-float-coin w-20 h-20 flex items-center justify-center relative">
-                             <SimpleButler type={butlerType} />
-                             <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-2 border-surface flex items-center justify-center shadow-lg ${aiBrain === 'llama' ? 'bg-secondary' : 'bg-primary'}`}>
-                                 {aiBrain === 'llama' ? <Cpu size={12} className="text-white" /> : <Sparkles size={12} className="text-white" />}
-                             </div>
-                         </div>
-                         <div className="flex-1">
-                             <div className="relative glass-card bg-foreground/[0.03] p-4 rounded-2xl rounded-tl-none border-0 shadow-inner group">
-                                 <div className="flex items-center gap-2 mb-1">
-                                     <span className="text-[8px] font-black text-primary uppercase tracking-[0.2em]">{butlerName}</span>
-                                     <div className="h-[1px] flex-1 bg-primary/10"></div>
-                                 </div>
-                                 <p className="font-comic text-[16px] text-foreground font-bold leading-relaxed">{butlerQuote}</p>
-                                 <div className="absolute top-0 left-[-8px] w-0 h-0 border-t-[8px] border-t-transparent border-r-[8px] border-r-foreground/[0.03] border-b-[8px] border-b-transparent"></div>
-                                 <div className="absolute -bottom-2 -right-1">
-                                     <span className={`text-[8px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full ${aiBrain === 'llama' ? 'bg-secondary/20 text-secondary' : 'bg-primary/20 text-primary'}`}>
-                                         {aiBrain === 'llama' ? 'Llama Brain' : 'Gemini Brain'}
-                                     </span>
-                                 </div>
-                             </div>
-                         </div>
-                    </div>
-               </div>
+        <div className={`glass-card liquid-glass rounded-[3rem] p-10 relative overflow-hidden group transition-all duration-700 border-0 shadow-2xl ${activeWalletTab === 'main' ? 'bg-gradient-to-br from-primary/20 via-surface/60 to-primary/5' : 'bg-gradient-to-br from-secondary/20 via-surface/60 to-secondary/5'}`}>
+          <div className="relative z-10">
+            <div className="flex items-start justify-between">
+              <div className="space-y-2">
+                <p className="text-foreground/30 text-[11px] font-bold tracking-[0.1em] uppercase">Số dư quản lý</p>
+                <p className={`font-black tracking-tight leading-tight transition-all duration-500 whitespace-nowrap ${activeWalletTab === 'backup' ? 'text-secondary' : 'text-foreground'} ${getDynamicFontSizeClass(activeBalance)}`}>
+                  {formatVND(activeBalance)}
+                </p>
+              </div>
+              {activeWalletTab === 'main' && (
+                <button onClick={() => setShowTransferModal(true)} className="w-14 h-14 bg-primary text-white rounded-2xl flex items-center justify-center shadow-lg neon-glow-primary active:scale-95 transition-all border-2 border-primary/20">
+                  <ArrowRightLeft size={22} />
+                </button>
+              )}
+            </div>
+            <div className="mt-8 pt-6 border-t border-foreground/5 flex items-center gap-5">
+              <div className="shrink-0 animate-float-coin w-20 h-20 flex items-center justify-center relative">
+                <SimpleButler type={butlerType} />
+                <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-2 border-surface flex items-center justify-center shadow-lg ${aiBrain === 'llama' ? 'bg-secondary' : 'bg-primary'}`}>
+                  {aiBrain === 'llama' ? <Cpu size={12} className="text-white" /> : <Sparkles size={12} className="text-white" />}
+                </div>
+              </div>
+              <div className="flex-1">
+                <div className="relative glass-card bg-foreground/[0.03] p-4 rounded-2xl rounded-tl-none border-0 shadow-inner group">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[8px] font-black text-primary uppercase tracking-[0.2em]">{butlerName}</span>
+                    <div className="h-[1px] flex-1 bg-primary/10"></div>
+                  </div>
+                  <p className="font-comic text-[16px] text-foreground font-bold leading-relaxed">{butlerQuote}</p>
+                  <div className="absolute top-0 left-[-8px] w-0 h-0 border-t-[8px] border-t-transparent border-r-[8px] border-r-foreground/[0.03] border-b-[8px] border-b-transparent"></div>
+                  <div className="absolute -bottom-2 -right-1">
+                    <span className={`text-[8px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full ${aiBrain === 'llama' ? 'bg-secondary/20 text-secondary' : 'bg-primary/20 text-primary'}`}>
+                      {aiBrain === 'llama' ? 'Llama Brain' : 'Gemini Brain'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
+        </div>
       </div>
 
       <div className="space-y-4 px-1">
-          <div className="glass-card liquid-glass p-7 rounded-[2.5rem] border-0 shadow-xl bg-gradient-to-br from-surface/50 to-background flex flex-col gap-6 relative overflow-hidden group">
-              <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center shadow-inner">
-                      <HeartPulse size={24} />
-                  </div>
-                  <div className="flex-1">
-                      <h3 className="text-[10px] font-bold text-foreground/40 uppercase tracking-[0.2em] mb-1">Đánh giá sức khỏe</h3>
-                      <p className="text-[14px] font-semibold text-foreground uppercase tracking-tight">Ổn định & Kỳ vọng</p>
-                  </div>
-                  <div className="w-12 h-12 rounded-full border-4 border-primary/20 flex items-center justify-center relative">
-                      <div className="absolute inset-0 border-4 border-primary rounded-full animate-pulse opacity-20"></div>
-                      <span className="text-[14px] font-black text-primary">85</span>
-                  </div>
-              </div>
-              <button onClick={handleOpenProsperity} className="w-full bg-primary text-white py-3 rounded-[1.5rem] font-extrabold text-[10px] uppercase tracking-refined shadow-[0_10px_20px_rgba(139,92,246,0.3)] neon-glow-primary active:scale-95 transition-all flex items-center justify-center gap-3 border border-white/20">
-                Tăng tốc thịnh vượng <Zap size={16} fill="currentColor" />
-              </button>
+        <div className="glass-card liquid-glass p-7 rounded-[2.5rem] border-0 shadow-xl bg-gradient-to-br from-surface/50 to-background flex flex-col gap-6 relative overflow-hidden group">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center shadow-inner">
+              <HeartPulse size={24} />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-[10px] font-bold text-foreground/40 uppercase tracking-[0.2em] mb-1">Đánh giá sức khỏe</h3>
+              <p className="text-[14px] font-semibold text-foreground uppercase tracking-tight">Ổn định & Kỳ vọng</p>
+            </div>
+            <div className="w-12 h-12 rounded-full border-4 border-primary/20 flex items-center justify-center relative">
+              <div className="absolute inset-0 border-4 border-primary rounded-full animate-pulse opacity-20"></div>
+              <span className="text-[14px] font-black text-primary">85</span>
+            </div>
           </div>
+          <button onClick={handleOpenProsperity} className="w-full bg-primary text-white py-3 rounded-[1.5rem] font-extrabold text-[10px] uppercase tracking-refined shadow-[0_10px_20px_rgba(139,92,246,0.3)] neon-glow-primary active:scale-95 transition-all flex items-center justify-center gap-3 border border-white/20">
+            Tăng tốc thịnh vượng <Zap size={16} fill="currentColor" />
+          </button>
+        </div>
       </div>
-      
+
       {/* Prosperity Modal - UPGRADED TO LORD DIAMOND MISSION STYLE */}
       {isProsperityOpen && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 backdrop-blur-3xl p-4 overflow-hidden">
-              <div className="glass-card w-full max-w-[420px] h-[85vh] sm:h-[90vh] flex flex-col rounded-[3.5rem] border-0 shadow-2xl bg-surface overflow-hidden animate-in zoom-in-95 duration-500 relative">
-                  
-                  {/* Decorative Background Blob */}
-                  <div className="absolute top-0 right-0 w-48 h-48 bg-primary/10 rounded-full blur-[80px] -mr-16 -mt-16 opacity-40"></div>
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 backdrop-blur-3xl p-4 overflow-hidden">
+          <div className="glass-card w-full max-w-[420px] h-[85vh] sm:h-[90vh] flex flex-col rounded-[3.5rem] border-0 shadow-2xl bg-surface overflow-hidden animate-in zoom-in-95 duration-500 relative">
 
-                  <div className="p-8 pb-4 flex justify-between items-center shrink-0 border-b border-foreground/5 bg-surface/80 backdrop-blur-md z-10">
-                      <div>
-                          <h3 className="text-xl font-black text-foreground tracking-tight uppercase leading-none">LỘ TRÌNH THỊNH VƯỢNG</h3>
-                          <p className="text-[9px] font-bold text-foreground/30 uppercase tracking-[0.3em] mt-1.5 flex items-center gap-2">
-                              <Bot size={12} className="text-primary" /> {butlerName} Analysis
-                          </p>
-                      </div>
-                      <button onClick={() => setIsProsperityOpen(false)} className="p-3 bg-foreground/5 rounded-2xl hover:bg-foreground/10 text-foreground transition-all"><X size={20} /></button>
-                  </div>
+            {/* Decorative Background Blob */}
+            <div className="absolute top-0 right-0 w-48 h-48 bg-primary/10 rounded-full blur-[80px] -mr-16 -mt-16 opacity-40"></div>
 
-                  <div className="flex-1 overflow-y-auto no-scrollbar p-6 sm:p-8 space-y-12 pb-12">
-                      {isLoadingProsperity ? (
-                          <div className="h-full flex flex-col items-center justify-center space-y-8 py-20">
-                              <div className="w-24 h-24 bg-primary/10 text-primary rounded-[2.5rem] flex items-center justify-center neon-glow-primary animate-pulse">
-                                  <Zap size={48} fill="currentColor" />
-                              </div>
-                              <div className="text-center space-y-3">
-                                  <p className="text-lg font-bold text-foreground uppercase tracking-tight">AI đang quét dòng tiền...</p>
-                                  <p className="text-[10px] font-medium text-foreground/30 uppercase tracking-widest text-center mx-auto">Đang chuẩn bị báo cáo xéo xắt</p>
-                              </div>
-                          </div>
-                      ) : prosperityData ? (
-                          <>
-                              {/* Header Card */}
-                              <div className="glass-card bg-gradient-to-br from-primary/10 via-surface/40 to-transparent p-8 rounded-[3rem] border-0 text-center space-y-6 shadow-inner relative overflow-hidden group">
-                                  <div className="text-6xl mb-2 filter drop-shadow-xl">{prosperityData.statusEmoji}</div>
-                                  <h4 className="text-2xl font-[1000] text-foreground tracking-tighter uppercase leading-tight px-2">{prosperityData.statusTitle || "ĐẠI PHÚ HÀO TIỀM NĂNG"}</h4>
-                                  
-                                  <div className="space-y-2">
-                                    <div className="flex justify-between items-center px-1">
-                                        <span className="text-[9px] font-black text-foreground/20 uppercase tracking-widest">Năng lực tích lũy</span>
-                                        <span className="text-[11px] font-black text-primary">{prosperityData.healthScore}/100</span>
-                                    </div>
-                                    <div className="h-3 w-full bg-foreground/5 rounded-full overflow-hidden shadow-inner">
-                                        <div className="h-full bg-primary rounded-full transition-all duration-1000 shadow-lg" style={{ width: `${prosperityData.healthScore}%` }}></div>
-                                    </div>
-                                  </div>
-
-                                  <div className="relative p-5 bg-foreground/[0.03] rounded-2xl border border-foreground/5 space-y-4">
-                                      <div className="space-y-1">
-                                          <p className="text-[9px] font-black text-primary uppercase tracking-widest">Góp ý thu chi:</p>
-                                          <p className="font-comic text-[14px] text-foreground font-bold leading-relaxed italic">
-                                              "{prosperityData.spendingVsIncomeFeedback}"
-                                          </p>
-                                      </div>
-                                      <div className="h-[1px] bg-foreground/5"></div>
-                                      <div className="space-y-1">
-                                          <p className="text-[9px] font-black text-secondary uppercase tracking-widest">Ghi nhận thu nhập:</p>
-                                          <p className="font-comic text-[14px] text-foreground font-bold leading-relaxed italic">
-                                              "{prosperityData.incomeRecognition}"
-                                          </p>
-                                      </div>
-                                  </div>
-                              </div>
-
-                              {/* BLOCK 1: NHIỆM VỤ HÀNG NGÀY */}
-                              <div className="space-y-6">
-                                  <div className="flex items-center gap-4 ml-2">
-                                      <div className="w-10 h-10 bg-primary/10 text-primary rounded-xl flex items-center justify-center shadow-inner">
-                                          <Target size={20} />
-                                      </div>
-                                      <h5 className="text-[11px] font-black text-foreground/40 uppercase tracking-[0.2em]">3 NHIỆM VỤ CHIẾN LƯỢC</h5>
-                                  </div>
-                                  <div className="space-y-4">
-                                      {prosperityData.dailyTasks.map((s, i) => (
-                                          <div key={i} className="glass-card bg-surface border border-foreground/5 p-6 rounded-[2rem] shadow-sm hover:shadow-md transition-all group relative overflow-hidden">
-                                              <div className="absolute top-0 left-0 w-1 h-full bg-primary/20 group-hover:bg-primary transition-all"></div>
-                                              <p className="text-[14px] font-black text-foreground uppercase tracking-tight mb-2">{s.title}</p>
-                                              <p className="text-[12px] font-medium text-foreground/50 leading-relaxed">{s.desc}</p>
-                                          </div>
-                                      ))}
-                                  </div>
-                              </div>
-
-                              {/* Bad Habit Alert */}
-                              {prosperityData.badHabitToQuit && (
-                                <div className="p-6 bg-warning/5 rounded-[2.5rem] border border-warning/10 flex gap-4 items-start">
-                                    <AlertTriangle size={20} className="text-warning shrink-0 mt-1" />
-                                    <div className="space-y-1">
-                                        <p className="text-[10px] font-black text-warning uppercase tracking-widest">BÁO ĐỘNG THÓI QUEN</p>
-                                        <p className="text-[13px] font-bold text-foreground/80">{prosperityData.badHabitToQuit.habit}</p>
-                                        <p className="text-[11px] font-medium text-foreground/40 leading-relaxed-tight italic">{prosperityData.badHabitToQuit.why}</p>
-                                    </div>
-                                </div>
-                              )}
-
-                              {/* Action Button moved inside scroll */}
-                              <div className="pt-4 pb-4">
-                                  <button 
-                                    onClick={() => setIsProsperityOpen(false)}
-                                    className="w-full bg-primary text-white font-black py-4 rounded-2xl text-[11px] uppercase tracking-[0.3em] active:scale-95 transition-all shadow-xl neon-glow-primary border border-white/10"
-                                  >
-                                     TUÂN LỆNH QUẢN GIA ✨
-                                  </button>
-                              </div>
-                          </>
-                      ) : null}
-                  </div>
+            <div className="p-8 pb-4 flex justify-between items-center shrink-0 border-b border-foreground/5 bg-surface/80 backdrop-blur-md z-10">
+              <div>
+                <h3 className="text-xl font-black text-foreground tracking-tight uppercase leading-none">LỘ TRÌNH THỊNH VƯỢNG</h3>
+                <p className="text-[9px] font-bold text-foreground/30 uppercase tracking-[0.3em] mt-1.5 flex items-center gap-2">
+                  <Bot size={12} className="text-primary" /> {butlerName} Analysis
+                </p>
               </div>
+              <button onClick={() => setIsProsperityOpen(false)} className="p-3 bg-foreground/5 rounded-2xl hover:bg-foreground/10 text-foreground transition-all"><X size={20} /></button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto no-scrollbar p-6 sm:p-8 space-y-12 pb-12">
+              {isLoadingProsperity ? (
+                <div className="h-full flex flex-col items-center justify-center space-y-8 py-20">
+                  <div className="w-24 h-24 bg-primary/10 text-primary rounded-[2.5rem] flex items-center justify-center neon-glow-primary animate-pulse">
+                    <Zap size={48} fill="currentColor" />
+                  </div>
+                  <div className="text-center space-y-3">
+                    <p className="text-lg font-bold text-foreground uppercase tracking-tight">AI đang quét dòng tiền...</p>
+                    <p className="text-[10px] font-medium text-foreground/30 uppercase tracking-widest text-center mx-auto">Đang chuẩn bị báo cáo xéo xắt</p>
+                  </div>
+                </div>
+              ) : prosperityData ? (
+                <>
+                  {/* Header Card */}
+                  <div className="glass-card bg-gradient-to-br from-primary/10 via-surface/40 to-transparent p-8 rounded-[3rem] border-0 text-center space-y-6 shadow-inner relative overflow-hidden group">
+                    <div className="text-6xl mb-2 filter drop-shadow-xl">{prosperityData.statusEmoji}</div>
+                    <h4 className="text-2xl font-[1000] text-foreground tracking-tighter uppercase leading-tight px-2">{prosperityData.statusTitle || "ĐẠI PHÚ HÀO TIỀM NĂNG"}</h4>
+
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center px-1">
+                        <span className="text-[9px] font-black text-foreground/20 uppercase tracking-widest">Năng lực tích lũy</span>
+                        <span className="text-[11px] font-black text-primary">{prosperityData.healthScore}/100</span>
+                      </div>
+                      <div className="h-3 w-full bg-foreground/5 rounded-full overflow-hidden shadow-inner">
+                        <div className="h-full bg-primary rounded-full transition-all duration-1000 shadow-lg" style={{ width: `${prosperityData.healthScore}%` }}></div>
+                      </div>
+                    </div>
+
+                    <div className="relative p-5 bg-foreground/[0.03] rounded-2xl border border-foreground/5 space-y-4">
+                      <div className="space-y-1">
+                        <p className="text-[9px] font-black text-primary uppercase tracking-widest">Góp ý thu chi:</p>
+                        <p className="font-comic text-[14px] text-foreground font-bold leading-relaxed italic">
+                          "{prosperityData.spendingVsIncomeFeedback}"
+                        </p>
+                      </div>
+                      <div className="h-[1px] bg-foreground/5"></div>
+                      <div className="space-y-1">
+                        <p className="text-[9px] font-black text-secondary uppercase tracking-widest">Ghi nhận thu nhập:</p>
+                        <p className="font-comic text-[14px] text-foreground font-bold leading-relaxed italic">
+                          "{prosperityData.incomeRecognition}"
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* BLOCK 1: NHIỆM VỤ HÀNG NGÀY */}
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-4 ml-2">
+                      <div className="w-10 h-10 bg-primary/10 text-primary rounded-xl flex items-center justify-center shadow-inner">
+                        <Target size={20} />
+                      </div>
+                      <h5 className="text-[11px] font-black text-foreground/40 uppercase tracking-[0.2em]">3 NHIỆM VỤ CHIẾN LƯỢC</h5>
+                    </div>
+                    <div className="space-y-4">
+                      {prosperityData.dailyTasks.map((s, i) => (
+                        <div key={i} className="glass-card bg-surface border border-foreground/5 p-6 rounded-[2rem] shadow-sm hover:shadow-md transition-all group relative overflow-hidden">
+                          <div className="absolute top-0 left-0 w-1 h-full bg-primary/20 group-hover:bg-primary transition-all"></div>
+                          <p className="text-[14px] font-black text-foreground uppercase tracking-tight mb-2">{s.title}</p>
+                          <p className="text-[12px] font-medium text-foreground/50 leading-relaxed">{s.desc}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Bad Habit Alert */}
+                  {prosperityData.badHabitToQuit && (
+                    <div className="p-6 bg-warning/5 rounded-[2.5rem] border border-warning/10 flex gap-4 items-start">
+                      <AlertTriangle size={20} className="text-warning shrink-0 mt-1" />
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-black text-warning uppercase tracking-widest">BÁO ĐỘNG THÓI QUEN</p>
+                        <p className="text-[13px] font-bold text-foreground/80">{prosperityData.badHabitToQuit.habit}</p>
+                        <p className="text-[11px] font-medium text-foreground/40 leading-relaxed-tight italic">{prosperityData.badHabitToQuit.why}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Action Button moved inside scroll */}
+                  <div className="pt-4 pb-4">
+                    <button
+                      onClick={() => setIsProsperityOpen(false)}
+                      className="w-full bg-primary text-white font-black py-4 rounded-2xl text-[11px] uppercase tracking-[0.3em] active:scale-95 transition-all shadow-xl neon-glow-primary border border-white/10"
+                    >
+                      TUÂN LỆNH QUẢN GIA ✨
+                    </button>
+                  </div>
+                </>
+              ) : null}
+            </div>
           </div>
+        </div>
       )}
 
       {/* Existing other parts... */}
       <div className="glass-card rounded-[2.5rem] overflow-hidden border-0 shadow-xl relative z-10">
         <div className="p-7 border-b border-foreground/5 flex justify-between items-center bg-foreground/[0.02]">
-            <h3 className="font-bold text-[10px] uppercase tracking-refined text-foreground/40">Nhật ký dữ liệu</h3>
-            <div className="flex glass-card p-1.5 rounded-2xl bg-foreground/5 border-0">
-                <button onClick={() => setViewMode('list')} className={`p-2.5 rounded-xl transition-all ${viewMode === 'list' ? 'bg-primary text-white neon-glow-primary' : 'text-foreground/30'}`}><List size={18} /></button>
-                <button onClick={() => setViewMode('calendar')} className={`p-2.5 rounded-xl transition-all ${viewMode === 'calendar' ? 'bg-primary text-white neon-glow-primary' : 'text-foreground/30'}`}><Calendar size={18} /></button>
-            </div>
+          <h3 className="font-bold text-[10px] uppercase tracking-refined text-foreground/40">Nhật ký dữ liệu</h3>
+          <div className="flex glass-card p-1.5 rounded-2xl bg-foreground/5 border-0">
+            <button onClick={() => setViewMode('list')} className={`p-2.5 rounded-xl transition-all ${viewMode === 'list' ? 'bg-primary text-white neon-glow-primary' : 'text-foreground/30'}`}><List size={18} /></button>
+            <button onClick={() => setViewMode('calendar')} className={`p-2.5 rounded-xl transition-all ${viewMode === 'calendar' ? 'bg-primary text-white neon-glow-primary' : 'text-foreground/30'}`}><Calendar size={18} /></button>
+          </div>
         </div>
         <div className="min-h-[200px] p-4">
-            {viewMode === 'list' ? (
-                <div className="space-y-4">
-                    {recentTransactions.length > 0 ? recentTransactions.map((tx) => {
-                        const txDate = new Date(tx.createdAt || tx.date);
-                        const timeStr = txDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false });
-                        const dateStr = txDate.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
-                        const catLabel = tx.type === TransactionType.TRANSFER ? 'Nội bộ' : (VI.category[tx.category] || tx.category);
+          {viewMode === 'list' ? (
+            <div className="space-y-4">
+              {recentTransactions.length > 0 ? recentTransactions.map((tx) => {
+                const txDate = new Date((tx as any).createdAt || tx.date);
+                const timeStr = txDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false });
+                const dateStr = txDate.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                const catLabel = tx.type === TransactionType.TRANSFER ? 'Nội bộ' : ((VI.category as any)[tx.category] || tx.category);
 
-                        return (
-                            <div key={tx.id} className="flex items-center justify-between p-5 rounded-[2rem] hover:bg-foreground/[0.04] transition-all group active:scale-[0.98] border border-transparent hover:border-foreground/5 shadow-sm mb-1">
-                                <div className="flex items-center space-x-5 flex-1 min-w-0">
-                                    <div className="w-12 h-12 shrink-0 rounded-[1.25rem] flex items-center justify-center text-white transition-all group-hover:rotate-6 shadow-lg" style={{ background: tx.type === TransactionType.INCOME ? 'linear-gradient(135deg, #10b981, #064e3b)' : tx.type === TransactionType.TRANSFER ? 'linear-gradient(135deg, #8b5cf6, #4c1d95)' : `linear-gradient(135deg, ${CATEGORY_COLORS[tx.category] || '#64748b'}, #00000044)` }}>
-                                        {tx.type === TransactionType.INCOME ? <ArrowUpRight size={20} strokeWidth={3} /> : tx.type === TransactionType.TRANSFER ? <ArrowRightLeft size={20} strokeWidth={3} /> : <ArrowDownRight size={20} strokeWidth={3} />}
-                                    </div>
-                                    <div className="flex-1 min-w-0 flex flex-col space-y-1.5">
-                                        <div className="flex justify-between items-center w-full gap-2">
-                                            <p className="font-black text-foreground text-[14px] uppercase tracking-tight truncate leading-tight">
-                                              {catLabel}
-                                            </p>
-                                            <span className={`font-black text-[16px] tracking-tighter shrink-0 whitespace-nowrap leading-tight ${tx.type === TransactionType.INCOME ? 'text-secondary' : tx.type === TransactionType.TRANSFER ? 'text-primary' : 'text-foreground'}`}>
-                                                {tx.type === TransactionType.INCOME ? '+' : tx.type === TransactionType.TRANSFER ? '⇄' : '-'}{formatVND(tx.amount)}
-                                            </span>
-                                        </div>
-                                        <div className="flex items-center gap-3 text-[11px] text-foreground/40 font-bold uppercase tracking-widest leading-none">
-                                            <div className="flex items-center gap-1"><Calendar size={10} strokeWidth={3} className="text-warning" /> {dateStr}</div>
-                                            <div className="flex items-center gap-1"><Clock size={10} strokeWidth={3} /> {timeStr}</div>
-                                        </div>
-                                        <p className="text-[10px] text-foreground/30 font-semibold truncate leading-none italic tracking-refined">
-                                            {tx.description || 'Không có mô tả'}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        );
-                    }) : (
-                        <div className="py-20 text-center text-foreground/20 font-bold uppercase text-[10px] tracking-widest leading-relaxed">Chưa có dữ liệu</div>
-                    )}
-                </div>
-            ) : (
-                <div className="p-2"><CalendarView transactions={transactions} /></div>
-            )}
+                return (
+                  <div key={tx.id} className="flex items-center justify-between p-5 rounded-[2rem] hover:bg-foreground/[0.04] transition-all group active:scale-[0.98] border border-transparent hover:border-foreground/5 shadow-sm mb-1">
+                    <div className="flex items-center space-x-5 flex-1 min-w-0">
+                      <div className="w-12 h-12 shrink-0 rounded-[1.25rem] flex items-center justify-center text-white transition-all group-hover:rotate-6 shadow-lg" style={{ background: tx.type === TransactionType.INCOME ? 'linear-gradient(135deg, #10b981, #064e3b)' : tx.type === TransactionType.TRANSFER ? 'linear-gradient(135deg, #8b5cf6, #4c1d95)' : `linear-gradient(135deg, ${CATEGORY_COLORS[tx.category] || '#64748b'}, #00000044)` }}>
+                        {tx.type === TransactionType.INCOME ? <ArrowUpRight size={20} strokeWidth={3} /> : tx.type === TransactionType.TRANSFER ? <ArrowRightLeft size={20} strokeWidth={3} /> : <ArrowDownRight size={20} strokeWidth={3} />}
+                      </div>
+                      <div className="flex-1 min-w-0 flex flex-col space-y-1.5">
+                        <div className="flex justify-between items-center w-full gap-2">
+                          <p className="font-black text-foreground text-[14px] uppercase tracking-tight truncate leading-tight">
+                            {catLabel}
+                          </p>
+                          <span className={`font-black text-[16px] tracking-tighter shrink-0 whitespace-nowrap leading-tight ${tx.type === TransactionType.INCOME ? 'text-secondary' : tx.type === TransactionType.TRANSFER ? 'text-primary' : 'text-foreground'}`}>
+                            {tx.type === TransactionType.INCOME ? '+' : tx.type === TransactionType.TRANSFER ? '⇄' : '-'}{formatVND(tx.amount)}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 text-[11px] text-foreground/40 font-bold uppercase tracking-widest leading-none">
+                          <div className="flex items-center gap-1"><Calendar size={10} strokeWidth={3} className="text-warning" /> {dateStr}</div>
+                          <div className="flex items-center gap-1"><Clock size={10} strokeWidth={3} /> {timeStr}</div>
+                        </div>
+                        <p className="text-[10px] text-foreground/30 font-semibold truncate leading-none italic tracking-refined">
+                          {tx.description || 'Không có mô tả'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }) : (
+                <div className="py-20 text-center text-foreground/20 font-bold uppercase text-[10px] tracking-widest leading-relaxed">Chưa có dữ liệu</div>
+              )}
+            </div>
+          ) : (
+            <div className="p-2"><CalendarView transactions={transactions} /></div>
+          )}
         </div>
       </div>
 
       {showTransferModal && (
-          <div className="fixed inset-0 z-[250] flex items-center justify-center bg-black/90 backdrop-blur-3xl p-6">
-              <div className="glass-card w-full max-w-[360px] rounded-[3.5rem] p-10 border-0 shadow-2xl bg-surface animate-in zoom-in-95 relative">
-                  <div className="flex justify-between items-center mb-10">
-                      <h3 className="text-xl font-[1000] text-foreground tracking-tighter uppercase leading-none">Trích lập quỹ</h3>
-                      <button onClick={() => setShowTransferModal(false)} className="p-2 bg-foreground/5 rounded-2xl hover:bg-foreground/10 text-foreground transition-all"><X size={18} /></button>
+        <div className="fixed inset-0 z-[250] flex items-center justify-center bg-black/90 backdrop-blur-3xl p-6">
+          <div className="glass-card w-full max-w-[360px] rounded-[3.5rem] p-10 border-0 shadow-2xl bg-surface animate-in zoom-in-95 relative">
+            <div className="flex justify-between items-center mb-10">
+              <h3 className="text-xl font-[1000] text-foreground tracking-tighter uppercase leading-none">Trích lập quỹ</h3>
+              <button onClick={() => setShowTransferModal(false)} className="p-2 bg-foreground/5 rounded-2xl hover:bg-foreground/10 text-foreground transition-all"><X size={18} /></button>
+            </div>
+            <form onSubmit={handleQuickTransfer} className="space-y-10">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black text-foreground/30 ml-2 tracking-[0.2em] uppercase">Số tiền chuyển</label>
+                <div className="relative glass-card bg-foreground/[0.03] p-6 rounded-[2.5rem] border-0 shadow-inner group">
+                  <div className="flex items-center justify-between gap-4">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      autoFocus
+                      placeholder="0"
+                      className="w-full bg-transparent text-primary text-3xl font-[1000] tracking-refined focus:outline-none border-0 text-left placeholder:opacity-20"
+                      value={transferAmount}
+                      onChange={(e) => setTransferAmount(formatNumberInput(e.target.value))}
+                    />
+                    <span className="text-xl font-black text-primary/40 tracking-widest shrink-0">đ</span>
                   </div>
-                  <form onSubmit={handleQuickTransfer} className="space-y-10">
-                      <div className="space-y-3">
-                        <label className="text-[10px] font-black text-foreground/30 ml-2 tracking-[0.2em] uppercase">Số tiền chuyển</label>
-                        <div className="relative glass-card bg-foreground/[0.03] p-6 rounded-[2.5rem] border-0 shadow-inner group">
-                            <div className="flex items-center justify-between gap-4">
-                                <input 
-                                    type="text"
-                                    inputMode="numeric"
-                                    autoFocus 
-                                    placeholder="0"
-                                    className="w-full bg-transparent text-primary text-3xl font-[1000] tracking-refined focus:outline-none border-0 text-left placeholder:opacity-20" 
-                                    value={transferAmount} 
-                                    onChange={(e) => setTransferAmount(formatNumberInput(e.target.value))} 
-                                />
-                                <span className="text-xl font-black text-primary/40 tracking-widest shrink-0">đ</span>
-                            </div>
-                        </div>
-                        <p className="text-[9px] font-bold text-foreground/20 italic px-2 uppercase tracking-wide">Số dư sẽ được chuyển tức thì sang Quỹ dự phòng.</p>
-                      </div>
-                      <button 
-                        type="submit" 
-                        className="w-full bg-primary text-white py-6 rounded-[2.25rem] font-black text-[12px] uppercase tracking-[0.3em] shadow-[0_20px_40px_rgba(139,92,246,0.3)] neon-glow-primary active:scale-90 transition-all border border-white/20"
-                      >
-                        XÁC NHẬN CHUYỂN
-                      </button>
-                  </form>
+                </div>
+                <p className="text-[9px] font-bold text-foreground/20 italic px-2 uppercase tracking-wide">Số dư sẽ được chuyển tức thì sang Quỹ dự phòng.</p>
               </div>
+              <button
+                type="submit"
+                className="w-full bg-primary text-white py-6 rounded-[2.25rem] font-black text-[12px] uppercase tracking-[0.3em] shadow-[0_20px_40px_rgba(139,92,246,0.3)] neon-glow-primary active:scale-90 transition-all border border-white/20"
+              >
+                XÁC NHẬN CHUYỂN
+              </button>
+            </form>
           </div>
+        </div>
       )}
 
       {isAllocationSuccessOpen && (
-          <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/90 backdrop-blur-3xl p-4 animate-in fade-in duration-500 overflow-hidden">
-              <div className="glass-card w-[92%] max-w-[420px] mx-auto rounded-[3.5rem] px-6 py-10 sm:p-12 text-center border-0 shadow-2xl bg-gradient-to-br from-secondary/10 via-surface to-background relative overflow-hidden animate-in zoom-in-95 duration-500 box-border">
-                  <div className="absolute top-0 left-0 w-full h-2.5 bg-gradient-to-r from-emerald-400 via-secondary to-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.5)]"></div>
-                  <div className="space-y-10 relative z-10">
-                      <div className="flex justify-center items-end gap-3 h-32 relative">
-                          <div className="w-14 h-14 bg-secondary/10 text-secondary rounded-2xl flex items-center justify-center shadow-lg transform -rotate-12 animate-bounce">
-                              <Trophy size={28} />
-                          </div>
-                          <div className="w-24 h-24 bg-secondary text-white rounded-[2.5rem] flex items-center justify-center shadow-2xl neon-glow-secondary z-20 animate-pulse">
-                              <PartyPopper size={50} strokeWidth={2.5} />
-                          </div>
-                          <div className="w-18 h-18 bg-emerald-100/10 text-emerald-400 rounded-2xl flex items-center justify-center shadow-lg transform rotate-12 animate-bounce delay-300">
-                              <Coins size={36} />
-                          </div>
-                      </div>
-                      <div className="space-y-5">
-                          <div className="inline-block px-4 py-1.5 rounded-full bg-secondary/10 border border-secondary/20 mb-2">
-                             <h3 className="text-[10px] font-black text-secondary uppercase tracking-[0.5em] animate-pulse">TRÍCH LẬP THÀNH CÔNG</h3>
-                          </div>
-                          <h4 className="text-2xl sm:text-3xl font-[1000] text-foreground tracking-tighter uppercase leading-tight drop-shadow-sm">AN TÂM TÍCH LŨY</h4>
-                          <div className="px-4">
-                             <p className="font-comic text-xl text-foreground font-bold leading-relaxed-tight italic opacity-90 tracking-refined px-[15px]">
-                                "{allocationSuccessQuote}"
-                             </p>
-                          </div>
-                      </div>
-                      <div className="glass-card bg-foreground/[0.04] p-6 sm:p-8 rounded-[3rem] border-0 shadow-inner relative overflow-hidden">
-                          <p className="text-[10px] font-black text-foreground/30 uppercase tracking-widest mb-1 relative z-10">SỐ TIỀN VỪA CẤT GIỮ</p>
-                          <p className="text-3xl sm:text-4xl font-[1000] text-secondary tracking-tighter relative z-10 neon-glow-secondary-text break-words overflow-wrap-anywhere">
-                            {formatVND(successAmount)}
-                          </p>
-                          <div className="absolute inset-0 bg-gradient-to-tr from-secondary/5 via-transparent to-primary/5"></div>
-                      </div>
-                      <button 
-                        onClick={() => setIsAllocationSuccessOpen(false)}
-                        className="w-full bg-secondary text-white font-[1000] py-6 rounded-[2.25rem] text-[12px] uppercase tracking-[0.4em] shadow-[0_25px_50px_rgba(16,185,129,0.5)] neon-glow-secondary active:scale-95 transition-all flex items-center justify-center gap-3 border border-white/20"
-                      >
-                         TIẾP TỤC TĂNG TỐC <ArrowRight size={22} />
-                      </button>
-                  </div>
-                  <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-secondary/20 rounded-full blur-3xl"></div>
-                  <div className="absolute -top-10 -left-10 w-32 h-32 bg-emerald-400/10 rounded-full blur-3xl"></div>
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/90 backdrop-blur-3xl p-4 animate-in fade-in duration-500 overflow-hidden">
+          <div className="glass-card w-[92%] max-w-[420px] mx-auto rounded-[3.5rem] px-6 py-10 sm:p-12 text-center border-0 shadow-2xl bg-gradient-to-br from-secondary/10 via-surface to-background relative overflow-hidden animate-in zoom-in-95 duration-500 box-border">
+            <div className="absolute top-0 left-0 w-full h-2.5 bg-gradient-to-r from-emerald-400 via-secondary to-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.5)]"></div>
+            <div className="space-y-10 relative z-10">
+              <div className="flex justify-center items-end gap-3 h-32 relative">
+                <div className="w-14 h-14 bg-secondary/10 text-secondary rounded-2xl flex items-center justify-center shadow-lg transform -rotate-12 animate-bounce">
+                  <Trophy size={28} />
+                </div>
+                <div className="w-24 h-24 bg-secondary text-white rounded-[2.5rem] flex items-center justify-center shadow-2xl neon-glow-secondary z-20 animate-pulse">
+                  <PartyPopper size={50} strokeWidth={2.5} />
+                </div>
+                <div className="w-18 h-18 bg-emerald-100/10 text-emerald-400 rounded-2xl flex items-center justify-center shadow-lg transform rotate-12 animate-bounce delay-300">
+                  <Coins size={36} />
+                </div>
               </div>
+              <div className="space-y-5">
+                <div className="inline-block px-4 py-1.5 rounded-full bg-secondary/10 border border-secondary/20 mb-2">
+                  <h3 className="text-[10px] font-black text-secondary uppercase tracking-[0.5em] animate-pulse">TRÍCH LẬP THÀNH CÔNG</h3>
+                </div>
+                <h4 className="text-2xl sm:text-3xl font-[1000] text-foreground tracking-tighter uppercase leading-tight drop-shadow-sm">AN TÂM TÍCH LŨY</h4>
+                <div className="px-4">
+                  <p className="font-comic text-xl text-foreground font-bold leading-relaxed-tight italic opacity-90 tracking-refined px-[15px]">
+                    "{allocationSuccessQuote}"
+                  </p>
+                </div>
+              </div>
+              <div className="glass-card bg-foreground/[0.04] p-6 sm:p-8 rounded-[3rem] border-0 shadow-inner relative overflow-hidden">
+                <p className="text-[10px] font-black text-foreground/30 uppercase tracking-widest mb-1 relative z-10">SỐ TIỀN VỪA CẤT GIỮ</p>
+                <p className="text-3xl sm:text-4xl font-[1000] text-secondary tracking-tighter relative z-10 neon-glow-secondary-text break-words overflow-wrap-anywhere">
+                  {formatVND(successAmount)}
+                </p>
+                <div className="absolute inset-0 bg-gradient-to-tr from-secondary/5 via-transparent to-primary/5"></div>
+              </div>
+              <button
+                onClick={() => setIsAllocationSuccessOpen(false)}
+                className="w-full bg-secondary text-white font-[1000] py-6 rounded-[2.25rem] text-[12px] uppercase tracking-[0.4em] shadow-[0_25px_50px_rgba(16,185,129,0.5)] neon-glow-secondary active:scale-95 transition-all flex items-center justify-center gap-3 border border-white/20"
+              >
+                TIẾP TỤC TĂNG TỐC <ArrowRight size={22} />
+              </button>
+            </div>
+            <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-secondary/20 rounded-full blur-3xl"></div>
+            <div className="absolute -top-10 -left-10 w-32 h-32 bg-emerald-400/10 rounded-full blur-3xl"></div>
           </div>
+        </div>
       )}
     </div>
   );

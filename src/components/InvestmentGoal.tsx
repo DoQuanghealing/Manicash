@@ -257,7 +257,121 @@ export const InvestmentGoal: React.FC<Props> = ({ goals, users, wallets, onRefre
            </div>
         </div>
       )}
-      {/* Các modal khác giữ nguyên... */}
+      {/* DEPOSIT MODAL */}
+      {isDepositOpen && (
+        <div className="fixed inset-0 z-[500] flex items-center justify-center bg-black/80 backdrop-blur-3xl p-4 sm:p-6 overflow-hidden">
+           <div className="glass-card w-full max-w-md h-[88vh] flex flex-col rounded-[3rem] shadow-2xl border-0 bg-surface overflow-hidden relative animate-in zoom-in-95">
+               <div className="flex justify-between items-center p-6 pb-2 shrink-0 bg-surface/80 backdrop-blur-md z-10 border-b border-foreground/5">
+                   <h3 className="text-lg font-[1000] text-foreground tracking-tighter uppercase">NẠP TIỀN MỤC TIÊU</h3>
+                   <button onClick={() => setIsDepositOpen(false)} className="p-2 bg-foreground/5 rounded-2xl hover:text-primary transition-colors"><X size={18} /></button>
+               </div>
+               <form onSubmit={handleDeposit} className="flex-1 overflow-y-auto no-scrollbar px-6 pb-72 space-y-6">
+                   <div className="mt-4 space-y-1">
+                       <label className="text-[8px] font-black text-foreground/30 ml-2 tracking-widest uppercase">Chọn ví nguồn</label>
+                       <div className="grid grid-cols-1 gap-3">
+                           {wallets.map(w => (
+                               <button 
+                                  key={w.id}
+                                  type="button"
+                                  onClick={() => setSourceWalletId(w.id)}
+                                  className={`p-4 rounded-2xl border-2 transition-all text-left flex justify-between items-center ${sourceWalletId === w.id ? 'border-secondary bg-secondary/10' : 'border-foreground/5 bg-foreground/5'}`}
+                               >
+                                   <div>
+                                       <p className="text-[10px] font-black uppercase tracking-tight text-foreground">{w.name}</p>
+                                       <p className="text-xs font-black text-secondary">{formatVND(w.balance)}</p>
+                                   </div>
+                                   {sourceWalletId === w.id && <CheckCircle2 size={18} className="text-secondary" />}
+                               </button>
+                           ))}
+                       </div>
+                   </div>
+                   <div className="space-y-1">
+                       <label className="text-[8px] font-black text-foreground/30 ml-2 tracking-widest uppercase">Số tiền nạp (VND)</label>
+                       <input 
+                          type="text"
+                          inputMode="numeric"
+                          required
+                          className="w-full bg-foreground/5 text-secondary text-2xl font-[900] p-4 rounded-[1.25rem] focus:ring-2 focus:ring-secondary focus:outline-none tracking-tighter border-0 shadow-inner"
+                          value={depositAmount}
+                          onChange={handleDepositAmountChange}
+                       />
+                   </div>
+                   <div className="space-y-1">
+                       <label className="text-[8px] font-black text-foreground/30 ml-2 tracking-widest uppercase">Ghi chú</label>
+                       <input 
+                          type="text"
+                          className="w-full bg-foreground/5 text-foreground font-[800] p-4 rounded-[1.25rem] focus:ring-2 focus:ring-primary focus:outline-none transition-all uppercase text-xs tracking-tight border-0 shadow-inner"
+                          value={depositNote}
+                          onChange={(e) => setDepositNote(e.target.value)}
+                          placeholder="VD: Tiền thưởng tháng 3"
+                       />
+                   </div>
+               </form>
+               <div className="absolute bottom-[140px] left-0 right-0 px-12 z-30 pointer-events-none">
+                  <div className="w-full pointer-events-auto">
+                    <button 
+                        type="submit" 
+                        onClick={handleDeposit} 
+                        className="w-full bg-secondary text-white font-[1000] py-4 rounded-2xl text-[11px] uppercase tracking-[0.4em] shadow-[0_12px_35px_rgba(16,185,129,0.5)] neon-glow-secondary active:scale-95 transition-all flex items-center justify-center gap-2 border border-white/20 backdrop-blur-xl"
+                    >
+                        XÁC NHẬN NẠP <PartyPopper size={16} strokeWidth={3} />
+                    </button>
+                  </div>
+               </div>
+           </div>
+        </div>
+      )}
+
+      {/* CELEBRATION MODAL */}
+      {isCelebrationOpen && (
+        <div className="fixed inset-0 z-[600] flex items-center justify-center bg-black/90 backdrop-blur-3xl p-4 overflow-hidden">
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                {[...Array(20)].map((_, i) => (
+                    <div 
+                        key={i} 
+                        className="absolute animate-bounce"
+                        style={{ 
+                            left: `${Math.random() * 100}%`, 
+                            top: `${Math.random() * 100}%`,
+                            animationDelay: `${Math.random() * 2}s`,
+                            opacity: 0.3
+                        }}
+                    >
+                        {i % 2 === 0 ? <Star className="text-warning" size={24} /> : <PartyPopper className="text-secondary" size={24} />}
+                    </div>
+                ))}
+            </div>
+
+            <div className="glass-card w-full max-w-sm p-10 rounded-[3.5rem] text-center relative animate-in zoom-in-50 duration-500 border-0 bg-gradient-to-b from-secondary/20 to-transparent shadow-[0_0_100px_rgba(16,185,129,0.2)]">
+                <div className="w-24 h-24 bg-secondary text-white rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 shadow-2xl neon-glow-secondary animate-pulse">
+                    <Trophy size={48} strokeWidth={2.5} />
+                </div>
+                
+                <h3 className="text-3xl font-[1000] text-foreground tracking-tighter uppercase mb-4 leading-tight">
+                    TUYỆT VỜI <br/> {userTitle}!
+                </h3>
+                
+                <div className="p-6 rounded-3xl bg-foreground/5 border border-foreground/5 mb-8">
+                    <p className="text-sm font-bold text-foreground/80 leading-relaxed italic">
+                        "{celebrationQuote}"
+                    </p>
+                </div>
+
+                <button 
+                    onClick={() => setIsCelebrationOpen(false)}
+                    className="w-full bg-foreground text-background font-[1000] py-4 rounded-2xl text-xs uppercase tracking-[0.3em] shadow-2xl active:scale-95 transition-all"
+                >
+                    TIẾP TỤC CỐ GẮNG
+                </button>
+
+                <div className="mt-6 flex justify-center gap-2">
+                    <Sparkles className="text-secondary animate-spin-slow" size={16} />
+                    <span className="text-[10px] font-black text-foreground/30 uppercase tracking-widest">Hành trình triệu đô</span>
+                    <Sparkles className="text-secondary animate-spin-slow" size={16} />
+                </div>
+            </div>
+        </div>
+      )}
     </div>
   );
 };

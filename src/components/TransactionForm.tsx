@@ -214,7 +214,7 @@ export const TransactionForm: React.FC<Props> = ({ isOpen, onClose, onSubmit, wa
   };
 
   const currentWalletName = wallets.find(w => w.id === walletId)?.name || 'Ví';
-  const displayCategory = type === TransactionType.INCOME ? VI.category['Income'] : (type === TransactionType.TRANSFER ? (internalMode === 'bill' ? 'Nạp hóa đơn' : 'Chuyển ví nội bộ') : ((VI.category as any)[category] || category));
+  const displayCategory = type === TransactionType.INCOME ? VI.category.INCOME : (type === TransactionType.TRANSFER ? (internalMode === 'bill' ? 'Nạp hóa đơn' : 'Chuyển ví nội bộ') : ((VI.category as any)[category] || category));
   const numericAmount = parseNumberInput(amount);
 
   return (

@@ -1,56 +1,90 @@
 // src/utils/format.ts
 
-/**
- * Định dạng tiền tệ VND chuẩn (VD: 1.000.000 ₫)
- */
-export const formatVND = (amount: number): string => {
-  if (amount === undefined || amount === null) return '0 ₫';
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
-    maximumFractionDigits: 0
-  }).format(amount);
-};
+// Parse an unknown input into a safe number.
+// - Supports: number, "1.234.567", "1,234,567", " 1 234 567 ", "-1200"
+// - Keeps minus sign. Drops all other non-numeric chars except "." and ","
+// - If both "." and "," exist, assumes the last separator is decimal and removes the rest.
+const toSafeNumber = (value: unknown, fallback = 0): number => {
+  if (typeof value === "number") return Number.isFinite(value) ? value : fallback;
+  if (value == null) return fallback;
 
-/**
- * Định dạng chuỗi số với dấu chấm phân cách hàng nghìn khi đang gõ (VD: 1.000)
- */
-export const formatNumberInput = (val: string | number): string => {
-  if (val === undefined || val === null || val === '') return '';
-  // Loại bỏ tất cả ký tự không phải số
-  const numStr = String(val).replace(/\D/g, '');
-  if (!numStr) return '';
-  // Định dạng lại và đảm bảo dùng dấu chấm làm phân cách hàng nghìn
-  return new Intl.NumberFormat('vi-VN').format(Number(numStr)).replace(/,/g, '.');
-};
+  const raw = String(value).trim();
+  if (!raw) return fallback;
 
-/**
- * Chuyển đổi chuỗi định dạng (có dấu chấm) về số nguyên để tính toán
- */
-export const parseNumberInput = (val: string | number): number => {
-  if (val === undefined || val === null || val === '') return 0;
-  if (typeof val === 'number') return val;
-  // Loại bỏ dấu chấm và các ký tự lạ để ép về kiểu Number
-  const cleanStr = val.replace(/\./g, '').replace(/[^\d]/g, '');
-  return Number(cleanStr) || 0;
-};
+  // Keep digits, dot, comma, minus
+  let s = raw.replace(/[^\d.,-]/g, "");
 
-/**
- * Rút gọn số tiền cho giao diện nhỏ (VD: 1.5M, 20k)
- */
-export const formatCompactNumber = (num: number): string => {
-  if (!num || num === 0) return '';
-  
-  if (num >= 1000000) {
-    const val = num / 1000000;
-    // Nếu là số nguyên thì không hiện .0, nếu lẻ thì hiện 1 chữ số thập phân
-    return (val % 1 === 0 ? val.toFixed(0) : val.toFixed(1)) + 'M';
+  // If multiple minus signs or minus not at start -> normalize
+  s = s.replace(/(?!^)-/g, "");
+
+  const hasDot = s.includes(".");
+  const hasComma = s.includes(",");
+
+  if (hasDot && hasComma) {
+    // Decide decimal separator by last occurrence
+    const lastDot = s.lastIndexOf(".");
+    const lastComma = s.lastIndexOf(",");
+    const decSep = lastDot > lastComma ? "." : ",";
+    const thouSep = decSep === "." ? "," : ".";
+
+    // Remove thousand separators, convert decimal to "."
+    s = s.split(thouSep).join("");
+    if (decSep === ",") s = s.replace(",", ".");
+  } else if (hasComma && !hasDot) {
+    // Common vi-VN input: "1.234.567" => commas less common; but if commas exist alone,
+    // it could be thousand sep or decimal. We'll treat comma as thousand sep if multiple.
+    const commas = (s.match(/,/g) || []).length;
+    if (commas >= 2) s = s.split(",").join("");
+    else s = s.replace(",", "."); // allow "12,5" => 12.5
+  } else if (hasDot && !hasComma) {
+    const dots = (s.match(/\./g) || []).length;
+    // If multiple dots, treat as thousand separators
+    if (dots >= 2) s = s.split(".").join("");
   }
-  
-  if (num >= 1000) {
-    const val = num / 1000;
-    return val.toFixed(0) + 'k';
-  }
-  
-  return num.toString();
+
+  const n = Number(s);
+  return Number.isFinite(n) ? n : fallback;
+};
+
+export const formatVND = (amount: number | string): string => {
+  const n = toSafeNumber(amount, 0);
+  return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(n);
+};
+
+// Live formatting for text input (money style).
+// Important for your app:
+// - keeps "0" as "0" (doesn't blank out)
+// - strips non-digits (money in VND integer), but preserves leading zeros -> normalized to int
+export const formatNumberInput = (value: string | number): string => {
+  const str = String(value ?? "");
+
+  // keep digits only for VND integer input
+  const digits = str.replace(/\D/g, "");
+
+  // If user cleared the input, return empty.
+  if (digits.length === 0) return "";
+
+  // Avoid huge numbers causing parse issues
+  const n = Number(digits);
+  if (!Number.isFinite(n)) return "";
+
+  return new Intl.NumberFormat("vi-VN").format(n);
+};
+
+// Parse formatted money input back to number (integer VND).
+export const parseNumberInput = (value: string | number): number => {
+  if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+  const digits = String(value ?? "").replace(/\D/g, "");
+  return digits ? parseInt(digits, 10) : 0;
+};
+
+// Optional: compact number for UI badges
+export const formatCompactNumber = (amount: number | string): string => {
+  const n = toSafeNumber(amount, 0);
+  const abs = Math.abs(n);
+
+  if (abs >= 1_000_000_000) return (n / 1_000_000_000).toFixed(1) + "B";
+  if (abs >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M";
+  if (abs >= 1_000) return (n / 1_000).toFixed(1) + "K";
+  return String(n);
 };

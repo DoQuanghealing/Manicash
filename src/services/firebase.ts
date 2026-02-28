@@ -1,15 +1,16 @@
+
 import { initializeApp, getApp, getApps, FirebaseApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, Auth } from "firebase/auth";
-import { getFirestore, Firestore, doc, getDoc, collection, addDoc } from "firebase/firestore";
+import { getFirestore, Firestore, doc, setDoc, getDoc, collection, addDoc, onSnapshot } from "firebase/firestore";
 
-// Tự động lấy cấu hình từ biến môi trường Vite (.env) hoặc dán trực tiếp
+// Lưu ý: Key này sẽ được thay thế bởi môi trường thực tế hoặc người dùng cấu hình
 const firebaseConfig = {
-  apiKey: (import.meta as any).env?.VITE_FIREBASE_API_KEY || "AIzaSy...", // Dán API Key thật của Quả Dâu vào đây
-  authDomain: (import.meta as any).env?.VITE_FIREBASE_AUTH_DOMAIN || "manicash-xxx.firebaseapp.com",
-  projectId: (import.meta as any).env?.VITE_FIREBASE_PROJECT_ID || "manicash-xxx",
-  storageBucket: (import.meta as any).env?.VITE_FIREBASE_STORAGE_BUCKET || "manicash-xxx.appspot.com",
-  messagingSenderId: (import.meta as any).env?.VITE_FIREBASE_MESSAGING_SENDER_ID || "xxx",
-  appId: (import.meta as any).env?.VITE_FIREBASE_APP_ID || "xxx"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "YOUR_FIREBASE_API_KEY",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "YOUR_PROJECT_ID.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "YOUR_PROJECT_ID",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "YOUR_SENDER_ID",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "YOUR_APP_ID"
 };
 
 let app: FirebaseApp | null = null;
@@ -21,83 +22,137 @@ const initFirebase = () => {
   try {
     if (getApps().length > 0) {
       app = getApp();
-    } else {
-      // Chỉ khởi tạo nếu apiKey không phải là chuỗi rỗng hoặc mặc định
-      if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "YOUR_FIREBASE_API_KEY") {
-        app = initializeApp(firebaseConfig);
-      }
+      auth = getAuth(app);
+      db = getFirestore(app);
+      isConfigured = true;
+      return true;
     }
 
-    if (app) {
+    if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "YOUR_FIREBASE_API_KEY") {
+      app = initializeApp(firebaseConfig);
       auth = getAuth(app);
       db = getFirestore(app);
       isConfigured = true;
       return true;
     }
   } catch (error) {
-    console.error("[Firebase Init Error]:", error);
+    console.warn("[Firebase Init] Chế độ Offline/Demo được kích hoạt do thiếu cấu hình.");
   }
   return false;
 };
 
+// Khởi tạo ngay lập tức
 initFirebase();
 
 const provider = new GoogleAuthProvider();
 provider.setCustomParameters({ prompt: 'select_account' });
 
+let authChangeCallback: ((user: any) => void) | null = null;
+
 export const AuthService = {
   isConfigured: () => isConfigured,
   
   getDb: () => {
+    if (!isConfigured) return null;
     if (!db) initFirebase();
     return db;
   },
 
   getAuth: () => {
+    if (!isConfigured) return null;
     if (!auth) initFirebase();
     return auth;
   },
 
   checkPreConditions: () => {
-    if (!isConfigured) {
-        throw new Error("CONFIGURATION_ERROR: Firebase chưa được cấu hình. Hãy kiểm tra API Key trong file firebase.ts.");
-    }
+    if (!isConfigured) throw new Error("Firebase chưa được cấu hình.");
     if (!navigator.onLine) {
       throw new Error("NETWORK_ERROR: Không có kết nối mạng.");
     }
     return true;
   },
 
-  // Đăng nhập Google chính thống
   loginWithGoogle: async () => {
-    AuthService.checkPreConditions();
     const currentAuth = AuthService.getAuth();
-    if (!currentAuth) throw new Error("Auth service không khả dụng.");
-    
-    const result = await signInWithPopup(currentAuth, provider);
+    if (!currentAuth) {
+      throw new Error("CONFIGURATION_ERROR: Firebase chưa được cấu hình. Vui lòng kiểm tra API Key.");
+    }
+    AuthService.checkPreConditions();
+    const result: any = await signInWithPopup(currentAuth, provider);
     return result.user;
   },
 
-  // Đã gỡ bỏ loginGuest để bảo mật dữ liệu thật
-  
+  loginGuest: async () => {
+    const guestUser = {
+      uid: "guest_user_demo",
+      email: "demo@manicash.io",
+      displayName: "Người dùng Trải nghiệm",
+      photoURL: "https://api.dicebear.com/7.x/avataaars/svg?seed=Demo"
+    };
+    if (authChangeCallback) {
+      authChangeCallback(guestUser);
+    }
+    return guestUser;
+  },
+
   logout: async () => {
     const currentAuth = AuthService.getAuth();
     if (currentAuth) await signOut(currentAuth);
+    if (authChangeCallback) authChangeCallback(null);
     window.location.reload();
   },
 
   onAuthChange: (callback: (user: any) => void) => {
+    authChangeCallback = callback;
     const currentAuth = AuthService.getAuth();
+    
     if (!currentAuth) {
-      callback(null);
-      return () => {};
+      const timer = setTimeout(() => {
+        if (authChangeCallback) callback(null);
+      }, 500); 
+      return () => { 
+        clearTimeout(timer);
+        authChangeCallback = null; 
+      };
     }
+
     return onAuthStateChanged(currentAuth, (user) => {
       callback(user);
     });
   },
 
-  // Các hàm log hành vi và dữ liệu cho Lord Diamond
+  // Hệ thống kiểm tra phiên bản
+  checkAppVersion: async (): Promise<string | null> => {
+    const database = AuthService.getDb();
+    if (!database) return null;
+    try {
+      const docRef = doc(database, "system_settings", "app_info");
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        return docSnap.data().latest_version || null;
+      }
+    } catch (e) {
+      console.error("Lỗi kiểm tra phiên bản:", e);
+    }
+    return null;
+  },
+
+  logFeatureRequest: async (featureId: string, userEmail: string) => {
+    const database = AuthService.getDb();
+    if (!database) return false;
+    try {
+      await addDoc(collection(database, "feature_requests"), {
+        featureId,
+        userEmail,
+        timestamp: new Date().toISOString()
+      });
+      return true;
+    } catch (e) {
+      console.error("Error logging feature request:", e);
+      return false;
+    }
+  },
+
   logFutureLead: async (tag: string, userEmail: string, userId: string) => {
     const database = AuthService.getDb();
     if (!database) return false;
@@ -109,7 +164,10 @@ export const AuthService = {
         timestamp: new Date().toISOString()
       });
       return true;
-    } catch (e) { return false; }
+    } catch (e) {
+      console.error("Error logging future lead:", e);
+      return false;
+    }
   },
 
   logBehavior: async (action: string, details: any, userEmail: string, userId: string) => {
@@ -124,6 +182,9 @@ export const AuthService = {
         timestamp: new Date().toISOString()
       });
       return true;
-    } catch (e) { return false; }
+    } catch (e) {
+      console.error("Error logging behavior:", e);
+      return false;
+    }
   }
 };

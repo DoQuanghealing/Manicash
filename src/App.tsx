@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Layout } from './components/Layout';
 import { Dashboard } from './components/Dashboard';
@@ -10,6 +11,7 @@ import { SettingsModal } from './components/SettingsModal';
 import { FutureRoadmap } from './components/FutureRoadmap'; 
 import { Login } from './components/Login';
 import { StorageService } from './services/storageService';
+import { AiService } from './services/aiService';
 import { AuthService } from './services/firebase';
 import { BrandLogo } from './components/BrandLogo';
 import { Transaction, Wallet, Goal, Category, TransactionType, User as AppUser, Budget, FixedCost, ButlerType } from './types';
@@ -29,6 +31,8 @@ function App() {
   const [isDataSyncing, setIsDataSyncing] = useState(false);
   const [bootError, setBootError] = useState<string | null>(null);
   const [updateRegistration, setUpdateRegistration] = useState<ServiceWorkerRegistration | null>(null);
+  
+  const [isBypassed, setIsBypassed] = useState(false);
   
   const [wallets, setWallets] = useState<Wallet[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -73,6 +77,14 @@ function App() {
     }
   }, []);
 
+  useEffect(() => {
+    if (isBypassed) {
+      StorageService.init();
+      refreshData();
+      applyInitialPreferences();
+    }
+  }, [isBypassed]);
+
   const handleUpdateApp = () => {
     if (updateRegistration && updateRegistration.waiting) {
       updateRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
@@ -92,6 +104,7 @@ function App() {
 
   const refreshData = () => {
     try {
+      // DATA GUARD INTEGRATION: Clean everything before putting in state
       const rawWallets = StorageService.getWallets();
       setWallets(rawWallets.map(DataGuard.sanitizeWallet));
 
@@ -110,6 +123,7 @@ function App() {
       setFixedCosts(rawCosts.map(DataGuard.sanitizeFixedCost));
     } catch (e) {
       console.error("Data refresh error:", e);
+      // Soft alert instead of white screen
       alert("Hệ thống phát hiện dữ liệu không đồng nhất. Đang tự động làm sạch...");
     }
   };
@@ -184,7 +198,6 @@ function App() {
     }
   };
 
-  // Màn hình Loading
   if (isInitialLoading || isDataSyncing) {
     return (
       <div className="h-full w-full flex flex-col items-center justify-center bg-background space-y-6">
@@ -203,7 +216,6 @@ function App() {
     );
   }
 
-  // Màn hình Lỗi
   if (bootError) {
     return (
       <div className="h-full w-full flex flex-col items-center justify-center bg-background p-10 text-center">
@@ -219,8 +231,9 @@ function App() {
     );
   }
 
-  // Nếu chưa đăng nhập, bắt buộc vào Login (đã bỏ bypass)
-  if (!currentUser) return <Login />;
+  if (!currentUser && !isBypassed) return <Login onBypass={() => setIsBypassed(true)} />;
+
+  const displayUser = currentUser || { uid: 'guest', email: 'guest@example.com' };
 
   return (
     <div className="bg-background text-foreground h-full transition-colors duration-300 relative">
@@ -276,13 +289,13 @@ function App() {
         isLoading={reflectionData.isLoading}
         onClose={() => setReflectionData({ ...reflectionData, isOpen: false })} 
       />
-      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} users={users} wallets={wallets} onSave={handleSaveSettings} onRefresh={refreshData} currentUser={currentUser} />
+      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} users={users} wallets={wallets} onSave={handleSaveSettings} onRefresh={refreshData} currentUser={displayUser} />
       
       <FutureRoadmap 
         isOpen={isFutureModalOpen} 
         onClose={() => setIsFutureModalOpen(false)} 
-        userEmail={currentUser.email || ''} 
-        userId={currentUser.uid}
+        userEmail={displayUser.email || ''} 
+        userId={displayUser.uid}
       />
     </div>
   );

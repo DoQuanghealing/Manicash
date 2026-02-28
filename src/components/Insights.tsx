@@ -45,6 +45,7 @@ export const Insights: React.FC<Props> = ({ transactions, users }) => {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [showRankUp, setShowRankUp] = useState<{old: Rank, new: Rank} | null>(null);
+  const [isXpAnimating, setIsXpAnimating] = useState(false);
 
   useEffect(() => { 
     loadProjects(); 
@@ -83,6 +84,12 @@ export const Insights: React.FC<Props> = ({ transactions, users }) => {
     ps[pIdx].milestones[mIdx].isCompleted = !ps[pIdx].milestones[mIdx].isCompleted;
     ps[pIdx].status = calculateStatus(ps[pIdx]);
     
+    if (ps[pIdx].milestones[mIdx].isCompleted) {
+        setIsXpAnimating(true);
+        setTimeout(() => setIsXpAnimating(false), 3000);
+        if (window.navigator.vibrate) window.navigator.vibrate(50);
+    }
+
     if (ps[pIdx].milestones.length > 0 && ps[pIdx].milestones.every(m => m.isCompleted)) {
         const randomQuote = CELEBRATION_QUOTES[Math.floor(Math.random() * CELEBRATION_QUOTES.length)];
         setCurrentQuote(randomQuote);
@@ -319,17 +326,26 @@ export const Insights: React.FC<Props> = ({ transactions, users }) => {
                 </button>
             </div>
 
-            {/* XP Progress Bar */}
-            <div className="relative z-10 space-y-2">
+            {/* XP Progress Bar & Circle */}
+            <div className="relative z-10 space-y-3">
                 <div className="flex justify-between items-end text-[9px] font-black uppercase tracking-widest">
-                    <span className="text-foreground/30">Tiến trình thăng hạng</span>
+                    <div className="flex items-center gap-2">
+                        <div className={`w-6 h-6 rounded-full border-2 border-primary/30 flex items-center justify-center relative ${isXpAnimating ? 'animate-xp-purple' : ''}`}>
+                            <Zap size={10} className={`text-primary ${isXpAnimating ? 'xp-glow-vibrant' : ''}`} fill={isXpAnimating ? "currentColor" : "none"} />
+                        </div>
+                        <span className="text-foreground/30">Tiến trình thăng hạng</span>
+                    </div>
                     <span className="text-primary">{nextRank ? `${Math.floor(progressPercent)}%` : 'MAX LEVEL'}</span>
                 </div>
-                <div className="h-2.5 w-full bg-foreground/5 rounded-full overflow-hidden shadow-inner relative">
+                <div className="h-3 w-full bg-foreground/5 rounded-full overflow-hidden shadow-inner relative border border-foreground/5">
                     <div 
-                      className={`h-full transition-all duration-1000 ease-out bg-gradient-to-r from-primary via-purple-500 to-secondary shadow-[0_0_12px_rgba(139,92,246,0.3)]`} 
+                      className={`h-full transition-all duration-1000 ease-out bg-gradient-to-r from-primary via-purple-500 to-secondary shadow-[0_0_15px_rgba(139,92,246,0.4)] ${isXpAnimating ? 'brightness-125' : ''}`} 
                       style={{ width: `${progressPercent}%` }}
-                    ></div>
+                    >
+                        {isXpAnimating && (
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer"></div>
+                        )}
+                    </div>
                 </div>
                 {nextRank && (
                     <p className="text-[8px] font-bold text-foreground/20 uppercase tracking-widest text-right">

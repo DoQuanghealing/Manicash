@@ -1,5 +1,5 @@
 
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, Type, ThinkingLevel } from "@google/genai";
 import { Transaction, Goal, IncomeProject, FixedCost, FinancialReport, ProsperityPlan, Budget, Wallet } from '../types';
 import { StorageService } from './storageService';
 
@@ -31,8 +31,12 @@ const cleanJsonResponse = (text: string) => {
 };
 
 const callGroq = async (prompt: string, system: string, isPro: boolean = false, jsonMode: boolean = false) => {
-    const apiKey = (import.meta as any).env?.VITE_GROQ_API_KEY;
-    if (!apiKey) return null;
+    // Try to get API key from process.env (AI Studio secrets) or import.meta.env (Vite)
+    const apiKey = process.env.GROQ_API_KEY || (import.meta as any).env?.VITE_GROQ_API_KEY;
+    if (!apiKey) {
+        console.warn("GROQ_API_KEY is missing. Please add it to secrets.");
+        return null;
+    }
 
     try {
         const response = await fetch(GROQ_ENDPOINT, {
@@ -62,7 +66,7 @@ const callGroq = async (prompt: string, system: string, isPro: boolean = false, 
 };
 
 export const AiService = {
-  isAvailable: () => !!process.env.API_KEY || !!(import.meta as any).env?.VITE_GROQ_API_KEY,
+  isAvailable: () => !!process.env.GEMINI_API_KEY || !!process.env.GROQ_API_KEY || !!(import.meta as any).env?.VITE_GROQ_API_KEY,
 
   generateTransactionComment: async (transaction: any): Promise<string> => {
     const brain = StorageService.getAiBrain();
@@ -73,14 +77,17 @@ export const AiService = {
         return res || "Lại tiêu tiền nữa rồi ạ?";
     }
 
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) return "Cần cấu hình API Key để dùng AI.";
+
+    const ai = new GoogleGenAI({ apiKey });
     try {
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: prompt,
         config: { 
           systemInstruction: SYSTEM_INSTRUCTION_BUTLER,
-          thinkingConfig: { thinkingBudget: 0 },
+          thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
           maxOutputTokens: 100
         }
       });
@@ -97,14 +104,17 @@ export const AiService = {
         return res || "Cậu chủ tiêu tiền như thể lá mít ngoài vườn vậy.";
     }
 
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) return "Cần cấu hình API Key.";
+
+    const ai = new GoogleGenAI({ apiKey });
     try {
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: prompt,
         config: { 
           systemInstruction: SYSTEM_INSTRUCTION_REFLECTION,
-          thinkingConfig: { thinkingBudget: 0 },
+          thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
           maxOutputTokens: 100
         }
       });
@@ -123,27 +133,20 @@ export const AiService = {
     };
 
     const prompt = `Dựa trên dữ liệu tài chính của chủ nhân: ${JSON.stringify(summary)}. 
-    Hãy đóng vai Quản gia Lord Diamond - một coach tài chính tài ba, mỉa mai xéo xắt nhưng cực kỳ sáng suốt để đưa ra "LỘ TRÌNH THỊNH VƯỢNG" gồm 3 ý chính:
-    
-    1. Góp ý nếu thấy chi tiêu quá nhiều so với thu vào (spendingVsIncomeFeedback).
-    2. Ghi nhận những khoản thu nhập (incomeRecognition).
-    3. Gợi ý ra ĐÚNG 3 nhiệm vụ (dailyTasks) mang tính chiến lược và sáng suốt cho mỗi ngày:
-       - Nhiệm vụ 1: Note lại đủ việc thu chi hằng ngày để kiểm soát dòng tiền.
-       - Nhiệm vụ 2: Chọn ra 1 thứ cắt giảm để tối ưu chi tiêu không cần thiết. Gợi ý: "Hãy thêm vào giỏ hàng và xem 3 ngày sau có thực sự cần không - lúc đó mới quyết định mua".
-       - Nhiệm vụ 3: Phát triển bản thân hoặc tâm thức. Gợi ý: "Học 1 kỹ năng/năng khiếu bản thân", "Nghĩ ra 1 thứ có thể kiếm được tiền ngay hôm nay", hoặc "Thiền giải tỏa tâm thức nếu đang cảm thấy stress".
-
-    Bạn là một chuyên gia tài chính, hãy đưa ra những lời khuyên thực sự giá trị và có chiều sâu.
+    Hãy đóng vai Quản gia Lord Diamond mỉa mai xéo xắt nhưng cực kỳ giỏi phân tích dòng tiền để đưa ra "LỘ TRÌNH THỊNH VƯỢNG".
     Bạn PHẢI trả về JSON theo cấu trúc sau:
     {
-      "statusTitle": string,
+      "statusTitle": "ĐẠI PHÚ HÀO TIỀM NĂNG",
       "statusEmoji": string,
       "healthScore": number,
-      "spendingVsIncomeFeedback": "Lời góp ý về thu chi (xéo xắt nhưng thực tế).",
-      "incomeRecognition": "Lời ghi nhận các khoản thu nhập.",
-      "dailyTasks": [
-        { "title": "NHIỆM VỤ 1: [Tên]", "desc": "[Mô tả]" },
-        { "title": "NHIỆM VỤ 2: [Tên]", "desc": "[Mô tả]" },
-        { "title": "NHIỆM VỤ 3: [Tên]", "desc": "[Mô tả]" }
+      "summary": "Lời nhận xét tổng thể về dòng tiền của Cậu chủ/Cô chủ (xéo xắt nhưng thực tế).",
+      "savingsStrategies": [
+        { "title": "NHIỆM VỤ 1: [Tên nhiệm vụ cắt giảm]", "desc": "[Mô tả cụ thể hành động cần làm ngay hôm nay]" },
+        { "title": "NHIỆM VỤ 2: [Tên nhiệm vụ tối ưu]", "desc": "[Mô tả cụ thể hành động cần làm]" }
+      ],
+      "incomeStrategies": [
+        { "title": "GỢI Ý 1: [Tên gợi ý dấn thân tăng thu]", "desc": "[Mô tả hành động cụ thể]" },
+        { "title": "GỢI Ý 2: [Tên gợi ý kinh doanh]", "desc": "[Mô tả hành động cụ thể]" }
       ],
       "badHabitToQuit": { "habit": string, "why": string }
     }`;
@@ -157,14 +160,17 @@ export const AiService = {
         }
     }
 
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) return null;
+
+    const ai = new GoogleGenAI({ apiKey });
     try {
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: prompt,
         config: {
           systemInstruction: SYSTEM_INSTRUCTION_CFO,
-          thinkingConfig: { thinkingBudget: 0 },
+          thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
           maxOutputTokens: 1000,
           responseMimeType: "application/json",
           responseSchema: {
@@ -173,9 +179,15 @@ export const AiService = {
               statusTitle: { type: Type.STRING },
               statusEmoji: { type: Type.STRING },
               healthScore: { type: Type.NUMBER },
-              spendingVsIncomeFeedback: { type: Type.STRING },
-              incomeRecognition: { type: Type.STRING },
-              dailyTasks: {
+              summary: { type: Type.STRING },
+              savingsStrategies: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: { title: { type: Type.STRING }, desc: { type: Type.STRING } }
+                }
+              },
+              incomeStrategies: {
                 type: Type.ARRAY,
                 items: {
                   type: Type.OBJECT,
@@ -187,7 +199,7 @@ export const AiService = {
                 properties: { habit: { type: Type.STRING }, why: { type: Type.STRING } }
               }
             },
-            required: ["statusTitle", "statusEmoji", "healthScore", "spendingVsIncomeFeedback", "incomeRecognition", "dailyTasks", "badHabitToQuit"]
+            required: ["statusTitle", "statusEmoji", "healthScore", "summary", "savingsStrategies", "incomeStrategies", "badHabitToQuit"]
           }
         }
       });
@@ -238,10 +250,13 @@ export const AiService = {
         }
     }
 
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) return null;
+
+    const ai = new GoogleGenAI({ apiKey });
     try {
       const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview',
+        model: 'gemini-3-flash-preview',
         contents: prompt,
         config: {
           systemInstruction: SYSTEM_INSTRUCTION_CFO,
@@ -320,10 +335,13 @@ export const AiService = {
         }
     }
 
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) return null;
+
+    const ai = new GoogleGenAI({ apiKey });
     try {
       const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview',
+        model: 'gemini-3-flash-preview',
         contents: prompt,
         config: {
           systemInstruction: SYSTEM_INSTRUCTION_BUTLER,

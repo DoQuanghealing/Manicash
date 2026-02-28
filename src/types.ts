@@ -1,8 +1,9 @@
-// src/types.ts
+export enum TransactionType {
+  INCOME = 'INCOME',
+  EXPENSE = 'EXPENSE',
+  TRANSFER = 'TRANSFER'
+}
 
-/**
- * ENUMS - Các danh mục cố định
- */
 export enum Category {
   FOOD = 'FOOD',
   TRANSPORT = 'TRANSPORT',
@@ -15,11 +16,6 @@ export enum Category {
   OTHER = 'OTHER'
 }
 
-export enum TransactionType {
-  EXPENSE = 'EXPENSE',
-  INCOME = 'INCOME'
-}
-
 export enum ButlerType {
   MALE = 'MALE',
   FEMALE = 'FEMALE'
@@ -27,7 +23,8 @@ export enum ButlerType {
 
 export enum UserGender {
   MALE = 'MALE',
-  FEMALE = 'FEMALE'
+  FEMALE = 'FEMALE',
+  OTHER = 'OTHER'
 }
 
 export enum Rank {
@@ -40,18 +37,16 @@ export enum Rank {
   DIAMOND = 'DIAMOND'
 }
 
-/**
- * INTERFACES - Cấu trúc dữ liệu
- */
-
-export interface User {
+export interface Transaction {
   id: string;
-  name: string;
-  avatar: string;
-  gender?: UserGender;
-  butlerPreference: ButlerType; // Chọn Lord hay Queen
-  maleButlerName?: string;      // Tên tùy chỉnh cho Lord
-  femaleButlerName?: string;    // Tên tùy chỉnh cho Queen
+  date: string;
+  createdAt?: string;
+  amount: number;
+  type: TransactionType;
+  category: Category;
+  walletId: string;
+  description: string;
+  timestamp: number;
 }
 
 export interface Wallet {
@@ -61,16 +56,32 @@ export interface Wallet {
   balance: number;
 }
 
-export interface Transaction {
+export interface GoalRound {
   id: string;
   date: string;
   amount: number;
-  type: TransactionType;
-  category: Category;
-  walletId: string;
-  description: string;
-  timestamp: number;
-  createdAt?: string;
+  contributorId: string;
+  note: string;
+}
+
+export interface Goal {
+  id: string;
+  userId?: string;
+  name: string;
+  targetAmount: number;
+  currentAmount: number;
+  deadline: string;
+  rounds: GoalRound[];
+}
+
+export interface User {
+  id: string;
+  name: string;
+  avatar: string;
+  gender?: UserGender;
+  butlerPreference?: ButlerType;
+  maleButlerName?: string;
+  femaleButlerName?: string;
 }
 
 export interface Budget {
@@ -84,48 +95,85 @@ export interface FixedCost {
   id: string;
   title: string;
   amount: number;
+  allocatedAmount: number;
   nextDueDate: string;
   frequencyMonths: number;
-  allocatedAmount: number;
   description?: string;
 }
 
-export interface Goal {
+export interface Milestone {
   id: string;
-  name: string;
-  targetAmount: number;
-  currentAmount: number;
-  deadline?: string;
-  rounds?: Array<{
-    id: string;
-    date: string;
-    amount: number;
-    contributorId: string;
-    note: string;
-  }>;
+  title: string;
+  startDate: string;
+  date: string;
+  isCompleted: boolean;
 }
 
 export interface IncomeProject {
   id: string;
+  userId: string;
   name: string;
+  description: string;
   expectedIncome: number;
-  milestones: Array<{
-    id: string;
-    title: string;
-    isCompleted: boolean;
-  }>;
+  startDate: string;
+  endDate: string;
+  status: 'planning' | 'upcoming' | 'in_progress' | 'completed' | 'overdue';
+  milestones: Milestone[];
+}
+
+export interface CompletedPlan {
+  id: string;
+  name: string;
+  earnedAmount: number;
+  completedAt: string;
+  pointsAwarded: number;
 }
 
 export interface GamificationState {
   points: number;
   rank: Rank;
-  lastUpdated: number;
+  lastUpdated: string;
 }
 
-export interface CompletedPlan {
-  id: string;
-  title: string;
-  completedDate: string;
+export interface FinancialReport {
+  healthScore: number;
+  healthAnalysis: string;
+  incomeEfficiency: {
+    score: number;
+    bestSource: string;
+    forecast: string;
+    analysis: string;
+  };
+  budgetDiscipline: {
+    status: string;
+    trashSpending: string[];
+    varianceAnalysis: string;
+    warningMessage?: string;
+  };
+  wealthVelocity: {
+    status: string;
+    goalForecasts: { name: string; estimatedDate: string }[];
+    cutSuggestions: string[];
+  };
+  gamificationInsights: {
+    rankVelocity: string;
+    incomeVsGoals: string;
+    domainExpertise: string;
+  };
+  cfoAdvice: string;
+}
+
+export interface ProsperityPlan {
+  statusTitle: string;
+  statusEmoji: string;
+  healthScore: number;
+  summary: string;
+  savingsStrategies: string[];
+  incomeStrategies: string[];
+  badHabitToQuit: { habit: string; why: string };
+  spendingVsIncomeFeedback: string;
+  incomeRecognition: string;
+  dailyTasks: { title: string; desc: string }[];
 }
 
 export interface AllocationSetting {
@@ -133,28 +181,4 @@ export interface AllocationSetting {
   type: 'COST' | 'GOAL';
   percentage: number;
   isEnabled: boolean;
-}
-
-/**
- * AI & REPORTS - Các cấu trúc phản hồi từ AI
- */
-
-export interface ProsperityPlan {
-  statusTitle: string;
-  statusEmoji: string;
-  healthScore: number;
-  summary: string;
-  savingsStrategies: Array<{ title: string; desc: string }>;
-  incomeStrategies: Array<{ title: string; desc: string }>;
-  badHabitToQuit: { habit: string; why: string };
-}
-
-export interface FinancialReport {
-  healthScore: number;
-  healthAnalysis: string;
-  incomeEfficiency: any;
-  budgetDiscipline: any;
-  wealthVelocity: any;
-  gamificationInsights: any;
-  cfoAdvice: string;
 }
