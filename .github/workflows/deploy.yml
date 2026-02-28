@@ -1,0 +1,40 @@
+name: Deploy ManiCash to Vercel
+
+on:
+  push:
+    branches:
+      - main # Hoặc tên branch chính của bạn (ví dụ: master)
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20 # React 19 chạy tốt nhất trên Node 20+
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build project
+        run: npm run build
+        env:
+          # Truyền các biến môi trường Firebase/AI vào lúc build nếu cần
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_GOOGLE_GENAI_KEY: ${{ secrets.VITE_GOOGLE_GENAI_KEY }}
+
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: ./
+          vercel-args: '--prod' # Deploy thẳng lên môi trường Production
