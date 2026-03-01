@@ -136,7 +136,7 @@ const ReportSkeleton: React.FC = () => {
 };
 
 export const Insights: React.FC<Props> = ({ transactions, users }) => {
-  const { toast } = useToast();
+  const { showToast } = useToast();
 
   const [activeTab, setActiveTab] = useState<"planning" | "report">("planning");
   const [projects, setProjects] = useState<IncomeProject[]>([]);
@@ -195,7 +195,7 @@ export const Insights: React.FC<Props> = ({ transactions, users }) => {
     setAiMeta((prev) => ({ ...prev, ...meta }));
   };
 
-  const toastFallback = (brainUsed: Brain, fallback: boolean) => {
+  const toastFallback = (brainUsed: Brain, fallback: boolean) => {   if (!fallback) return;    showToast(     `AI đã fallback sang ${brainUsed.toUpperCase()}`,     "info"   ); };
     if (!fallback) return;
     toast({
       title: "AI đã tự động fallback",
@@ -204,7 +204,7 @@ export const Insights: React.FC<Props> = ({ transactions, users }) => {
     });
   };
 
-  const toastFail = (actionLabel: string) => {
+  const toastFail = (actionLabel: string) => {   showToast(     `AI không phản hồi khi tạo ${actionLabel}. Bạn có thể thử lại.`,     "error"   ); };
     toast({
       title: "AI không phản hồi",
       description: `Không tạo được ${actionLabel}. Bạn có thể bấm “Thử lại”.`,
