@@ -139,7 +139,7 @@ const ReportSkeleton: React.FC = () => {
   );
 };
 
-export const Insights: React.FC<Props> = ({ transactions, users }) => {
+  /* ================================      AI ENGINE STATE (Part 5/6/7)   ================================= */    const { showToast } = useToast();    // Brain user đã chọn trong Settings   const [aiPreferred, setAiPreferred] = useState<Brain>(     AiService.getPreferredBrain()   );    // Trạng thái runtime của AI   const [aiStatus, setAiStatus] = useState<{     brainUsed: Brain | null;     fallback: boolean;     fromCache: boolean;     error: string | null;     retryAfterMs: number;     lastFeature: "income_plan" | "cfo_report" | null;   }>({     brainUsed: null,     fallback: false,     fromCache: false,     error: null,     retryAfterMs: 0,     lastFeature: null,   });    // Countdown cho retryAfter (rate limit)   useEffect(() => {     if (!aiStatus.retryAfterMs || aiStatus.retryAfterMs <= 0) return;      const id = window.setInterval(() => {       setAiStatus((prev) => ({         ...prev,         retryAfterMs: Math.max(0, prev.retryAfterMs - 250),       }));     }, 250);      return () => window.clearInterval(id);   }, [aiStatus.retryAfterMs]);    // Update preferred brain nếu user đổi trong Settings   useEffect(() => {     setAiPreferred(AiService.getPreferredBrain());   }, [users]);
   const { showToast } = useToast();
 
   const [activeTab, setActiveTab] = useState<"planning" | "report">("planning");
