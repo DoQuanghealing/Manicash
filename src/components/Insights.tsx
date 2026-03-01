@@ -67,6 +67,94 @@ const CELEBRATION_QUOTES = [
   "Không gì có thể ngăn cản bước chân chinh phục của Cậu chủ! 🌪️🔥🎯",
   "Tiền về đầy túi, nụ cười rạng rỡ, hôm nay thật tuyệt! 🧧😊🎉",
 ];
+/* ================================
+   AI ENGINE STATE (PRODUCTION)
+================================ */
+
+type Feature = "income_plan" | "cfo_report";
+
+const { showToast } = useToast();
+
+const [aiPreferred, setAiPreferred] = useState<Brain>(
+  AiService.getPreferredBrain()
+);
+
+const [aiStatus, setAiStatus] = useState<{
+  brainUsed: Brain | null;
+  fallback: boolean;
+  fromCache: boolean;
+  error: string | null;
+  retryAfterMs: number;
+  lastFeature: Feature | null;
+}>({
+  brainUsed: null,
+  fallback: false,
+  fromCache: false,
+  error: null,
+  retryAfterMs: 0,
+  lastFeature: null,
+});
+
+// rate limit countdown
+useEffect(() => {
+  if (!aiStatus.retryAfterMs) return;
+
+  const id = setInterval(() => {
+    setAiStatus(prev => ({
+      ...prev,
+      retryAfterMs: Math.max(0, prev.retryAfterMs - 1000),
+    }));
+  }, 1000);
+
+  return () => clearInterval(id);
+}, [aiStatus.retryAfterMs]);
+
+// sync preferred brain
+useEffect(() => {
+  setAiPreferred(AiService.getPreferredBrain());
+}, [users]);
+
+const applyAiMeta = <T,>(result: AiResult<T>) => {
+  setAiStatus({
+    brainUsed: result.brainUsed || null,
+    fallback: !!result.fallback,
+    fromCache: !!result.fromCache,
+    error: result.data ? null : result.error || "AI failed",
+    retryAfterMs: result.retryAfterMs || 0,
+    lastFeature: result.feature || null,
+  });
+
+  if (result.errorCode === "RATE_LIMIT") {
+    showToast(
+      `AI rate limit. Thử lại sau ${Math.ceil(
+        (result.retryAfterMs || 0) / 1000
+      )} giây`,
+      "error"
+    );
+    return;
+  }
+
+  if (!result.data) {
+    showToast("AI lỗi. Bạn có thể thử lại.", "error");
+    return;
+  }
+
+  if (result.fallback) {
+    showToast(
+      `Fallback sang ${result.brainUsed?.toUpperCase()}`,
+      "info"
+    );
+  }
+
+  if (result.fromCache) {
+    showToast("Dùng cache 5 phút", "info");
+  }
+
+  showToast(
+    `AI OK (${result.brainUsed?.toUpperCase()})`,
+    "success"
+  );
+};
   /* ================================
      APPLY AI META + TOAST HANDLER
   ================================= */
@@ -125,134 +213,7 @@ const CELEBRATION_QUOTES = [
 
     showToast(`AI OK (${used})`, "success");
   };
-type Brain = "gemini" | "llama";
-type AiMeta = {
-  preferredBrain: Brain;
-  brainUsed: Brain | null;
-  fallback: boolean;
-  error?: string;
-  lastAction?: "CFO_REPORT" | "INCOME_PLAN" | null;
-};
 
-const BrainBadge: React.FC<{ meta: AiMeta }> = ({ meta }) => {
-  const used = meta.brainUsed;
-  const preferred = meta.preferredBrain;
-  const isFallback = meta.fallback;
-
-  const label = used
-    ? `${used === "gemini" ? "GEMINI" : "LLAMA"}${isFallback ? " (FALLBACK)" : ""}`
-    : "AI OFF";
-
-  const sub = used
-    ? isFallback
-      ? `Ưu tiên: ${preferred.toUpperCase()}`
-      : `Ưu tiên: ${preferred.toUpperCase()}`
-    : `Ưu tiên: ${preferred.toUpperCase()}`;
-
-  return (
-    <div className="flex items-center gap-2">
-      <span
-        className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${
-          used === "gemini"
-            ? "bg-primary/10 text-primary border-primary/20"
-            : used === "llama"
-            ? "bg-secondary/10 text-secondary border-secondary/20"
-            : "bg-foreground/5 text-foreground/30 border-foreground/10"
-        }`}
-        title={sub}
-      >
-        {label}
-      </span>
-      {meta.error && (
-        <span className="text-[9px] font-black text-danger/70 uppercase tracking-widest">
-          FAIL
-        </span>
-      )}
-    </div>
-  );
-};
-
-const ReportSkeleton: React.FC = () => {
-  return (
-    <div className="space-y-6 animate-in fade-in duration-300">
-      {[...Array(4)].map((_, i) => (
-        <div
-          key={i}
-          className="glass-card bg-surface/50 p-7 rounded-[2.5rem] border-0 shadow-lg space-y-4"
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-foreground/10 animate-pulse" />
-            <div className="h-4 w-40 rounded bg-foreground/10 animate-pulse" />
-          </div>
-          <div className="space-y-3">
-            <div className="h-4 w-full rounded bg-foreground/10 animate-pulse" />
-            <div className="h-4 w-5/6 rounded bg-foreground/10 animate-pulse" />
-            <div className="h-4 w-2/3 rounded bg-foreground/10 animate-pulse" />
-            <div className="h-10 w-full rounded-xl bg-foreground/10 animate-pulse" />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-};
-
-  /* ================================      AI ENGINE STATE (Part 5/6/7)   ================================= */    const { showToast } = useToast();    // Brain user đã chọn trong Settings   const [aiPreferred, setAiPreferred] = useState<Brain>(     AiService.getPreferredBrain()   );    // Trạng thái runtime của AI   const [aiStatus, setAiStatus] = useState<{     brainUsed: Brain | null;     fallback: boolean;     fromCache: boolean;     error: string | null;     retryAfterMs: number;     lastFeature: "income_plan" | "cfo_report" | null;   }>({     brainUsed: null,     fallback: false,     fromCache: false,     error: null,     retryAfterMs: 0,     lastFeature: null,   });    // Countdown cho retryAfter (rate limit)   useEffect(() => {     if (!aiStatus.retryAfterMs || aiStatus.retryAfterMs <= 0) return;      const id = window.setInterval(() => {       setAiStatus((prev) => ({         ...prev,         retryAfterMs: Math.max(0, prev.retryAfterMs - 250),       }));     }, 250);      return () => window.clearInterval(id);   }, [aiStatus.retryAfterMs]);    // Update preferred brain nếu user đổi trong Settings   useEffect(() => {     setAiPreferred(AiService.getPreferredBrain());   }, [users]);
-  const { showToast } = useToast();
-
-  const [activeTab, setActiveTab] = useState<"planning" | "report">("planning");
-  const [projects, setProjects] = useState<IncomeProject[]>([]);
-  const [report, setReport] = useState<FinancialReport | null>(null);
-  const [isReportLoading, setIsReportLoading] = useState(false);
-
-  const [isEditOpen, setIsEditOpen] = useState(false);
-  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
-  const [celebratingProject, setCelebratingProject] = useState<IncomeProject | null>(null);
-  const [currentQuote, setCurrentQuote] = useState("");
-
-  const [aiPrompt, setAiPrompt] = useState("");
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [editingProject, setEditingProject] = useState<any>({ milestones: [] });
-
-  const [completedHistory, setCompletedHistory] = useState<CompletedPlan[]>([]);
-  const [gamification, setGamification] = useState<GamificationState>({
-    points: 0,
-    rank: Rank.IRON,
-    lastUpdated: new Date().toISOString(),
-  });
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-  const [isHelpOpen, setIsHelpOpen] = useState(false);
-  const [showRankUp, setShowRankUp] = useState<{ old: Rank; new: Rank } | null>(null);
-  const [isXpAnimating, setIsXpAnimating] = useState(false);
-
-  // ✅ AI META (brain thật sự dùng + fallback)
-  const preferredBrain = useMemo(() => (StorageService.getAiBrain() as Brain) || "gemini", []);
-  const [aiMeta, setAiMeta] = useState<AiMeta>({
-    preferredBrain,
-    brainUsed: null,
-    fallback: false,
-    error: undefined,
-    lastAction: null,
-  });
-
-  useEffect(() => {
-    loadProjects();
-    setCompletedHistory(StorageService.getCompletedProjects());
-    setGamification(StorageService.getGamificationState());
-    // refresh preferred brain mỗi khi users đổi (vì settings có thể đổi)
-    setAiMeta((prev) => ({
-      ...prev,
-      preferredBrain: (StorageService.getAiBrain() as Brain) || "gemini",
-    }));
-  }, [users]);
-
-  const loadProjects = () => {
-    setProjects(StorageService.getIncomeProjects());
-  };
-
-  const activeUser = users[0];
-
-  // ✅ helper cập nhật ai meta + toast
-  const commitAiMeta = (meta: Partial<AiMeta>) => {
     setAiMeta((prev) => ({ ...prev, ...meta }));
   };
 
@@ -274,43 +235,35 @@ const ReportSkeleton: React.FC = () => {
   };
 
   // ✅ UPDATED: CFO report dùng AiResult
-  const handleGenerateReport = async () => {
-    setIsReportLoading(true);
-    commitAiMeta({ error: undefined, lastAction: "CFO_REPORT" });
+ const handleGenerateReport = async () => {
+  setIsReportLoading(true);
 
-    try {
-      const result = await AiService.generateComprehensiveReport(
-        transactions,
-        StorageService.getGoals(),
-        projects,
-        StorageService.getFixedCosts(),
-        StorageService.getBudgets(),
-        StorageService.getWallets(),
-        gamification,
-        (activeUser?.gender as any) || "MALE"
-      );
+  try {
+    const result = await AiService.generateComprehensiveReport(
+      transactions,
+      StorageService.getGoals(),
+      projects,
+      StorageService.getFixedCosts(),
+      StorageService.getBudgets(),
+      StorageService.getWallets(),
+      gamification,
+      (activeUser?.gender as any) || "MALE"
+    );
 
-      commitAiMeta({
-        brainUsed: result.brainUsed,
-        fallback: result.fallback,
-        error: result.error,
-      });
+    applyAiMeta(result);
 
-      if (result.data) {
-        setReport(result.data);
-        toastFallback((result.brainUsed || aiMeta.preferredBrain) as Brain, !!result.fallback);
-      } else {
-        setReport(null);
-        toastFail("BÁO CÁO CFO");
-      }
-    } catch (e: any) {
-      commitAiMeta({ brainUsed: null, fallback: true, error: e?.message || "Unknown error" });
+    if (result.data) {
+      setReport(result.data);
+    } else {
       setReport(null);
-      toastFail("BÁO CÁO CFO");
-    } finally {
-      setIsReportLoading(false);
     }
-  };
+  } catch (e: any) {
+    showToast("AI crash", "error");
+    setReport(null);
+  } finally {
+    setIsReportLoading(false);
+  }
+};
 
   const toggleMilestone = (projectId: string, milestoneId: string) => {
     const ps = [...projects];
@@ -483,59 +436,52 @@ const ReportSkeleton: React.FC = () => {
   };
 
   // ✅ UPDATED: income plan dùng AiResult
-  const handleGeneratePlan = async () => {
-    if (!aiPrompt.trim()) return;
+const handleGeneratePlan = async () => {
+  if (!aiPrompt.trim()) return;
 
-    setIsGenerating(true);
-    commitAiMeta({ error: undefined, lastAction: "INCOME_PLAN" });
+  setIsGenerating(true);
 
-    try {
-      const result = await AiService.generateIncomePlan(aiPrompt);
+  try {
+    const result = await AiService.generateIncomePlan(aiPrompt);
 
-      commitAiMeta({
-        brainUsed: result.brainUsed,
-        fallback: result.fallback,
-        error: result.error,
-      });
+    applyAiMeta(result);
 
-      if (result.data) {
-        // ✅ fallback toast
-        toastFallback((result.brainUsed || aiMeta.preferredBrain) as Brain, !!result.fallback);
+    if (!result.data) return;
 
-        setIsAiModalOpen(false);
-        const today = new Date().toISOString().split("T")[0];
+    setIsAiModalOpen(false);
 
-        const plan = result.data;
-        const newProj: any = {
-          id: "",
-          userId: activeUser.id,
-          name: plan.name,
-          description: plan.description,
-          expectedIncome: formatNumberInput(plan.expectedIncome),
+    const today = new Date().toISOString().split("T")[0];
+
+    const plan = result.data;
+
+    const newProj: any = {
+      id: "",
+      userId: activeUser.id,
+      name: plan.name,
+      description: plan.description,
+      expectedIncome: formatNumberInput(plan.expectedIncome),
+      startDate: today,
+      endDate: today,
+      status: "planning",
+      milestones: (plan.milestones || []).map(
+        (m: any, idx: number) => ({
+          id: `m_ai_${idx}_${Date.now()}`,
+          title: m.title,
           startDate: today,
-          endDate: today,
-          status: "planning",
-          milestones: (plan.milestones || []).map((m: any, idx: number) => ({
-            id: `m_ai_${idx}_${Date.now()}`,
-            title: m.title,
-            startDate: today,
-            date: today,
-            isCompleted: false,
-          })),
-        };
+          date: today,
+          isCompleted: false,
+        })
+      ),
+    };
 
-        setEditingProject(newProj);
-        setIsEditOpen(true);
-      } else {
-        toastFail("KẾ HOẠCH THU NHẬP");
-      }
-    } catch (e: any) {
-      commitAiMeta({ brainUsed: null, fallback: true, error: e?.message || "Unknown error" });
-      toastFail("KẾ HOẠCH THU NHẬP");
-    } finally {
-      setIsGenerating(false);
-    }
-  };
+    setEditingProject(newProj);
+    setIsEditOpen(true);
+  } catch (e) {
+    showToast("AI crash", "error");
+  } finally {
+    setIsGenerating(false);
+  }
+};
 
   const renderPlanningTab = () => {
     const RANK_THRESHOLDS: Record<Rank, number> = {
@@ -800,7 +746,7 @@ const ReportSkeleton: React.FC = () => {
           <div className="flex items-center justify-center gap-3">
             <h3 className="text-[10px] font-black text-foreground/40 uppercase tracking-[0.3em]">Phân tích tài chính tổng thể</h3>
             {/* ✅ AI STATUS BADGE */}
-            <BrainBadge meta={aiMeta} />
+            <AiStatusPill   preferred={aiPreferred}   used={aiStatus.brainUsed}   fallback={aiStatus.fallback}   error={aiStatus.error} />
           </div>
 
           <button
@@ -960,7 +906,7 @@ const ReportSkeleton: React.FC = () => {
             THU NHẬP
           </h2>
           {/* ✅ status nhỏ ở header luôn */}
-          <BrainBadge meta={aiMeta} />
+          <AiStatusPill   preferred={aiPreferred}   used={aiStatus.brainUsed}   fallback={aiStatus.fallback}   error={aiStatus.error} />
         </div>
 
         {activeTab === "planning" && (
@@ -1222,7 +1168,7 @@ const ReportSkeleton: React.FC = () => {
               <div className="space-y-1">
                 <h3 className="text-xl font-black text-foreground uppercase tracking-tight">AI SUGGESTION</h3>
                 <div className="flex items-center gap-2">
-                  <BrainBadge meta={aiMeta} />
+                  <AiStatusPill   preferred={aiPreferred}   used={aiStatus.brainUsed}   fallback={aiStatus.fallback}   error={aiStatus.error} />
                   {aiMeta.lastAction === "INCOME_PLAN" && aiMeta.error && (
                     <button
                       onClick={handleGeneratePlan}
