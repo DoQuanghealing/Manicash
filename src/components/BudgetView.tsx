@@ -16,7 +16,7 @@ interface Props {
   onRefresh: () => void;
 }
 
-export const BudgetView: React.FC<Props> = ({ budgets, getSpent, onUpdateBudgets, fixedCosts = [], onPayFixedCost, onRefresh }) => {
+const BudgetView: React.FC<Props> = ({ budgets, getSpent, onUpdateBudgets, fixedCosts = [], onPayFixedCost, onRefresh }) => {
   const [activeTab, setActiveTab] = useState<'flexible' | 'fixed'>('flexible');
   const [isEditingFlexible, setIsEditingFlexible] = useState(false);
   const [localBudgets, setLocalBudgets] = useState<Budget[]>([]);
@@ -447,3 +447,4 @@ export const BudgetView: React.FC<Props> = ({ budgets, getSpent, onUpdateBudgets
     </div>
   );
 };
+export default BudgetView;
