@@ -67,7 +67,64 @@ const CELEBRATION_QUOTES = [
   "Không gì có thể ngăn cản bước chân chinh phục của Cậu chủ! 🌪️🔥🎯",
   "Tiền về đầy túi, nụ cười rạng rỡ, hôm nay thật tuyệt! 🧧😊🎉",
 ];
+  /* ================================
+     APPLY AI META + TOAST HANDLER
+  ================================= */
 
+  const applyAiMeta = <T,>(result: AiResult<T>) => {
+    setAiStatus({
+      brainUsed: result.brainUsed || null,
+      fallback: !!result.fallback,
+      fromCache: !!result.fromCache,
+      error: result.data ? null : result.error || "AI failed",
+      retryAfterMs: result.retryAfterMs || 0,
+      lastFeature: result.feature || null,
+    });
+
+    // ===== ERROR CASES =====
+    if (result.errorCode === "RATE_LIMIT") {
+      showToast(
+        `AI đang bị giới hạn. Chờ ${Math.ceil(
+          (result.retryAfterMs || 0) / 1000
+        )} giây rồi thử lại.`,
+        "error"
+      );
+      return;
+    }
+
+    if (result.errorCode === "OFFLINE") {
+      showToast("Bạn đang offline. Bật mạng để dùng AI.", "error");
+      return;
+    }
+
+    if (result.errorCode === "NO_KEY") {
+      showToast("Chưa cấu hình API key cho AI.", "error");
+      return;
+    }
+
+    if (!result.data) {
+      showToast("AI lỗi. Bạn có thể thử lại hoặc đổi brain.", "error");
+      return;
+    }
+
+    // ===== SUCCESS CASES =====
+    if (result.fromCache) {
+      showToast("Đang dùng kết quả cache (5 phút).", "info");
+    }
+
+    if (result.fallback) {
+      showToast("AI đã tự động fallback sang brain dự phòng.", "info");
+    }
+
+    const used =
+      result.brainUsed === "gemini"
+        ? "Gemini"
+        : result.brainUsed === "llama"
+        ? "Llama"
+        : "AI";
+
+    showToast(`AI OK (${used})`, "success");
+  };
 type Brain = "gemini" | "llama";
 type AiMeta = {
   preferredBrain: Brain;
