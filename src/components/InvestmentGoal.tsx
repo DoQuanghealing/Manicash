@@ -13,7 +13,7 @@ interface Props {
   onRefresh: () => void;
 }
 
-export const InvestmentGoal: React.FC<Props> = ({ goals, users, wallets, onRefresh }) => {
+const InvestmentGoal: React.FC<Props> = ({ goals, users, wallets, onRefresh }) => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isDepositOpen, setIsDepositOpen] = useState(false);
   const [isCelebrationOpen, setIsCelebrationOpen] = useState(false);
@@ -375,3 +375,4 @@ export const InvestmentGoal: React.FC<Props> = ({ goals, users, wallets, onRefre
     </div>
   );
 };
+export default InvestmentGoal;
