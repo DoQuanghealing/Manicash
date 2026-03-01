@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Layout } from './components/Layout';
 import { Dashboard } from './components/Dashboard';
@@ -8,15 +7,24 @@ import { InvestmentGoal } from './components/InvestmentGoal';
 import { Insights } from './components/Insights';
 import { ReflectionModal } from './components/ReflectionModal';
 import { SettingsModal } from './components/SettingsModal';
-import { FutureRoadmap } from './components/FutureRoadmap'; 
+import { FutureRoadmap } from './components/FutureRoadmap';
 import { Login } from './components/Login';
 import { StorageService } from './services/storageService';
-import { AiService } from './services/aiService';
 import { AuthService } from './services/firebase';
 import { BrandLogo } from './components/BrandLogo';
-import { Transaction, Wallet, Goal, Category, TransactionType, User as AppUser, Budget, FixedCost, ButlerType } from './types';
+import {
+  Transaction,
+  Wallet,
+  Goal,
+  Category,
+  TransactionType,
+  User as AppUser,
+  Budget,
+  FixedCost,
+  ButlerType
+} from './types';
 import { User as FirebaseUser } from 'firebase/auth';
-import { AlertTriangle, RefreshCw, Zap, Sparkles } from 'lucide-react';
+import { AlertTriangle, RefreshCw, Zap } from 'lucide-react';
 import { VI } from './constants/vi';
 import { getRandomSarcasm } from './constants/sarcasm';
 import { DataGuard } from './utils/dataGuard';
@@ -25,30 +33,38 @@ function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isTxModalOpen, setIsTxModalOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isFutureModalOpen, setIsFutureModalOpen] = useState(false); 
+  const [isFutureModalOpen, setIsFutureModalOpen] = useState(false);
+
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isDataSyncing, setIsDataSyncing] = useState(false);
   const [bootError, setBootError] = useState<string | null>(null);
-  const [updateRegistration, setUpdateRegistration] = useState<ServiceWorkerRegistration | null>(null);
-  
-  const [isBypassed, setIsBypassed] = useState(false);
-  
-  const [wallets, setWallets] = useState<Wallet[]>([]);
-  
-  useEffect(() => {
-    console.log("[App] Wallets state updated:", wallets);
-  }, [wallets]);
+  const [updateRegistration, setUpdateRegistration] =
+    useState<ServiceWorkerRegistration | null>(null);
 
+  const [wallets, setWallets] = useState<Wallet[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [users, setUsers] = useState<AppUser[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [fixedCosts, setFixedCosts] = useState<FixedCost[]>([]);
 
-  const [reflectionData, setReflectionData] = useState<{isOpen: boolean, message: string, category: string, title?: string, variant?: 'danger' | 'success', isLoading?: boolean}>({
-    isOpen: false, message: '', category: ''
+  const [reflectionData, setReflectionData] = useState<{
+    isOpen: boolean;
+    message: string;
+    category: string;
+    title?: string;
+    variant?: 'danger' | 'success';
+    isLoading?: boolean;
+  }>({
+    isOpen: false,
+    message: '',
+    category: ''
   });
+
+  /* =========================
+     AUTH + BOOT
+  ========================== */
 
   useEffect(() => {
     const handleUpdate = (e: any) => {
@@ -58,46 +74,35 @@ function App() {
 
     try {
       const unsubscribe = AuthService.onAuthChange(async (user) => {
-        console.log("[App] Auth state changed:", user ? user.email : "No user");
         setCurrentUser(user);
-        
+
         if (user) {
           setIsDataSyncing(true);
           StorageService.init();
           await StorageService.loadFromCloud(user.uid);
           await StorageService.checkNewMonth();
-          refreshData();
+          await refreshData();
           applyInitialPreferences();
           setIsDataSyncing(false);
         }
+
         setIsInitialLoading(false);
       });
+
       return () => {
         unsubscribe();
         window.removeEventListener('app-update-available', handleUpdate);
       };
     } catch (e: any) {
-      console.error("App Boot Error:", e);
-      setBootError(e.message || "Lỗi khởi động dịch vụ.");
+      console.error('App Boot Error:', e);
+      setBootError(e.message || 'Lỗi khởi động dịch vụ.');
       setIsInitialLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    if (isBypassed) {
-      console.log("[App] Login bypassed, initializing data...");
-      StorageService.init();
-      refreshData();
-      applyInitialPreferences();
-    }
-  }, [isBypassed]);
-
-  const handleUpdateApp = () => {
-    if (updateRegistration && updateRegistration.waiting) {
-      updateRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
-      window.location.reload();
-    }
-  };
+  /* =========================
+     UTILITIES
+  ========================== */
 
   const applyInitialPreferences = () => {
     const theme = StorageService.getTheme();
@@ -111,130 +116,90 @@ function App() {
 
   const refreshData = async () => {
     try {
-      // DATA GUARD INTEGRATION: Clean everything before putting in state
-      const rawWallets = StorageService.getWallets();
-      console.log(`[App] Raw wallets from StorageService: ${rawWallets.length} items`, rawWallets);
-      setWallets(rawWallets.map(DataGuard.sanitizeWallet));
-
-      const rawTxs = StorageService.getTransactions();
-      console.log(`[App] Raw transactions from StorageService: ${rawTxs.length} items`, rawTxs);
-      setTransactions(rawTxs.map(DataGuard.sanitizeTransaction));
-
-      const rawGoals = StorageService.getGoals();
-      console.log(`[App] Raw goals from StorageService: ${rawGoals.length} items`, rawGoals);
-      setGoals(rawGoals.map(DataGuard.sanitizeGoal));
-
-      const usersFromStorage = StorageService.getUsers();
-      console.log("[App] Users from StorageService:", usersFromStorage);
-      setUsers(usersFromStorage);
-
-      const rawBudgets = StorageService.getBudgets();
-      console.log(`[App] Raw budgets from StorageService: ${rawBudgets.length} items`, rawBudgets);
-      setBudgets(rawBudgets.map(DataGuard.sanitizeBudget));
-
-      const rawCosts = StorageService.getFixedCosts();
-      console.log(`[App] Raw costs from StorageService: ${rawCosts.length} items`, rawCosts);
-      setFixedCosts(rawCosts.map(DataGuard.sanitizeFixedCost));
+      setWallets(
+        StorageService.getWallets().map(DataGuard.sanitizeWallet)
+      );
+      setTransactions(
+        StorageService.getTransactions().map(DataGuard.sanitizeTransaction)
+      );
+      setGoals(
+        StorageService.getGoals().map(DataGuard.sanitizeGoal)
+      );
+      setUsers(StorageService.getUsers());
+      setBudgets(
+        StorageService.getBudgets().map(DataGuard.sanitizeBudget)
+      );
+      setFixedCosts(
+        StorageService.getFixedCosts().map(DataGuard.sanitizeFixedCost)
+      );
     } catch (e) {
-      console.error("Data refresh error:", e);
-      // Soft alert instead of white screen
-      alert("Hệ thống phát hiện dữ liệu không đồng nhất. Đang tự động làm sạch...");
+      console.error('Data refresh error:', e);
+      alert('Hệ thống phát hiện dữ liệu lỗi. Đang tự làm sạch...');
     }
-  };
-
-  const handleSaveSettings = async (updatedUsers: AppUser[], updatedWallets: Wallet[]) => {
-    console.log("[App] Saving settings, updated wallets:", updatedWallets);
-    await StorageService.updateUsers(updatedUsers);
-    await StorageService.updateWallets(updatedWallets);
-    console.log("[App] Settings saved, refreshing data...");
-    await refreshData();
-  };
-
-  const handleUpdateBudgets = async (newBudgets: Budget[]) => {
-      await StorageService.updateBudgets(newBudgets);
-      refreshData();
-  };
-  
-  const handlePayFixedCost = async (cost: FixedCost) => {
-      const tx: Transaction = {
-          id: `tx_fix_${Date.now()}`,
-          date: new Date().toISOString(),
-          amount: cost.amount,
-          type: TransactionType.EXPENSE,
-          category: Category.BILLS,
-          walletId: wallets[0]?.id || '',
-          description: `Thanh toán: ${cost.title}`,
-          timestamp: Date.now()
-      };
-      await StorageService.addTransaction(tx);
-      const nextDate = new Date(cost.nextDueDate);
-      nextDate.setMonth(nextDate.getMonth() + cost.frequencyMonths);
-      const updatedCost: FixedCost = { ...cost, allocatedAmount: 0, nextDueDate: nextDate.toISOString().split('T')[0] };
-      await StorageService.updateFixedCost(updatedCost);
-      refreshData();
   };
 
   const getSpentByCategory = (category: Category) => {
-    try {
-        const now = new Date();
-        return transactions
-          .filter(t => t.type === TransactionType.EXPENSE && t.category === category)
-          .filter(t => {
-              const d = new Date(t.date);
-              return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-          })
-          .reduce((sum, t) => sum + DataGuard.asNumber(t.amount), 0);
-    } catch {
-        return 0;
-    }
+    const now = new Date();
+    return transactions
+      .filter(
+        (t) =>
+          t.type === TransactionType.EXPENSE &&
+          t.category === category
+      )
+      .filter((t) => {
+        const d = new Date(t.date);
+        return (
+          d.getMonth() === now.getMonth() &&
+          d.getFullYear() === now.getFullYear()
+        );
+      })
+      .reduce((sum, t) => sum + DataGuard.asNumber(t.amount), 0);
   };
+
+  /* =========================
+     HANDLERS
+  ========================== */
 
   const handleAddTransaction = async (data: any) => {
-    console.log("[APP] Received tx:", data);
-    try {
-      console.log("[APP] Calling StorageService...");
-      await refreshData();
+    await refreshData();
 
-      if (data && data.type === TransactionType.EXPENSE) {
-        const user = users[0];
-        const butlerName = user?.butlerPreference === ButlerType.FEMALE 
-            ? (user.femaleButlerName || VI.butler.femaleName) 
-            : (user.maleButlerName || VI.butler.maleName);
+    if (data?.type === TransactionType.EXPENSE) {
+      const user = users[0];
+      const butlerName =
+        user?.butlerPreference === ButlerType.FEMALE
+          ? user.femaleButlerName || VI.butler.femaleName
+          : user.maleButlerName || VI.butler.maleName;
 
-        const sarcasmMessage = getRandomSarcasm(data.category);
-        const budget = budgets.find(b => b.category === data.category);
-        const currentSpent = getSpentByCategory(data.category);
-        const isOver = budget && currentSpent > budget.limit;
+      const sarcasmMessage = getRandomSarcasm(data.category);
+      const budget = budgets.find((b) => b.category === data.category);
+      const currentSpent = getSpentByCategory(data.category);
+      const isOver = budget && currentSpent > budget.limit;
 
-        setReflectionData({
-            isOpen: true,
-            message: sarcasmMessage,
-            category: data.category,
-            variant: isOver ? 'danger' : 'success',
-            title: isOver ? VI.reflection.defaultTitle : butlerName,
-            isLoading: false
-        });
-      }
-    } catch (e) {
-      console.error("FULL ERROR in handleAddTransaction:", e);
-      throw e;
+      setReflectionData({
+        isOpen: true,
+        message: sarcasmMessage,
+        category: data.category,
+        variant: isOver ? 'danger' : 'success',
+        title: isOver ? VI.reflection.defaultTitle : butlerName
+      });
     }
   };
+
+  /* =========================
+     LOADING STATES
+  ========================== */
 
   if (isInitialLoading || isDataSyncing) {
     return (
       <div className="h-full w-full flex flex-col items-center justify-center bg-background space-y-6">
-        <div className="w-24 h-24 bg-gold rounded-[2.5rem] flex items-center justify-center shadow-2xl neon-glow-gold animate-bounce">
-            <BrandLogo size={64} color="white" />
+        <div className="w-24 h-24 bg-gold rounded-[2.5rem] flex items-center justify-center shadow-2xl animate-bounce">
+          <BrandLogo size={64} color="white" />
         </div>
-        <div className="text-center space-y-2">
-            <p className="text-[10px] font-black text-foreground/40 uppercase tracking-[0.3em]">
-                {isDataSyncing ? "Đang đồng bộ dữ liệu Cloud..." : "Đang khởi động hệ thống..."}
-            </p>
-            <div className="w-12 h-1 bg-foreground/10 rounded-full mx-auto overflow-hidden relative">
-                <div className="absolute inset-0 bg-primary animate-progress"></div>
-            </div>
-        </div>
+        <p className="text-xs font-black uppercase tracking-widest text-foreground/40">
+          {isDataSyncing
+            ? 'Đang đồng bộ dữ liệu Cloud...'
+            : 'Đang khởi động hệ thống...'}
+        </p>
       </div>
     );
   }
@@ -242,82 +207,106 @@ function App() {
   if (bootError) {
     return (
       <div className="h-full w-full flex flex-col items-center justify-center bg-background p-10 text-center">
-        <div className="w-20 h-20 bg-danger/10 text-danger rounded-3xl flex items-center justify-center mb-6">
-          <AlertTriangle size={40} />
-        </div>
-        <h1 className="text-xl font-black uppercase mb-2">Lỗi hệ thống</h1>
-        <p className="text-sm text-foreground/50 mb-8 max-w-xs">{bootError}</p>
-        <button onClick={() => window.location.reload()} className="bg-primary text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2">
+        <AlertTriangle size={40} className="text-danger mb-6" />
+        <p className="mb-8">{bootError}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="bg-primary text-white px-8 py-4 rounded-2xl font-black"
+        >
           <RefreshCw size={18} /> Thử lại
         </button>
       </div>
     );
   }
 
-  if (!currentUser && !isBypassed) return <Login onBypass={() => setIsBypassed(true)} />;
+  /* =========================
+     AUTH GATE
+  ========================== */
 
-  const displayUser = currentUser || { uid: 'guest', email: 'guest@example.com' };
+  if (!currentUser) return <Login />;
+
+  const displayUser = currentUser;
+
+  /* =========================
+     MAIN APP
+  ========================== */
 
   return (
-    <div className="bg-background text-foreground h-full transition-colors duration-300 relative">
-      {updateRegistration && (
-        <div className="fixed top-0 left-0 right-0 z-[1000] p-4 animate-in slide-in-from-top duration-500">
-           <div className="max-w-md mx-auto glass-card bg-primary text-white p-5 rounded-[2rem] shadow-2xl flex items-center justify-between border-0 relative overflow-hidden group">
-              <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-50 group-hover:translate-x-full transition-transform duration-1000"></div>
-              <div className="flex items-center gap-4 relative z-10">
-                <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center shadow-inner">
-                  <Zap size={24} className="text-white fill-white animate-pulse" />
-                </div>
-                <div>
-                  <h4 className="text-[11px] font-black uppercase tracking-widest">Nâng cấp hệ thống!</h4>
-                  <p className="text-[10px] font-bold opacity-80 uppercase leading-none mt-1">Đã có phiên bản Manicash mới!</p>
-                </div>
-              </div>
-              <button 
-                onClick={handleUpdateApp}
-                className="bg-white text-primary px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg active:scale-95 transition-all relative z-10"
-              >
-                Cập nhật ngay
-              </button>
-           </div>
-        </div>
-      )}
+    <div className="bg-background text-foreground h-full">
+      <Layout
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        onAddTransaction={() => setIsTxModalOpen(true)}
+      >
+        {activeTab === 'dashboard' && (
+          <Dashboard
+            wallets={wallets}
+            transactions={transactions}
+            users={users}
+            onOpenSettings={() => setIsSettingsOpen(true)}
+            onRefresh={refreshData}
+            onOpenFuture={() => setIsFutureModalOpen(true)}
+          />
+        )}
 
-      <Layout activeTab={activeTab} onTabChange={setActiveTab} onAddTransaction={() => setIsTxModalOpen(true)}>
-        {activeTab === 'dashboard' ? (
-            <Dashboard 
-              wallets={wallets} 
-              transactions={transactions} 
-              users={users} 
-              onOpenSettings={() => setIsSettingsOpen(true)} 
-              onRefresh={refreshData}
-              onOpenFuture={() => setIsFutureModalOpen(true)} 
-            />
-        ) : activeTab === 'budgets' ? (
-            <BudgetView budgets={budgets} getSpent={getSpentByCategory} onUpdateBudgets={handleUpdateBudgets} fixedCosts={fixedCosts} onPayFixedCost={handlePayFixedCost} onRefresh={refreshData} />
-        ) : activeTab === 'goals' ? (
-            <InvestmentGoal goals={goals} users={users} wallets={wallets} onRefresh={refreshData} />
-        ) : (
-            <Insights transactions={transactions} users={users} />
+        {activeTab === 'budgets' && (
+          <BudgetView
+            budgets={budgets}
+            getSpent={getSpentByCategory}
+            onUpdateBudgets={async (b) => {
+              await StorageService.updateBudgets(b);
+              refreshData();
+            }}
+            fixedCosts={fixedCosts}
+            onRefresh={refreshData}
+          />
+        )}
+
+        {activeTab === 'goals' && (
+          <InvestmentGoal
+            goals={goals}
+            users={users}
+            wallets={wallets}
+            onRefresh={refreshData}
+          />
+        )}
+
+        {activeTab === 'insights' && (
+          <Insights transactions={transactions} users={users} />
         )}
       </Layout>
-      
-      <TransactionForm isOpen={isTxModalOpen} onClose={() => setIsTxModalOpen(false)} onSubmit={handleAddTransaction} wallets={wallets} />
-      <ReflectionModal 
-        isOpen={reflectionData.isOpen} 
-        message={reflectionData.message} 
-        category={reflectionData.category} 
+
+      <TransactionForm
+        isOpen={isTxModalOpen}
+        onClose={() => setIsTxModalOpen(false)}
+        onSubmit={handleAddTransaction}
+        wallets={wallets}
+      />
+
+      <ReflectionModal
+        isOpen={reflectionData.isOpen}
+        message={reflectionData.message}
+        category={reflectionData.category}
         variant={reflectionData.variant}
         title={reflectionData.title}
-        isLoading={reflectionData.isLoading}
-        onClose={() => setReflectionData({ ...reflectionData, isOpen: false })} 
+        onClose={() =>
+          setReflectionData({ ...reflectionData, isOpen: false })
+        }
       />
-      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} users={users} wallets={wallets} onSave={handleSaveSettings} onRefresh={refreshData} currentUser={displayUser} />
-      
-      <FutureRoadmap 
-        isOpen={isFutureModalOpen} 
-        onClose={() => setIsFutureModalOpen(false)} 
-        userEmail={displayUser.email || ''} 
+
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        users={users}
+        wallets={wallets}
+        onRefresh={refreshData}
+        currentUser={displayUser}
+      />
+
+      <FutureRoadmap
+        isOpen={isFutureModalOpen}
+        onClose={() => setIsFutureModalOpen(false)}
+        userEmail={displayUser.email || ''}
         userId={displayUser.uid}
       />
     </div>
