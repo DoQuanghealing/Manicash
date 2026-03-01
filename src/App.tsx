@@ -1,21 +1,20 @@
 import React, { useEffect, useState } from "react";
 import { Layout } from "./components/Layout";
 import { Login } from "./components/Login";
-import { ToastProvider } from "./components/ToastProvider";
+import { ToastProvider, useToast } from "./components/ToastProvider";
 import { StorageService } from "./services/storageService";
-import { User } from "./types";
-import { useToast } from "./components/ToastProvider";
+import type { User } from "./types";
+
+type AiHealth = "checking" | "online" | "fallback" | "offline";
 
 function AppContent() {
   const [users, setUsers] = useState<User[]>([]);
   const [isReady, setIsReady] = useState(false);
-  const [aiStatus, setAiStatus] = useState<
-    "checking" | "online" | "fallback" | "offline"
-  >("checking");
+  const [aiHealth, setAiHealth] = useState<AiHealth>("checking");
 
   const { showToast } = useToast();
 
-  // 🚀 Load users
+  // 🚀 Load users khi khởi động
   useEffect(() => {
     try {
       const storedUsers = StorageService.getUsers?.() || [];
@@ -28,29 +27,25 @@ function AppContent() {
     }
   }, []);
 
-  // 🧠 AI HEALTH CHECK khi app khởi động
+  // 🧠 AI HEALTH CHECK khi app start
   useEffect(() => {
-    const checkAI = async () => {
-      try {
-        const geminiKey = import.meta.env.VITE_GEMINI_API_KEY;
-        const groqKey = import.meta.env.VITE_GROQ_API_KEY;
+    try {
+      const geminiKey = import.meta.env.VITE_GEMINI_API_KEY;
+      const groqKey = import.meta.env.VITE_GROQ_API_KEY;
 
-        if (!geminiKey && !groqKey) {
-          setAiStatus("offline");
-          return;
-        }
-
-        if (geminiKey && groqKey) {
-          setAiStatus("online");
-        } else {
-          setAiStatus("fallback");
-        }
-      } catch (err) {
-        setAiStatus("offline");
+      if (!geminiKey && !groqKey) {
+        setAiHealth("offline");
+        return;
       }
-    };
 
-    checkAI();
+      if (geminiKey && groqKey) {
+        setAiHealth("online");
+      } else {
+        setAiHealth("fallback");
+      }
+    } catch {
+      setAiHealth("offline");
+    }
   }, []);
 
   const handleLoginSuccess = () => {
@@ -71,25 +66,26 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-background text-foreground relative">
-      {/* 🌐 AI STATUS INDICATOR GLOBAL */}
+
+      {/* 🌐 GLOBAL AI STATUS INDICATOR */}
       <div className="fixed bottom-6 right-6 z-[999]">
         <div
           className={`px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-widest shadow-xl backdrop-blur-xl border
             ${
-              aiStatus === "online"
+              aiHealth === "online"
                 ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
-                : aiStatus === "fallback"
+                : aiHealth === "fallback"
                 ? "bg-warning/10 border-warning/30 text-warning"
-                : aiStatus === "offline"
+                : aiHealth === "offline"
                 ? "bg-danger/10 border-danger/30 text-danger"
                 : "bg-primary/10 border-primary/30 text-primary"
             }
           `}
         >
-          {aiStatus === "checking" && "AI: Checking..."}
-          {aiStatus === "online" && "AI: Online"}
-          {aiStatus === "fallback" && "AI: Limited Mode"}
-          {aiStatus === "offline" && "AI: Offline"}
+          {aiHealth === "checking" && "AI: Checking..."}
+          {aiHealth === "online" && "AI: Online"}
+          {aiHealth === "fallback" && "AI: Limited Mode"}
+          {aiHealth === "offline" && "AI: Offline"}
         </div>
       </div>
 
