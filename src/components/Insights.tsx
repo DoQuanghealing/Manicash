@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+
 import {
   Transaction,
   User,
@@ -14,10 +15,13 @@ import {
   GamificationState,
   Rank,
 } from "../types";
+
 import { AiService } from "../services/aiService";
+import type { AiResult, Brain } from "../services/aiService";
 import { StorageService } from "../services/storageService";
 import { VI } from "../constants/vi";
 import { formatVND, formatNumberInput, parseNumberInput } from "../utils/format";
+
 import {
   Sparkles,
   Plus,
@@ -43,8 +47,8 @@ import {
   X,
 } from "lucide-react";
 
-// ✅ Toast hook (giả định ToastProvider bạn đã làm có useToast)
 import { useToast } from "./ToastProvider";
+import { AiStatusPill } from "./AiStatusPill";
 
 interface Props {
   transactions: Transaction[];
