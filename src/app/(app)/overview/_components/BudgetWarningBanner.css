@@ -1,0 +1,120 @@
+/* ═══ BudgetWarningBanner Styles ═══ */
+
+.bwb-container {
+  border-radius: var(--radius-lg);
+  background: rgba(245, 158, 11, 0.05);
+  border: 1px solid rgba(245, 158, 11, 0.12);
+  padding: var(--space-md);
+  overflow: hidden;
+}
+
+.bwb-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: var(--space-sm);
+}
+
+.bwb-header-icon {
+  font-size: 0.8rem;
+}
+
+.bwb-header-text {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #F59E0B;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.bwb-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bwb-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.bwb-item--danger {
+  background: rgba(239, 68, 68, 0.06);
+  border: 1px solid rgba(239, 68, 68, 0.1);
+}
+
+.bwb-item--warning {
+  border: 1px solid rgba(245, 158, 11, 0.08);
+}
+
+.bwb-item-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.bwb-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.bwb-item-name {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--c-text-primary);
+  display: block;
+  margin-bottom: 3px;
+}
+
+.bwb-item-bar {
+  height: 3px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.bwb-item-bar-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 0.6s ease;
+}
+
+.bwb-item-pct {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: #F59E0B;
+  flex-shrink: 0;
+}
+
+.bwb-item-pct--danger {
+  color: #EF4444;
+}
+
+.bwb-item-amounts {
+  font-size: 0.5rem;
+  color: var(--c-text-muted);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* ═══ LIGHT MODE ═══ */
+[data-theme="light"] .bwb-container {
+  background: rgba(217, 119, 6, 0.04);
+  border-color: rgba(217, 119, 6, 0.08);
+}
+
+[data-theme="light"] .bwb-item {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+[data-theme="light"] .bwb-item--danger {
+  background: rgba(220, 38, 38, 0.04);
+  border-color: rgba(220, 38, 38, 0.08);
+}
+
+[data-theme="light"] .bwb-item-bar {
+  background: rgba(0, 0, 0, 0.05);
+}

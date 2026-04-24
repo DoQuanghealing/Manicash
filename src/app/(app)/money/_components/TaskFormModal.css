@@ -1,0 +1,144 @@
+/* ═══ TaskFormModal Styles ═══ */
+.tfm-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.6); backdrop-filter: blur(6px); z-index: 200;
+}
+
+.tfm-panel {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 201;
+  max-height: 85dvh; overflow-y: auto;
+  padding: 24px 20px calc(env(safe-area-inset-bottom, 0px) + 20px);
+  background: linear-gradient(180deg, #1C1930 0%, #13111D 100%);
+  border-top: 1px solid rgba(255,255,255,0.08);
+  border-radius: 24px 24px 0 0;
+  scrollbar-width: none;
+}
+
+.tfm-panel::-webkit-scrollbar { display: none; }
+
+.tfm-top {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: var(--space-xl);
+}
+
+.tfm-title {
+  font-family: var(--font-display);
+  font-size: var(--text-lg); font-weight: 700;
+}
+
+.tfm-close {
+  width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,0.06); color: var(--c-text-muted);
+}
+
+.tfm-field { margin-bottom: var(--space-lg); }
+
+.tfm-field--half { flex: 1; }
+
+.tfm-label {
+  display: block; font-size: 0.65rem; font-weight: 600;
+  color: var(--c-text-muted); text-transform: uppercase;
+  letter-spacing: 0.06em; margin-bottom: 6px;
+}
+
+.tfm-row { display: flex; gap: var(--space-sm); }
+
+.tfm-submit {
+  width: 100%; padding: 14px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, #10B981, #059669);
+  color: white; font-weight: 700; font-size: var(--text-sm);
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  box-shadow: 0 4px 16px rgba(16,185,129,0.3);
+}
+
+.tfm-submit:disabled { opacity: 0.4; }
+
+/* Sub-tasks */
+.tfm-sub-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px; margin-bottom: 6px;
+  border-radius: var(--radius-md);
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.tfm-sub-num {
+  width: 20px; height: 20px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.55rem; font-weight: 700;
+  background: rgba(124,58,237,0.12); color: var(--c-purple-light);
+  flex-shrink: 0;
+}
+
+.tfm-sub-text {
+  flex: 1; font-size: var(--text-xs); color: var(--c-text-secondary);
+}
+
+.tfm-sub-remove {
+  width: 24px; height: 24px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(239,68,68,0.08); color: #EF4444;
+  flex-shrink: 0;
+}
+
+.tfm-sub-add {
+  display: flex; gap: 6px; margin-top: 6px;
+}
+
+.tfm-sub-add-btn {
+  width: 40px; height: 40px; border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(124,58,237,0.1); color: var(--c-purple-light);
+  border: 1px solid rgba(124,58,237,0.2);
+  flex-shrink: 0;
+}
+
+/* XP Estimation */
+.tfm-xp-estimate {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; margin-bottom: var(--space-md);
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, rgba(124,58,237,0.1), rgba(6,182,212,0.06));
+  border: 1px solid rgba(124,58,237,0.15);
+}
+
+.tfm-xp-label {
+  font-size: 0.65rem; font-weight: 600; color: var(--c-text-secondary);
+}
+
+.tfm-xp-value {
+  font-family: var(--font-display);
+  font-size: var(--text-base); font-weight: 800;
+  color: var(--c-purple-light);
+}
+
+@media (min-width: 768px) {
+  .tfm-panel { max-width: 430px; left: 50%; transform: translateX(-50%); }
+}
+
+/* ═══ LIGHT MODE ═══ */
+[data-theme="light"] .tfm-backdrop {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="light"] .tfm-panel {
+  background: linear-gradient(180deg, #FFFFFF 0%, #F8F7FC 100%);
+  border-top-color: rgba(0, 0, 0, 0.06);
+  box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .tfm-close {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .tfm-sub-item {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .tfm-xp-estimate {
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.05), rgba(6, 182, 212, 0.03));
+  border-color: rgba(124, 58, 237, 0.08);
+}

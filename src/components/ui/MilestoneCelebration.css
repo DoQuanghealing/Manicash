@@ -1,0 +1,43 @@
+/* ═══ MilestoneCelebration Styles ═══ */
+.msc-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(8px);
+  z-index: var(--z-confetti);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+}
+
+.msc-content {
+  text-align: center;
+  padding: var(--space-3xl);
+}
+
+.msc-emoji {
+  font-size: 4rem;
+  display: block;
+  margin-bottom: var(--space-lg);
+  animation: float 2s ease-in-out infinite;
+}
+
+.msc-title {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 800;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: var(--space-sm);
+}
+
+.msc-name {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--c-text-primary);
+  margin-bottom: var(--space-sm);
+}
+
+.msc-sub {
+  font-size: var(--text-sm);
+  color: var(--c-text-secondary);
+}

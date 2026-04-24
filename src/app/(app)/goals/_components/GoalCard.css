@@ -1,0 +1,186 @@
+/* ═══ GoalCard Styles ═══ */
+
+.gc-card {
+  padding: var(--space-lg);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  transition: background 0.15s;
+}
+
+.gc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  margin-bottom: var(--space-md);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.gc-header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.gc-icon { font-size: 1.4rem; }
+
+.gc-name {
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.gc-deadline {
+  font-size: var(--text-xs);
+  color: var(--c-text-muted);
+}
+
+.gc-header-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.gc-pct-badge {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+
+.gc-chevron {
+  color: var(--c-text-muted);
+  transition: transform 0.3s ease;
+}
+
+.gc-chevron--open {
+  transform: rotate(180deg);
+}
+
+/* Progress */
+.gc-progress-bar {
+  width: 100%;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.04);
+  overflow: hidden;
+  margin-bottom: var(--space-xs);
+}
+
+.gc-progress-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+}
+
+.gc-progress-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--text-xs);
+  color: var(--c-text-muted);
+}
+
+/* Milestones */
+.gc-milestones {
+  overflow: hidden;
+  padding-top: var(--space-md);
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  margin-top: var(--space-md);
+}
+
+.gc-ms-header {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--c-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: var(--space-sm);
+}
+
+.gc-ms-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+}
+
+.gc-ms-item--done { opacity: 0.5; }
+
+.gc-ms-check {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  border: 1.5px solid var(--glass-border);
+  color: var(--c-text-muted);
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+
+.gc-ms-check:not(:disabled):hover {
+  border-color: var(--c-success);
+  color: var(--c-success);
+}
+
+.gc-ms-check--done {
+  background: var(--c-success);
+  border-color: var(--c-success);
+  color: white;
+}
+
+.gc-ms-info { flex: 1; }
+
+.gc-ms-name {
+  font-size: var(--text-xs);
+  font-weight: 500;
+  display: block;
+}
+
+.gc-ms-target {
+  font-size: 0.6rem;
+  color: var(--c-text-muted);
+}
+
+.gc-ms-empty {
+  font-size: var(--text-xs);
+  color: var(--c-text-muted);
+  text-align: center;
+  padding: var(--space-sm) 0;
+}
+
+.gc-delete-btn {
+  width: 100%;
+  margin-top: var(--space-md);
+  padding: 8px;
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  color: var(--c-text-muted);
+  background: rgba(239, 68, 68, 0.05);
+  border: 1px solid rgba(239, 68, 68, 0.1);
+  transition: all 0.15s;
+}
+
+.gc-delete-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #EF4444;
+}
+
+/* ═══ LIGHT MODE ═══ */
+[data-theme="light"] .gc-progress-bar {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .gc-milestones {
+  border-top-color: rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .gc-ms-check {
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .gc-delete-btn {
+  background: rgba(220, 38, 38, 0.04);
+  border-color: rgba(220, 38, 38, 0.08);
+}

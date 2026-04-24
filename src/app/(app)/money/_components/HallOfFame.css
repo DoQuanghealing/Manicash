@@ -1,0 +1,120 @@
+/* ═══ HallOfFame Styles ═══ */
+.hof-container {
+  border-radius: var(--radius-xl);
+  background: linear-gradient(160deg, rgba(124,58,237,0.08), rgba(6,182,212,0.04));
+  border: 1px solid rgba(124,58,237,0.12);
+  padding: var(--space-xl);
+  margin-bottom: var(--space-lg);
+}
+
+.hof-hero {
+  text-align: center; margin-bottom: var(--space-xl);
+}
+
+.hof-badge {
+  width: 72px; height: 72px;
+  border-radius: 50%; margin: 0 auto var(--space-md);
+  display: flex; align-items: center; justify-content: center;
+}
+
+.hof-badge-icon { font-size: 2rem; }
+
+.hof-rank-name {
+  font-family: var(--font-display);
+  font-size: var(--text-xl); font-weight: 800;
+  margin-bottom: 2px;
+}
+
+.hof-xp {
+  font-size: var(--text-xs); color: var(--c-text-muted);
+}
+
+/* Progress */
+.hof-progress-section { margin-bottom: var(--space-md); }
+
+.hof-progress-header {
+  display: flex; justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.hof-progress-label {
+  font-size: 0.6rem; font-weight: 600; color: var(--c-text-secondary);
+}
+
+.hof-progress-pct {
+  font-size: 0.6rem; font-weight: 700; color: var(--c-purple-light);
+}
+
+.hof-progress-bar {
+  width: 100%; height: 8px;
+  border-radius: var(--radius-full);
+  background: rgba(255,255,255,0.05);
+  overflow: hidden;
+}
+
+.hof-progress-fill {
+  height: 100%; border-radius: var(--radius-full);
+}
+
+.hof-progress-labels {
+  display: flex; justify-content: space-between;
+  margin-top: 3px;
+  font-size: 0.5rem; color: var(--c-text-muted);
+}
+
+/* Penalty */
+.hof-penalty {
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  background: rgba(239,68,68,0.08);
+  font-size: 0.6rem; font-weight: 600;
+  color: #EF4444; margin-bottom: var(--space-md);
+  text-align: center;
+}
+
+/* Forecast */
+.hof-forecast {
+  padding: 12px;
+  border-radius: var(--radius-md);
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.04);
+  margin-bottom: var(--space-md);
+  display: flex; flex-direction: column; gap: 4px;
+}
+
+.hof-forecast-label {
+  font-size: 0.6rem; font-weight: 600; color: var(--c-text-secondary);
+}
+
+.hof-forecast-value {
+  font-family: var(--font-display);
+  font-size: var(--text-base); font-weight: 700;
+  color: var(--c-purple-light);
+}
+
+.hof-forecast-sub {
+  font-size: 0.5rem; color: var(--c-text-muted);
+}
+
+/* Roadmap */
+.hof-roadmap {
+  display: flex; justify-content: space-between;
+  padding-top: var(--space-md);
+  border-top: 1px solid rgba(255,255,255,0.04);
+}
+
+.hof-roadmap-item {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 3px; opacity: 0.3;
+}
+
+.hof-roadmap-item--past { opacity: 0.6; }
+
+.hof-roadmap-item--active { opacity: 1; }
+
+.hof-roadmap-icon { font-size: 1rem; }
+
+.hof-roadmap-name {
+  font-size: 0.45rem; font-weight: 600;
+  color: var(--c-text-secondary);
+}

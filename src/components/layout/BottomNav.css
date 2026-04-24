@@ -1,0 +1,139 @@
+/* ═══ BottomNav — Flex child (flex-shrink: 0) inside MobileShell ═══ */
+
+.bottom-nav {
+  flex-shrink: 0;
+  width: 100%;
+  height: var(--bottom-nav-height);
+  background: rgba(10, 10, 18, 0.95);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border-top: 1px solid var(--glass-border);
+  display: flex;
+  align-items: stretch;
+  z-index: 50;
+}
+
+.nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: var(--space-xs) 0;
+  color: var(--c-text-muted);
+  font-size: 10px;
+  font-weight: 500;
+  transition: color var(--duration-fast) ease;
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+  text-decoration: none;
+}
+
+.nav-item:hover {
+  color: var(--c-text-secondary);
+}
+
+.nav-item.active {
+  color: var(--c-purple-light);
+}
+
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 28px;
+  height: 2.5px;
+  border-radius: 0 0 3px 3px;
+  background: var(--gradient-primary);
+}
+
+.nav-icon {
+  width: 22px;
+  height: 22px;
+  transition: transform var(--duration-fast) ease;
+}
+
+.nav-item.active .nav-icon {
+  transform: scale(1.12);
+}
+
+.nav-item-center {
+  position: relative;
+}
+
+/* ═══ Center (+) Button — Large, intense glow ═══ */
+.nav-item-center .nav-icon-bg {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #7C3AED, #9333EA, #A855F7);
+  box-shadow:
+    0 4px 20px rgba(124, 58, 237, 0.5),
+    0 0 40px rgba(124, 58, 237, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  margin-top: -14px;
+  transition: box-shadow var(--duration-fast) ease, transform var(--duration-fast) ease;
+  animation: plusGlow 3s ease-in-out infinite;
+}
+
+@keyframes plusGlow {
+  0%, 100% { box-shadow: 0 4px 20px rgba(124, 58, 237, 0.5), 0 0 40px rgba(124, 58, 237, 0.25); }
+  50% { box-shadow: 0 6px 28px rgba(124, 58, 237, 0.65), 0 0 56px rgba(124, 58, 237, 0.35); }
+}
+
+.nav-item-center:hover .nav-icon-bg {
+  box-shadow:
+    0 8px 32px rgba(124, 58, 237, 0.6),
+    0 0 60px rgba(124, 58, 237, 0.35);
+  transform: scale(1.08);
+}
+
+.nav-item-center:active .nav-icon-bg {
+  transform: scale(0.94);
+}
+
+.nav-item-center .nav-icon {
+  color: white;
+  width: 24px;
+  height: 24px;
+}
+
+.nav-label {
+  font-size: 10px;
+  line-height: 1;
+  letter-spacing: 0.01em;
+}
+
+/* ═══ LIGHT MODE ═══ */
+[data-theme="light"] .bottom-nav {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .nav-item {
+  color: #8E8E9A;
+}
+
+[data-theme="light"] .nav-item:hover {
+  color: #4A4A5A;
+}
+
+[data-theme="light"] .nav-item.active {
+  color: var(--c-purple);
+}
+
+[data-theme="light"] .header-streak {
+  border-right-color: rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .fb-badge-dot {
+  border-color: #FFFFFF;
+}

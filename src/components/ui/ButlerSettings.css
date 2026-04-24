@@ -1,0 +1,196 @@
+/* ═══ ButlerSettings — Premium Settings Panel ═══ */
+
+.bs-container {
+  padding: var(--space-lg) 0;
+}
+
+.bs-back-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--c-text-secondary);
+  margin-bottom: var(--space-xl);
+  transition: color 0.15s;
+}
+
+.bs-back-btn:hover {
+  color: var(--c-text-primary);
+}
+
+.bs-title {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  margin-bottom: var(--space-2xl);
+}
+
+/* ═══ Setting Section ═══ */
+.bs-section {
+  margin-bottom: var(--space-2xl);
+}
+
+.bs-section-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--c-text-muted);
+  margin-bottom: var(--space-md);
+}
+
+/* ═══ Name Input ═══ */
+.bs-name-row {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.bs-name-input {
+  flex: 1;
+  padding: var(--space-md) var(--space-lg);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  color: var(--c-text-primary);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.bs-name-input:focus {
+  border-color: var(--c-purple);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
+}
+
+.bs-name-save {
+  padding: var(--space-md) var(--space-xl);
+  border-radius: var(--radius-md);
+  background: var(--gradient-primary);
+  color: white;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.bs-name-save:hover {
+  transform: scale(1.03);
+}
+
+.bs-name-save:disabled {
+  opacity: 0.4;
+  transform: none;
+}
+
+.bs-name-hint {
+  font-size: 10px;
+  color: var(--c-text-muted);
+  margin-top: var(--space-xs);
+}
+
+/* ═══ Theme Toggle ═══ */
+.bs-theme-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-lg);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+}
+
+.bs-theme-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.bs-theme-icon {
+  font-size: 1.4rem;
+}
+
+.bs-theme-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bs-theme-label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--c-text-primary);
+}
+
+.bs-theme-desc {
+  font-size: 10px;
+  color: var(--c-text-muted);
+}
+
+/* ═══ Premium Toggle Switch ═══ */
+.bs-toggle {
+  position: relative;
+  width: 52px;
+  height: 28px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.bs-toggle.active {
+  background: linear-gradient(135deg, var(--c-purple), var(--c-orange));
+  border-color: rgba(124, 58, 237, 0.3);
+}
+
+.bs-toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+}
+
+.bs-toggle.active .bs-toggle-thumb {
+  transform: translateX(24px);
+}
+
+/* ═══ Version Footer ═══ */
+.bs-footer {
+  text-align: center;
+  font-size: 10px;
+  color: var(--c-text-muted);
+  padding-top: var(--space-xl);
+  border-top: 1px solid var(--glass-border);
+}
+
+/* ═══ LIGHT MODE ═══ */
+[data-theme="light"] .bs-name-input {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .bs-theme-row {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .bs-toggle {
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .bs-footer {
+  border-top-color: rgba(0, 0, 0, 0.06);
+}

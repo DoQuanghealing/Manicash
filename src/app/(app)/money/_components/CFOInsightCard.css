@@ -1,0 +1,106 @@
+/* ═══ CFOInsightCard Styles ═══ */
+.cfo-card-v2 {
+  padding: var(--space-xl);
+  border-radius: var(--radius-xl);
+  background: linear-gradient(135deg, rgba(124,58,237,0.1), rgba(6,182,212,0.05));
+  border: 1px solid rgba(124,58,237,0.15);
+}
+
+.cfo-card-header {
+  display: flex; align-items: center; gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+
+.cfo-card-avatar {
+  width: 44px; height: 44px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem;
+  background: linear-gradient(135deg, rgba(124,58,237,0.2), rgba(6,182,212,0.15));
+  border: 2px solid rgba(124,58,237,0.3);
+}
+
+.cfo-card-name {
+  font-family: var(--font-display);
+  font-size: var(--text-base); font-weight: 700;
+}
+
+.cfo-card-role {
+  font-size: 10px; color: var(--c-purple-light);
+  text-transform: uppercase; letter-spacing: 0.08em;
+}
+
+.cfo-card-summary {
+  font-size: var(--text-sm); color: var(--c-text-secondary);
+  line-height: 1.6; margin-bottom: var(--space-sm);
+}
+
+.cfo-card-more {
+  font-size: var(--text-xs); font-weight: 600;
+  color: var(--c-purple-light);
+  margin-bottom: var(--space-md);
+}
+
+.cfo-card-loading {
+  display: flex; flex-direction: column; gap: 8px;
+  margin-bottom: var(--space-lg);
+}
+
+.cfo-shimmer {
+  height: 12px; border-radius: 4px;
+  background: linear-gradient(90deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.cfo-shimmer--short { width: 60%; }
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.cfo-card-suggestions {
+  overflow: hidden;
+  margin-bottom: var(--space-md);
+}
+
+.cfo-card-sug-label {
+  font-size: 0.6rem; font-weight: 700;
+  color: var(--c-text-muted); margin-bottom: var(--space-sm);
+}
+
+.cfo-card-sug-item {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 8px 0;
+  font-size: var(--text-xs); color: var(--c-text-secondary);
+  line-height: 1.5;
+}
+
+.cfo-card-sug-num {
+  width: 20px; height: 20px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.55rem; font-weight: 700;
+  background: rgba(124,58,237,0.12); color: var(--c-purple-light);
+  flex-shrink: 0;
+}
+
+.cfo-card-btn {
+  width: 100%; padding: 12px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, rgba(124,58,237,0.15), rgba(6,182,212,0.1));
+  border: 1px solid rgba(124,58,237,0.2);
+  color: var(--c-text-primary);
+  font-weight: 600; font-size: var(--text-sm);
+  transition: all 0.2s; margin-top: var(--space-sm);
+}
+
+.cfo-card-btn:hover {
+  background: linear-gradient(135deg, rgba(124,58,237,0.2), rgba(6,182,212,0.15));
+}
+
+.cfo-card-btn:disabled { opacity: 0.5; }
+
+.cfo-card-empty {
+  font-size: var(--text-sm); color: var(--c-text-muted);
+  text-align: center; padding: var(--space-lg) 0;
+}

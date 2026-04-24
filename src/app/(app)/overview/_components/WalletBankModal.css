@@ -1,0 +1,367 @@
+/* ═══ WalletBankModal — Styles ═══ */
+
+/* ── Backdrop ── */
+.wb-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: var(--z-modal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-md);
+}
+
+/* ── Panel ── */
+.wb-panel {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  max-height: 88dvh;
+  overflow-y: auto;
+  scrollbar-width: none;
+  background: var(--c-bg-secondary);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-2xl) var(--space-lg) var(--space-xl);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.4);
+}
+
+.wb-panel::-webkit-scrollbar { display: none; }
+
+.wb-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--c-text-muted);
+  transition: all 0.15s;
+}
+.wb-close:hover { background: rgba(255, 255, 255, 0.1); color: var(--c-text-primary); }
+
+/* ── Header ── */
+.wb-title {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 800;
+  color: var(--c-text-primary);
+  margin-bottom: 4px;
+  padding-right: 30px;
+}
+
+.wb-subtitle {
+  font-size: var(--text-xs);
+  color: var(--c-text-muted);
+  margin-bottom: var(--space-lg);
+}
+
+/* ═══ Formula Card ═══ */
+.wb-formula-card {
+  padding: var(--space-md) var(--space-lg);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.06), rgba(249, 115, 22, 0.04));
+  border: 1px solid rgba(124, 58, 237, 0.12);
+  margin-bottom: var(--space-xl);
+}
+
+.wb-formula-label {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--c-text-secondary);
+  margin-bottom: var(--space-sm);
+}
+
+.wb-formula-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: 4px;
+}
+
+.wb-formula-name {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--c-text-primary);
+  min-width: 110px;
+}
+
+.wb-formula-eq {
+  font-size: 11px;
+  color: var(--c-text-muted);
+  font-style: italic;
+}
+
+.wb-formula-divider {
+  height: 1px;
+  background: var(--glass-border);
+  margin: var(--space-sm) 0;
+}
+
+.wb-formula-result {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.wb-fr-label {
+  display: block;
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--c-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-align: right;
+}
+
+.wb-fr-value {
+  display: block;
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  font-weight: 800;
+  text-align: right;
+}
+
+/* ═══ Wallet Groups ═══ */
+.wb-groups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.wb-group {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--glass-border);
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.wb-group:hover { border-color: rgba(255, 255, 255, 0.08); }
+
+/* ── Group Header ── */
+.wb-group-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md) var(--space-lg);
+  background: var(--glass-bg);
+  color: var(--c-text-muted);
+  transition: background 0.15s;
+}
+
+.wb-group-header:hover { background: var(--glass-bg-hover); }
+
+.wb-group-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.wb-group-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.wb-group-label {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--c-text-primary);
+}
+
+.wb-group-bank-preview {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 9px;
+  color: var(--c-text-muted);
+  margin-top: 1px;
+}
+
+/* ── Group Body ── */
+.wb-group-body {
+  overflow: hidden;
+  padding: 0 var(--space-lg) var(--space-md);
+}
+
+/* ── Bank Fields ── */
+.wb-bank-fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding-top: var(--space-sm);
+}
+
+.wb-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.wb-field-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--c-text-muted);
+}
+
+.wb-field-input {
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--glass-border);
+  font-size: var(--text-xs);
+  background: transparent;
+  color: var(--c-text-primary);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.wb-field-input:focus { border-color: var(--wb-accent, #7C3AED); }
+.wb-field-input::placeholder { color: var(--c-text-muted); opacity: 0.5; }
+
+/* ── Sub-wallets ── */
+.wb-subs {
+  margin-top: var(--space-md);
+}
+
+.wb-subs-title {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--c-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--space-xs);
+}
+
+.wb-sub-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 8px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  margin-bottom: 4px;
+}
+
+.wb-sub-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.wb-sub-name {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--c-text-primary);
+  margin-bottom: 4px;
+}
+
+.wb-sub-fields {
+  display: flex;
+  gap: 4px;
+}
+
+.wb-sub-input {
+  flex: 1;
+  padding: 4px 6px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--glass-border);
+  font-size: 10px;
+  background: transparent;
+  color: var(--c-text-secondary);
+  outline: none;
+  min-width: 0;
+}
+
+.wb-sub-input:focus { border-color: var(--wb-accent, #7C3AED); }
+.wb-sub-input::placeholder { color: var(--c-text-muted); opacity: 0.4; }
+
+.wb-sub-del {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--c-text-muted);
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.wb-sub-del:hover { background: rgba(239, 68, 68, 0.12); color: #EF4444; }
+
+/* ── Add Sub-wallet ── */
+.wb-add-sub-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  padding: 6px;
+  margin-top: var(--space-sm);
+  border-radius: var(--radius-sm);
+  border: 1px dashed rgba(124, 58, 237, 0.2);
+  color: var(--c-purple-light);
+  font-size: 10px;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+.wb-add-sub-btn:hover { background: rgba(124, 58, 237, 0.06); }
+
+.wb-add-sub-form {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: var(--space-sm);
+}
+
+.wb-add-sub-input {
+  flex: 1;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--glass-border);
+  font-size: var(--text-xs);
+  background: transparent;
+  color: var(--c-text-primary);
+  outline: none;
+}
+.wb-add-sub-input:focus { border-color: #7C3AED; }
+
+.wb-add-sub-ok {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--gradient-success);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wb-add-sub-cancel {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--c-text-muted);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* ═══ LIGHT MODE ═══ */
+[data-theme="light"] .wb-panel { background: #FFFFFF; }
+[data-theme="light"] .wb-sub-item { background: rgba(0, 0, 0, 0.02); border-color: rgba(0, 0, 0, 0.04); }
+[data-theme="light"] .wb-formula-card { background: linear-gradient(135deg, rgba(124, 58, 237, 0.03), rgba(249, 115, 22, 0.02)); }

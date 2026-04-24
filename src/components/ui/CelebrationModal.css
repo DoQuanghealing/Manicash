@@ -1,0 +1,131 @@
+.celebration-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: calc(var(--z-modal) + 10);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2xl);
+}
+
+.celebration-card {
+  width: 100%;
+  max-width: 320px;
+  padding: var(--space-3xl) var(--space-2xl);
+  border-radius: var(--radius-2xl);
+  background: rgba(20, 15, 40, 0.95);
+  border: 1px solid rgba(124, 58, 237, 0.25);
+  box-shadow: 0 0 80px rgba(124, 58, 237, 0.2);
+  text-align: center;
+  animation: celebrationPop 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes celebrationPop {
+  0% { transform: scale(0.7); opacity: 0; }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.celebration-emoji {
+  font-size: 3.5rem;
+  margin-bottom: var(--space-md);
+  animation: celebrationBounce 0.6s ease 0.3s both;
+}
+
+@keyframes celebrationBounce {
+  0% { transform: translateY(-20px); opacity: 0; }
+  60% { transform: translateY(5px); }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+.celebration-title {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 800;
+  margin-bottom: var(--space-xs);
+}
+
+.celebration-title.income {
+  background: linear-gradient(135deg, #22C55E, #4ADE80);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.celebration-title.expense {
+  background: linear-gradient(135deg, #F97316, #FB923C);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.celebration-amount {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 800;
+  color: var(--c-text-primary);
+  margin-bottom: var(--space-lg);
+}
+
+.celebration-xp {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 4px 14px;
+  border-radius: var(--radius-full);
+  background: rgba(124, 58, 237, 0.12);
+  border: 1px solid rgba(124, 58, 237, 0.2);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--c-purple-light);
+  margin-bottom: var(--space-lg);
+}
+
+.celebration-butler {
+  font-size: var(--text-xs);
+  color: var(--c-text-secondary);
+  line-height: 1.6;
+  font-style: italic;
+  margin-bottom: var(--space-xl);
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  background: rgba(124, 58, 237, 0.05);
+  border: 1px solid rgba(124, 58, 237, 0.08);
+}
+
+.celebration-close-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: var(--radius-lg);
+  background: var(--gradient-primary);
+  color: white;
+  font-weight: 600;
+  font-size: var(--text-base);
+  transition: transform 0.15s;
+}
+
+.celebration-close-btn:active {
+  transform: scale(0.96);
+}
+
+/* ═══ LIGHT MODE ═══ */
+[data-theme="light"] .celebration-overlay {
+  background: rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="light"] .celebration-card {
+  background: rgba(255, 255, 255, 0.96);
+  border-color: rgba(124, 58, 237, 0.15);
+  box-shadow: 0 8px 48px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .celebration-butler {
+  background: rgba(124, 58, 237, 0.04);
+  border-color: rgba(124, 58, 237, 0.06);
+}
+
+[data-theme="light"] .celebration-xp {
+  background: rgba(124, 58, 237, 0.08);
+  border-color: rgba(124, 58, 237, 0.12);
+}

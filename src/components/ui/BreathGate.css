@@ -1,0 +1,215 @@
+.breathgate-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  z-index: var(--z-modal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2xl);
+}
+
+.breathgate-card {
+  width: 100%;
+  max-width: 340px;
+  padding: var(--space-3xl) var(--space-2xl);
+  border-radius: var(--radius-2xl);
+  background: rgba(20, 15, 40, 0.95);
+  border: 1px solid rgba(124, 58, 237, 0.2);
+  box-shadow: 0 0 80px rgba(124, 58, 237, 0.15);
+  text-align: center;
+  animation: scaleIn 0.4s var(--ease-out-expo);
+}
+
+.breathgate-icon {
+  font-size: 3rem;
+  margin-bottom: var(--space-lg);
+}
+
+.breathgate-title {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--c-text-primary);
+  margin-bottom: var(--space-sm);
+}
+
+.breathgate-amount {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 800;
+  color: var(--c-orange);
+  margin-bottom: var(--space-2xl);
+}
+
+.breathgate-instruction {
+  font-size: var(--text-sm);
+  color: var(--c-text-secondary);
+  margin-bottom: var(--space-2xl);
+  line-height: 1.6;
+}
+
+/* ═══ Breathing circle ═══ */
+.breathgate-circle-container {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  margin: 0 auto var(--space-2xl);
+}
+
+.breathgate-circle-bg {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.06);
+  position: absolute;
+  inset: 0;
+}
+
+.breathgate-circle-progress {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  position: absolute;
+  inset: 0;
+}
+
+.breathgate-circle-progress svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.breathgate-circle-progress circle {
+  fill: none;
+  stroke-width: 4;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1s linear;
+}
+
+.breathgate-circle-inner {
+  position: absolute;
+  inset: 16px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(124, 58, 237, 0.05);
+}
+
+.breathgate-timer {
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-weight: 800;
+  color: var(--c-text-primary);
+  line-height: 1;
+}
+
+.breathgate-phase {
+  font-size: var(--text-xs);
+  color: var(--c-purple-light);
+  font-weight: 600;
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* ═══ Breath animation on inner circle ═══ */
+.breathgate-circle-inner.inhale {
+  animation: breathInhale 4s ease-in-out forwards;
+}
+
+.breathgate-circle-inner.exhale {
+  animation: breathExhale 4s ease-in-out forwards;
+}
+
+.breathgate-circle-inner.hold {
+  animation: breathHold 2s ease-in-out forwards;
+}
+
+@keyframes breathInhale {
+  0% { transform: scale(0.85); background: rgba(124, 58, 237, 0.05); }
+  100% { transform: scale(1.05); background: rgba(124, 58, 237, 0.12); }
+}
+
+@keyframes breathExhale {
+  0% { transform: scale(1.05); background: rgba(124, 58, 237, 0.12); }
+  100% { transform: scale(0.85); background: rgba(124, 58, 237, 0.05); }
+}
+
+@keyframes breathHold {
+  0%, 100% { transform: scale(1.05); background: rgba(124, 58, 237, 0.12); }
+}
+
+/* ═══ Buttons ═══ */
+.breathgate-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  margin-top: var(--space-lg);
+}
+
+.breathgate-confirm-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: var(--radius-lg);
+  font-weight: 600;
+  font-size: var(--text-base);
+  transition: all 0.2s ease;
+}
+
+.breathgate-confirm-btn.ready {
+  background: var(--gradient-primary);
+  color: white;
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.3);
+}
+
+.breathgate-confirm-btn.waiting {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--c-text-muted);
+  cursor: not-allowed;
+}
+
+.breathgate-cancel-btn {
+  font-size: var(--text-sm);
+  color: var(--c-text-muted);
+  padding: var(--space-sm);
+}
+
+.breathgate-cancel-btn:hover {
+  color: var(--c-text-secondary);
+}
+
+.breathgate-butler {
+  margin-top: var(--space-xl);
+  font-size: var(--text-xs);
+  color: var(--c-text-muted);
+  font-style: italic;
+  line-height: 1.5;
+}
+
+/* ═══ LIGHT MODE ═══ */
+[data-theme="light"] .breathgate-overlay {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="light"] .breathgate-card {
+  background: rgba(255, 255, 255, 0.96);
+  border-color: rgba(124, 58, 237, 0.12);
+  box-shadow: 0 8px 48px rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="light"] .breathgate-circle-bg {
+  border-color: rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .breathgate-circle-inner {
+  background: rgba(124, 58, 237, 0.04);
+}
+
+[data-theme="light"] .breathgate-confirm-btn.waiting {
+  background: rgba(0, 0, 0, 0.04);
+}

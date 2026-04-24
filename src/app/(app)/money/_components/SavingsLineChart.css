@@ -1,0 +1,26 @@
+/* ═══ SavingsLineChart Styles ═══ */
+.slc-container {
+  padding: var(--space-lg);
+  border-radius: var(--radius-lg);
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+}
+
+.slc-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: var(--space-md);
+}
+
+.slc-title { font-size: var(--text-sm); font-weight: 700; }
+
+.slc-total {
+  font-family: var(--font-display);
+  font-size: var(--text-sm); font-weight: 800;
+  color: var(--c-purple-light);
+}
+
+.slc-svg { display: block; }
+
+.slc-label {
+  font-size: 9px; fill: var(--c-text-muted);
+  font-family: var(--font-display);
+}

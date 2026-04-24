@@ -1,0 +1,71 @@
+/* ═══ TaskOverdueDialog Styles ═══ */
+.tod-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.65); backdrop-filter: blur(6px); z-index: 300;
+}
+
+.tod-dialog {
+  position: fixed; top: 50%; left: 50%;
+  transform: translate(-50%,-50%); z-index: 301;
+  width: calc(100% - 48px); max-width: 340px;
+  padding: var(--space-2xl);
+  background: #1C1930;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--radius-xl);
+  text-align: center;
+}
+
+.tod-icon { font-size: 2rem; margin-bottom: var(--space-sm); }
+
+.tod-title {
+  font-family: var(--font-display);
+  font-size: var(--text-lg); font-weight: 700;
+  margin-bottom: var(--space-xs);
+}
+
+.tod-task-name {
+  font-size: var(--text-sm); color: var(--c-text-secondary);
+  margin-bottom: var(--space-md);
+}
+
+.tod-warning {
+  font-size: 0.6rem; font-weight: 600;
+  color: #EF4444;
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  background: rgba(239,68,68,0.08);
+  margin-bottom: var(--space-lg);
+}
+
+.tod-label {
+  font-size: 0.6rem; font-weight: 700;
+  color: var(--c-text-muted);
+  text-transform: uppercase; letter-spacing: 0.08em;
+  margin-bottom: var(--space-sm);
+  text-align: left;
+}
+
+.tod-reasons {
+  display: flex; flex-direction: column; gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+}
+
+.tod-reason-btn {
+  width: 100%; padding: 12px;
+  border-radius: var(--radius-md);
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+  color: var(--c-text-primary);
+  font-size: var(--text-sm); font-weight: 500;
+  text-align: left; transition: all 0.15s;
+}
+
+.tod-reason-btn:hover {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.12);
+}
+
+.tod-cancel {
+  width: 100%; padding: 10px;
+  font-size: var(--text-sm); color: var(--c-text-muted);
+}

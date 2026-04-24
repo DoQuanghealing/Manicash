@@ -1,0 +1,153 @@
+/* ═══ FixedBillsSummary Styles ═══ */
+
+.fbs-card {
+  padding: var(--space-lg);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+}
+
+.fbs-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-md);
+}
+
+.fbs-header-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.fbs-icon {
+  font-size: 1rem;
+}
+
+.fbs-title {
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.fbs-badge {
+  font-size: 0.55rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background: rgba(245, 158, 11, 0.12);
+  color: #F59E0B;
+}
+
+/* Fund row */
+.fbs-fund-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: var(--space-sm) 0;
+  margin-bottom: var(--space-sm);
+}
+
+.fbs-fund-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+}
+
+.fbs-fund-label {
+  font-size: 0.55rem;
+  color: var(--c-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.fbs-fund-value {
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--c-text-primary);
+}
+
+.fbs-fund-danger {
+  color: #EF4444;
+}
+
+.fbs-fund-divider {
+  width: 1px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* Next bill */
+.fbs-next {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.fbs-next--urgent {
+  background: rgba(239, 68, 68, 0.06);
+  border-color: rgba(239, 68, 68, 0.15);
+  animation: pulse-subtle 2s ease-in-out infinite;
+}
+
+@keyframes pulse-subtle {
+  0%, 100% { box-shadow: 0 0 0 0 transparent; }
+  50% { box-shadow: 0 0 12px rgba(239, 68, 68, 0.15); }
+}
+
+.fbs-next-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.fbs-next-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.fbs-next-name {
+  font-size: 0.7rem;
+  font-weight: 600;
+  display: block;
+}
+
+.fbs-next-due {
+  font-size: 0.55rem;
+  color: var(--c-text-muted);
+}
+
+.fbs-next--urgent .fbs-next-due {
+  color: #EF4444;
+  font-weight: 600;
+}
+
+.fbs-next-amount {
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--c-ruby);
+  flex-shrink: 0;
+}
+
+/* ═══ LIGHT MODE ═══ */
+[data-theme="light"] .fbs-next {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .fbs-next--urgent {
+  background: rgba(220, 38, 38, 0.04);
+  border-color: rgba(220, 38, 38, 0.1);
+}
+
+[data-theme="light"] .fbs-fund-divider {
+  background: rgba(0, 0, 0, 0.06);
+}

@@ -1,0 +1,54 @@
+/* ═══ StackedBarChart Styles ═══ */
+.sbc-container {
+  padding: var(--space-lg);
+  border-radius: var(--radius-lg);
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+}
+
+.sbc-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: var(--space-md);
+}
+
+.sbc-title {
+  font-size: var(--text-sm); font-weight: 700;
+}
+
+.sbc-legend {
+  display: flex; gap: 12px;
+}
+
+.sbc-legend-item {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 0.55rem; color: var(--c-text-muted);
+}
+
+.sbc-dot {
+  width: 8px; height: 8px; border-radius: 2px;
+}
+
+.sbc-dot--income { background: #10B981; }
+.sbc-dot--expense { background: #F97316; }
+
+.sbc-svg { display: block; margin: 0 auto; }
+
+.sbc-label {
+  font-size: 10px; fill: var(--c-text-muted);
+  font-family: var(--font-display);
+}
+
+.sbc-values {
+  display: flex; justify-content: space-around;
+  margin-top: var(--space-sm);
+}
+
+.sbc-value-col {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+}
+
+.sbc-val {
+  font-size: 0.5rem; font-weight: 600;
+}
+
+.sbc-val--income { color: #10B981; }
+.sbc-val--expense { color: #F97316; }

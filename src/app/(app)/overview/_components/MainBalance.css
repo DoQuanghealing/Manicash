@@ -1,0 +1,150 @@
+/* ═══ MainBalance Styles ═══ */
+
+.main-balance-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-xl) var(--space-lg) var(--space-lg);
+  background: linear-gradient(
+    160deg,
+    rgba(16, 185, 129, 0.06) 0%,
+    rgba(124, 58, 237, 0.08) 50%,
+    rgba(239, 68, 68, 0.04) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-xl);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  overflow: hidden;
+}
+
+/* Subtle radial glow behind the ring */
+.main-balance-card::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -55%);
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(124, 58, 237, 0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.main-balance-ring-wrapper {
+  position: relative;
+  width: 220px;
+  height: 220px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+.main-balance-ring {
+  position: absolute;
+  inset: 0;
+}
+
+.main-balance-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 28px;
+}
+
+.main-balance-content {
+  text-align: center;
+}
+
+.main-balance-label {
+  font-size: 0.65rem;
+  color: var(--c-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 4px;
+  line-height: 1.3;
+}
+
+.main-balance-amount {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 800;
+  background: linear-gradient(135deg, #A78BFA, #10B981);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.main-balance-temp {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.main-balance-temp-emoji {
+  font-size: 0.6rem;
+}
+
+.main-balance-temp-label {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--c-text-secondary);
+  letter-spacing: 0.02em;
+}
+
+.main-balance-hint {
+  font-size: 0.6rem;
+  color: var(--c-text-muted);
+  text-align: center;
+  margin-top: var(--space-sm);
+  opacity: 0.6;
+  transition: opacity 0.3s ease;
+}
+
+.main-balance-ring-wrapper:active .main-balance-hint {
+  opacity: 1;
+}
+
+/* Ring pulse animation */
+@keyframes ring-breathe {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
+}
+
+.main-balance-ring circle:nth-child(2) {
+  animation: ring-breathe 3s ease-in-out infinite;
+}
+
+/* ═══ LIGHT MODE ═══ */
+[data-theme="light"] .main-balance-card {
+  background: linear-gradient(
+    160deg,
+    rgba(16, 185, 129, 0.04) 0%,
+    rgba(124, 58, 237, 0.05) 50%,
+    rgba(239, 68, 68, 0.02) 100%
+  );
+  border-color: rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .main-balance-card::before {
+  background: radial-gradient(circle, rgba(124, 58, 237, 0.04) 0%, transparent 70%);
+}
+
+[data-theme="light"] .main-balance-temp {
+  background: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.05);
+}

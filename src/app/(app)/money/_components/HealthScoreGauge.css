@@ -1,0 +1,39 @@
+/* ═══ HealthScoreGauge Styles ═══ */
+.hsg-container {
+  padding: var(--space-lg);
+  border-radius: var(--radius-lg);
+  background: var(--glass-bg); border: 1px solid var(--glass-border);
+  text-align: center;
+}
+
+.hsg-header { margin-bottom: var(--space-md); }
+
+.hsg-title { font-size: var(--text-sm); font-weight: 700; }
+
+.hsg-gauge-wrap {
+  position: relative;
+  width: 130px; height: 130px;
+  margin: 0 auto var(--space-md);
+}
+
+.hsg-center {
+  position: absolute;
+  inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+
+.hsg-score {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl); font-weight: 800;
+  line-height: 1;
+}
+
+.hsg-label {
+  font-size: 0.55rem; font-weight: 600;
+  color: var(--c-text-muted); margin-top: 2px;
+}
+
+.hsg-desc {
+  font-size: 0.55rem; color: var(--c-text-muted); line-height: 1.4;
+}
