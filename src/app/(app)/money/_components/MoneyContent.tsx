@@ -1,10 +1,12 @@
 /* ═══ Money Content — Dual-Tab: Money + CFO Report ═══ */
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTaskStore } from '@/stores/useTaskStore';
 import { useChartData } from '@/hooks/useChartData';
+import { useCFOSnapshot } from '@/hooks/useCFOSnapshot';
+import { useCFOReport } from '@/hooks/useCFOReport';
 import { useIncomeCelebration } from '@/hooks/useIncomeCelebration';
 import type { OverdueReason, EarningTask } from '@/types/task';
 import HallOfFame from './HallOfFame';
@@ -48,8 +50,27 @@ export default function MoneyContent() {
   const deleteOverdueTask = useTaskStore((s) => s.deleteOverdueTask);
   const getStatus = useTaskStore((s) => s.getStatus);
 
-  const { weeklyComparison, savingsGrowth, healthScore } = useChartData();
+  const { weeklyComparison, savingsGrowth } = useChartData();
   const { fireConfetti } = useIncomeCelebration();
+
+  // === CFO state — lifted lên đây để share giữa CFOInsightCard + HealthScoreGauge ===
+  const { payload, breakdown, cacheKey } = useCFOSnapshot();
+  const {
+    insight: cfoInsight,
+    isLoading: cfoLoading,
+    error: cfoError,
+    lastUpdated: cfoLastUpdated,
+    fetchInsight,
+  } = useCFOReport();
+
+  // Auto-fetch khi cacheKey đổi (data tháng/ngày thay đổi). Hook tự dedupe + cache.
+  useEffect(() => {
+    fetchInsight(payload, { cacheKey });
+  }, [cacheKey, payload, fetchInsight]);
+
+  const handleCfoRefresh = useCallback(() => {
+    fetchInsight(payload, { cacheKey, forceRefresh: true });
+  }, [payload, cacheKey, fetchInsight]);
 
   const [showForm, setShowForm] = useState(false);
   const [editingTask, setEditingTask] = useState<EarningTask | null>(null);
@@ -193,10 +214,16 @@ export default function MoneyContent() {
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             >
               {/* ═══ TAB 2: CFO Report ═══ */}
-              <CFOInsightCard />
+              <CFOInsightCard
+                insight={cfoInsight}
+                isLoading={cfoLoading}
+                error={cfoError}
+                lastUpdated={cfoLastUpdated}
+                onRefresh={handleCfoRefresh}
+              />
               <StackedBarChart data={weeklyComparison} />
               <SavingsLineChart data={savingsGrowth} />
-              <HealthScoreGauge score={healthScore} />
+              <HealthScoreGauge score={breakdown.total} />
             </motion.div>
           )}
         </AnimatePresence>

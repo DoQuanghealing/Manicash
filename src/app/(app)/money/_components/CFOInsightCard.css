@@ -104,3 +104,61 @@
   font-size: var(--text-sm); color: var(--c-text-muted);
   text-align: center; padding: var(--space-lg) 0;
 }
+
+/* ═══ Badge — AI vs Quick analysis ═══ */
+.cfo-card-badge {
+  margin-left: auto;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.cfo-card-badge--ai {
+  background: rgba(124, 58, 237, 0.15);
+  color: var(--c-purple-light);
+  border: 1px solid rgba(124, 58, 237, 0.3);
+}
+
+.cfo-card-badge--quick {
+  background: rgba(156, 163, 175, 0.12);
+  color: var(--c-text-muted);
+  border: 1px solid rgba(156, 163, 175, 0.25);
+}
+
+/* ═══ Stale-data banner — refresh fail nhưng có insight cũ ═══ */
+.cfo-card-stale-banner {
+  padding: 8px 12px;
+  margin-bottom: var(--space-md);
+  border-radius: var(--radius-md);
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  color: #F59E0B;
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+/* ═══ Error message khi chưa từng load thành công ═══ */
+.cfo-card-error {
+  padding: var(--space-md);
+  margin-bottom: var(--space-md);
+  border-radius: var(--radius-md);
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: var(--c-text-secondary);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  text-align: center;
+}
+
+/* ═══ "Cập nhật X phút trước" ═══ */
+.cfo-card-updated {
+  font-size: 10px;
+  color: var(--c-text-muted);
+  text-align: right;
+  margin-bottom: var(--space-sm);
+  margin-top: var(--space-xs);
+}
