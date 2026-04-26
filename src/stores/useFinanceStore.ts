@@ -2,6 +2,7 @@
 'use client';
 
 import { create } from 'zustand';
+import { useAuthStore } from '@/stores/useAuthStore';
 
 export type TxnType = 'income' | 'expense' | 'transfer';
 export type WalletType = 'main' | 'emergency' | 'bill-fund';
@@ -185,6 +186,13 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
         billFundBalance: billFund,
       };
     });
+
+    // === DAILY_STREAK XP — chỉ tính cho income/expense, KHÔNG tính transfer ===
+    // Streak dựa vào ngày HÔM NAY, không phải txn.date (user có thể backdate).
+    // updateStreak idempotent: cùng ngày gọi nhiều lần chỉ grant 1 lần.
+    if (txn.type === 'income' || txn.type === 'expense') {
+      useAuthStore.getState().updateStreak();
+    }
 
     return txn;
   },

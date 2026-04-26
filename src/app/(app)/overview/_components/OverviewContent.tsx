@@ -1,11 +1,14 @@
 /* ═══ Overview Content — Financial Intelligence Dashboard v3 (1-2-3 Layout) ═══ */
 'use client';
 
+import { useEffect } from 'react';
+import { useBudgetStore } from '@/stores/useBudgetStore';
 import SafeToSpendCard from './SafeToSpendCard';
 import BudgetWarningBanner from './BudgetWarningBanner';
 import FixedBillsSummary from './FixedBillsSummary';
 import MissionChecklist from './MissionChecklist';
 import WishlistPopup from './WishlistPopup';
+import MonthlyReportModal from './MonthlyReportModal';
 
 // Nạp 3 khối vừa tạo (1-2-3)
 import IncomeBlock from './IncomeBlock';
@@ -13,6 +16,13 @@ import ExpenseBillBlock from './ExpenseBillBlock';
 import FundsBlock from './FundsBlock';
 
 export default function OverviewContent() {
+  // Trigger rollover check 1 lần khi mount Overview. Idempotent — nếu cùng tháng
+  // thì là no-op; nếu tháng mới → grant BUDGET_ON_TRACK XP + generate butler report.
+  const checkAndRollover = useBudgetStore((s) => s.checkAndRollover);
+  useEffect(() => {
+    checkAndRollover();
+  }, [checkAndRollover]);
+
   return (
     <>
       <div className="stack stack-md">
@@ -42,6 +52,9 @@ export default function OverviewContent() {
         {/* ═══ BLOCK 6: Wellness & Chữa lành ═══ */}
         <WellnessCard />
       </div>
+
+      {/* Monthly butler report modal — auto show khi unviewedReportMonth có giá trị */}
+      <MonthlyReportModal />
     </>
   );
 }

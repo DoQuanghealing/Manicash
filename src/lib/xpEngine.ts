@@ -20,10 +20,14 @@ const XP_REWARDS: Record<string, (action: XPAction) => number> = {
 
   DAILY_STREAK: (action) => {
     const days = action.days || 1;
-    if (days >= 30) return 30;
-    if (days >= 14) return 20;
-    if (days >= 7) return 15;
-    return 10;
+    let xp: number;
+    if (days >= 30) xp = 30;
+    else if (days >= 14) xp = 20;
+    else if (days >= 7) xp = 15;
+    else xp = 10;
+    // Bonus mốc 7-day (7, 14, 21, 28...) — per butler message contract.
+    if (days > 0 && days % 7 === 0) xp += 500;
+    return xp;
   },
 
   BUDGET_ON_TRACK: () => 20,

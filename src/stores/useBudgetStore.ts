@@ -2,7 +2,10 @@
 'use client';
 
 import { create } from 'zustand';
-import type { CategoryBudget } from '@/types/budget';
+import type { CategoryBudget, MonthlySnapshot } from '@/types/budget';
+import { useAuthStore } from '@/stores/useAuthStore';
+import { useFinanceStore } from '@/stores/useFinanceStore';
+import { generateButlerReport } from '@/lib/butlerReport';
 
 /** Lấy tháng hiện tại dạng 'YYYY-MM' */
 function getCurrentMonth(): string {
@@ -26,6 +29,14 @@ interface BudgetState {
   categoryBudgets: CategoryBudget[];
   rolloverNotified: boolean;    // Đã thông báo rollover chưa
 
+  // === Monthly butler report state ===
+  /** Snapshot tháng cũ kèm butler report — append qua mỗi rollover. */
+  monthlySnapshots: MonthlySnapshot[];
+  /** Tháng có report mới chưa xem (null nếu đã xem hết). */
+  unviewedReportMonth: string | null;
+  /** XP của user tại đầu tháng — để compute delta khi rollover. */
+  xpAtMonthStart: number;
+
   // Computed
   getTotalCategoryLimits: () => number;
   getTotalSpent: () => number;
@@ -34,12 +45,16 @@ interface BudgetState {
   getCategoryProgress: (catId: string) => number; // 0-100
   isOverBudget: (catId: string) => boolean;
   getOverBudgetCategories: () => CategoryBudget[];
+  /** Lấy snapshot/report của tháng có unviewedReportMonth. */
+  getUnviewedReport: () => MonthlySnapshot | null;
 
   // Actions
   setCategoryBudget: (catId: string, limit: number) => void;
   addSpending: (catId: string, amount: number) => void;
   checkAndRollover: () => { rolled: boolean; carryOver: number };
   markRolloverNotified: () => void;
+  /** User đã đọc/đóng modal báo cáo — ngừng show lại. */
+  markReportViewed: () => void;
 }
 
 export const useBudgetStore = create<BudgetState>((set, get) => ({
@@ -47,6 +62,9 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
   currentMonth: getCurrentMonth(),
   categoryBudgets: SEED_BUDGETS,
   rolloverNotified: false,
+  monthlySnapshots: [],
+  unviewedReportMonth: null,
+  xpAtMonthStart: 0,
 
   /** Tổng ngưỡng chi tiêu đã thiết lập */
   getTotalCategoryLimits: () => {
@@ -141,7 +159,22 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
       ),
     })),
 
-  /** Auto-rollover: gọi khi mở app, kiểm tra tháng mới */
+  getUnviewedReport: () => {
+    const { unviewedReportMonth, monthlySnapshots } = get();
+    if (!unviewedReportMonth) return null;
+    return monthlySnapshots.find((s) => s.month === unviewedReportMonth) || null;
+  },
+
+  /**
+   * Auto-rollover: gọi khi mở app, kiểm tra tháng mới.
+   * Idempotent — guard `currentMonth === actualMonth` ngăn re-grant XP + re-generate report.
+   *
+   * Side effects khi tháng mới:
+   *   1. BUDGET_ON_TRACK +20 XP cho mỗi category đã on-track tháng cũ.
+   *   2. Generate butler report cho tháng cũ (Phần 5).
+   *   3. Append MonthlySnapshot, set unviewedReportMonth → modal sẽ hiện.
+   *   4. Update xpAtMonthStart = current xp để delta tháng tới chính xác.
+   */
   checkAndRollover: () => {
     const state = get();
     const actualMonth = getCurrentMonth();
@@ -150,8 +183,71 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
       return { rolled: false, carryOver: state.carryOver };
     }
 
-    // Tháng mới! Chốt số dư
+    const oldMonth = state.currentMonth;
+    const oldMonthBudgets = state.categoryBudgets.filter((b) => b.month === oldMonth);
+
+    // === Phần 2: BUDGET_ON_TRACK XP — grant cho mỗi category đã đạt mục tiêu ===
+    // "On-track" = đã set ngưỡng (limit > 0) AND chi tiêu ≤ ngưỡng.
+    const award = useAuthStore.getState().awardXP;
+    for (const b of oldMonthBudgets) {
+      if (b.monthlyLimit > 0 && b.spent <= b.monthlyLimit) {
+        award({ type: 'BUDGET_ON_TRACK' });
+      }
+    }
+
+    // === Phần 5: Aggregate metrics tháng cũ → generate report ===
+    const finance = useFinanceStore.getState();
+    const [oldYear, oldMonthNum] = oldMonth.split('-').map(Number);
+
+    const oldMonthTxns = finance.transactions.filter((t) => {
+      const d = new Date(t.date);
+      return d.getFullYear() === oldYear && d.getMonth() + 1 === oldMonthNum;
+    });
+    const monthlyIncome = oldMonthTxns
+      .filter((t) => t.type === 'income')
+      .reduce((s, t) => s + t.amount, 0);
+    const monthlyExpense = oldMonthTxns
+      .filter((t) => t.type === 'expense')
+      .reduce((s, t) => s + t.amount, 0);
+
+    const billsTotal = finance.fixedBills.length;
+    const billsPaid = finance.fixedBills.filter((b) => b.isPaid).length;
+
+    const categoriesTotal = oldMonthBudgets.length;
+    const categoriesOnTrack = oldMonthBudgets.filter(
+      (b) => b.monthlyLimit > 0 && b.spent <= b.monthlyLimit,
+    ).length;
+
+    // XP delta — sau khi BUDGET_ON_TRACK đã grant ở trên, current xp = end-of-month total.
+    const xpNow = useAuthStore.getState().user?.xp || 0;
+    const xpEarned = xpNow - state.xpAtMonthStart;
+
     const oldSafe = state.getSafeToSpend();
+
+    const report = generateButlerReport({
+      month: oldMonth,
+      monthlyIncome,
+      monthlyExpense,
+      transactionCount: oldMonthTxns.length,
+      billsDueByNow: billsTotal,
+      billsPaidOfDue: billsPaid,
+      categoriesTotal,
+      categoriesOnTrack,
+      emergencyBalance: finance.emergencyBalance,
+      safeToSpend: oldSafe,
+      xpEarned,
+      dayOfMonth: 31,
+    });
+
+    const snapshot: MonthlySnapshot = {
+      month: oldMonth,
+      incomeTotal: monthlyIncome,
+      expenseTotal: monthlyExpense,
+      savingTotal: 0, // Demo — track explicit savings ở dashboardStore
+      carryOver: state.carryOver,
+      budgetLimits: oldMonthBudgets,
+      butlerReport: report,
+    };
 
     set({
       carryOver: oldSafe,
@@ -162,10 +258,15 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
         spent: 0,
         month: actualMonth,
       })),
+      monthlySnapshots: [...state.monthlySnapshots, snapshot],
+      unviewedReportMonth: oldMonth,
+      xpAtMonthStart: xpNow,
     });
 
     return { rolled: true, carryOver: oldSafe };
   },
 
   markRolloverNotified: () => set({ rolloverNotified: true }),
+
+  markReportViewed: () => set({ unviewedReportMonth: null }),
 }));

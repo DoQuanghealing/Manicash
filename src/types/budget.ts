@@ -1,5 +1,7 @@
 /* ═══ Budget & Wallet Types — Three-Bucket System ═══ */
 
+import type { HealthTier } from '@/lib/cfoHealthScore';
+
 /** Ba ví chính */
 export type BucketType = 'income' | 'expense' | 'saving';
 
@@ -14,6 +16,22 @@ export interface CategoryBudget {
   month: string; // 'YYYY-MM'
 }
 
+/** Báo cáo butler cuối tháng — generated tại checkAndRollover. */
+export interface ButlerReport {
+  summary: string;          // 2-3 câu tổng hợp + khích lệ
+  xpEarned: number;         // Số XP grant trong tháng (delta)
+  tier: HealthTier;         // Tier cảnh sức khỏe tháng
+  generatedAt: string;      // ISO timestamp
+  metrics: {
+    transactionCount: number;
+    billsPaidOnTime: number;
+    billsTotal: number;
+    categoriesOnTrack: number;
+    categoriesTotal: number;
+    surplus: number;        // income - expense (≥ 0; nếu âm → 0)
+  };
+}
+
 /** Snapshot tài chính theo tháng — dùng cho rollover */
 export interface MonthlySnapshot {
   month: string; // 'YYYY-MM'
@@ -22,6 +40,7 @@ export interface MonthlySnapshot {
   savingTotal: number;
   carryOver: number; // Dư tháng trước chuyển sang
   budgetLimits: CategoryBudget[];
+  butlerReport?: ButlerReport;
 }
 
 /** Mục tiêu tài chính */

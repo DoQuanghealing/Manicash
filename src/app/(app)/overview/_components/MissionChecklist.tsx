@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, X, ChevronRight, Trophy, Target, CheckCircle2 } from 'lucide-react';
 import { useConfetti } from '@/hooks/useConfetti';
 import { useAudio } from '@/hooks/useAudio';
+import { useMissionStore } from '@/stores/useMissionStore';
 import './MissionChecklist.css';
 
 /* ── Mission Data ── */
@@ -61,54 +62,59 @@ const NEXT_ACTIONS: NextAction[] = [
 
 export default function MissionChecklist() {
   const [isOpen, setIsOpen] = useState(false);
-  const [completedSteps, setCompletedSteps] = useState<Set<string>>(new Set());
   const [showCongrats, setShowCongrats] = useState<{ title: string; body: string } | null>(null);
   const [showNextActions, setShowNextActions] = useState(false);
   const { fireConfetti } = useConfetti();
   const { play } = useAudio();
 
-  const allCompleted = completedSteps.size === MISSION_STEPS.length;
-  const progress = Math.round((completedSteps.size / MISSION_STEPS.length) * 100);
+  // Lift completion state → useMissionStore. Subscribe để re-render khi đổi.
+  const completedMissionIds = useMissionStore((s) => s.completedMissionIds);
+  const completeMission = useMissionStore((s) => s.completeMission);
+  const uncompleteMission = useMissionStore((s) => s.uncompleteMission);
+
+  // completedMissionIds chứa cả id ngoài MISSION_STEPS (future-proof) — chỉ count steps thuộc mission này.
+  const completedCount = MISSION_STEPS.filter((s) => completedMissionIds.includes(s.id)).length;
+  const allCompleted = completedCount === MISSION_STEPS.length;
+  const progress = Math.round((completedCount / MISSION_STEPS.length) * 100);
 
   const handleToggleStep = useCallback((stepId: string) => {
-    setCompletedSteps((prev) => {
-      const next = new Set(prev);
-      if (next.has(stepId)) {
-        next.delete(stepId);
-        setShowCongrats(null);
-        setShowNextActions(false);
-        return next;
-      }
+    if (completedMissionIds.includes(stepId)) {
+      // Bỏ tick — không hoàn XP (đã grant là giữ).
+      uncompleteMission(stepId);
+      setShowCongrats(null);
+      setShowNextActions(false);
+      return;
+    }
 
-      next.add(stepId);
+    // Tick mới → grant XP idempotent qua store.
+    const result = completeMission(stepId);
+    // result.granted = false chỉ khi id đã có, ở đây không xảy ra (đã guard ở trên).
 
-      // Pick random congrats message
-      const msg = CONGRATS_MESSAGES[Math.floor(Math.random() * CONGRATS_MESSAGES.length)];
-      setShowCongrats(msg);
+    // Pick random congrats message
+    const msg = CONGRATS_MESSAGES[Math.floor(Math.random() * CONGRATS_MESSAGES.length)];
+    setShowCongrats(msg);
 
-      // Fire confetti!
-      if (next.size === MISSION_STEPS.length) {
-        // ALL DONE — big celebration!
-        fireConfetti('rankUp');
-        try { play('levelUp'); } catch {}
-      } else {
-        fireConfetti('mission');
-        try { play('missionComplete'); } catch {}
-      }
+    // Fire confetti! Compute "all done" sau khi store đã update.
+    const newCompletedCount = completedCount + (result.granted ? 1 : 0);
+    if (newCompletedCount === MISSION_STEPS.length) {
+      // ALL DONE — big celebration!
+      fireConfetti('rankUp');
+      try { play('levelUp'); } catch {}
+    } else {
+      fireConfetti('mission');
+      try { play('missionComplete'); } catch {}
+    }
 
-      // Show next actions after brief delay
-      setTimeout(() => {
-        setShowNextActions(true);
-      }, 2000);
+    // Show next actions after brief delay
+    setTimeout(() => {
+      setShowNextActions(true);
+    }, 2000);
 
-      // Auto-hide congrats after 4s
-      setTimeout(() => {
-        setShowCongrats(null);
-      }, 4000);
-
-      return next;
-    });
-  }, [fireConfetti, play]);
+    // Auto-hide congrats after 4s
+    setTimeout(() => {
+      setShowCongrats(null);
+    }, 4000);
+  }, [completedMissionIds, completedCount, completeMission, uncompleteMission, fireConfetti, play]);
 
   return (
     <>
@@ -124,7 +130,7 @@ export default function MissionChecklist() {
       >
         <div className="mc-trigger-icon-wrap">
           <Target size={20} className="mc-trigger-icon" />
-          {!allCompleted && <span className="mc-trigger-badge">{MISSION_STEPS.length - completedSteps.size}</span>}
+          {!allCompleted && <span className="mc-trigger-badge">{MISSION_STEPS.length - completedCount}</span>}
           {allCompleted && <CheckCircle2 size={14} className="mc-trigger-check" />}
         </div>
         <div className="mc-trigger-content">
@@ -192,7 +198,7 @@ export default function MissionChecklist() {
                       transition={{ duration: 0.5, ease: 'easeOut' }}
                     />
                   </div>
-                  <span className="mc-progress-text">{completedSteps.size}/{MISSION_STEPS.length} hoàn thành</span>
+                  <span className="mc-progress-text">{completedCount}/{MISSION_STEPS.length} hoàn thành</span>
                 </div>
 
                 {/* Mission 1: Tạo 3 tài khoản */}
@@ -208,7 +214,7 @@ export default function MissionChecklist() {
                   {/* Steps */}
                   <div className="mc-steps">
                     {MISSION_STEPS.map((step, i) => {
-                      const isDone = completedSteps.has(step.id);
+                      const isDone = completedMissionIds.includes(step.id);
                       return (
                         <motion.button
                           key={step.id}

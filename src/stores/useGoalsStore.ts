@@ -3,6 +3,7 @@
 
 import { create } from 'zustand';
 import type { Goal, Milestone } from '@/types/budget';
+import { useAuthStore } from '@/stores/useAuthStore';
 
 function genId(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
@@ -83,12 +84,17 @@ export const useGoalsStore = create<GoalsState>((set, get) => ({
   deleteGoal: (id) =>
     set((s) => ({ goals: s.goals.filter((g) => g.id !== id) })),
 
-  addFundsToGoal: (id, amount) =>
+  addFundsToGoal: (id, amount) => {
     set((s) => ({
       goals: s.goals.map((g) =>
         g.id === id ? { ...g, currentAmount: g.currentAmount + amount } : g
       ),
-    })),
+    }));
+    // SAVINGS_DEPOSIT XP — chỉ grant khi deposit dương (rút tiền không grant).
+    if (amount > 0) {
+      useAuthStore.getState().awardXP({ type: 'SAVINGS_DEPOSIT', amount });
+    }
+  },
 
   addMilestone: (goalId, data) =>
     set((s) => ({

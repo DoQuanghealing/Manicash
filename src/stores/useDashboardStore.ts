@@ -2,6 +2,7 @@
 'use client';
 
 import { create } from 'zustand';
+import { useAuthStore } from '@/stores/useAuthStore';
 
 export interface AccountData {
   balance: number;
@@ -237,12 +238,17 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     }),
 
   /** Ghi nhận 1 lần tích lũy vào quỹ */
-  addFundContribution: (fund, amount) =>
+  addFundContribution: (fund, amount) => {
     set((state) => {
       const month = getCurMonth();
       const existing = { ...state.monthlyContributions };
       if (!existing[fund]) existing[fund] = [];
       existing[fund] = [...existing[fund], { month, amount }];
       return { monthlyContributions: existing };
-    }),
+    });
+    // SAVINGS_DEPOSIT XP — reserve/goals/investment đều coi là tiết kiệm.
+    if (amount > 0) {
+      useAuthStore.getState().awardXP({ type: 'SAVINGS_DEPOSIT', amount });
+    }
+  },
 }));
