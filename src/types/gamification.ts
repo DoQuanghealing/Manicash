@@ -29,6 +29,7 @@ export type XPActionType =
   | 'RESIST_SPENDING'
   | 'MISSION_COMPLETE'
   | 'DAILY_STREAK'
+  | 'STREAK_BONUS'      // Mốc 7-day streak — separate type để emit toast riêng.
   | 'BUDGET_ON_TRACK'
   | 'SAVINGS_DEPOSIT'
   | 'TASK_COMPLETE'

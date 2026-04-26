@@ -3,6 +3,7 @@
 
 import { create } from 'zustand';
 import type { EarningTask, SubTask, TaskStatus, XPPenalty, OverdueReason } from '@/types/task';
+import { useAuthStore } from '@/stores/useAuthStore';
 
 function genId(prefix = 'task') {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
@@ -123,7 +124,17 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       tasks: s.tasks.map((t) => t.id === id ? { ...t, ...data } : t),
     })),
 
-  completeTask: (id, actualAmount) =>
+  completeTask: (id, actualAmount) => {
+    // Tính daysEarly TRƯỚC khi mutate state — cần raw task để đọc endDate.
+    const task = get().tasks.find((t) => t.id === id);
+    const completedAt = new Date();
+    let daysEarly = 0;
+    if (task) {
+      const end = new Date(task.endDate);
+      const diffMs = end.getTime() - completedAt.getTime();
+      daysEarly = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
+    }
+
     set((s) => {
       const newPenalties = s.xpPenalties.map((p) =>
         p.remainingTasks > 0 ? { ...p, remainingTasks: p.remainingTasks - 1 } : p
@@ -132,15 +143,24 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       return {
         tasks: s.tasks.map((t) =>
           t.id === id
-            ? { ...t, completedAt: new Date().toISOString(), actualAmount,
+            ? { ...t, completedAt: completedAt.toISOString(), actualAmount,
                 subTasks: t.subTasks.map((st) => ({ ...st, isCompleted: true })) }
             : t
         ),
         xpPenalties: newPenalties,
       };
-    }),
+    });
 
-  deleteOverdueTask: (id, reason) =>
+    // TASK_COMPLETE XP — formula = max(20, base + earlyBonus). Penalty multiplier
+    // (nếu user đang gánh penalty từ task trễ trước) đã được apply trong awardXP.
+    useAuthStore.getState().awardXP({
+      type: 'TASK_COMPLETE',
+      earnedAmount: actualAmount,
+      daysEarly,
+    });
+  },
+
+  deleteOverdueTask: (id, reason) => {
     set((s) => ({
       tasks: s.tasks.map((t) =>
         t.id === id ? { ...t, deletedAt: new Date().toISOString(), deleteReason: reason } : t
@@ -149,7 +169,12 @@ export const useTaskStore = create<TaskState>((set, get) => ({
         ...s.xpPenalties,
         { taskId: id, penaltyMultiplier: 0.7, remainingTasks: 3 },
       ],
-    })),
+    }));
+
+    // TASK_OVERDUE XP — penalty -15 (negative). awardXP không apply task multiplier
+    // cho XP âm (chỉ apply cho positive) → user mất đúng -15.
+    useAuthStore.getState().awardXP({ type: 'TASK_OVERDUE' });
+  },
 
   toggleSubTask: (taskId, subTaskId) =>
     set((s) => ({

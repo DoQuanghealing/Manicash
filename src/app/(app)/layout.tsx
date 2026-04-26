@@ -1,8 +1,9 @@
-/* ═══ App Layout — MobileShell + FloatingButler ═══ */
+/* ═══ App Layout — MobileShell + FloatingButler + XP Toast ═══ */
 import type { ReactNode } from 'react';
 import BottomNav from '@/components/layout/BottomNav';
 import AppHeader from '@/components/layout/AppHeader';
 import FloatingButler from '@/components/ui/FloatingButler';
+import XPToastHost from '@/components/ui/XPToast';
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
@@ -21,6 +22,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
         {/* Floating Butler: draggable AssistiveTouch */}
         <FloatingButler />
+
+        {/* XP toast host — subscribe xpEvents, render stack top-right */}
+        <XPToastHost />
       </div>
     </div>
   );

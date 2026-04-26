@@ -4,6 +4,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTaskStore } from '@/stores/useTaskStore';
+import { useAuthStore } from '@/stores/useAuthStore';
 import { useChartData } from '@/hooks/useChartData';
 import { useCFOSnapshot } from '@/hooks/useCFOSnapshot';
 import { useCFOReport } from '@/hooks/useCFOReport';
@@ -19,8 +20,6 @@ import SavingsLineChart from './SavingsLineChart';
 import HealthScoreGauge from './HealthScoreGauge';
 import { Plus } from 'lucide-react';
 import './money.css';
-
-const DEMO_XP = 1_250;
 
 type MoneyTab = 'money' | 'cfo';
 
@@ -49,6 +48,9 @@ export default function MoneyContent() {
   const completeTask = useTaskStore((s) => s.completeTask);
   const deleteOverdueTask = useTaskStore((s) => s.deleteOverdueTask);
   const getStatus = useTaskStore((s) => s.getStatus);
+
+  // XP đọc từ store (demo bypass set xp=2500). Fallback 0 khi profile chưa init.
+  const currentXP = useAuthStore((s) => s.user?.xp ?? 0);
 
   const { weeklyComparison, savingsGrowth } = useChartData();
   const { fireConfetti } = useIncomeCelebration();
@@ -154,7 +156,7 @@ export default function MoneyContent() {
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             >
               {/* ═══ TAB 1: Money — Gamification + Tasks ═══ */}
-              <HallOfFame currentXP={DEMO_XP} />
+              <HallOfFame currentXP={currentXP} />
 
               {/* Task Stats */}
               <div className="glass-card" style={{ display: 'flex', justifyContent: 'space-around', textAlign: 'center' }}>

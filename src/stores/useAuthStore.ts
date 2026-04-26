@@ -9,6 +9,7 @@ import type { UserProfile, FirebaseUserMinimal, UserRank } from '@/types/user';
 import type { XPAction } from '@/types/gamification';
 import { calculateXP, applyPenalty, getTotalXPForRank } from '@/lib/xpEngine';
 import { useTaskStore } from '@/stores/useTaskStore';
+import { emitXPGranted } from '@/lib/xpEvents';
 
 const RANK_ORDER: UserRank[] = ['iron', 'bronze', 'silver', 'gold', 'platinum', 'emerald', 'diamond'];
 
@@ -112,6 +113,10 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         updatedAt: new Date().toISOString(),
       },
     });
+
+    // Emit cho XPToastHost — listener mount ở app shell.
+    emitXPGranted({ type: action.type, amount: granted, totalXp: newXP });
+
     return granted;
   },
 
@@ -141,13 +146,16 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       },
     });
 
-    // Grant XP qua awardXP — xpEngine.DAILY_STREAK tự cộng bonus 7-day.
-    const xpAwarded = get().awardXP({ type: 'DAILY_STREAK', days: newStreak });
+    // Grant XP base + bonus mốc 7-day là 2 awardXP riêng → 2 toast event riêng.
+    const baseAwarded = get().awardXP({ type: 'DAILY_STREAK', days: newStreak });
+    const bonusAwarded = newStreak > 0 && newStreak % 7 === 0
+      ? get().awardXP({ type: 'STREAK_BONUS' })
+      : 0;
 
     return {
       streakAdvanced: true,
       currentStreak: newStreak,
-      xpAwarded,
+      xpAwarded: baseAwarded + bonusAwarded,
     };
   },
 }));

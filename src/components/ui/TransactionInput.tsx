@@ -10,6 +10,7 @@ import { getButlerMessage } from '@/data/butlerMessages';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useAudio } from '@/hooks/useAudio';
 import { useFinanceStore, type TxnType, type WalletType } from '@/stores/useFinanceStore';
+import { useAuthStore } from '@/stores/useAuthStore';
 import { calculateXP } from '@/lib/xpEngine';
 import BreathGate from './BreathGate';
 import CelebrationModal from './CelebrationModal';
@@ -80,11 +81,13 @@ export default function TransactionInput() {
       wallet,
     });
 
-    // 2. Calculate XP
+    // 2. Calculate XP — calculateXP cho hiển thị ngay trong CelebrationModal.
+    //    Đồng thời awardXP để persist vào userProfile + emit toast.
     const xpAction = type === 'income'
       ? { type: 'INCOME_LOGGED' as const, earnedAmount: numericAmount }
       : { type: 'EXPENSE_LOGGED' as const };
     const xpEarned = calculateXP(xpAction);
+    useAuthStore.getState().awardXP(xpAction);
 
     // 3. Get category name for celebration
     const catName = categories.find((c) => c.id === selectedCategory)?.name || 'Giao dịch';
@@ -245,7 +248,15 @@ export default function TransactionInput() {
         amount={numericAmount}
         isOpen={showBreathGate}
         onConfirm={handleBreathGateConfirm}
-        onCancel={() => setShowBreathGate(false)}
+        onCancel={() => {
+          // RESIST_SPENDING: user nhịn chi tiêu lớn → award XP với savedAmount.
+          // Multiplier x2 đã được apply trong xpEngine.RESIST_SPENDING formula.
+          useAuthStore.getState().awardXP({
+            type: 'RESIST_SPENDING',
+            savedAmount: numericAmount,
+          });
+          setShowBreathGate(false);
+        }}
       />
 
       {/* Celebration Modal — Dopamine popup */}

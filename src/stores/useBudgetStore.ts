@@ -219,8 +219,12 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
     ).length;
 
     // XP delta — sau khi BUDGET_ON_TRACK đã grant ở trên, current xp = end-of-month total.
+    // Lazy-init: lần rollover ĐẦU TIÊN, xpAtMonthStart === 0 trong khi user đã có xp
+    // sẵn (vd demo profile xp=2500). Skip delta cho tháng này để tránh report inflate;
+    // các tháng sau hoạt động bình thường nhờ set xpAtMonthStart = xpNow ở cuối.
     const xpNow = useAuthStore.getState().user?.xp || 0;
-    const xpEarned = xpNow - state.xpAtMonthStart;
+    const isFirstMonth = state.xpAtMonthStart === 0 && xpNow > 0;
+    const xpEarned = isFirstMonth ? 0 : xpNow - state.xpAtMonthStart;
 
     const oldSafe = state.getSafeToSpend();
 
