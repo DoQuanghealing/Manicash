@@ -1,0 +1,192 @@
+/* SMS webhook settings layout, token card, and confirm dialog */
+.sw-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-md);
+}
+
+.sw-header {
+  margin-bottom: var(--space-sm);
+}
+
+.sw-h1 {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 800;
+  color: var(--c-text-primary);
+  margin-bottom: 4px;
+}
+
+.sw-h1-desc {
+  font-size: var(--text-sm);
+  color: var(--c-text-secondary);
+  line-height: 1.5;
+}
+
+.sw-locked,
+.sw-card {
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--glass-border);
+}
+
+.sw-locked {
+  padding: var(--space-xl);
+  background: rgba(124, 58, 237, 0.06);
+  border-color: rgba(124, 58, 237, 0.2);
+  text-align: center;
+}
+
+.sw-locked-icon {
+  font-size: 2.5rem;
+  margin-bottom: var(--space-sm);
+}
+
+.sw-locked-title,
+.sw-card-title,
+.sw-confirm-title {
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--c-text-primary);
+}
+
+.sw-locked-title {
+  margin-bottom: 6px;
+}
+
+.sw-locked-desc,
+.sw-confirm-body {
+  font-size: var(--text-sm);
+  color: var(--c-text-muted);
+  line-height: 1.5;
+}
+
+.sw-card {
+  padding: var(--space-lg);
+  background: var(--c-bg-secondary);
+}
+
+.sw-card-title {
+  margin-bottom: var(--space-md);
+}
+
+.sw-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.sw-label {
+  min-width: 50px;
+  font-size: 11px;
+  color: var(--c-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+}
+
+.sw-code {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  color: var(--c-text-secondary);
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.sw-icon-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  color: var(--c-text-secondary);
+  cursor: pointer;
+}
+
+.sw-icon-btn:hover {
+  background: rgba(124, 58, 237, 0.12);
+  color: var(--c-purple-light);
+}
+
+.sw-muted {
+  font-size: var(--text-sm);
+  color: var(--c-text-muted);
+  font-style: italic;
+}
+
+.sw-actions,
+.sw-confirm-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.sw-actions {
+  margin-top: 12px;
+}
+
+.sw-confirm-actions {
+  justify-content: flex-end;
+}
+
+.sw-btn-primary,
+.sw-btn-secondary,
+.sw-btn-cancel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.15s;
+}
+
+.sw-btn-primary {
+  background: linear-gradient(135deg, var(--c-purple), var(--c-purple-light));
+  color: white;
+}
+
+.sw-btn-primary:hover {
+  filter: brightness(1.1);
+}
+
+.sw-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.sw-btn-secondary,
+.sw-btn-cancel {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--glass-border);
+  color: var(--c-text-secondary);
+}
+
+.sw-btn-cancel {
+  color: var(--c-text-muted);
+}
+
+.sw-error {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: var(--radius-md);
+  color: #fca5a5;
+  font-size: var(--text-xs);
+}

@@ -4,6 +4,9 @@ export type UserRank = 'iron' | 'bronze' | 'silver' | 'gold' | 'platinum' | 'eme
 
 export type SubscriptionPlan = 'free' | 'premium';
 
+/** Tier cho feature gating mới (vd SMS Webhook). Hiện chưa enforce — xem utils/proGating.ts. */
+export type UserTier = 'free' | 'pro';
+
 export interface UserProfile {
   uid: string;
   displayName: string;
@@ -17,6 +20,8 @@ export interface UserProfile {
   totalResistSaved: number;
   isPremium: boolean;
   plan: SubscriptionPlan;
+  /** Pro tier — optional, default 'free' khi đọc. Enforce ở proGating.ts. */
+  tier?: UserTier;
   premiumExpiresAt: string | null;
   createdAt: string;
   updatedAt: string;

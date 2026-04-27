@@ -29,6 +29,11 @@ const XP_REWARDS: Record<string, (action: XPAction) => number> = {
   // Mốc 7-day (7, 14, 21, 28...) — emit như XP action riêng để toast hiển thị 🔥.
   STREAK_BONUS: () => 500,
 
+  // SMS webhook pending tx được confirm — fixed +10, không scale theo amount.
+  // Lý do: là acknowledgement của parsing pipeline, không phải reward chính
+  // (INCOME_LOGGED/EXPENSE_LOGGED đã grant khi finance store add). Analytics tag.
+  WEBHOOK_CONFIRMED: () => 10,
+
   BUDGET_ON_TRACK: () => 20,
 
   SAVINGS_DEPOSIT: (action) => {

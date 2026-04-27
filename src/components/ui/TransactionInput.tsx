@@ -59,18 +59,6 @@ export default function TransactionInput() {
     }
   };
 
-  const handleSubmit = useCallback(() => {
-    if (!numericAmount || (type !== 'transfer' && !selectedCategory)) return;
-
-    // BreathGate for large expenses
-    if (type === 'expense' && numericAmount >= BREATHGATE_THRESHOLD) {
-      setShowBreathGate(true);
-      return;
-    }
-
-    processTransaction();
-  }, [numericAmount, selectedCategory, type]);
-
   const processTransaction = useCallback(() => {
     // 1. Save to Finance Store → updates balances + Ledger auto-renders
     const txn = addTransaction({
@@ -106,7 +94,19 @@ export default function TransactionInput() {
     setAmount('');
     setSelectedCategory('');
     setNote('');
-  }, [type, numericAmount, selectedCategory, note, wallet, addTransaction, categories]);
+  }, [type, numericAmount, selectedCategory, note, wallet, addTransaction, categories, butlerName]);
+
+  const handleSubmit = useCallback(() => {
+    if (!numericAmount || (type !== 'transfer' && !selectedCategory)) return;
+
+    // BreathGate for large expenses
+    if (type === 'expense' && numericAmount >= BREATHGATE_THRESHOLD) {
+      setShowBreathGate(true);
+      return;
+    }
+
+    processTransaction();
+  }, [numericAmount, selectedCategory, type, processTransaction]);
 
   const handleBreathGateConfirm = useCallback(() => {
     setShowBreathGate(false);

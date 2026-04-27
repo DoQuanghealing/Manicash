@@ -267,6 +267,9 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
       xpAtMonthStart: xpNow,
     });
 
+    // === Reset bills: tháng mới → tất cả bill về "chưa đóng" ===
+    useFinanceStore.getState().resetBillsPaid();
+
     return { rolled: true, carryOver: oldSafe };
   },
 

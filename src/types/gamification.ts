@@ -33,4 +33,5 @@ export type XPActionType =
   | 'BUDGET_ON_TRACK'
   | 'SAVINGS_DEPOSIT'
   | 'TASK_COMPLETE'
-  | 'TASK_OVERDUE';
+  | 'TASK_OVERDUE'
+  | 'WEBHOOK_CONFIRMED'; // SMS webhook pending tx được user confirm — analytics tag.

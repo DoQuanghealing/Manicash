@@ -30,6 +30,7 @@ const ACTION_LABELS: Record<XPActionType, string> = {
   SAVINGS_DEPOSIT: 'Đã gửi tiết kiệm',
   TASK_COMPLETE: 'Hoàn thành nhiệm vụ kiếm tiền',
   TASK_OVERDUE: 'Trễ hạn nhiệm vụ',
+  WEBHOOK_CONFIRMED: 'Đã xác nhận giao dịch SMS',
 };
 
 /** Emoji prefix theo action — cảm xúc. */
@@ -44,6 +45,7 @@ const ACTION_EMOJI: Record<XPActionType, string> = {
   SAVINGS_DEPOSIT: '🏦',
   TASK_COMPLETE: '🏆',
   TASK_OVERDUE: '⚠️',
+  WEBHOOK_CONFIRMED: '✅',
 };
 
 export default function XPToastHost() {

@@ -11,6 +11,7 @@ const PROTECTED_PREFIXES = [
   '/goals',
   '/money',
   '/academy',
+  '/settings',
 ];
 
 /* ── Routes that skip rate limiting ── */

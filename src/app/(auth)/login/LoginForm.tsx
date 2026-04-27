@@ -86,7 +86,7 @@ export default function LoginForm() {
         rank: 'silver',
         xp: 2500,
         streak: 7,
-        lastActiveDate: new Date().toISOString(),
+        lastActiveDate: new Date().toISOString().slice(0, 10),
         resistCount: 12,
         totalResistSaved: 3500000,
         isPremium: false,

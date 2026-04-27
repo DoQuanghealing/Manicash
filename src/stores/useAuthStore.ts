@@ -125,7 +125,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     if (!user) return { streakAdvanced: false, currentStreak: 0, xpAwarded: 0 };
 
     const today = todayLocal();
-    const last = user.lastActiveDate || '';
+    const last = (user.lastActiveDate || '').slice(0, 10);
 
     // Đã log hôm nay → no-op (per spec: không grant lần 2 trong ngày).
     if (last === today) {

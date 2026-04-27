@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { useBudgetStore } from '@/stores/useBudgetStore';
 import SafeToSpendCard from './SafeToSpendCard';
 import BudgetWarningBanner from './BudgetWarningBanner';
+import PendingTransactionBanner from './PendingTransactionBanner';
 import FixedBillsSummary from './FixedBillsSummary';
 import MissionChecklist from './MissionChecklist';
 import WishlistPopup from './WishlistPopup';
@@ -28,6 +29,7 @@ export default function OverviewContent() {
       <div className="stack stack-md">
         {/* ═══ BLOCK 1: Safe-to-Spend Balance & Warning ═══ */}
         <SafeToSpendCard />
+        <PendingTransactionBanner />
         <BudgetWarningBanner />
 
         {/* ═══ NEW: GIAO DIỆN 1-2-3 ═══ */}

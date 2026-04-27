@@ -54,6 +54,8 @@ interface FinanceState {
   removeBill: (billId: string) => void;
   payBill: (billId: string) => void;
   addToBillFund: (amount: number) => void;
+  /** Reset tất cả bill về chưa đóng — gọi khi sang tháng mới (rollover). */
+  resetBillsPaid: () => void;
   getTotalBills: () => number;
   getAccumulatedBillTarget: () => { total: number; accumulated: number; bills: (FixedBill & { runningTotal: number; canPay: boolean; shortage: number })[] };
 }
@@ -127,7 +129,7 @@ function generateSeedData(): Transaction[] {
         note: cat.note,
         wallet: 'main',
         date: d.toISOString(),
-        time: `${String(hour).padStart(2, '0')}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')}`,
+        time: `${String(hour).padStart(2, '0')}:${String(Math.floor(seededRandom(seed + 19) * 60)).padStart(2, '0')}`,
         dateLabel: dl,
         dateKey: dk,
       });
@@ -295,6 +297,11 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
       mainBalance: state.mainBalance - amount,
     }));
   },
+
+  resetBillsPaid: () =>
+    set((state) => ({
+      fixedBills: state.fixedBills.map((b) => ({ ...b, isPaid: false })),
+    })),
 
   getTotalBills: () =>
     get().fixedBills.reduce((sum, b) => sum + b.amount, 0),
