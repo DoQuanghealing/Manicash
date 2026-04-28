@@ -67,9 +67,9 @@ export default function ButlerDrawer({ isOpen, onClose }: ButlerDrawerProps) {
           {/* Drawer */}
           <motion.div
             className="bd-drawer"
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
+            initial={{ x: '-50%', y: '100%' }}
+            animate={{ x: '-50%', y: 0 }}
+            exit={{ x: '-50%', y: '100%' }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
           >
             {/* Handle bar */}
