@@ -9,11 +9,10 @@ import { useAuthStore } from '@/stores/useAuthStore';
 
 export default function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
-  const [isDemoLoading, setIsDemoLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const { play } = useAudio();
-  const { setFirebaseUser, setUserProfile, setLoading, setDemoMode } = useAuthStore();
+  const { setFirebaseUser, setUserProfile, setLoading } = useAuthStore();
 
   async function handleGoogleSignIn() {
     setIsLoading(true);
@@ -48,75 +47,13 @@ export default function LoginForm() {
     }
   }
 
-  async function handleDemoBypass() {
-    setIsDemoLoading(true);
-
-    try {
-      // IMPORTANT: Set demo mode FIRST so AuthProvider doesn't overwrite
-      setDemoMode(true);
-
-      // Set session cookie for Proxy
-      const res = await fetch('/api/auth/session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'login',
-          uid: 'demo-user-001',
-          rank: 'silver',
-        }),
-      });
-
-      if (!res.ok) {
-        console.error('Session API failed:', res.status);
-      }
-
-      // Set demo user in Zustand store
-      setFirebaseUser({
-        uid: 'demo-user-001',
-        email: 'demo@manicash.vn',
-        displayName: 'Chiến Binh Demo',
-        photoURL: null,
-      });
-
-      setUserProfile({
-        uid: 'demo-user-001',
-        email: 'demo@manicash.vn',
-        displayName: 'Chiến Binh Demo',
-        photoURL: null,
-        rank: 'silver',
-        xp: 2500,
-        streak: 7,
-        lastActiveDate: new Date().toISOString().slice(0, 10),
-        resistCount: 12,
-        totalResistSaved: 3500000,
-        isPremium: false,
-        plan: 'free',
-        premiumExpiresAt: null,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      });
-
-      setLoading(false);
-
-      // Audio is non-blocking — don't let it prevent redirect
-      try { play('levelUp'); } catch {}
-
-      // Navigate immediately
-      router.push('/overview');
-    } catch (err) {
-      console.error('Demo bypass error:', err);
-      setDemoMode(false);
-      setError('Có lỗi xảy ra. Vui lòng thử lại.');
-      setIsDemoLoading(false);
-    }
-  }
 
   return (
     <>
       <button
         className="login-google-btn"
         onClick={handleGoogleSignIn}
-        disabled={isLoading || isDemoLoading}
+        disabled={isLoading}
         id="google-sign-in-btn"
         type="button"
       >
@@ -144,24 +81,6 @@ export default function LoginForm() {
         )}
         <span className="login-google-text">
           {isLoading ? 'Đang đăng nhập...' : 'Đăng nhập với Google'}
-        </span>
-      </button>
-
-      {/* ═══ Demo Bypass Button ═══ */}
-      <button
-        className="login-demo-btn"
-        onClick={handleDemoBypass}
-        disabled={isLoading || isDemoLoading}
-        id="demo-bypass-btn"
-        type="button"
-      >
-        {isDemoLoading ? (
-          <span className="login-spinner" />
-        ) : (
-          <span>🚀</span>
-        )}
-        <span className="login-google-text">
-          {isDemoLoading ? 'Đang tải...' : 'Trải nghiệm Demo (không cần đăng nhập)'}
         </span>
       </button>
 
