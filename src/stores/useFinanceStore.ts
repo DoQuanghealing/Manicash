@@ -3,6 +3,7 @@
 
 import { create } from 'zustand';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { useBudgetStore } from '@/stores/useBudgetStore';
 
 export type TxnType = 'income' | 'expense' | 'transfer';
 export type WalletType = 'main' | 'emergency' | 'bill-fund';
@@ -194,6 +195,11 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
     // updateStreak idempotent: cùng ngày gọi nhiều lần chỉ grant 1 lần.
     if (txn.type === 'income' || txn.type === 'expense') {
       useAuthStore.getState().updateStreak();
+    }
+
+    // === BUDGET SYNC — cập nhật spent trong category budget khi chi tiêu ===
+    if (txn.type === 'expense') {
+      useBudgetStore.getState().addSpending(txn.categoryId, txn.amount);
     }
 
     return txn;

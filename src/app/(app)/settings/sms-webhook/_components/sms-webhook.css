@@ -6,6 +6,53 @@
   padding: var(--space-md);
 }
 
+/* Sticky nav bar — back button + title. Cuộn dài (setup guide) vẫn thấy. */
+.sw-navbar {
+  position: sticky;
+  top: calc(var(--space-md) * -1);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin: calc(var(--space-md) * -1) calc(var(--space-md) * -1) 0;
+  padding: var(--space-sm) var(--space-md);
+  background: rgba(10, 10, 18, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.sw-back-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  color: var(--c-text-primary);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, transform 0.1s;
+}
+
+.sw-back-btn:hover {
+  background: rgba(124, 58, 237, 0.12);
+  color: var(--c-purple-light);
+}
+
+.sw-back-btn:active {
+  transform: scale(0.95);
+}
+
+.sw-navbar-title {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 800;
+  color: var(--c-text-primary);
+}
+
 .sw-header {
   margin-bottom: var(--space-sm);
 }

@@ -1,15 +1,17 @@
 /* ═══ WishlistPopup — Dashboard popup khi hết cooling period ═══ */
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { ShoppingCart, XCircle } from 'lucide-react';
 import { useWishlistStore, REJECT_PRAISE } from '@/stores/useWishlistStore';
+import { useAuthStore } from '@/stores/useAuthStore';
 import { useConfetti } from '@/hooks/useConfetti';
 import { useAudio } from '@/hooks/useAudio';
 import { formatCurrency } from '@/utils/formatCurrency';
 import './WishlistPopup.css';
+
 
 export default function WishlistPopup() {
   const items = useWishlistStore((s) => s.items);
@@ -20,6 +22,13 @@ export default function WishlistPopup() {
   const { play } = useAudio();
   const router = useRouter();
 
+  // Re-render every minute to detect cooling period expiry
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => setTick((t) => t + 1), 60_000);
+    return () => clearInterval(interval);
+  }, []);
+
   // Compute popup items from raw data (avoid getSnapshot infinite loop)
   const popupItems = useMemo(() => {
     const now = Date.now();
@@ -29,7 +38,8 @@ export default function WishlistPopup() {
         new Date(i.expiresAt).getTime() <= now &&
         !i.dismissedFromDashboard
     );
-  }, [items]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items, Math.floor(Date.now() / 60_000)]);
 
   const [showResult, setShowResult] = useState<{
     type: 'bought' | 'rejected';
@@ -56,6 +66,12 @@ export default function WishlistPopup() {
   const handleReject = useCallback(() => {
     if (!currentItem) return;
     rejectItem(currentItem.id);
+    // Grant XP cho hành vi resist — savedAmount = giá món để scale bonus theo formula RESIST_SPENDING.
+    // Dùng getState() thay vì subscribe để callback không phụ thuộc identity của awardXP.
+    useAuthStore.getState().awardXP({
+      type: 'RESIST_SPENDING',
+      savedAmount: currentItem.price,
+    });
     const praise = REJECT_PRAISE[Math.floor(Math.random() * REJECT_PRAISE.length)];
     setShowResult({
       type: 'rejected',

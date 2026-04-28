@@ -1,8 +1,6 @@
 /* ═══ Overview Content — Financial Intelligence Dashboard v3 (1-2-3 Layout) ═══ */
 'use client';
 
-import { useEffect } from 'react';
-import { useBudgetStore } from '@/stores/useBudgetStore';
 import SafeToSpendCard from './SafeToSpendCard';
 import BudgetWarningBanner from './BudgetWarningBanner';
 import PendingTransactionBanner from './PendingTransactionBanner';
@@ -17,12 +15,8 @@ import ExpenseBillBlock from './ExpenseBillBlock';
 import FundsBlock from './FundsBlock';
 
 export default function OverviewContent() {
-  // Trigger rollover check 1 lần khi mount Overview. Idempotent — nếu cùng tháng
-  // thì là no-op; nếu tháng mới → grant BUDGET_ON_TRACK XP + generate butler report.
-  const checkAndRollover = useBudgetStore((s) => s.checkAndRollover);
-  useEffect(() => {
-    checkAndRollover();
-  }, [checkAndRollover]);
+  // NOTE: checkAndRollover đã được gọi ở RolloverGuard (app layout),
+  // không cần gọi lại ở đây.
 
   return (
     <>

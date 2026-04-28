@@ -3,6 +3,7 @@
 
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Image from 'next/image';
 import { useFinanceStore } from '@/stores/useFinanceStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { MOTIVATION_QUOTES, AI_SUGGESTIONS } from '@/data/butlerDrawerData';
@@ -96,7 +97,15 @@ export default function ButlerDrawer({ isOpen, onClose }: ButlerDrawerProps) {
                 >
                   {/* Header */}
                   <div className="bd-header">
-                    <span className="bd-avatar">🎩</span>
+                    <div className="bd-avatar-wrap">
+                      <Image
+                        src="/butler-avatar.png"
+                        alt={butlerName}
+                        width={44}
+                        height={44}
+                        className="bd-avatar-img"
+                      />
+                    </div>
                     <div style={{ flex: 1 }}>
                       <h2 className="bd-title">{butlerName}</h2>
                       <p className="bd-subtitle">Quản gia tài chính AI</p>

@@ -147,3 +147,66 @@ export function getButlerMessageByMood(mood: ButlerMessage['mood'], butlerName?:
   return msg;
 }
 
+/* ═══ MICRO-PHRASES — 15 câu ngắn cho bong bóng nút quản gia ═══ */
+export const BUTLER_MICRO_PHRASES: string[] = [
+  'Bấm vào đây để chia tiền nhanh! 💸',
+  'Nhớ nhập tiền in/out nhé! 📝',
+  'Quản lý tài chính = quản lý cuộc đời 💎',
+  'Chia tiền ngay, mai khỏi lo! ✨',
+  'Mở ra xem gợi ý thông minh nè 🤖',
+  'Tiền nằm 1 chỗ = tiêu hết. Chia ngay! 🏦',
+  'Ghi sổ hôm nay chưa? Bấm đây! 📝',
+  '1 phút ghi sổ = 1 năm an tâm 🎯',
+  'Cậu chủ ơi! Có việc cần bàn 💬',
+  'Đã chia tiền tiết kiệm chưa? 🛡️',
+  'Quản gia có lời khuyên hay! 🎩',
+  'Streak đang nóng! Đừng quên ghi sổ 🔥',
+  '10 giây ghi chi tiêu = thói quen tỷ phú 🏆',
+  'Tiền vào mà không chia = bay hơi nhanh 💨',
+  'Quản gia đang chờ nè! Bấm đi! 🤵',
+];
+
+/* ═══ WELLNESS MESSAGES — theo khung giờ ═══ */
+export interface WellnessSlot {
+  hourStart: number;
+  hourEnd: number;
+  messages: string[];
+}
+
+export const WELLNESS_SLOTS: WellnessSlot[] = [
+  {
+    hourStart: 5, hourEnd: 9,
+    messages: [
+      'Chào buổi sáng! Tập thể dục 15 phút rồi chinh phục ngày mới nhé! 🏃',
+      'Sáng rồi! Vươn vai, uống nước, và bắt đầu ngày mới tuyệt vời! 🌅',
+      'Buổi sáng đẹp trời! Chạy bộ 10 phút để não sáng, tiền về! 💪',
+    ],
+  },
+  {
+    hourStart: 11, hourEnd: 13,
+    messages: [
+      'Trưa rồi! Nghỉ ngơi 30 phút, đừng quên ăn trưa nhé 🍱',
+      'Dừng làm việc chút, ăn trưa đi cậu chủ! Sức khỏe là vốn quý nhất 🥗',
+      'Nửa ngày rồi! Nghỉ mắt, uống nước, chiều lại chiến tiếp! ☕',
+    ],
+  },
+  {
+    hourStart: 21, hourEnd: 24,
+    messages: [
+      'Đi ngủ thôi! Ngủ đủ giấc = não sáng = quyết định tài chính tốt hơn 🌙',
+      'Khuya rồi cậu chủ! Điện thoại xuống, mắt nhắm lại. Ngày mai sẽ tốt hơn! 😴',
+      'Ngủ sớm = tiết kiệm điện + tiết kiệm sức khỏe. Một công đôi việc! 🛌',
+    ],
+  },
+];
+
+/* ═══ SAVINGS NUDGES — nhắc chia tiền chủ động ═══ */
+export const SAVINGS_NUDGES: string[] = [
+  'Lương về rồi hả? Chia tiền ngay đi, bấm vào quản gia nè! 💎',
+  'Tiết kiệm 20% thu nhập = đi du lịch cuối năm. Bắt đầu ngay! ✈️',
+  'Quỹ dự phòng quan trọng lắm! Thêm chút nữa cho an tâm nhé 🛡️',
+  'Người giàu chia tiền trước khi tiêu. Cậu chủ cũng vậy nhé! 🏆',
+  'Mỗi tháng tiết kiệm 1tr = 5 năm sau có 60tr + lãi. Bắt đầu ngay! 📈',
+  'Chia tiền vào 3 ví = kiểm soát hoàn toàn. Bấm quản gia để chia! 🎩',
+];
+

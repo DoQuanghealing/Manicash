@@ -20,6 +20,7 @@ import {
 import { getFirebaseDB } from '@/lib/firebase/config';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useFinanceStore, type WalletType } from '@/stores/useFinanceStore';
+import { useBudgetStore } from '@/stores/useBudgetStore';
 import type { PendingTransaction } from '@/types/webhook';
 
 export interface ConfirmEdits {
@@ -92,13 +93,17 @@ export function usePendingTransactions(): UsePendingTransactionsReturn {
       if (!item) return;
 
       // Add transaction qua finance store. Side-effect: updateStreak fire trong addTransaction.
+      const finalCategoryId = edits.categoryId ?? item.predictedCategoryId ?? 'other';
       useFinanceStore.getState().addTransaction({
         type: item.type,
         amount: item.amount,
-        categoryId: edits.categoryId ?? item.predictedCategoryId ?? 'other',
+        categoryId: finalCategoryId,
         note: edits.note ?? item.description,
         wallet: edits.wallet ?? 'main',
       });
+
+      // NOTE: addTransaction already calls addSpending for expenses internally,
+      // so we don't need to call it again here.
 
       // WEBHOOK_CONFIRMED — Decision #1: +10 fixed analytics tag.
       // Replace regular log XP — không grant INCOME/EXPENSE_LOGGED ở flow này.

@@ -249,8 +249,12 @@ export default function TransactionInput() {
         isOpen={showBreathGate}
         onConfirm={handleBreathGateConfirm}
         onCancel={() => {
-          // RESIST_SPENDING: user nhịn chi tiêu lớn → award XP với savedAmount.
-          // Multiplier x2 đã được apply trong xpEngine.RESIST_SPENDING formula.
+          // Cancel TRƯỚC khi timer xong — chỉ dismiss, KHÔNG grant XP.
+          setShowBreathGate(false);
+        }}
+        onResist={() => {
+          // Cancel SAU khi timer xong — user đã chờ 30s suy nghĩ rồi quyết định không mua.
+          // RESIST_SPENDING XP: reward cho kỷ luật tài chính.
           useAuthStore.getState().awardXP({
             type: 'RESIST_SPENDING',
             savedAmount: numericAmount,

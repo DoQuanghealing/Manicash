@@ -16,11 +16,14 @@ type BreathPhase = 'inhale' | 'hold' | 'exhale';
 interface BreathGateProps {
   amount: number;
   onConfirm: () => void;
+  /** User bấm Cancel TRƯỚC khi timer xong — dismiss, KHÔNG grant XP. */
   onCancel: () => void;
+  /** User bấm Cancel SAU khi timer xong — resist spending, grant RESIST_SPENDING XP. */
+  onResist: () => void;
   isOpen: boolean;
 }
 
-export default function BreathGate({ amount, onConfirm, onCancel, isOpen }: BreathGateProps) {
+export default function BreathGate({ amount, onConfirm, onCancel, onResist, isOpen }: BreathGateProps) {
   const [secondsLeft, setSecondsLeft] = useState(TOTAL_SECONDS);
   const [phase, setPhase] = useState<BreathPhase>('inhale');
   const [isComplete, setIsComplete] = useState(false);
@@ -148,7 +151,6 @@ export default function BreathGate({ amount, onConfirm, onCancel, isOpen }: Brea
             </div>
           </div>
 
-          {/* Actions */}
           <div className="breathgate-actions">
             <button
               className={`breathgate-confirm-btn ${isComplete ? 'ready' : 'waiting'}`}
@@ -160,10 +162,10 @@ export default function BreathGate({ amount, onConfirm, onCancel, isOpen }: Brea
             </button>
             <button
               className="breathgate-cancel-btn"
-              onClick={onCancel}
+              onClick={isComplete ? onResist : onCancel}
               id="breathgate-cancel"
             >
-              Hủy — Tôi đã nghĩ lại ☺️
+              {isComplete ? 'Hủy — Tôi đã nghĩ lại ☺️' : 'Bỏ qua'}
             </button>
           </div>
 
