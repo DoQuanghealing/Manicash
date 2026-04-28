@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTaskStore } from '@/stores/useTaskStore';
 import { useAuthStore } from '@/stores/useAuthStore';
@@ -18,7 +19,7 @@ import CFOInsightCard from './CFOInsightCard';
 import StackedBarChart from './StackedBarChart';
 import SavingsLineChart from './SavingsLineChart';
 import HealthScoreGauge from './HealthScoreGauge';
-import { Plus } from 'lucide-react';
+import { Plus, ChevronRight } from 'lucide-react';
 import './money.css';
 
 type MoneyTab = 'money' | 'cfo';
@@ -39,6 +40,7 @@ const tabVariants = {
 };
 
 export default function MoneyContent() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<MoneyTab>('money');
   const [direction, setDirection] = useState(0);
 
@@ -204,6 +206,53 @@ export default function MoneyContent() {
                   ))}
                 </div>
               )}
+
+              {/* ═══ Section: Công cụ — entry point cho các tính năng phụ trợ ═══ */}
+              <div style={{ marginTop: 'var(--space-lg)' }}>
+                <p style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--c-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-sm)' }}>
+                  🛠️ Công cụ
+                </p>
+                <button
+                  type="button"
+                  className="glass-card"
+                  onClick={() => router.push('/settings/sms-webhook')}
+                  aria-label="Mở cài đặt SMS Webhook"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 'var(--space-md)',
+                    width: '100%',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    background: 'linear-gradient(135deg, rgba(124, 58, 237, 0.08), rgba(249, 115, 22, 0.04))',
+                    border: '1px solid rgba(124, 58, 237, 0.18)',
+                  }}
+                >
+                  <span style={{ fontSize: '1.6rem', flexShrink: 0 }} aria-hidden>🤖</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', marginBottom: 4 }}>
+                      <p style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--c-text-primary)' }}>
+                        Tự động ghi giao dịch SMS
+                      </p>
+                      <span style={{
+                        fontSize: 9,
+                        fontWeight: 800,
+                        letterSpacing: '0.06em',
+                        padding: '2px 6px',
+                        borderRadius: 'var(--radius-full)',
+                        background: 'var(--gradient-primary)',
+                        color: '#fff',
+                      }}>
+                        PRO
+                      </span>
+                    </div>
+                    <p style={{ fontSize: 'var(--text-xs)', color: 'var(--c-text-muted)', lineHeight: 1.4 }}>
+                      Liên kết SMS ngân hàng — không cần API
+                    </p>
+                  </div>
+                  <ChevronRight size={18} style={{ color: 'var(--c-text-muted)', flexShrink: 0 }} aria-hidden />
+                </button>
+              </div>
             </motion.div>
           ) : (
             <motion.div

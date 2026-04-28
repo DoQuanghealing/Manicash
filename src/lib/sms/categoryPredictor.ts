@@ -23,7 +23,7 @@ const EXPENSE_RULES: CategoryRule[] = [
   // === Restaurant chains ===
   { keywords: ['kfc', 'mcdonald', 'jollibee', 'lotteria', 'pizza hut', 'dominos', 'bbq chicken', 'texas chicken'], categoryId: 'food', confidence: 0.9 },
   // === Supermarket / convenience ===
-  { keywords: ['vinmart', 'winmart', 'bach hoa xanh', 'bhx', 'co.opmart', 'lotte mart', 'big c', 'mega market', 'circle k', 'familymart', 'gs25'], categoryId: 'food', confidence: 0.85 },
+  { keywords: ['vinmart', 'winmart', 'bach hoa xanh', 'bhx', 'co.opmart', 'lotte mart', 'big c', 'mega market', 'circle k', 'familymart', 'gs25'], categoryId: 'shopping', confidence: 0.85 },
 
   // === Coffee chains ===
   { keywords: ['highland', 'highlands coffee', 'starbucks', 'phuc long', 'phuclong', 'the coffee house', 'cong caphe', 'trung nguyen', 'katinat'], categoryId: 'coffee', confidence: 0.95 },
