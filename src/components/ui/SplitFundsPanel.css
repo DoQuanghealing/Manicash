@@ -1,0 +1,522 @@
+/* ═══ SplitFundsPanel — Shared split UI for all 3 entry points ═══ */
+
+.sfp-root {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 4px 0;
+}
+
+/* ── Source amount ── */
+.sfp-source {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+}
+
+.sfp-source-label {
+  font-size: 0.8rem;
+  color: var(--c-text-secondary, #94a3b8);
+}
+
+.sfp-source-amount {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--c-text, #e2e8f0);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Section label ── */
+.sfp-section-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--c-text-muted, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 4px 0 2px;
+}
+
+/* ═══ Preset Cards — ALWAYS 3 horizontal from 360px ═══ */
+.sfp-presets {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.sfp-preset-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 6px 10px;
+  border-radius: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.06);
+  background: linear-gradient(
+    160deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    rgba(255, 255, 255, 0.01) 100%
+  );
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  opacity: 0.65;
+  transform: scale(1);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sfp-preset-card:hover {
+  opacity: 1;
+}
+
+.sfp-preset-card--active {
+  opacity: 1;
+  transform: scale(1.02);
+  border-color: var(--preset-color, #8B5CF6);
+  box-shadow:
+    0 0 0 1px var(--preset-color, #8B5CF6),
+    0 4px 20px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--preset-color) 12%, transparent) 0%,
+    rgba(255, 255, 255, 0.02) 100%
+  );
+}
+
+.sfp-preset-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.sfp-preset-name {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--c-text, #e2e8f0);
+  white-space: nowrap;
+}
+
+.sfp-preset-badge {
+  font-size: 0.58rem;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: rgba(139, 92, 246, 0.2);
+  color: #c084fc;
+  white-space: nowrap;
+}
+
+.sfp-preset-badge--custom {
+  background: rgba(249, 115, 22, 0.2);
+  color: #fb923c;
+}
+
+.sfp-preset-ratio {
+  font-size: 0.62rem;
+  color: var(--c-text-muted, #64748b);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ═══ Customization toggle ═══ */
+.sfp-custom-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: none;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 10px;
+  color: var(--c-text-secondary, #94a3b8);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sfp-custom-toggle:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--c-text, #e2e8f0);
+}
+
+.sfp-custom-chevron {
+  transition: transform 0.2s ease;
+}
+
+.sfp-custom-toggle--open .sfp-custom-chevron {
+  transform: rotate(180deg);
+}
+
+/* ═══ Slider Section ═══ */
+.sfp-sliders-wrap {
+  overflow: hidden;
+}
+
+.sfp-sliders {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 12px;
+}
+
+.sfp-slider-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sfp-slider-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sfp-slider-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--c-text-secondary, #94a3b8);
+}
+
+.sfp-slider-value {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--c-text, #e2e8f0);
+  font-variant-numeric: tabular-nums;
+}
+
+.sfp-slider-amt {
+  font-size: 0.68rem;
+  color: var(--c-text-muted, #64748b);
+  margin-left: 4px;
+}
+
+/* ── Range slider styling ── */
+.sfp-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  outline: none;
+  transition: background 0.15s;
+}
+
+.sfp-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+
+.sfp-range::-webkit-slider-thumb:active {
+  transform: scale(1.15);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+}
+
+.sfp-range::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  border: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+}
+
+.sfp-range--bill {
+  background: linear-gradient(90deg, #8B5CF6 0%, rgba(255, 255, 255, 0.08) 100%);
+}
+
+.sfp-range--savings {
+  background: linear-gradient(90deg, #10B981 0%, rgba(255, 255, 255, 0.08) 100%);
+}
+
+.sfp-range--sub {
+  height: 4px;
+}
+
+.sfp-range--sub::-webkit-slider-thumb {
+  width: 16px;
+  height: 16px;
+}
+
+/* ── Sub-sliders ── */
+.sfp-sub-sliders {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  margin-top: 4px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 10px;
+  border-left: 2px solid rgba(16, 185, 129, 0.3);
+}
+
+.sfp-sub-row {
+  display: grid;
+  grid-template-columns: 80px 1fr 90px;
+  align-items: center;
+  gap: 8px;
+}
+
+.sfp-sub-label {
+  font-size: 0.68rem;
+  color: var(--c-text-secondary, #94a3b8);
+  white-space: nowrap;
+}
+
+.sfp-sub-value {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--c-text, #e2e8f0);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ═══ Manual input toggle ═══ */
+.sfp-manual-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: none;
+  background: none;
+  color: var(--c-text-muted, #64748b);
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sfp-manual-toggle:hover {
+  color: var(--c-text-secondary, #94a3b8);
+}
+
+/* ═══ Manual Input Section ═══ */
+.sfp-manual-wrap {
+  overflow: hidden;
+}
+
+.sfp-manual-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 12px;
+}
+
+.sfp-manual-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sfp-manual-label {
+  font-size: 0.65rem;
+  color: var(--c-text-muted, #64748b);
+}
+
+.sfp-manual-input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--c-text, #e2e8f0);
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.sfp-manual-input:focus {
+  border-color: rgba(139, 92, 246, 0.5);
+}
+
+.sfp-manual-input::placeholder {
+  color: var(--c-text-muted, #475569);
+}
+
+.sfp-manual-warning {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  margin-top: 6px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 8px;
+  font-size: 0.72rem;
+  color: #f87171;
+}
+
+.sfp-manual-autofix {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 6px;
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  font-size: 0.68rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+
+.sfp-manual-autofix:hover {
+  background: rgba(239, 68, 68, 0.25);
+}
+
+.sfp-manual-info {
+  font-size: 0.68rem;
+  color: var(--c-text-muted, #64748b);
+  margin-top: 4px;
+  padding: 0 4px;
+}
+
+/* ═══ Summary ═══ */
+.sfp-summary {
+  padding: 4px 0;
+}
+
+.sfp-remaining {
+  font-size: 0.78rem;
+  color: var(--c-text-secondary, #94a3b8);
+  font-variant-numeric: tabular-nums;
+}
+
+.sfp-remaining strong {
+  color: var(--c-text, #e2e8f0);
+}
+
+/* ═══ Action buttons ═══ */
+.sfp-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sfp-confirm-btn {
+  width: 100%;
+  padding: 14px 20px;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #8B5CF6 0%, #EC4899 50%, #F97316 100%);
+  color: #fff;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sfp-confirm-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(139, 92, 246, 0.3);
+}
+
+.sfp-confirm-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.sfp-confirm-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.sfp-cancel-btn {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 10px;
+  background: none;
+  color: var(--c-text-muted, #64748b);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sfp-cancel-btn:hover {
+  color: var(--c-text-secondary, #94a3b8);
+}
+
+/* ═══ Responsive: Mobile ≥ 360px ═══ */
+@media (max-width: 420px) {
+  .sfp-presets {
+    gap: 6px;
+  }
+
+  .sfp-preset-card {
+    padding: 10px 4px 8px;
+  }
+
+  .sfp-preset-icon {
+    font-size: 1.3rem;
+  }
+
+  .sfp-preset-name {
+    font-size: 0.65rem;
+  }
+
+  .sfp-preset-badge {
+    display: none;
+  }
+
+  .sfp-preset-ratio {
+    font-size: 0.58rem;
+  }
+
+  .sfp-sub-row {
+    grid-template-columns: 70px 1fr 80px;
+    gap: 4px;
+  }
+}
+
+/* ═══ Very small: < 360px stack vertically ═══ */
+@media (max-width: 359px) {
+  .sfp-presets {
+    grid-template-columns: 1fr;
+  }
+
+  .sfp-preset-card {
+    flex-direction: row;
+    gap: 10px;
+    padding: 10px 14px;
+  }
+
+  .sfp-preset-badge {
+    display: inline;
+    margin-left: auto;
+  }
+}
+
+/* ═══ prefers-reduced-motion ═══ */
+@media (prefers-reduced-motion: reduce) {
+  .sfp-preset-card,
+  .sfp-confirm-btn,
+  .sfp-range::-webkit-slider-thumb {
+    transition-duration: 50ms;
+  }
+
+  .sfp-custom-chevron {
+    transition-duration: 50ms;
+  }
+}

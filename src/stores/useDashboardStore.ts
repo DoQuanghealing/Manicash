@@ -3,6 +3,29 @@
 
 import { create } from 'zustand';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { useFinanceStore } from '@/stores/useFinanceStore';
+
+/* ── Split Funds types (shared across all entry points) ── */
+export interface SplitFundsParams {
+  sourceAmount: number;       // Total amount to split (e.g. mainBalance or income)
+  billPercent: number;        // % allocated to Bill Fund (0-100)
+  savingsPercent: number;     // % allocated to total Savings (0-100)
+  savingsBreakdown: {         // How savings portion is divided (must sum to 100)
+    reserve: number;          // % of savings → Dự phòng
+    goals: number;            // % of savings → Mục tiêu
+    investment: number;       // % of savings → Đầu tư
+  };
+}
+
+export interface SplitResult {
+  billAmount: number;
+  reserveAmount: number;
+  goalsAmount: number;
+  investmentAmount: number;
+  totalDeducted: number;
+  remaining: number;
+  sourceAmount: number;
+}
 
 export interface AccountData {
   balance: number;
@@ -72,6 +95,8 @@ interface DashboardState {
   updateAccountBalance: (key: keyof DashboardAccounts, amount: number) => void;
   splitIncome: (splits: Partial<Record<keyof DashboardAccounts, number>>) => void;
   addFundContribution: (fund: 'reserve' | 'goals' | 'investment', amount: number) => void;
+  /** Atomic split — updates FinanceStore + DashboardStore in one call */
+  splitFunds: (params: SplitFundsParams) => SplitResult;
 }
 
 // Helper: current month string
@@ -250,5 +275,60 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     if (amount > 0) {
       useAuthStore.getState().awardXP({ type: 'SAVINGS_DEPOSIT', amount });
     }
+  },
+
+  /** ═══ Atomic Split — single source of truth for all 3 entry points ═══
+   *  Updates BOTH FinanceStore (mainBalance, billFundBalance) and
+   *  DashboardStore (reserve, goals, investment) in one atomic call.
+   *  Returns SplitResult for the success popup to display breakdown.
+   */
+  splitFunds: (params) => {
+    const { sourceAmount, billPercent, savingsPercent, savingsBreakdown } = params;
+
+    // 1. Calculate amounts
+    const billAmount = Math.round(sourceAmount * (billPercent / 100));
+    const savingsTotal = Math.round(sourceAmount * (savingsPercent / 100));
+    const reserveAmount = Math.round(savingsTotal * (savingsBreakdown.reserve / 100));
+    const goalsAmount = Math.round(savingsTotal * (savingsBreakdown.goals / 100));
+    // Investment gets the remainder to avoid rounding drift
+    const investmentAmount = savingsTotal - reserveAmount - goalsAmount;
+    const totalDeducted = billAmount + savingsTotal;
+    const remaining = sourceAmount - totalDeducted;
+
+    // 2. Snapshot current balances for rollback
+    const finStore = useFinanceStore.getState();
+    const prevMainBalance = finStore.mainBalance;
+    const prevBillFundBalance = finStore.billFundBalance;
+
+    // 3. Update FinanceStore atomically (mainBalance ↓, billFundBalance ↑)
+    useFinanceStore.setState({
+      mainBalance: prevMainBalance - totalDeducted,
+      billFundBalance: prevBillFundBalance + billAmount,
+    });
+
+    // 4. Update DashboardStore accounts (reserve, goals, investment ↑)
+    set((state) => {
+      const newAccounts = { ...state.accounts };
+      newAccounts.reserve = { ...newAccounts.reserve, balance: newAccounts.reserve.balance + reserveAmount };
+      newAccounts.goals = { ...newAccounts.goals, balance: newAccounts.goals.balance + goalsAmount };
+      newAccounts.investment = { ...newAccounts.investment, balance: newAccounts.investment.balance + investmentAmount };
+      return { accounts: newAccounts };
+    });
+
+    // 5. Record monthly contributions (for charts) + award XP per fund
+    const addContrib = get().addFundContribution;
+    if (reserveAmount > 0) addContrib('reserve', reserveAmount);
+    if (goalsAmount > 0) addContrib('goals', goalsAmount);
+    if (investmentAmount > 0) addContrib('investment', investmentAmount);
+
+    return {
+      billAmount,
+      reserveAmount,
+      goalsAmount,
+      investmentAmount,
+      totalDeducted,
+      remaining,
+      sourceAmount,
+    };
   },
 }));
