@@ -12,9 +12,11 @@ import { useAudio } from '@/hooks/useAudio';
 import { useFinanceStore, type TxnType, type WalletType } from '@/stores/useFinanceStore';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { calculateXP } from '@/lib/xpEngine';
+import type { SplitResult } from '@/stores/useDashboardStore';
 import BreathGate from './BreathGate';
 import CelebrationModal from './CelebrationModal';
 import BillFundReminder from './BillFundReminder';
+import SplitSuccessPopup from './SplitSuccessPopup';
 import './TransactionInput.css';
 
 const BREATHGATE_THRESHOLD = 3_000_000;
@@ -32,6 +34,7 @@ export default function TransactionInput() {
   const [showCelebration, setShowCelebration] = useState(false);
   const [showBillReminder, setShowBillReminder] = useState(false);
   const [lastIncomeAmount, setLastIncomeAmount] = useState(0);
+  const [splitResult, setSplitResult] = useState<SplitResult | null>(null);
   const [celebrationData, setCelebrationData] = useState({
     type: 'expense' as TxnType,
     amount: 0,
@@ -291,6 +294,20 @@ export default function TransactionInput() {
           router.push('/ledger');
         }}
         incomeAmount={lastIncomeAmount}
+        onSplitComplete={(result) => {
+          setSplitResult(result);
+          setShowBillReminder(false);
+        }}
+      />
+
+      {/* Split Success Popup */}
+      <SplitSuccessPopup
+        isOpen={!!splitResult}
+        result={splitResult}
+        onClose={() => {
+          setSplitResult(null);
+          router.push('/ledger');
+        }}
       />
     </div>
   );

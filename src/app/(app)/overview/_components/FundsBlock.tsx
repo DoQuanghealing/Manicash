@@ -47,9 +47,23 @@ export default function FundsBlock() {
   const goalsMonthly = getMonthlyFundTotal('goals');
   const investMonthly = getMonthlyFundTotal('investment');
 
+  const savingsTotal = reserve.balance + goals.balance + investment.balance;
+
   return (
     <>
-      <div className="fb-grid">
+      {/* ═══ Savings Header — aggregate total ═══ */}
+      <div className="fb-savings-wrap">
+        <div className="fb-savings-header">
+          <div className="fb-savings-left">
+            <span className="fb-savings-icon">💎</span>
+            <span className="fb-savings-label">Tiết Kiệm</span>
+          </div>
+          <span className="fb-savings-total">
+            {formatCurrencyShort(savingsTotal)}
+          </span>
+        </div>
+
+        <div className="fb-grid">
         {/* ═══ Card: Dự phòng ═══ */}
         <motion.button 
           className="fb-card fb-card--reserve"
@@ -102,6 +116,7 @@ export default function FundsBlock() {
           <p className="fb-card-sub">tháng này</p>
         </motion.button>
       </div>
+      </div> {/* close fb-savings-wrap */}
 
       {/* ═══ Fund Detail Modal ═══ */}
       <AnimatePresence>

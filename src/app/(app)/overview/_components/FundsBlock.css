@@ -1,10 +1,61 @@
+.fb-savings-wrap {
+  margin-top: var(--space-sm);
+  border-radius: var(--radius-xl);
+  border: 1px solid rgba(139, 92, 246, 0.15);
+  background: linear-gradient(
+    160deg,
+    rgba(139, 92, 246, 0.04) 0%,
+    rgba(236, 72, 153, 0.02) 100%
+  );
+  padding: 0 0 2px;
+  overflow: hidden;
+}
+
+.fb-savings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(139, 92, 246, 0.08);
+}
+
+.fb-savings-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fb-savings-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.fb-savings-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--c-text-secondary, #94a3b8);
+}
+
+.fb-savings-total {
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  font-weight: 800;
+  background: linear-gradient(135deg, #c084fc, #f9a8d4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-variant-numeric: tabular-nums;
+}
+
 /* ═══ FundsBlock Styles ═══ */
 
 .fb-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: var(--space-sm);
-  margin-top: var(--space-sm);
+  padding: 2px;
 }
 
 .fb-card {

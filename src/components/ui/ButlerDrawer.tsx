@@ -10,6 +10,7 @@ import { MOTIVATION_QUOTES, AI_SUGGESTIONS } from '@/data/butlerDrawerData';
 import { replaceButlerName } from '@/utils/butlerNameUtils';
 import type { SplitResult } from '@/stores/useDashboardStore';
 import SplitFundsPanel from './SplitFundsPanel';
+import SplitSuccessPopup from './SplitSuccessPopup';
 import ButlerSettings from './ButlerSettings';
 import './ButlerDrawer.css';
 
@@ -43,12 +44,12 @@ export default function ButlerDrawer({ isOpen, onClose }: ButlerDrawerProps) {
   const handleSplitConfirm = (result: SplitResult) => {
     setSplitResult(result);
     setShowSplitPopup(false);
-    // TODO: trigger SplitSuccessPopup (Step G)
     onClose();
   };
 
   return (
-    <AnimatePresence>
+    <>
+      <AnimatePresence>
       {isOpen && (
         <>
           {/* Backdrop */}
@@ -187,5 +188,13 @@ export default function ButlerDrawer({ isOpen, onClose }: ButlerDrawerProps) {
         </>
       )}
     </AnimatePresence>
+
+      {/* Split Success Popup */}
+      <SplitSuccessPopup
+        isOpen={!!splitResult}
+        result={splitResult}
+        onClose={() => setSplitResult(null)}
+      />
+    </>
   );
 }

@@ -1,38 +1,35 @@
-/* ═══ InputMoneyFlow — Floating + Button with Fund Split Popup ═══ */
+/* ═══ InputMoneyFlow — FAB + SplitFundsPanel quick-action popup ═══
+ * Entry point 3: Quick fund split from the Overview page FAB button.
+ * Uses SplitFundsPanel (shared) with mainBalance as source.
+ */
 'use client';
 
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, X, Sparkles, ArrowRight } from 'lucide-react';
-import { useDashboardStore } from '@/stores/useDashboardStore';
+import { Plus, X } from 'lucide-react';
+import { useFinanceStore } from '@/stores/useFinanceStore';
+import type { SplitResult } from '@/stores/useDashboardStore';
+import SplitFundsPanel from '@/components/ui/SplitFundsPanel';
+import SplitSuccessPopup from '@/components/ui/SplitSuccessPopup';
 import './InputMoneyFlow.css';
 
-const SPLIT_PRESETS = [
-  { label: '50/20/20/10', desc: 'Cân bằng', splits: { spending: 50, reserve: 20, goals: 20, investment: 10 } },
-  { label: '60/15/15/10', desc: 'Ưu tiên chi', splits: { spending: 60, reserve: 15, goals: 15, investment: 10 } },
-  { label: '40/20/30/10', desc: 'Ưu tiên tiết kiệm', splits: { spending: 40, reserve: 20, goals: 30, investment: 10 } },
-];
-
 export default function InputMoneyFlow() {
-  const autoSplit = useDashboardStore((s) => s.auto_split);
-  const setAutoSplit = useDashboardStore((s) => s.setAutoSplit);
+  const mainBalance = useFinanceStore((s) => s.mainBalance);
   const [showPopup, setShowPopup] = useState(false);
-  const [selectedPreset, setSelectedPreset] = useState(0);
+  const [splitResult, setSplitResult] = useState<SplitResult | null>(null);
 
   const handleFabClick = useCallback(() => {
-    if (!autoSplit) {
-      setShowPopup(true);
-    }
-  }, [autoSplit]);
+    setShowPopup(true);
+  }, []);
 
   const handleDismiss = useCallback(() => {
     setShowPopup(false);
   }, []);
 
-  const handleEnableAutoSplit = useCallback(() => {
-    setAutoSplit(true);
+  const handleSplitConfirm = useCallback((result: SplitResult) => {
+    setSplitResult(result);
     setShowPopup(false);
-  }, [setAutoSplit]);
+  }, []);
 
   return (
     <>
@@ -46,7 +43,7 @@ export default function InputMoneyFlow() {
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 0.6, type: 'spring', stiffness: 260, damping: 20 }}
-        aria-label="Thêm giao dịch"
+        aria-label="Chia tiền nhanh"
       >
         <Plus size={24} strokeWidth={2.5} />
         <div className="input-fab-ring" />
@@ -78,78 +75,35 @@ export default function InputMoneyFlow() {
                 <X size={18} />
               </button>
 
-              {/* Butler message */}
+              {/* Butler header */}
               <div className="input-popup-butler">
                 <div className="input-popup-butler-avatar">🎩</div>
                 <div className="input-popup-butler-bubble">
                   <p className="input-popup-butler-text">
-                    <span className="input-popup-butler-title">Cậu chủ ơi!</span>
+                    <span className="input-popup-butler-title">Chia tiền nhanh!</span>
                     <br />
-                    Hãy chia tiền ra các quỹ để tránh xài lẹm và bảo vệ mục tiêu lớn!
+                    Phân bổ số dư trong ví chính vào các quỹ ngay bây giờ.
                   </p>
                 </div>
               </div>
 
-              {/* Sparkle divider */}
-              <div className="input-popup-divider">
-                <Sparkles size={14} className="input-popup-sparkle" />
-              </div>
-
-              {/* Preset selection */}
-              <p className="input-popup-section-label">Chọn tỷ lệ phân chia</p>
-              <div className="input-popup-presets">
-                {SPLIT_PRESETS.map((preset, i) => (
-                  <button
-                    key={i}
-                    className={`input-popup-preset ${selectedPreset === i ? 'input-popup-preset--active' : ''}`}
-                    onClick={() => setSelectedPreset(i)}
-                  >
-                    <span className="input-popup-preset-label">{preset.label}</span>
-                    <span className="input-popup-preset-desc">{preset.desc}</span>
-                  </button>
-                ))}
-              </div>
-
-              {/* Split breakdown */}
-              <div className="input-popup-breakdown">
-                {Object.entries(SPLIT_PRESETS[selectedPreset].splits).map(([key, pct]) => (
-                  <div key={key} className="input-popup-breakdown-row">
-                    <span className="input-popup-breakdown-name">
-                      {key === 'spending' ? 'Chi tiêu' :
-                       key === 'reserve' ? 'Dự phòng' :
-                       key === 'goals' ? 'Mục tiêu' : 'Đầu tư'}
-                    </span>
-                    <div className="input-popup-breakdown-bar-wrap">
-                      <div
-                        className="input-popup-breakdown-bar"
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                    <span className="input-popup-breakdown-pct">{pct}%</span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Actions */}
-              <div className="input-popup-actions">
-                <button
-                  className="input-popup-btn-primary"
-                  onClick={handleEnableAutoSplit}
-                >
-                  <span>Bật chia tự động</span>
-                  <ArrowRight size={16} />
-                </button>
-                <button
-                  className="input-popup-btn-ghost"
-                  onClick={handleDismiss}
-                >
-                  Để sau
-                </button>
-              </div>
+              {/* SplitFundsPanel — shared component */}
+              <SplitFundsPanel
+                totalAmount={mainBalance}
+                onConfirm={handleSplitConfirm}
+                onCancel={handleDismiss}
+              />
             </motion.div>
           </>
         )}
       </AnimatePresence>
+
+      {/* Split Success Popup */}
+      <SplitSuccessPopup
+        isOpen={!!splitResult}
+        result={splitResult}
+        onClose={() => setSplitResult(null)}
+      />
     </>
   );
 }
