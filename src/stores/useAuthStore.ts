@@ -10,6 +10,7 @@ import type { XPAction } from '@/types/gamification';
 import { calculateXP, applyPenalty, getTotalXPForRank } from '@/lib/xpEngine';
 import { useTaskStore } from '@/stores/useTaskStore';
 import { emitXPGranted } from '@/lib/xpEvents';
+import { getDateKey, daysBetween } from '@/lib/dateHelpers';
 
 const RANK_ORDER: UserRank[] = ['iron', 'bronze', 'silver', 'gold', 'platinum', 'emerald', 'diamond'];
 
@@ -21,18 +22,6 @@ function rankFromXP(xp: number): UserRank {
   return 'iron';
 }
 
-/** Local YYYY-MM-DD — dùng local date của user, KHÔNG UTC. */
-function todayLocal(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
-/** Số ngày giữa 2 ISO date (YYYY-MM-DD). Negative nếu a > b. */
-function daysBetween(a: string, b: string): number {
-  const da = new Date(a + 'T00:00:00');
-  const db = new Date(b + 'T00:00:00');
-  return Math.round((db.getTime() - da.getTime()) / (1000 * 60 * 60 * 24));
-}
 
 interface AuthStore {
   user: UserProfile | null;
@@ -124,7 +113,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     const user = get().user;
     if (!user) return { streakAdvanced: false, currentStreak: 0, xpAwarded: 0 };
 
-    const today = todayLocal();
+    const today = getDateKey(new Date());
     const last = (user.lastActiveDate || '').slice(0, 10);
 
     // Đã log hôm nay → no-op (per spec: không grant lần 2 trong ngày).

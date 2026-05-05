@@ -3,7 +3,8 @@
 
 import { create } from 'zustand';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { useFinanceStore, getMonthKeyFromDate } from '@/stores/useFinanceStore';
+import { useFinanceStore } from '@/stores/useFinanceStore';
+import { getMonthKeyFromDate, getCurrentMonthKey, isInCurrentWeek } from '@/lib/dateHelpers';
 
 /* ── Split Funds types (shared across all entry points) ── */
 export interface SplitFundsParams {
@@ -117,30 +118,9 @@ interface DashboardState {
   splitFunds: (params: SplitFundsParams) => SplitResult;
 }
 
-// Helper: current month string
-function getCurMonth(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-}
-
-function isInCurrentWeek(isoDate: string): boolean {
-  const date = new Date(isoDate);
-  if (Number.isNaN(date.getTime())) return false;
-
-  const now = new Date();
-  const dayOfWeek = now.getDay();
-  const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-  const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - mondayOffset);
-  weekStart.setHours(0, 0, 0, 0);
-
-  const weekEnd = new Date(weekStart);
-  weekEnd.setDate(weekStart.getDate() + 7);
-
-  return date >= weekStart && date < weekEnd;
-}
 
 // Demo monthly contributions
-const curM = getCurMonth();
+const curM = getCurrentMonthKey();
 const SEED_CONTRIBUTIONS: Record<string, FundContribution[]> = {
   reserve: [
     { month: curM, amount: 500_000 },
@@ -230,7 +210,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
 
   /** Tích lũy tháng hiện tại cho 1 quỹ */
   getMonthlyFundTotal: (fund) => {
-    const month = getCurMonth();
+    const month = getCurrentMonthKey();
     const contribs = get().monthlyContributions[fund] || [];
     return contribs
       .filter((c) => c.month === month)
@@ -247,7 +227,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
 
   /** Tích lũy cả năm cho 1 quỹ */
   getYearlyFundTotal: (fund) => {
-    const year = new Date().getFullYear().toString();
+    const year = getCurrentMonthKey().split('-')[0];
     const contribs = get().monthlyContributions[fund] || [];
     return contribs
       .filter((c) => c.month.startsWith(year))
@@ -267,7 +247,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
 
   /** Breakdown 12 tháng */
   getYearlyFundBreakdown: (fund) => {
-    const year = new Date().getFullYear();
+    const year = getCurrentMonthKey().split('-')[0];
     const contribs = get().monthlyContributions[fund] || [];
     const monthlyMap: Record<string, number> = {};
 

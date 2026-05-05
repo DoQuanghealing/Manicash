@@ -1,6 +1,7 @@
 import { useFinanceStore } from '@/stores/useFinanceStore';
 import { useBudgetStore } from '@/stores/useBudgetStore';
 import { useDashboardStore } from '@/stores/useDashboardStore';
+import { getDateKey } from '@/lib/dateHelpers';
 import type { MonthlySnapshot } from '@/types/budget';
 
 type TestFn = () => void | Promise<void>;
@@ -253,7 +254,7 @@ describe('Phase 2 - Fix B: Fund Contribution Date Propagation', () => {
     if (!splitTxn) throw new Error("Expected splitTxn to exist");
     
     const now = new Date();
-    const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const todayKey = getDateKey(new Date());
     expect(splitTxn.dateKey).toBe(todayKey);
   });
   

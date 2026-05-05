@@ -21,13 +21,16 @@ function getTaskStatus(task: EarningTask): TaskStatus {
 }
 
 const today = new Date();
+const msPerDay = 1000 * 60 * 60 * 24;
+const getDayStr = (offsetDays: number) => new Date(today.getTime() + offsetDays * msPerDay).toISOString();
+
 const SEED_TASKS: EarningTask[] = [
   {
     id: 'task-1', name: 'Freelance thiết kế logo',
     expectedAmount: 3_000_000,
-    startDate: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 2).toISOString(),
-    endDate: new Date(today.getFullYear(), today.getMonth(), today.getDate() + 5).toISOString(),
-    createdAt: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 3).toISOString(),
+    startDate: getDayStr(-2),
+    endDate: getDayStr(5),
+    createdAt: getDayStr(-3),
     subTasks: [
       { id: 'st-1a', name: 'Liên hệ khách hàng', isCompleted: true },
       { id: 'st-1b', name: 'Gửi bản nháp v1', isCompleted: true },
@@ -39,9 +42,9 @@ const SEED_TASKS: EarningTask[] = [
   {
     id: 'task-2', name: 'Bán hàng online Shopee',
     expectedAmount: 1_500_000,
-    startDate: new Date(today.getFullYear(), today.getMonth(), today.getDate() + 2).toISOString(),
-    endDate: new Date(today.getFullYear(), today.getMonth(), today.getDate() + 10).toISOString(),
-    createdAt: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1).toISOString(),
+    startDate: getDayStr(2),
+    endDate: getDayStr(10),
+    createdAt: getDayStr(-1),
     subTasks: [
       { id: 'st-2a', name: 'Chụp ảnh sản phẩm', isCompleted: false },
       { id: 'st-2b', name: 'Đăng listing', isCompleted: false },
@@ -51,9 +54,9 @@ const SEED_TASKS: EarningTask[] = [
   {
     id: 'task-3', name: 'Dạy kèm tiếng Anh',
     expectedAmount: 2_000_000,
-    startDate: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 10).toISOString(),
-    endDate: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1).toISOString(),
-    createdAt: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 12).toISOString(),
+    startDate: getDayStr(-10),
+    endDate: getDayStr(-1),
+    createdAt: getDayStr(-12),
     subTasks: [
       { id: 'st-3a', name: 'Soạn giáo trình', isCompleted: true },
       { id: 'st-3b', name: 'Dạy 8 buổi', isCompleted: false },
@@ -63,10 +66,10 @@ const SEED_TASKS: EarningTask[] = [
     id: 'task-4', name: 'Viết bài blog công nghệ',
     expectedAmount: 800_000,
     actualAmount: 800_000,
-    completedAt: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 3).toISOString(),
-    startDate: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7).toISOString(),
-    endDate: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 2).toISOString(),
-    createdAt: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 8).toISOString(),
+    completedAt: getDayStr(-3),
+    startDate: getDayStr(-7),
+    endDate: getDayStr(-2),
+    createdAt: getDayStr(-8),
     subTasks: [
       { id: 'st-4a', name: 'Research chủ đề', isCompleted: true },
       { id: 'st-4b', name: 'Viết bài 2000 từ', isCompleted: true },
@@ -76,8 +79,8 @@ const SEED_TASKS: EarningTask[] = [
   {
     id: 'task-5', name: 'Chụp ảnh sự kiện',
     expectedAmount: 5_000_000,
-    startDate: new Date(today.getFullYear(), today.getMonth(), today.getDate() + 7).toISOString(),
-    endDate: new Date(today.getFullYear(), today.getMonth(), today.getDate() + 14).toISOString(),
+    startDate: getDayStr(7),
+    endDate: getDayStr(14),
     createdAt: today.toISOString(),
     subTasks: [
       { id: 'st-5a', name: 'Xác nhận lịch với khách', isCompleted: false },

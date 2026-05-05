@@ -7,20 +7,16 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { useFinanceStore } from '@/stores/useFinanceStore';
 import { generateButlerReport } from '@/lib/butlerReport';
 
-/** Lấy tháng hiện tại dạng 'YYYY-MM' */
-function getCurrentMonth(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-}
+import { getCurrentMonthKey, getMonthKeyFromDate } from '@/lib/dateHelpers';
 
 // Demo category budgets
 const SEED_BUDGETS: CategoryBudget[] = [
-  { categoryId: 'food',      monthlyLimit: 4_000_000, spent: 2_800_000, month: getCurrentMonth() },
-  { categoryId: 'coffee',    monthlyLimit: 800_000,   spent: 650_000,   month: getCurrentMonth() },
-  { categoryId: 'transport', monthlyLimit: 1_500_000, spent: 900_000,   month: getCurrentMonth() },
-  { categoryId: 'shopping',  monthlyLimit: 2_000_000, spent: 1_200_000, month: getCurrentMonth() },
-  { categoryId: 'entertain', monthlyLimit: 1_000_000, spent: 750_000,   month: getCurrentMonth() },
-  { categoryId: 'health',    monthlyLimit: 500_000,   spent: 200_000,   month: getCurrentMonth() },
+  { categoryId: 'food',      monthlyLimit: 4_000_000, spent: 2_800_000, month: getCurrentMonthKey() },
+  { categoryId: 'coffee',    monthlyLimit: 800_000,   spent: 650_000,   month: getCurrentMonthKey() },
+  { categoryId: 'transport', monthlyLimit: 1_500_000, spent: 900_000,   month: getCurrentMonthKey() },
+  { categoryId: 'shopping',  monthlyLimit: 2_000_000, spent: 1_200_000, month: getCurrentMonthKey() },
+  { categoryId: 'entertain', monthlyLimit: 1_000_000, spent: 750_000,   month: getCurrentMonthKey() },
+  { categoryId: 'health',    monthlyLimit: 500_000,   spent: 200_000,   month: getCurrentMonthKey() },
 ];
 
 interface BudgetState {
@@ -60,7 +56,7 @@ interface BudgetState {
 
 export const useBudgetStore = create<BudgetState>((set, get) => ({
   carryOver: 800_000, // Dư từ tháng trước (demo)
-  currentMonth: getCurrentMonth(),
+  currentMonth: getCurrentMonthKey(),
   categoryBudgets: SEED_BUDGETS,
   rolloverNotified: false,
   monthlySnapshots: [],
@@ -186,7 +182,7 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
 
     const { useFinanceStore } = require('@/stores/useFinanceStore');
     const allTxns = useFinanceStore.getState().transactions;
-    const { getMonthKeyFromDate } = require('@/stores/useFinanceStore');
+    const { getMonthKeyFromDate } = require('@/lib/dateHelpers');
 
     const txnsInMonth = allTxns.filter((t: any) => getMonthKeyFromDate(t.date) === monthKey);
     
@@ -209,7 +205,7 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
 
   checkAndRollover: () => {
     const state = get();
-    const actualMonth = getCurrentMonth();
+    const actualMonth = getCurrentMonthKey();
 
     if (state.currentMonth === actualMonth) {
       return { rolled: false, carryOver: state.carryOver };
@@ -229,12 +225,7 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
 
     // === Phần 5: Aggregate metrics tháng cũ → generate report ===
     const finance = useFinanceStore.getState();
-    const [oldYear, oldMonthNum] = oldMonth.split('-').map(Number);
-
-    const oldMonthTxns = finance.transactions.filter((t) => {
-      const d = new Date(t.date);
-      return d.getFullYear() === oldYear && d.getMonth() + 1 === oldMonthNum;
-    });
+    const oldMonthTxns = finance.transactions.filter((t) => getMonthKeyFromDate(t.date) === oldMonth);
     const monthlyIncome = oldMonthTxns
       .filter((t) => t.type === 'income')
       .reduce((s, t) => s + t.amount, 0);

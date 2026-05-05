@@ -11,6 +11,7 @@ import {
   getSafeToSpendStatus,
   type SafeToSpendStatus,
 } from '@/lib/accountOverviewMath';
+import { getMonthKeyFromDate } from '@/lib/dateHelpers';
 
 export type OverviewAccountId = 'income' | 'expense' | 'saving';
 
@@ -123,17 +124,14 @@ function findWallet(walletBank: WalletBankSource, id: OverviewAccountId): Wallet
   return walletBank.wallets.find((wallet) => wallet.id === id);
 }
 
-function getMonthKey(date: Date): string {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-}
-
 function getRecentMonthKeys(count: number): string[] {
   const now = new Date();
   const months: string[] = [];
 
   for (let i = count - 1; i >= 0; i -= 1) {
-    const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    months.push(getMonthKey(date));
+    // Generate dates using UTC to stay consistent with dateHelpers
+    const date = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1));
+    months.push(getMonthKeyFromDate(date));
   }
 
   return months;
@@ -204,7 +202,7 @@ function buildExpenseFundingOverview(
     const dailyMap = new Map<string, number>();
     finance.transactions.forEach((txn) => {
       if (txn.type !== 'expense') return;
-      if (getMonthKey(new Date(txn.date)) !== month) return;
+      if (getMonthKeyFromDate(txn.date) !== month) return;
       dailyMap.set(txn.categoryId, (dailyMap.get(txn.categoryId) || 0) + txn.amount);
     });
 

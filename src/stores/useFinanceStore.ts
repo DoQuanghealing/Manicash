@@ -4,6 +4,7 @@
 import { create } from 'zustand';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useBudgetStore } from '@/stores/useBudgetStore';
+import { getMonthKeyFromDate, getCurrentMonthKey, getDateKey, getDateLabel, parseMonthKey } from '@/lib/dateHelpers';
 
 export type TxnType = 'income' | 'expense' | 'transfer';
 export type WalletType = 'main' | 'emergency' | 'bill-fund';
@@ -82,22 +83,6 @@ interface FinanceState {
   resetBillsPaid: () => void;
   getTotalBills: () => number;
   getAccumulatedBillTarget: () => { total: number; accumulated: number; bills: (FixedBill & { runningTotal: number; canPay: boolean; shortage: number })[] };
-}
-
-function getDateLabel(dateStr: string): string {
-  const d = new Date(dateStr);
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const txnDay = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  const diff = (today.getTime() - txnDay.getTime()) / (1000 * 60 * 60 * 24);
-
-  if (diff === 0) return 'Hôm nay';
-  if (diff === 1) return 'Hôm qua';
-  return d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
-}
-
-function getDateKey(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 // Generate historical demo data
@@ -288,20 +273,12 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
 
   /** Thu nhập tháng hiện tại (từ ngày 1 đến nay) */
   getMonthlyIncome: () => {
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    return get().transactions
-      .filter((t) => t.type === 'income' && new Date(t.date) >= startOfMonth)
-      .reduce((sum, t) => sum + t.amount, 0);
+    return get().getIncomeForMonth(getCurrentMonthKey());
   },
 
   /** Chi tiêu tháng hiện tại (từ ngày 1 đến nay) */
   getMonthlyExpense: () => {
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    return get().transactions
-      .filter((t) => t.type === 'expense' && new Date(t.date) >= startOfMonth)
-      .reduce((sum, t) => sum + t.amount, 0);
+    return get().getExpenseForMonth(getCurrentMonthKey());
   },
 
   getIncomeForMonth: (monthKey) => {
@@ -316,7 +293,7 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
       .reduce((sum, t) => sum + t.amount, 0);
   },
 
-  getCurrentMonthKey: () => getMonthKeyFromDate(new Date()),
+  getCurrentMonthKey: () => getCurrentMonthKey(),
 
   /** Tổng bill cố định hàng tháng */
   getTotalFixedBillsAmount: () =>
@@ -409,13 +386,3 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
     return { total, accumulated: state.billFundBalance, bills };
   },
 }));
-
-export function getMonthKeyFromDate(date: Date | string): string {
-  const d = new Date(date);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-}
-
-export function parseMonthKey(monthKey: string): { year: number; month: number } {
-  const [y, m] = monthKey.split('-');
-  return { year: parseInt(y, 10), month: parseInt(m, 10) };
-}

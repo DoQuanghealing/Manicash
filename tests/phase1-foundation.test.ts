@@ -1,10 +1,9 @@
 import { useDashboardStore, type DashboardAccounts } from '@/stores/useDashboardStore';
 import {
-  getMonthKeyFromDate,
-  parseMonthKey,
   useFinanceStore,
   type Transaction,
 } from '@/stores/useFinanceStore';
+import { getMonthKeyFromDate, parseMonthKey } from '@/lib/dateHelpers';
 
 type TestFn = () => void;
 
