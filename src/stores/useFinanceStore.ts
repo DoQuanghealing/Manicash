@@ -57,7 +57,7 @@ interface FinanceState {
   billSnapshots: BillSnapshot[];
 
   addTransaction: (txn: Omit<Transaction, 'id' | 'date' | 'time' | 'dateLabel' | 'dateKey'> & { transactionDate?: Date }) => Transaction;
-  addSplitTransaction: (params: { splitBreakdown: { billFund: number; reserve: number; goals: number; investment: number; }; sourceTransactionId?: string; note?: string; }) => Transaction;
+  addSplitTransaction: (params: { splitBreakdown: { billFund: number; reserve: number; goals: number; investment: number; }; sourceTransactionId?: string; note?: string; occurredAt?: Date; }) => Transaction;
   getFilteredTransactions: (filter: 'all' | 'income' | 'expense') => Transaction[];
   getTotalIncome: () => number;
   getTotalExpense: () => number;
@@ -247,8 +247,8 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
     return txn;
   },
 
-  addSplitTransaction: ({ splitBreakdown, sourceTransactionId, note }) => {
-    const now = new Date();
+  addSplitTransaction: ({ splitBreakdown, sourceTransactionId, note, occurredAt }) => {
+    const now = occurredAt ?? new Date();
     const amount = splitBreakdown.billFund + splitBreakdown.reserve +
       splitBreakdown.goals + splitBreakdown.investment;
     const txn: Transaction = {

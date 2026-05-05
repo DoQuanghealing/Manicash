@@ -3,7 +3,7 @@
 
 import { create } from 'zustand';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { useFinanceStore } from '@/stores/useFinanceStore';
+import { useFinanceStore, getMonthKeyFromDate } from '@/stores/useFinanceStore';
 
 /* ── Split Funds types (shared across all entry points) ── */
 export interface SplitFundsParams {
@@ -16,6 +16,7 @@ export interface SplitFundsParams {
     investment: number;       // % of savings → Đầu tư
   };
   sourceTransactionId?: string;
+  occurredAt?: Date;
 }
 
 export interface SplitResult {
@@ -111,7 +112,7 @@ interface DashboardState {
   setAutoSplit: (value: boolean) => void;
   updateAccountBalance: (key: keyof DashboardAccounts, amount: number) => void;
   splitIncome: (splits: Partial<Record<keyof DashboardAccounts, number>>) => void;
-  addFundContribution: (fund: SavingsFund, amount: number) => void;
+  addFundContribution: (fund: SavingsFund, amount: number, occurredAt?: Date) => void;
   /** Atomic split — updates FinanceStore + DashboardStore in one call */
   splitFunds: (params: SplitFundsParams) => SplitResult;
 }
@@ -315,10 +316,11 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     }),
 
   /** Ghi nhận 1 lần tích lũy vào quỹ */
-  addFundContribution: (fund, amount) => {
+  addFundContribution: (fund, amount, occurredAt) => {
     set((state) => {
-      const month = getCurMonth();
-      const createdAt = new Date().toISOString();
+      const date = occurredAt ?? new Date();
+      const month = getMonthKeyFromDate(date.toISOString());
+      const createdAt = date.toISOString();
       const existing = { ...state.monthlyContributions };
       if (!existing[fund]) existing[fund] = [];
       existing[fund] = [...existing[fund], { month, amount, createdAt }];
@@ -336,7 +338,15 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
    *  Returns SplitResult for the success popup to display breakdown.
    */
   splitFunds: (params) => {
-    const { sourceAmount, billPercent, savingsPercent, savingsBreakdown, sourceTransactionId } = params;
+    const { sourceAmount, billPercent, savingsPercent, savingsBreakdown, sourceTransactionId, occurredAt } = params;
+
+    const splitOccurredAt = occurredAt ?? (() => {
+      if (sourceTransactionId) {
+        const txn = useFinanceStore.getState().transactions.find(t => t.id === sourceTransactionId);
+        if (txn) return new Date(txn.date);
+      }
+      return new Date();
+    })();
 
     // 1. Calculate amounts
     const billAmount = Math.round(sourceAmount * (billPercent / 100));
@@ -379,6 +389,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
           investment: investmentAmount,
         },
         sourceTransactionId,
+        occurredAt: splitOccurredAt,
       });
       splitTransactionId = splitTransaction.id;
     } catch (error) {
@@ -392,9 +403,9 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
 
     // 5. Record monthly contributions (for charts) + award XP per fund
     const addContrib = get().addFundContribution;
-    if (reserveAmount > 0) addContrib('reserve', reserveAmount);
-    if (goalsAmount > 0) addContrib('goals', goalsAmount);
-    if (investmentAmount > 0) addContrib('investment', investmentAmount);
+    if (reserveAmount > 0) addContrib('reserve', reserveAmount, splitOccurredAt);
+    if (goalsAmount > 0) addContrib('goals', goalsAmount, splitOccurredAt);
+    if (investmentAmount > 0) addContrib('investment', investmentAmount, splitOccurredAt);
 
     return {
       billAmount,

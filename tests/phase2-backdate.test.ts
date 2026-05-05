@@ -1,5 +1,6 @@
 import { useFinanceStore } from '@/stores/useFinanceStore';
 import { useBudgetStore } from '@/stores/useBudgetStore';
+import { useDashboardStore } from '@/stores/useDashboardStore';
 import type { MonthlySnapshot } from '@/types/budget';
 
 type TestFn = () => void | Promise<void>;
@@ -142,5 +143,147 @@ describe('Phase 2 - Fix A: Backdate Transaction', () => {
 
     const snapshots = useBudgetStore.getState().monthlySnapshots;
     expect(snapshots.length).toBe(0);
+  });
+});
+
+describe('Phase 2 - Fix B: Fund Contribution Date Propagation', () => {
+  it('addFundContribution với occurredAt → contribution vào đúng month', () => {
+    useDashboardStore.setState({ monthlyContributions: {} });
+    const pastDate = new Date('2026-04-15T10:00:00Z');
+    useDashboardStore.getState().addFundContribution('reserve', 1000000, pastDate);
+    
+    const contribs = useDashboardStore.getState().monthlyContributions;
+    const monthKey = '2026-04';
+    expect(contribs.reserve?.length).toBe(1);
+    expect(contribs.reserve![0].month).toBe(monthKey);
+    expect(contribs.reserve![0].amount).toBe(1000000);
+  });
+  
+  it('addFundContribution không pass occurredAt → fallback current month', () => {
+    useDashboardStore.setState({ monthlyContributions: {} });
+    useDashboardStore.getState().addFundContribution('goals', 500000);
+    
+    const contribs = useDashboardStore.getState().monthlyContributions;
+    const now = new Date();
+    const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    expect(contribs.goals?.length).toBe(1);
+    expect(contribs.goals![0].month).toBe(monthKey);
+  });
+  
+  it('splitFunds với occurredAt → split transaction date = occurredAt', () => {
+    useFinanceStore.setState({ transactions: [], mainBalance: 1000000, billFundBalance: 0 });
+    const prevAccs = useDashboardStore.getState().accounts;
+    useDashboardStore.setState({ 
+      monthlyContributions: {}, 
+      accounts: { 
+        ...prevAccs, 
+        reserve: { ...prevAccs.reserve, balance: 0 }, 
+        goals: { ...prevAccs.goals, balance: 0 }, 
+        investment: { ...prevAccs.investment, balance: 0 } 
+      } 
+    });
+    
+    const pastDate = new Date('2026-04-10T10:00:00Z');
+    useDashboardStore.getState().splitFunds({
+      sourceAmount: 1000000,
+      billPercent: 10,
+      savingsPercent: 90,
+      savingsBreakdown: { reserve: 50, goals: 30, investment: 20 },
+      occurredAt: pastDate,
+    });
+    
+    const txns = useFinanceStore.getState().transactions;
+    const splitTxn = txns.find(t => t.kind === 'split');
+    if (!splitTxn) throw new Error("Expected splitTxn to exist");
+    
+    expect(splitTxn.dateKey).toBe('2026-04-10');
+    
+    const contribs = useDashboardStore.getState().monthlyContributions;
+    expect(contribs.reserve![0].month).toBe('2026-04');
+  });
+  
+  it('splitFunds với sourceTransactionId fallback → dùng date của source txn', () => {
+    const pastDate = new Date('2026-04-20T10:00:00Z');
+    useFinanceStore.setState({ 
+      transactions: [{
+        id: 'txn-source',
+        type: 'income',
+        amount: 1000000,
+        categoryId: 'salary',
+        note: '',
+        wallet: 'main',
+        date: pastDate.toISOString(),
+        time: '10:00',
+        dateLabel: '20/04',
+        dateKey: '2026-04-20',
+      }], 
+      mainBalance: 1000000, 
+      billFundBalance: 0 
+    });
+    useDashboardStore.setState({ monthlyContributions: {} });
+    
+    useDashboardStore.getState().splitFunds({
+      sourceAmount: 1000000,
+      billPercent: 10,
+      savingsPercent: 90,
+      savingsBreakdown: { reserve: 50, goals: 30, investment: 20 },
+      sourceTransactionId: 'txn-source'
+    });
+    
+    const txns = useFinanceStore.getState().transactions;
+    const splitTxn = txns.find(t => t.kind === 'split');
+    if (!splitTxn) throw new Error("Expected splitTxn to exist");
+    
+    expect(splitTxn.dateKey).toBe('2026-04-20');
+  });
+  
+  it('splitFunds không có occurredAt và sourceTransactionId → new Date()', () => {
+    useFinanceStore.setState({ transactions: [], mainBalance: 1000000, billFundBalance: 0 });
+    useDashboardStore.setState({ monthlyContributions: {} });
+    
+    useDashboardStore.getState().splitFunds({
+      sourceAmount: 1000000,
+      billPercent: 10,
+      savingsPercent: 90,
+      savingsBreakdown: { reserve: 50, goals: 30, investment: 20 }
+    });
+    
+    const txns = useFinanceStore.getState().transactions;
+    const splitTxn = txns.find(t => t.kind === 'split');
+    if (!splitTxn) throw new Error("Expected splitTxn to exist");
+    
+    const now = new Date();
+    const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    expect(splitTxn.dateKey).toBe(todayKey);
+  });
+  
+  it('addFundContribution timezone consistency với ledger dateKey', () => {
+    // setup: backdate vào edge case ngày cuối tháng
+    const edgeDate = new Date('2026-04-30T22:00:00.000Z');
+    // (tương đương 5h sáng 1/5 ở VN UTC+7)
+    
+    useFinanceStore.setState({ transactions: [], mainBalance: 1000000, emergencyBalance: 0, billFundBalance: 0 });
+    useDashboardStore.setState({ monthlyContributions: {} });
+
+    // action: 
+    // 1. addTransaction({ ..., transactionDate: edgeDate })
+    useFinanceStore.getState().addTransaction({
+      type: 'income',
+      amount: 1000000,
+      categoryId: 'salary',
+      note: 'Late salary',
+      wallet: 'main',
+      transactionDate: edgeDate,
+    });
+    // 2. addFundContribution('reserve', 1tr, edgeDate)
+    useDashboardStore.getState().addFundContribution('reserve', 1000000, edgeDate);
+    
+    // expect: 
+    // - Transaction dateKey và contribution month đều consistent
+    const txn = useFinanceStore.getState().transactions[0];
+    const contrib = useDashboardStore.getState().monthlyContributions.reserve![0];
+
+    // Transaction dateKey và contribution month đều consistent
+    expect(contrib.month).toBe(txn.dateKey.substring(0, 7));
   });
 });
