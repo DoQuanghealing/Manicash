@@ -27,6 +27,7 @@ export default function TransactionInput() {
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [note, setNote] = useState('');
   const [wallet, setWallet] = useState<WalletType>('main');
+  const [transactionDate, setTransactionDate] = useState<string>(() => new Date().toISOString().substring(0, 10));
   const [showBreathGate, setShowBreathGate] = useState(false);
   const [butlerComment, setButlerComment] = useState<string | null>(null);
 
@@ -55,6 +56,14 @@ export default function TransactionInput() {
 
   const numericAmount = parseInt(amount.replace(/\D/g, ''), 10) || 0;
 
+  const dateConstraints = useMemo(() => {
+    const now = new Date();
+    return {
+      max: now.toISOString().substring(0, 10),
+      min: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10),
+    };
+  }, []);
+
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value.replace(/\D/g, '');
     if (raw.length <= 12) {
@@ -65,6 +74,7 @@ export default function TransactionInput() {
   const processTransaction = useCallback(() => {
     // 1. Save to Finance Store → updates balances + Ledger auto-renders
     const txn = addTransaction({
+      transactionDate: new Date(transactionDate + 'T12:00:00'),
       type,
       amount: numericAmount,
       categoryId: selectedCategory || 'other',
@@ -97,7 +107,7 @@ export default function TransactionInput() {
     setAmount('');
     setSelectedCategory('');
     setNote('');
-  }, [type, numericAmount, selectedCategory, note, wallet, addTransaction, categories, butlerName]);
+  }, [type, numericAmount, selectedCategory, note, wallet, transactionDate, addTransaction, categories, butlerName]);
 
   const handleSubmit = useCallback(() => {
     if (!numericAmount || (type !== 'transfer' && !selectedCategory)) return;
@@ -208,6 +218,21 @@ export default function TransactionInput() {
           </div>
         </div>
       )}
+
+      {/* Date Picker */}
+      <div className="txn-date-section" style={{ marginBottom: '1rem' }}>
+        <p className="txn-section-title">Ngày giao dịch</p>
+        <input
+          type="date"
+          className="txn-date-input"
+          id="txn-date"
+          value={transactionDate}
+          onChange={(e) => setTransactionDate(e.target.value)}
+          max={dateConstraints.max}
+          min={dateConstraints.min}
+          style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', border: '1px solid var(--glass-border)', background: 'var(--glass-bg)', color: 'var(--text-primary)', outline: 'none', fontFamily: 'inherit', fontSize: '1rem' }}
+        />
+      </div>
 
       {/* Note */}
       <input

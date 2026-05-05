@@ -24,6 +24,21 @@ export interface Transaction {
   sourceTransactionId?: string;
 }
 
+export interface BillSnapshot {
+  month: string;           // 'YYYY-MM'
+  totalFixedBills: number;
+  billFundBalance: number;
+  isFullyFunded: boolean;
+  bills: Array<{
+    id: string;
+    name: string;
+    icon: string;
+    amount: number;
+    dueDay: number;
+    isPaid: boolean;
+  }>;
+}
+
 export interface FixedBill {
   id: string;
   name: string;
@@ -39,8 +54,9 @@ interface FinanceState {
   emergencyBalance: number;
   billFundBalance: number;
   fixedBills: FixedBill[];
+  billSnapshots: BillSnapshot[];
 
-  addTransaction: (txn: Omit<Transaction, 'id' | 'date' | 'time' | 'dateLabel' | 'dateKey'>) => Transaction;
+  addTransaction: (txn: Omit<Transaction, 'id' | 'date' | 'time' | 'dateLabel' | 'dateKey'> & { transactionDate?: Date }) => Transaction;
   addSplitTransaction: (params: { splitBreakdown: { billFund: number; reserve: number; goals: number; investment: number; }; sourceTransactionId?: string; note?: string; }) => Transaction;
   getFilteredTransactions: (filter: 'all' | 'income' | 'expense') => Transaction[];
   getTotalIncome: () => number;
@@ -162,16 +178,28 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
   emergencyBalance: 5000000,
   billFundBalance: 8500000, // Demo: partially funded
   fixedBills: SEED_BILLS,
+  billSnapshots: [],
 
   addTransaction: (txnData) => {
-    const now = new Date();
+    const { transactionDate, ...restTxnData } = txnData;
+    const txnDate = transactionDate ?? new Date();
+    
+    const daysAgo = (Date.now() - txnDate.getTime()) / (1000 * 60 * 60 * 24);
+    if (daysAgo > 30) {
+      throw new Error('Không thể backdate quá 30 ngày');
+    }
+    if (daysAgo < 0) {
+      throw new Error('Không thể nhập transaction ngày trong tương lai');
+    }
+
     const txn: Transaction = {
-      ...txnData,
+      ...restTxnData,
+      kind: restTxnData.kind ?? (restTxnData.type === 'income' ? 'income' : restTxnData.type === 'expense' ? 'expense' : undefined),
       id: `txn-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-      date: now.toISOString(),
-      time: now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-      dateLabel: getDateLabel(now.toISOString()),
-      dateKey: getDateKey(now),
+      date: txnDate.toISOString(),
+      time: txnDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+      dateLabel: getDateLabel(txnDate.toISOString()),
+      dateKey: getDateKey(txnDate),
     };
 
     set((state) => {
@@ -207,6 +235,13 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
     // === BUDGET SYNC — cập nhật spent trong category budget khi chi tiêu ===
     if (txn.type === 'expense') {
       useBudgetStore.getState().addSpending(txn.categoryId, txn.amount);
+    }
+
+    // === SNAPSHOT RECALC — cập nhật snapshot tháng cũ khi backdate ===
+    const txnMonthKey = getMonthKeyFromDate(txnDate);
+    const currentMonthKey = get().getCurrentMonthKey();
+    if (txnMonthKey !== currentMonthKey) {
+      useBudgetStore.getState().updateSnapshotTotals(txnMonthKey);
     }
 
     return txn;

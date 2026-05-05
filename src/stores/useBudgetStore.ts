@@ -51,6 +51,7 @@ interface BudgetState {
   // Actions
   setCategoryBudget: (catId: string, limit: number) => void;
   addSpending: (catId: string, amount: number) => void;
+  updateSnapshotTotals: (monthKey: string) => void;
   checkAndRollover: () => { rolled: boolean; carryOver: number };
   markRolloverNotified: () => void;
   /** User đã đọc/đóng modal báo cáo — ngừng show lại. */
@@ -175,6 +176,37 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
    *   3. Append MonthlySnapshot, set unviewedReportMonth → modal sẽ hiện.
    *   4. Update xpAtMonthStart = current xp để delta tháng tới chính xác.
    */
+  updateSnapshotTotals: (monthKey: string) => {
+    const state = get();
+    const existing = state.monthlySnapshots.find((s) => s.month === monthKey);
+    if (!existing) {
+      console.warn(`[BudgetStore] Không tìm thấy snapshot cho tháng ${monthKey}. Bỏ qua cập nhật.`);
+      return;
+    }
+
+    const { useFinanceStore } = require('@/stores/useFinanceStore');
+    const allTxns = useFinanceStore.getState().transactions;
+    const { getMonthKeyFromDate } = require('@/stores/useFinanceStore');
+
+    const txnsInMonth = allTxns.filter((t: any) => getMonthKeyFromDate(t.date) === monthKey);
+    
+    const incomeTotal = txnsInMonth
+      .filter((t: any) => t.type === 'income')
+      .reduce((sum: number, t: any) => sum + t.amount, 0);
+      
+    const expenseTotal = txnsInMonth
+      .filter((t: any) => t.type === 'expense')
+      .reduce((sum: number, t: any) => sum + t.amount, 0);
+
+    set((s) => ({
+      monthlySnapshots: s.monthlySnapshots.map((snap) =>
+        snap.month === monthKey
+          ? { ...snap, incomeTotal, expenseTotal }
+          : snap
+      ),
+    }));
+  },
+
   checkAndRollover: () => {
     const state = get();
     const actualMonth = getCurrentMonth();
