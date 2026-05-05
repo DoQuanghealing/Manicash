@@ -19,6 +19,9 @@ export interface Transaction {
   time: string;       // HH:mm
   dateLabel: string;  // 'Hôm nay', 'Hôm qua', or dd/MM
   dateKey: string;    // 'YYYY-MM-DD' for calendar grouping
+  kind?: 'income' | 'expense' | 'split';
+  splitBreakdown?: { billFund: number; reserve: number; goals: number; investment: number; };
+  sourceTransactionId?: string;
 }
 
 export interface FixedBill {
@@ -38,11 +41,15 @@ interface FinanceState {
   fixedBills: FixedBill[];
 
   addTransaction: (txn: Omit<Transaction, 'id' | 'date' | 'time' | 'dateLabel' | 'dateKey'>) => Transaction;
+  addSplitTransaction: (params: { splitBreakdown: { billFund: number; reserve: number; goals: number; investment: number; }; sourceTransactionId?: string; note?: string; }) => Transaction;
   getFilteredTransactions: (filter: 'all' | 'income' | 'expense') => Transaction[];
   getTotalIncome: () => number;
   getTotalExpense: () => number;
   getMonthlyIncome: () => number;
   getMonthlyExpense: () => number;
+  getIncomeForMonth: (monthKey: string) => number;
+  getExpenseForMonth: (monthKey: string) => number;
+  getCurrentMonthKey: () => string;
   getTotalFixedBillsAmount: () => number;
   getVirtualBalance: () => number;
 
@@ -205,6 +212,33 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
     return txn;
   },
 
+  addSplitTransaction: ({ splitBreakdown, sourceTransactionId, note }) => {
+    const now = new Date();
+    const amount = splitBreakdown.billFund + splitBreakdown.reserve +
+      splitBreakdown.goals + splitBreakdown.investment;
+    const txn: Transaction = {
+      id: `split-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      type: 'transfer',
+      kind: 'split',
+      amount,
+      categoryId: 'split-funds',
+      note: note || 'Phan bo tien vao cac quy',
+      wallet: 'main',
+      date: now.toISOString(),
+      time: now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+      dateLabel: getDateLabel(now.toISOString()),
+      dateKey: getDateKey(now),
+      splitBreakdown,
+      sourceTransactionId,
+    };
+
+    set((state) => ({
+      transactions: [txn, ...state.transactions],
+    }));
+
+    return txn;
+  },
+
   getFilteredTransactions: (filter) => {
     const txns = get().transactions;
     if (filter === 'all') return txns;
@@ -234,6 +268,20 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
       .filter((t) => t.type === 'expense' && new Date(t.date) >= startOfMonth)
       .reduce((sum, t) => sum + t.amount, 0);
   },
+
+  getIncomeForMonth: (monthKey) => {
+    return get().transactions
+      .filter((t) => t.type === 'income' && getMonthKeyFromDate(t.date) === monthKey)
+      .reduce((sum, t) => sum + t.amount, 0);
+  },
+
+  getExpenseForMonth: (monthKey) => {
+    return get().transactions
+      .filter((t) => t.type === 'expense' && getMonthKeyFromDate(t.date) === monthKey)
+      .reduce((sum, t) => sum + t.amount, 0);
+  },
+
+  getCurrentMonthKey: () => getMonthKeyFromDate(new Date()),
 
   /** Tổng bill cố định hàng tháng */
   getTotalFixedBillsAmount: () =>
@@ -326,3 +374,13 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
     return { total, accumulated: state.billFundBalance, bills };
   },
 }));
+
+export function getMonthKeyFromDate(date: Date | string): string {
+  const d = new Date(date);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+export function parseMonthKey(monthKey: string): { year: number; month: number } {
+  const [y, m] = monthKey.split('-');
+  return { year: parseInt(y, 10), month: parseInt(m, 10) };
+}

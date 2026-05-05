@@ -15,6 +15,7 @@ export interface SplitFundsParams {
     goals: number;            // % of savings → Mục tiêu
     investment: number;       // % of savings → Đầu tư
   };
+  sourceTransactionId?: string;
 }
 
 export interface SplitResult {
@@ -25,6 +26,16 @@ export interface SplitResult {
   totalDeducted: number;
   remaining: number;
   sourceAmount: number;
+  splitTransactionId: string;
+}
+
+export type SavingsPeriod = 'week' | 'month' | 'year';
+export type SavingsFund = 'reserve' | 'goals' | 'investment';
+
+export interface FundContribution {
+  month: string;
+  amount: number;
+  createdAt?: string;
 }
 
 export interface AccountData {
@@ -73,8 +84,8 @@ export interface DashboardAccounts {
 interface DashboardState {
   accounts: DashboardAccounts;
   auto_split: boolean;
-  /** Tích lũy tháng cho mỗi quỹ — key: 'reserve'|'goals'|'investment', value: amount trong tháng */
-  monthlyContributions: Record<string, { month: string; amount: number }[]>;
+  /** Tích lũy cho mỗi quỹ — legacy key month giữ lại, createdAt dùng cho tuần. */
+  monthlyContributions: Record<string, FundContribution[]>;
 
   // Computed
   getSafeBalance: () => number;
@@ -84,17 +95,23 @@ interface DashboardState {
   /** Tổng tiết kiệm tháng hiện tại (dự phòng + mục tiêu + đầu tư) */
   getTotalMonthlySavings: () => number;
   /** Tích lũy tháng hiện tại cho 1 quỹ */
-  getMonthlyFundTotal: (fund: 'reserve' | 'goals' | 'investment') => number;
+  getMonthlyFundTotal: (fund: SavingsFund) => number;
   /** Tích lũy năm cho 1 quỹ */
-  getYearlyFundTotal: (fund: 'reserve' | 'goals' | 'investment') => number;
+  getYearlyFundTotal: (fund: SavingsFund) => number;
+  /** Tích lũy tuần hiện tại cho 1 quỹ. Dữ liệu cũ chưa có createdAt sẽ không được tính. */
+  getWeeklyFundTotal: (fund: SavingsFund) => number;
+  /** Tích lũy theo kỳ cho 1 quỹ */
+  getFundTotalByPeriod: (fund: SavingsFund, period: SavingsPeriod) => number;
+  /** Tổng tiết kiệm theo kỳ */
+  getTotalSavingsByPeriod: (period: SavingsPeriod) => number;
   /** Chi tiết tích lũy theo tháng cho 1 quỹ (12 tháng) */
-  getYearlyFundBreakdown: (fund: 'reserve' | 'goals' | 'investment') => { month: string; amount: number }[];
+  getYearlyFundBreakdown: (fund: SavingsFund) => { month: string; amount: number }[];
 
   // Actions
   setAutoSplit: (value: boolean) => void;
   updateAccountBalance: (key: keyof DashboardAccounts, amount: number) => void;
   splitIncome: (splits: Partial<Record<keyof DashboardAccounts, number>>) => void;
-  addFundContribution: (fund: 'reserve' | 'goals' | 'investment', amount: number) => void;
+  addFundContribution: (fund: SavingsFund, amount: number) => void;
   /** Atomic split — updates FinanceStore + DashboardStore in one call */
   splitFunds: (params: SplitFundsParams) => SplitResult;
 }
@@ -105,9 +122,25 @@ function getCurMonth(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
+function isInCurrentWeek(isoDate: string): boolean {
+  const date = new Date(isoDate);
+  if (Number.isNaN(date.getTime())) return false;
+
+  const now = new Date();
+  const dayOfWeek = now.getDay();
+  const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - mondayOffset);
+  weekStart.setHours(0, 0, 0, 0);
+
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 7);
+
+  return date >= weekStart && date < weekEnd;
+}
+
 // Demo monthly contributions
 const curM = getCurMonth();
-const SEED_CONTRIBUTIONS: Record<string, { month: string; amount: number }[]> = {
+const SEED_CONTRIBUTIONS: Record<string, FundContribution[]> = {
   reserve: [
     { month: curM, amount: 500_000 },
     { month: curM, amount: 300_000 },
@@ -190,7 +223,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
 
   /** Tổng tiết kiệm tháng hiện tại */
   getTotalMonthlySavings: () => {
-    const funds: ('reserve' | 'goals' | 'investment')[] = ['reserve', 'goals', 'investment'];
+    const funds: SavingsFund[] = ['reserve', 'goals', 'investment'];
     return funds.reduce((sum, f) => sum + get().getMonthlyFundTotal(f), 0);
   },
 
@@ -203,6 +236,14 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       .reduce((sum, c) => sum + c.amount, 0);
   },
 
+  /** Tích lũy tuần hiện tại cho 1 quỹ. Seed cũ thiếu createdAt nên trả 0. */
+  getWeeklyFundTotal: (fund) => {
+    const contribs = get().monthlyContributions[fund] || [];
+    return contribs
+      .filter((c) => c.createdAt && isInCurrentWeek(c.createdAt))
+      .reduce((sum, c) => sum + c.amount, 0);
+  },
+
   /** Tích lũy cả năm cho 1 quỹ */
   getYearlyFundTotal: (fund) => {
     const year = new Date().getFullYear().toString();
@@ -210,6 +251,17 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     return contribs
       .filter((c) => c.month.startsWith(year))
       .reduce((sum, c) => sum + c.amount, 0);
+  },
+
+  getFundTotalByPeriod: (fund, period) => {
+    if (period === 'week') return get().getWeeklyFundTotal(fund);
+    if (period === 'year') return get().getYearlyFundTotal(fund);
+    return get().getMonthlyFundTotal(fund);
+  },
+
+  getTotalSavingsByPeriod: (period) => {
+    const funds: SavingsFund[] = ['reserve', 'goals', 'investment'];
+    return funds.reduce((sum, f) => sum + get().getFundTotalByPeriod(f, period), 0);
   },
 
   /** Breakdown 12 tháng */
@@ -266,9 +318,10 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   addFundContribution: (fund, amount) => {
     set((state) => {
       const month = getCurMonth();
+      const createdAt = new Date().toISOString();
       const existing = { ...state.monthlyContributions };
       if (!existing[fund]) existing[fund] = [];
-      existing[fund] = [...existing[fund], { month, amount }];
+      existing[fund] = [...existing[fund], { month, amount, createdAt }];
       return { monthlyContributions: existing };
     });
     // SAVINGS_DEPOSIT XP — reserve/goals/investment đều coi là tiết kiệm.
@@ -283,7 +336,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
    *  Returns SplitResult for the success popup to display breakdown.
    */
   splitFunds: (params) => {
-    const { sourceAmount, billPercent, savingsPercent, savingsBreakdown } = params;
+    const { sourceAmount, billPercent, savingsPercent, savingsBreakdown, sourceTransactionId } = params;
 
     // 1. Calculate amounts
     const billAmount = Math.round(sourceAmount * (billPercent / 100));
@@ -299,6 +352,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     const finStore = useFinanceStore.getState();
     const prevMainBalance = finStore.mainBalance;
     const prevBillFundBalance = finStore.billFundBalance;
+    const prevAccounts = get().accounts;
 
     // 3. Update FinanceStore atomically (mainBalance ↓, billFundBalance ↑)
     useFinanceStore.setState({
@@ -315,6 +369,27 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       return { accounts: newAccounts };
     });
 
+    let splitTransactionId: string;
+    try {
+      const splitTransaction = useFinanceStore.getState().addSplitTransaction({
+        splitBreakdown: {
+          billFund: billAmount,
+          reserve: reserveAmount,
+          goals: goalsAmount,
+          investment: investmentAmount,
+        },
+        sourceTransactionId,
+      });
+      splitTransactionId = splitTransaction.id;
+    } catch (error) {
+      useFinanceStore.setState({
+        mainBalance: prevMainBalance,
+        billFundBalance: prevBillFundBalance,
+      });
+      set({ accounts: prevAccounts });
+      throw error;
+    }
+
     // 5. Record monthly contributions (for charts) + award XP per fund
     const addContrib = get().addFundContribution;
     if (reserveAmount > 0) addContrib('reserve', reserveAmount);
@@ -329,6 +404,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       totalDeducted,
       remaining,
       sourceAmount,
+      splitTransactionId,
     };
   },
 }));

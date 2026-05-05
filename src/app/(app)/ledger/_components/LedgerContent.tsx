@@ -27,6 +27,7 @@ export default function LedgerContent() {
   const [showCalendar, setShowCalendar] = useState(false);
   const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null);
   const [showBudgetSettings, setShowBudgetSettings] = useState(false);
+  const [expandedSplitId, setExpandedSplitId] = useState<string | null>(null);
 
   const transactions = useFinanceStore((s) => s.transactions);
   const totalIncome = useFinanceStore((s) => s.getTotalIncome());
@@ -155,7 +156,11 @@ export default function LedgerContent() {
               </div>
             ) : (
               Object.entries(grouped).map(([dateLabel, txns]) => {
-                const dayTotal = txns.reduce((s, t) => s + (t.type === 'income' ? t.amount : -t.amount), 0);
+                const dayTotal = txns.reduce((s, t) => {
+                  const kind = t.kind ?? t.type;
+                  if (kind === 'split') return s;
+                  return s + (t.type === 'income' ? t.amount : -t.amount);
+                }, 0);
                 return (
                   <div key={dateLabel} className="ledger-day-group">
                     <div className="ledger-day-header">
@@ -167,21 +172,59 @@ export default function LedgerContent() {
                     <div className="ledger-txn-list">
                       {txns.map((txn) => {
                         const cat = getCategory(txn.categoryId);
+                        const kind = txn.kind ?? txn.type;
+                        const isSplit = kind === 'split';
+                        const isExpanded = expandedSplitId === txn.id;
+                        const splitBreakdown = txn.splitBreakdown;
+                        const amountColor = isSplit
+                          ? 'var(--c-purple-light)'
+                          : txn.type === 'income'
+                            ? 'var(--c-success)'
+                            : 'var(--c-orange)';
+                        const displayCategory = isSplit
+                          ? { icon: '🔀', name: 'Phân bổ quỹ', color: '#7C3AED' }
+                          : cat;
                         return (
-                          <div key={txn.id} className="ledger-txn-item" id={`txn-${txn.id}`}>
-                            <div className="ledger-txn-icon" style={{ background: `${cat?.color || '#6B7280'}15` }}>
-                              {cat?.icon || '📦'}
+                          <div key={txn.id} className={`ledger-txn-wrap ${isSplit ? 'split' : ''}`}>
+                            <div
+                              className={`ledger-txn-item ${isSplit ? 'split' : ''}`}
+                              id={`txn-${txn.id}`}
+                              role={isSplit ? 'button' : undefined}
+                              tabIndex={isSplit ? 0 : undefined}
+                              aria-expanded={isSplit ? isExpanded : undefined}
+                              onClick={() => {
+                                if (isSplit) setExpandedSplitId(isExpanded ? null : txn.id);
+                              }}
+                              onKeyDown={(event) => {
+                                if (!isSplit) return;
+                                if (event.key === 'Enter' || event.key === ' ') {
+                                  event.preventDefault();
+                                  setExpandedSplitId(isExpanded ? null : txn.id);
+                                }
+                              }}
+                            >
+                            <div className="ledger-txn-icon" style={{ background: `${displayCategory?.color || '#6B7280'}15` }}>
+                              {displayCategory?.icon || '📦'}
                             </div>
                             <div className="ledger-txn-info">
-                              <p className="ledger-txn-category">{cat?.name || 'Khác'}</p>
+                              <p className="ledger-txn-category">{displayCategory?.name || 'Khác'}</p>
                               <p className="ledger-txn-note">{txn.note}</p>
                             </div>
                             <div style={{ textAlign: 'right' }}>
-                              <p className="ledger-txn-amount" style={{ color: txn.type === 'income' ? 'var(--c-success)' : 'var(--c-orange)' }}>
+                              <p className="ledger-txn-amount" style={{ color: amountColor }}>
                                 {txn.type === 'income' ? '+' : '-'}{formatCurrency(txn.amount)}
                               </p>
-                              <p className="ledger-txn-time">{txn.time}</p>
+                              <p className="ledger-txn-time">{isSplit ? (isExpanded ? 'Thu gọn' : 'Chi tiết') : txn.time}</p>
                             </div>
+                            </div>
+                            {isSplit && isExpanded && splitBreakdown && (
+                              <div className="ledger-split-breakdown">
+                                <div><span>Quỹ bill</span><strong>{formatCurrency(splitBreakdown.billFund)}</strong></div>
+                                <div><span>Dự phòng</span><strong>{formatCurrency(splitBreakdown.reserve)}</strong></div>
+                                <div><span>Mục tiêu</span><strong>{formatCurrency(splitBreakdown.goals)}</strong></div>
+                                <div><span>Đầu tư</span><strong>{formatCurrency(splitBreakdown.investment)}</strong></div>
+                              </div>
+                            )}
                           </div>
                         );
                       })}

@@ -34,12 +34,16 @@ export default function SafeToSpendCard() {
       </div>
 
       {/* Main balance */}
-      <div className="flex items-center gap-2 mb-2">
-        <p className="sts-label" style={{ marginBottom: 0 }}>SỐ DƯ AN TOÀN ĐỂ CHI TIÊU</p>
+      <div className="flex items-center gap-2 mb-1">
+        <span style={{ fontSize: '14px' }}>✨</span>
+        <p className="sts-label" style={{ marginBottom: 0 }}>CÓ THỂ TIÊU THÊM</p>
         <button onClick={() => setShowInfo(true)} className="text-gray-400 hover:text-gray-300 transition-colors">
           <Info size={14} />
         </button>
       </div>
+      <p style={{ fontSize: '11px', color: 'var(--c-text-tertiary)', marginBottom: '12px', fontWeight: 500 }}>
+        Sau khi đã trừ chi tiêu + bill + tiết kiệm
+      </p>
       <p className={`sts-amount ${isNegative ? 'sts-amount--negative' : ''}`}>
         {isNegative ? '−' : ''}{formatCurrency(Math.abs(safeToSpend))}
       </p>

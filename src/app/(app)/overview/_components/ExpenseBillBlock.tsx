@@ -3,23 +3,26 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingBag, CreditCard, X, AlertTriangle } from 'lucide-react';
+import { ShoppingBag, CreditCard, X, AlertTriangle, BarChart3 } from 'lucide-react';
 import { useFinanceStore } from '@/stores/useFinanceStore';
-import { useDashboardStore } from '@/stores/useDashboardStore';
 import { useBudgetStore } from '@/stores/useBudgetStore';
+import { useAccountOverviewSnapshot } from '@/stores/useAccountOverviewStore';
 import { formatCurrency, formatCurrencyShort } from '@/utils/formatCurrency';
+import ExpenseFundingChartModal from './ExpenseFundingChartModal';
 import './ExpenseBillBlock.css';
 
 export default function ExpenseBillBlock() {
   const [showExpenseModal, setShowExpenseModal] = useState(false);
   const [showBillModal, setShowBillModal] = useState(false);
+  const [showFundingChart, setShowFundingChart] = useState(false);
+  const { accounts } = useAccountOverviewSnapshot();
+  const expenseFunding = accounts.expense.expenseFunding;
 
   // Chi tiêu tháng hiện tại (đồng bộ với Sổ sách)
-  const totalExpense = useFinanceStore((s) => s.getMonthlyExpense());
+  const totalExpense = useFinanceStore((s) => s.getExpenseForMonth(s.getCurrentMonthKey()));
   const transactions = useFinanceStore((s) => s.transactions);
   const fixedBills = useFinanceStore((s) => s.fixedBills);
   const billFundBalance = useFinanceStore((s) => s.billFundBalance);
-  const mainBalance = useFinanceStore((s) => s.mainBalance);
   const getAccumulatedBillTarget = useFinanceStore((s) => s.getAccumulatedBillTarget);
 
   // Ngưỡng chi tiêu từ budgetStore (đồng bộ với Sổ sách → Ngưỡng)
@@ -32,7 +35,6 @@ export default function ExpenseBillBlock() {
   const billData = getAccumulatedBillTarget();
   const unpaidBills = fixedBills.filter((b) => !b.isPaid);
   const today = new Date().getDate();
-  const urgentBills = unpaidBills.filter((b) => b.dueDay <= today + 3);
 
   const paidBills = fixedBills.filter((b) => b.isPaid);
   const upcomingBills = unpaidBills.filter((b) => {
@@ -47,82 +49,116 @@ export default function ExpenseBillBlock() {
 
   return (
     <>
-      <div className="ebb-grid">
-        {/* ═══ Card 1: Chi tiêu ═══ */}
-        <motion.button
-          className="ebb-card ebb-card--expense"
-          onClick={() => setShowExpenseModal(true)}
-          whileTap={{ scale: 0.97 }}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          {/* Row 1: Icon + Label ngang */}
-          <div className="ebb-card-row1">
-            <div className="ebb-card-icon-sm" style={{ background: 'rgba(249, 115, 22, 0.12)' }}>
-              <ShoppingBag size={14} color="#F97316" />
+      <div className="ebb-funding-wrap">
+        {expenseFunding && (
+          <div className="ebb-funding-header">
+            <div className="ebb-funding-copy">
+              <div className="ebb-funding-title-row">
+                <span className="ebb-funding-icon">📋</span>
+                <p className="ebb-funding-label">NGÂN SÁCH THÁNG</p>
+              </div>
+              <p className="ebb-funding-amount">{formatCurrencyShort(expenseFunding.target)}</p>
+              <p className="ebb-funding-formula">
+                Ngưỡng hằng ngày {formatCurrencyShort(expenseFunding.dailyLimit)} + Hóa đơn cố định {formatCurrencyShort(expenseFunding.fixedBillsTotal)}
+              </p>
+              {expenseFunding.fixedBillsOverfunded && expenseFunding.fixedBillsOverfunded > 0 ? (
+                <p className="ebb-funding-status" style={{ color: '#10B981', fontSize: '11px', fontWeight: 600, marginTop: '4px' }}>
+                  ✅ Quỹ bill đã đủ + dư {formatCurrencyShort(expenseFunding.fixedBillsOverfunded)}
+                </p>
+              ) : expenseFunding.fixedBillsProgress !== undefined && expenseFunding.fixedBillsProgress < 1 ? (
+                <p className="ebb-funding-status" style={{ color: '#F59E0B', fontSize: '11px', fontWeight: 600, marginTop: '4px' }}>
+                  ⚠️ Quỹ bill còn thiếu {formatCurrencyShort(expenseFunding.fixedBillsTotal - expenseFunding.billFundBalance)}
+                </p>
+              ) : null}
             </div>
-            <p className="ebb-card-label" style={{ color: '#F97316' }}>Chi tiêu</p>
+            <button
+              className="ebb-chart-btn"
+              type="button"
+              onClick={() => setShowFundingChart(true)}
+              aria-label="Mở biểu đồ ngân sách chi tiêu"
+            >
+              <BarChart3 size={17} />
+            </button>
           </div>
+        )}
 
-          {/* Row 2: Số tiền */}
-          <p className={`ebb-card-amount ${isOverBudget ? 'ebb-card-amount--danger' : ''}`}>
-            {formatCurrencyShort(totalExpense)}
-          </p>
-
-          {/* Row 3: Thanh tiến trình chi tiêu */}
-          <div className="ebb-progress">
-            <div
-              className={`ebb-progress-fill ${isOverBudget ? 'ebb-progress-fill--danger' : ''}`}
-              style={{ width: `${spendingPercent}%` }}
-            />
-          </div>
-
-          {/* Row 4: Còn bao nhiêu */}
-          <p className="ebb-card-remaining">
-            💡 Còn <span className="ebb-remaining-value">{formatCurrencyShort(remainingToSpend)}</span> có thể chi
-          </p>
-        </motion.button>
-
-        {/* ═══ Card 2: Hóa đơn ═══ */}
-        <motion.button
-          className="ebb-card ebb-card--bills"
-          onClick={() => setShowBillModal(true)}
-          whileTap={{ scale: 0.97 }}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          {/* Row 1: Icon + Label ngang */}
-          <div className="ebb-card-row1">
-            <div className="ebb-card-icon-sm" style={{ background: 'rgba(139, 92, 246, 0.12)' }}>
-              <CreditCard size={14} color="#8B5CF6" />
+        <div className="ebb-grid">
+          {/* ═══ Card 1: Chi tiêu ═══ */}
+          <motion.button
+            className="ebb-card ebb-card--expense"
+            onClick={() => setShowExpenseModal(true)}
+            whileTap={{ scale: 0.97 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            {/* Row 1: Icon + Label ngang */}
+            <div className="ebb-card-row1">
+              <div className="ebb-card-icon-sm" style={{ background: 'rgba(249, 115, 22, 0.12)' }}>
+                <ShoppingBag size={14} color="#F97316" />
+              </div>
+              <p className="ebb-card-label" style={{ color: '#F97316' }}>Chi tiêu</p>
             </div>
-            <p className="ebb-card-label" style={{ color: '#8B5CF6' }}>Hóa đơn</p>
-          </div>
 
-          {/* Row 2: Số tiền */}
-          <p className="ebb-card-amount">{formatCurrencyShort(billFundBalance)}</p>
+            {/* Row 2: Số tiền */}
+            <p className={`ebb-card-amount ${isOverBudget ? 'ebb-card-amount--danger' : ''}`}>
+              {formatCurrencyShort(totalExpense)}
+            </p>
 
-          {/* Row 3: Bill đã đóng */}
-          <div className="ebb-bill-stat ebb-bill-stat--paid">
-            <span className="ebb-bill-stat-icon">🪙</span>
-            <span>{paidBills.length} bill đã đóng</span>
-          </div>
-
-          {/* Row 4: Bill sắp hạn */}
-          {upcomingBills.length > 0 ? (
-            <div className="ebb-bill-stat ebb-bill-stat--urgent">
-              <AlertTriangle size={10} />
-              <span>{upcomingBills.length} sắp đến hạn</span>
+            {/* Row 3: Thanh tiến trình chi tiêu */}
+            <div className="ebb-progress">
+              <div
+                className={`ebb-progress-fill ${isOverBudget ? 'ebb-progress-fill--danger' : ''}`}
+                style={{ width: `${spendingPercent}%` }}
+              />
             </div>
-          ) : (
-            <div className="ebb-bill-stat ebb-bill-stat--safe">
-              <span>✅</span>
-              <span>Không có bill gấp</span>
+
+            {/* Row 4: Còn bao nhiêu */}
+            <p className="ebb-card-remaining">
+              💡 Còn <span className="ebb-remaining-value">{formatCurrencyShort(remainingToSpend)}</span> có thể chi
+            </p>
+          </motion.button>
+
+          {/* ═══ Card 2: Hóa đơn ═══ */}
+          <motion.button
+            className="ebb-card ebb-card--bills"
+            onClick={() => setShowBillModal(true)}
+            whileTap={{ scale: 0.97 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            {/* Row 1: Icon + Label ngang */}
+            <div className="ebb-card-row1">
+              <div className="ebb-card-icon-sm" style={{ background: 'rgba(139, 92, 246, 0.12)' }}>
+                <CreditCard size={14} color="#8B5CF6" />
+              </div>
+              <p className="ebb-card-label" style={{ color: '#8B5CF6' }}>Hóa đơn</p>
             </div>
-          )}
-        </motion.button>
+
+            {/* Row 2: Số tiền */}
+            <p className="ebb-card-amount">{formatCurrencyShort(billFundBalance)}</p>
+
+            {/* Row 3: Bill đã đóng */}
+            <div className="ebb-bill-stat ebb-bill-stat--paid">
+              <span className="ebb-bill-stat-icon">🪙</span>
+              <span>{paidBills.length} bill đã đóng</span>
+            </div>
+
+            {/* Row 4: Bill sắp hạn */}
+            {upcomingBills.length > 0 ? (
+              <div className="ebb-bill-stat ebb-bill-stat--urgent">
+                <AlertTriangle size={10} />
+                <span>{upcomingBills.length} sắp đến hạn</span>
+              </div>
+            ) : (
+              <div className="ebb-bill-stat ebb-bill-stat--safe">
+                <span>✅</span>
+                <span>Không có bill gấp</span>
+              </div>
+            )}
+          </motion.button>
+        </div>
       </div>
 
       {/* ═══ Expense Detail Modal ═══ */}
@@ -250,6 +286,15 @@ export default function ExpenseBillBlock() {
               )}
             </motion.div>
           </>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showFundingChart && expenseFunding && (
+          <ExpenseFundingChartModal
+            funding={expenseFunding}
+            onClose={() => setShowFundingChart(false)}
+          />
         )}
       </AnimatePresence>
     </>

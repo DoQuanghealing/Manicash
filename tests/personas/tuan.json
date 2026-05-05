@@ -1,0 +1,43 @@
+{
+  "id": "tuan",
+  "displayName": "Tuan",
+  "age": 22,
+  "role": "Sinh vien nam cuoi",
+  "voice": "casual, ngan gon, co slang nhe, hay noi kieu qua tay roi",
+  "income": {
+    "pattern": "variable",
+    "monthlyRange": [4000000, 8000000],
+    "payDays": [8, 22],
+    "notes": "Thu nhap tu gia su va part-time, khong deu."
+  },
+  "dailySpendingLimit": 4200000,
+  "bills": [
+    { "id": "tuan-rent", "name": "Tro chia", "amount": 1500000, "dueDay": 5, "categoryId": "rent" },
+    { "id": "tuan-internet", "name": "Mang chia", "amount": 100000, "dueDay": 10, "categoryId": "internet" },
+    { "id": "tuan-netflix", "name": "Netflix chia", "amount": 50000, "dueDay": 15, "categoryId": "subscription" },
+    { "id": "tuan-home-food", "name": "An o nha", "amount": 800000, "dueDay": 20, "categoryId": "food" }
+  ],
+  "budgets": [
+    { "categoryId": "food", "monthlyLimit": 1500000 },
+    { "categoryId": "coffee", "monthlyLimit": 900000 },
+    { "categoryId": "transport", "monthlyLimit": 450000 },
+    { "categoryId": "shopping", "monthlyLimit": 800000 },
+    { "categoryId": "entertainment", "monthlyLimit": 350000 },
+    { "categoryId": "misc", "monthlyLimit": 200000 }
+  ],
+  "goals": [
+    { "id": "dalat-trip", "name": "Di Da Lat", "targetAmount": 5000000, "deadline": "2025-12-31" }
+  ],
+  "splitDefaults": {
+    "billPercent": 35,
+    "savingsPercent": 15,
+    "savingsBreakdown": { "reserve": 25, "goals": 65, "investment": 10 }
+  },
+  "habits": {
+    "forgetDays": [8, 9, 10, 11],
+    "backfillDay": 12,
+    "coffeeDaysPerWeek": 6,
+    "onlineShoppingImpulseDays": [17, 42, 63, 80]
+  },
+  "uxRisk": "Hay backdate va vuot nguong, nen can test canh bao va rollback rat ky."
+}

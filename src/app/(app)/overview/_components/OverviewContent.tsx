@@ -4,7 +4,6 @@
 import SafeToSpendCard from './SafeToSpendCard';
 import BudgetWarningBanner from './BudgetWarningBanner';
 import PendingTransactionBanner from './PendingTransactionBanner';
-import FixedBillsSummary from './FixedBillsSummary';
 import MissionChecklist from './MissionChecklist';
 import WishlistPopup from './WishlistPopup';
 import MonthlyReportModal from './MonthlyReportModal';
@@ -37,8 +36,6 @@ export default function OverviewContent() {
         <FundsBlock />
 
         {/* ═══ BLOCK 4: Fixed Bills Summary ═══ */}
-        <FixedBillsSummary />
-
         {/* ═══ BLOCK 5: Wishlist Popup (auto khi hết cooling) ═══ */}
         <WishlistPopup />
 

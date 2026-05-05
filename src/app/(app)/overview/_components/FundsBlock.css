@@ -15,38 +15,98 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 10px;
   padding: 10px 14px;
   border-bottom: 1px solid rgba(139, 92, 246, 0.08);
 }
 
 .fb-savings-left {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.fb-savings-title-row {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  min-width: 0;
 }
 
 .fb-savings-icon {
-  font-size: 1.1rem;
+  font-size: 0.95rem;
   line-height: 1;
 }
 
 .fb-savings-label {
-  font-size: 0.72rem;
-  font-weight: 700;
+  display: block;
+  font-size: 0.84rem;
+  font-weight: 900;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--c-text-secondary, #94a3b8);
+  letter-spacing: 0.04em;
+  color: #C084FC;
+  text-shadow: 0 0 18px rgba(192, 132, 252, 0.24);
+}
+
+.fb-savings-period {
+  display: inline-block;
+  margin-top: 0;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--c-text-muted);
+  white-space: nowrap;
 }
 
 .fb-savings-total {
+  display: block;
   font-family: var(--font-display);
-  font-size: var(--text-base);
-  font-weight: 800;
-  background: linear-gradient(135deg, #c084fc, #f9a8d4);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  font-size: var(--text-xl);
+  font-weight: 900;
+  color: var(--c-text-primary);
   font-variant-numeric: tabular-nums;
+  text-align: left;
+  line-height: 1.05;
+  margin-top: 5px;
+}
+
+.fb-savings-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.fb-period-tabs {
+  display: flex;
+  gap: 3px;
+  padding: 2px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.fb-period-tab {
+  padding: 4px 7px;
+  border-radius: var(--radius-full);
+  font-size: 9px;
+  font-weight: 800;
+  color: var(--c-text-muted);
+  white-space: nowrap;
+}
+
+.fb-period-tab--active {
+  color: white;
+  background: linear-gradient(135deg, #8B5CF6, #EC4899);
+}
+
+.fb-savings-advice {
+  padding: 8px 14px 10px;
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--c-text-secondary);
+  border-bottom: 1px solid rgba(139, 92, 246, 0.06);
 }
 
 /* ═══ FundsBlock Styles ═══ */
@@ -156,10 +216,12 @@
 .fb-modal {
   position: fixed;
   bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
+  left: 0;
+  right: 0;
+  width: min(calc(100vw - 16px), 430px);
   max-width: 430px;
+  margin: 0 auto;
+  box-sizing: border-box;
   z-index: 201;
   max-height: 85dvh;
   overflow-y: auto;
@@ -189,7 +251,9 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: var(--space-md);
   margin-bottom: var(--space-lg);
+  min-width: 0;
 }
 
 .fb-modal-icon {
@@ -205,6 +269,8 @@
   font-family: var(--font-display);
   font-size: var(--text-base);
   font-weight: 700;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .fb-modal-close {
@@ -228,6 +294,7 @@
   font-size: 2.5rem;
   font-weight: 800;
   line-height: 1.1;
+  overflow-wrap: anywhere;
 }
 
 .fb-modal-progress {
@@ -285,6 +352,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: var(--space-md);
   padding: 12px 16px;
   background: rgba(255, 255, 255, 0.03);
   border-radius: var(--radius-md);
@@ -295,6 +363,7 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
+  min-width: 0;
 }
 
 .fb-history-date {
@@ -306,9 +375,13 @@
   font-size: var(--text-xs);
   font-weight: 600;
   color: var(--c-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .fb-history-amt {
+  flex-shrink: 0;
   font-family: var(--font-display);
   font-size: var(--text-sm);
   font-weight: 700;
@@ -332,4 +405,18 @@
 
 [data-theme="light"] .fb-overlay {
   background: rgba(0, 0, 0, 0.3);
+}
+
+@media (max-width: 360px) {
+  .fb-savings-header {
+    align-items: flex-start;
+  }
+
+  .fb-savings-total {
+    font-size: var(--text-lg);
+  }
+
+  .fb-period-tab {
+    padding: 4px 6px;
+  }
 }

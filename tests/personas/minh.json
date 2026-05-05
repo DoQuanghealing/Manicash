@@ -1,0 +1,45 @@
+{
+  "id": "minh",
+  "displayName": "Minh",
+  "age": 27,
+  "role": "Freelancer designer",
+  "voice": "di dom, tu che nhe, hay noi kieu thang nay hoi qua tay roi thang sau bu",
+  "income": {
+    "pattern": "variable",
+    "monthlyRange": [15000000, 35000000],
+    "payDays": [15, 28],
+    "notes": "Thuong nhan tien du an giua thang va cuoi thang."
+  },
+  "dailySpendingLimit": 9800000,
+  "bills": [
+    { "id": "minh-rent", "name": "Nha thue", "amount": 4000000, "dueDay": 5, "categoryId": "rent" },
+    { "id": "minh-internet", "name": "Internet", "amount": 250000, "dueDay": 10, "categoryId": "internet" },
+    { "id": "minh-electric", "name": "Dien", "amount": 800000, "dueDay": 15, "categoryId": "utilities" },
+    { "id": "minh-spotify", "name": "Spotify", "amount": 60000, "dueDay": 20, "categoryId": "subscription" },
+    { "id": "minh-insurance", "name": "Bao hiem", "amount": 900000, "dueDay": 25, "categoryId": "insurance" }
+  ],
+  "budgets": [
+    { "categoryId": "food", "monthlyLimit": 2800000 },
+    { "categoryId": "coffee", "monthlyLimit": 900000 },
+    { "categoryId": "transport", "monthlyLimit": 1000000 },
+    { "categoryId": "social", "monthlyLimit": 1700000 },
+    { "categoryId": "shopping", "monthlyLimit": 1500000 },
+    { "categoryId": "misc", "monthlyLimit": 1900000 }
+  ],
+  "goals": [
+    { "id": "macbook", "name": "Mua MacBook", "targetAmount": 50000000, "deadline": "2026-03-31" }
+  ],
+  "splitDefaults": {
+    "billPercent": 35,
+    "savingsPercent": 25,
+    "savingsBreakdown": { "reserve": 35, "goals": 50, "investment": 15 }
+  },
+  "habits": {
+    "forgetDays": [12, 13],
+    "backfillDay": 14,
+    "coffeeDaysPerWeek": 5,
+    "eatOutMealsPerWeek": 4,
+    "socialEventsPerMonth": 2
+  },
+  "uxRisk": "Hay quen ghi 1-2 ngay nen backdate va lich su giao dich la diem de bi nan."
+}

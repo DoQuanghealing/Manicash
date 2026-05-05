@@ -12,7 +12,7 @@ export default function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const { play } = useAudio();
-  const { setFirebaseUser, setUserProfile, setLoading } = useAuthStore();
+  const { setFirebaseUser, setUserProfile, setLoading, setDemoMode } = useAuthStore();
 
   async function handleGoogleSignIn() {
     setIsLoading(true);
@@ -45,6 +45,45 @@ export default function LoginForm() {
     } finally {
       setIsLoading(false);
     }
+  }
+
+  async function handleDevBypass() {
+    setIsLoading(true);
+    setDemoMode(true);
+    setFirebaseUser({
+      uid: 'demo-user-123',
+      displayName: 'Nhà Phát Triển',
+      email: 'dev@manicash.local',
+      photoURL: '',
+    });
+    setUserProfile({
+      uid: 'demo-user-123',
+      displayName: 'Nhà Phát Triển',
+      xp: 1500,
+      rank: 'gold',
+      streak: 5,
+      totalMoney: 5000000,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+    
+    try {
+      await fetch('/api/auth/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'login',
+          uid: 'demo-user-123',
+          rank: 'gold',
+        }),
+      });
+    } catch (e) {
+      // Ignore
+    }
+
+    play('levelUp');
+    await new Promise((r) => setTimeout(r, 600));
+    router.push('/overview');
   }
 
 
@@ -82,6 +121,30 @@ export default function LoginForm() {
         <span className="login-google-text">
           {isLoading ? 'Đang đăng nhập...' : 'Đăng nhập với Google'}
         </span>
+      </button>
+
+      {/* DEV BYPASS BUTTON */}
+      <button
+        onClick={handleDevBypass}
+        disabled={isLoading}
+        type="button"
+        style={{
+          marginTop: '12px',
+          background: 'rgba(255, 255, 255, 0.1)',
+          border: '1px dashed rgba(255, 255, 255, 0.3)',
+          color: '#fff',
+          padding: '10px',
+          borderRadius: '12px',
+          cursor: 'pointer',
+          width: '100%',
+          fontSize: '14px',
+          fontFamily: 'var(--font-inter)',
+          transition: 'all 0.2s ease',
+        }}
+        onMouseOver={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)')}
+        onMouseOut={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)')}
+      >
+        🛠️ Dev Bypass Login
       </button>
 
       {error && <div className="login-error">{error}</div>}

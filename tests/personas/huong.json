@@ -1,0 +1,45 @@
+{
+  "id": "huong",
+  "displayName": "Huong",
+  "age": 32,
+  "role": "Nhan vien van phong, co 1 con",
+  "voice": "nghiem tuc, co ky luat, de y so lieu va bieu do tang deu",
+  "income": {
+    "pattern": "fixed",
+    "monthlyAmount": 22000000,
+    "payDays": [5],
+    "notes": "Luong co dinh ngay 5 hang thang."
+  },
+  "dailySpendingLimit": 8800000,
+  "bills": [
+    { "id": "huong-rent", "name": "Nha", "amount": 5000000, "dueDay": 5, "categoryId": "rent" },
+    { "id": "huong-school", "name": "Hoc phi con", "amount": 2000000, "dueDay": 10, "categoryId": "child" },
+    { "id": "huong-utilities", "name": "Dien nuoc", "amount": 1000000, "dueDay": 15, "categoryId": "utilities" },
+    { "id": "huong-insurance", "name": "Bao hiem", "amount": 1000000, "dueDay": 25, "categoryId": "insurance" }
+  ],
+  "budgets": [
+    { "categoryId": "food", "monthlyLimit": 3200000 },
+    { "categoryId": "child", "monthlyLimit": 1800000 },
+    { "categoryId": "transport", "monthlyLimit": 900000 },
+    { "categoryId": "shopping", "monthlyLimit": 1600000 },
+    { "categoryId": "health", "monthlyLimit": 700000 },
+    { "categoryId": "misc", "monthlyLimit": 600000 }
+  ],
+  "goals": [
+    { "id": "emergency-6m", "name": "Quy du phong 6 thang", "targetAmount": 132000000, "deadline": "2026-12-31" },
+    { "id": "stock-dca", "name": "Dau tu co phieu dinh ky", "targetAmount": 30000000, "deadline": "2026-10-31" }
+  ],
+  "splitDefaults": {
+    "billPercent": 40,
+    "savingsPercent": 30,
+    "savingsBreakdown": { "reserve": 55, "goals": 20, "investment": 25 }
+  },
+  "habits": {
+    "forgetDays": [],
+    "backfillDay": null,
+    "coffeeDaysPerWeek": 1,
+    "eatOutMealsPerWeek": 1,
+    "shoppingSpikeDays": [27, 28, 29]
+  },
+  "uxRisk": "Ky luat va thich bieu do, nen neu chart tich luy sai hoac reload lech se mat niem tin nhanh."
+}

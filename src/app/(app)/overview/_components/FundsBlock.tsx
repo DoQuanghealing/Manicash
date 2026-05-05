@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Lock, Target, TrendingUp, X } from 'lucide-react';
-import { useDashboardStore } from '@/stores/useDashboardStore';
+import { useDashboardStore, type DashboardAccounts, type SavingsPeriod } from '@/stores/useDashboardStore';
 import { formatCurrency, formatCurrencyShort } from '@/utils/formatCurrency';
 import './FundsBlock.css';
 
@@ -25,7 +25,8 @@ function generateDemoHistory(baseAmount: number, isGrowth: boolean) {
     
     // Growth step
     if (isGrowth) {
-      currentVal += (baseAmount * 0.6) / 6 * (0.8 + Math.random() * 0.4);
+      const factor = 0.85 + ((6 - i) % 3) * 0.1;
+      currentVal += (baseAmount * 0.6) / 6 * factor;
     } else {
       currentVal += (baseAmount * 0.6) / 6;
     }
@@ -37,17 +38,25 @@ function generateDemoHistory(baseAmount: number, isGrowth: boolean) {
 
 export default function FundsBlock() {
   const [activeModal, setActiveModal] = useState<FundType | null>(null);
+  const [period, setPeriod] = useState<SavingsPeriod>('month');
   const accounts = useDashboardStore((s) => s.accounts);
-  const getMonthlyFundTotal = useDashboardStore((s) => s.getMonthlyFundTotal);
+  const getFundTotalByPeriod = useDashboardStore((s) => s.getFundTotalByPeriod);
+  const getTotalSavingsByPeriod = useDashboardStore((s) => s.getTotalSavingsByPeriod);
   
-  const { reserve, goals, investment } = accounts;
+  const { reserve } = accounts;
 
-  // Show monthly accumulation on cards (not total balance)
-  const reserveMonthly = getMonthlyFundTotal('reserve');
-  const goalsMonthly = getMonthlyFundTotal('goals');
-  const investMonthly = getMonthlyFundTotal('investment');
+  const reservePeriodTotal = getFundTotalByPeriod('reserve', period);
+  const goalsPeriodTotal = getFundTotalByPeriod('goals', period);
+  const investPeriodTotal = getFundTotalByPeriod('investment', period);
 
-  const savingsTotal = reserve.balance + goals.balance + investment.balance;
+  const savingsTotal = getTotalSavingsByPeriod(period);
+  const periodText = period === 'week' ? 'tuần này' : period === 'year' ? 'năm nay' : 'tháng này';
+  const savingsSuggestion =
+    savingsTotal <= 0
+      ? `Chưa có khoản tiết kiệm nào trong ${periodText}.`
+      : savingsTotal < 1_000_000
+        ? `Tiết kiệm ${periodText} còn mỏng, nên chia thêm khi có thu nhập.`
+        : `Đang có nhịp tiết kiệm tốt trong ${periodText}, tiếp tục duy trì.`;
 
   return (
     <>
@@ -55,13 +64,29 @@ export default function FundsBlock() {
       <div className="fb-savings-wrap">
         <div className="fb-savings-header">
           <div className="fb-savings-left">
-            <span className="fb-savings-icon">💎</span>
-            <span className="fb-savings-label">Tiết Kiệm</span>
+            <div className="fb-savings-title-row">
+              <span className="fb-savings-icon">💎</span>
+              <span className="fb-savings-label">TIẾT KIỆM</span>
+              <span className="fb-savings-period">{periodText}</span>
+            </div>
+            <span className="fb-savings-total">{formatCurrencyShort(savingsTotal)}</span>
           </div>
-          <span className="fb-savings-total">
-            {formatCurrencyShort(savingsTotal)}
-          </span>
+          <div className="fb-savings-right">
+            <div className="fb-period-tabs">
+              {(['week', 'month', 'year'] as SavingsPeriod[]).map((item) => (
+                <button
+                  key={item}
+                  className={`fb-period-tab ${period === item ? 'fb-period-tab--active' : ''}`}
+                  onClick={() => setPeriod(item)}
+                  type="button"
+                >
+                  {item === 'week' ? 'Tuần' : item === 'month' ? 'Tháng' : 'Năm'}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
+        <p className="fb-savings-advice">{savingsSuggestion}</p>
 
         <div className="fb-grid">
         {/* ═══ Card: Dự phòng ═══ */}
@@ -78,8 +103,8 @@ export default function FundsBlock() {
             {reserve.is_locked && <span className="fb-locked-badge">🔒</span>}
           </div>
           <p className="fb-card-label">Dự phòng</p>
-          <p className="fb-card-amount">{formatCurrencyShort(reserveMonthly)}</p>
-          <p className="fb-card-sub">tháng này</p>
+          <p className="fb-card-amount">{formatCurrencyShort(reservePeriodTotal)}</p>
+          <p className="fb-card-sub">{periodText}</p>
         </motion.button>
 
         {/* ═══ Card: Mục tiêu ═══ */}
@@ -95,8 +120,8 @@ export default function FundsBlock() {
             <Target size={16} />
           </div>
           <p className="fb-card-label">Mục tiêu</p>
-          <p className="fb-card-amount">{formatCurrencyShort(goalsMonthly)}</p>
-          <p className="fb-card-sub">tháng này</p>
+          <p className="fb-card-amount">{formatCurrencyShort(goalsPeriodTotal)}</p>
+          <p className="fb-card-sub">{periodText}</p>
         </motion.button>
 
         {/* ═══ Card: Đầu tư ═══ */}
@@ -112,8 +137,8 @@ export default function FundsBlock() {
             <TrendingUp size={16} />
           </div>
           <p className="fb-card-label">Đầu tư</p>
-          <p className="fb-card-amount">{formatCurrencyShort(investMonthly)}</p>
-          <p className="fb-card-sub">tháng này</p>
+          <p className="fb-card-amount">{formatCurrencyShort(investPeriodTotal)}</p>
+          <p className="fb-card-sub">{periodText}</p>
         </motion.button>
       </div>
       </div> {/* close fb-savings-wrap */}
@@ -133,7 +158,7 @@ export default function FundsBlock() {
 }
 
 /* ═══ Fund Detail Modal — Tháng / Năm toggle ═══ */
-function FundDetailModal({ type, accounts, onClose }: { type: FundType, accounts: any, onClose: () => void }) {
+function FundDetailModal({ type, accounts, onClose }: { type: FundType, accounts: DashboardAccounts, onClose: () => void }) {
   const [viewMode, setViewMode] = useState<'month' | 'year'>('month');
   const account = accounts[type];
   const getMonthlyFundTotal = useDashboardStore((s) => s.getMonthlyFundTotal);
@@ -166,6 +191,7 @@ function FundDetailModal({ type, accounts, onClose }: { type: FundType, accounts
   const yearlyTotal = getYearlyFundTotal(type);
   const yearlyBreakdown = getYearlyBreakdown(type);
   const currentMonth = new Date().getMonth() + 1;
+  const recentContributionAmounts = [260_000, 340_000, 220_000];
 
   // Demo chart data for monthly view (daily accumulation)
   const monthHistory = generateDemoHistory(monthlyTotal > 0 ? monthlyTotal : account.balance, type === 'investment');
@@ -250,12 +276,12 @@ function FundDetailModal({ type, accounts, onClose }: { type: FundType, accounts
           </p>
           {type === 'goals' && (
             <p className="fb-modal-progress" style={{ marginTop: 4 }}>
-              Tổng quỹ: {formatCurrencyShort(account.balance)} / {formatCurrencyShort(account.target)}
+              Tổng quỹ: {formatCurrencyShort(accounts.goals.balance)} / {formatCurrencyShort(accounts.goals.target)}
             </p>
           )}
           {type === 'investment' && (
             <p className="fb-modal-progress" style={{ color: '#10B981', marginTop: 4 }}>
-              Tăng trưởng: {account.growth}
+              Tăng trưởng: {accounts.investment.growth}
             </p>
           )}
         </div>
@@ -335,7 +361,7 @@ function FundDetailModal({ type, accounts, onClose }: { type: FundType, accounts
                     </span>
                   </div>
                   <span className="fb-history-amt" style={{ color: accentColor }}>
-                    +{formatCurrencyShort(Math.floor(Math.random() * 300 + 200) * 1000)}
+                    +{formatCurrencyShort(recentContributionAmounts[i - 1])}
                   </span>
                 </div>
               ))

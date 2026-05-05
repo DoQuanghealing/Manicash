@@ -179,15 +179,49 @@
   display: flex;
   align-items: center;
   gap: var(--space-md);
+  width: 100%;
   padding: var(--space-md);
   border-radius: var(--radius-md);
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
   transition: background 0.15s;
+  text-align: left;
 }
 
 .ledger-txn-item:hover {
   background: var(--glass-bg-hover);
+}
+
+.ledger-txn-item.split {
+  border-color: rgba(124, 58, 237, 0.28);
+  background: rgba(124, 58, 237, 0.08);
+}
+
+.ledger-txn-wrap.split {
+  border-radius: var(--radius-md);
+}
+
+.ledger-split-breakdown {
+  margin-top: 4px;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(124, 58, 237, 0.18);
+  background: rgba(124, 58, 237, 0.06);
+  display: grid;
+  gap: 6px;
+}
+
+.ledger-split-breakdown div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  font-size: var(--text-xs);
+  color: var(--c-text-secondary);
+}
+
+.ledger-split-breakdown strong {
+  color: var(--c-text-primary);
+  font-weight: 700;
 }
 
 .ledger-txn-icon {

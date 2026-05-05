@@ -1,0 +1,445 @@
+/* Account Overview Store - canonical 3-account read model */
+'use client';
+
+import { create } from 'zustand';
+import { useBudgetStore } from '@/stores/useBudgetStore';
+import { useDashboardStore } from '@/stores/useDashboardStore';
+import { useFinanceStore } from '@/stores/useFinanceStore';
+import { useWalletBankStore, type WalletGroupData } from '@/stores/useWalletBankStore';
+import {
+  calculateSafeToSpend,
+  getSafeToSpendStatus,
+  type SafeToSpendStatus,
+} from '@/lib/accountOverviewMath';
+
+export type OverviewAccountId = 'income' | 'expense' | 'saving';
+
+export interface OverviewSubAccount {
+  id: string;
+  label: string;
+  amount: number;
+  limit?: number;
+  color?: string;
+  isPaid?: boolean;
+  source: string;
+}
+
+export interface ExpenseFundingMonth {
+  month: string;
+  dailyTotal: number;
+  fixedTotal: number;
+  dailyItems: OverviewSubAccount[];
+  fixedItems: OverviewSubAccount[];
+  hasFixedSnapshot: boolean;
+}
+
+export interface ExpenseFundingComparison {
+  increased: OverviewSubAccount[];
+  decreased: OverviewSubAccount[];
+  topDaily?: OverviewSubAccount;
+  topFixed?: OverviewSubAccount;
+  previousMonth?: string;
+}
+
+export interface ExpenseFundingOverview {
+  target: number;
+  dailyLimit: number;
+  fixedBillsTotal: number;
+  monthlyExpense: number;
+  billFundBalance: number;
+  remainingDaily: number;
+  fixedBillsOverfunded?: number;
+  fixedBillsProgress?: number;
+  months: ExpenseFundingMonth[];
+  comparison: ExpenseFundingComparison;
+}
+
+export interface OverviewAccount {
+  id: OverviewAccountId;
+  label: string;
+  amount: number;
+  wallet?: WalletGroupData;
+  source: string;
+  subAccounts: OverviewSubAccount[];
+  meta: Record<string, number | string | boolean>;
+  expenseFunding?: ExpenseFundingOverview;
+}
+
+export interface SafeToSpendSnapshot {
+  amount: number;
+  monthlyIncome: number;
+  carryOver: number;
+  spendingLimit: number;
+  fixedBills: number;
+  monthlySavings: number;
+  monthlyExpense: number;
+  spentPercent: number;
+  status: SafeToSpendStatus;
+}
+
+export interface AccountOverviewSnapshot {
+  accounts: Record<OverviewAccountId, OverviewAccount>;
+  safeToSpend: SafeToSpendSnapshot;
+  sourceMap: Record<OverviewAccountId, string[]>;
+}
+
+type FinanceSource = ReturnType<typeof useFinanceStore.getState>;
+type BudgetSource = ReturnType<typeof useBudgetStore.getState>;
+type DashboardSource = ReturnType<typeof useDashboardStore.getState>;
+type WalletBankSource = ReturnType<typeof useWalletBankStore.getState>;
+
+interface BuildSnapshotParams {
+  finance: FinanceSource;
+  budget: BudgetSource;
+  dashboard: DashboardSource;
+  walletBank: WalletBankSource;
+}
+
+interface AccountOverviewState {
+  getSnapshot: () => AccountOverviewSnapshot;
+  getAccount: (id: OverviewAccountId) => OverviewAccount;
+  getSafeToSpend: () => SafeToSpendSnapshot;
+}
+
+const SOURCE_MAP: Record<OverviewAccountId, string[]> = {
+  income: ['useFinanceStore.transactions[type=income]', 'useWalletBankStore.wallets[income]'],
+  expense: [
+    'useFinanceStore.transactions[type=expense]',
+    'useBudgetStore.categoryBudgets',
+    'useFinanceStore.fixedBills',
+    'useFinanceStore.billFundBalance',
+    'useWalletBankStore.wallets[expense]',
+  ],
+  saving: [
+    'useDashboardStore.accounts.reserve',
+    'useDashboardStore.accounts.goals',
+    'useDashboardStore.accounts.investment',
+    'useDashboardStore.monthlyContributions',
+    'useWalletBankStore.wallets[saving]',
+  ],
+};
+
+function findWallet(walletBank: WalletBankSource, id: OverviewAccountId): WalletGroupData | undefined {
+  return walletBank.wallets.find((wallet) => wallet.id === id);
+}
+
+function getMonthKey(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function getRecentMonthKeys(count: number): string[] {
+  const now = new Date();
+  const months: string[] = [];
+
+  for (let i = count - 1; i >= 0; i -= 1) {
+    const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push(getMonthKey(date));
+  }
+
+  return months;
+}
+
+function compareSubAccounts(
+  current: OverviewSubAccount[],
+  previous: OverviewSubAccount[],
+): Pick<ExpenseFundingComparison, 'increased' | 'decreased'> {
+  const previousMap = new Map(previous.map((item) => [item.id, item.amount]));
+
+  const deltas = current
+    .map((item) => ({
+      ...item,
+      amount: item.amount - (previousMap.get(item.id) || 0),
+    }))
+    .filter((item) => item.amount !== 0)
+    .sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount));
+
+  return {
+    increased: deltas.filter((item) => item.amount > 0).slice(0, 3),
+    decreased: deltas.filter((item) => item.amount < 0).map((item) => ({
+      ...item,
+      amount: Math.abs(item.amount),
+    })).slice(0, 3),
+  };
+}
+
+function buildExpenseFundingOverview(
+  finance: FinanceSource,
+  budget: BudgetSource,
+  spendingLimit: number,
+  fixedBills: number,
+  monthlyExpense: number,
+): ExpenseFundingOverview {
+  const monthKeys = getRecentMonthKeys(6);
+  const currentMonth = budget.currentMonth;
+  const currentDailyItems: OverviewSubAccount[] = budget.categoryBudgets
+    .filter((item) => item.month === currentMonth && (item.monthlyLimit > 0 || item.spent > 0))
+    .map((item) => ({
+      id: item.categoryId,
+      label: item.categoryId,
+      amount: item.spent,
+      limit: item.monthlyLimit,
+      source: 'useBudgetStore.categoryBudgets',
+    }));
+
+  const currentFixedItems: OverviewSubAccount[] = finance.fixedBills.map((bill) => ({
+    id: bill.id,
+    label: bill.name,
+    amount: bill.amount,
+    isPaid: bill.isPaid,
+    source: 'useFinanceStore.fixedBills',
+  }));
+
+  const months: ExpenseFundingMonth[] = monthKeys.map((month) => {
+    if (month === currentMonth) {
+      return {
+        month,
+        dailyTotal: currentDailyItems.reduce((sum, item) => sum + item.amount, 0),
+        fixedTotal: fixedBills,
+        dailyItems: currentDailyItems,
+        fixedItems: currentFixedItems,
+        hasFixedSnapshot: true, // Current month always has live data
+      };
+    }
+
+    const dailyMap = new Map<string, number>();
+    finance.transactions.forEach((txn) => {
+      if (txn.type !== 'expense') return;
+      if (getMonthKey(new Date(txn.date)) !== month) return;
+      dailyMap.set(txn.categoryId, (dailyMap.get(txn.categoryId) || 0) + txn.amount);
+    });
+
+    const dailyItems = Array.from(dailyMap.entries()).map(([categoryId, amount]) => ({
+      id: categoryId,
+      label: categoryId,
+      amount,
+      source: 'useFinanceStore.transactions',
+    }));
+
+    const snapshot = finance.billSnapshots.find((s) => s.month === month);
+    const hasFixedSnapshot = !!snapshot;
+    const fixedItems: OverviewSubAccount[] = snapshot
+      ? snapshot.bills.map((bill) => ({
+          id: bill.id,
+          label: bill.name,
+          amount: bill.amount,
+          isPaid: bill.isPaid,
+          source: 'useFinanceStore.billSnapshots',
+        }))
+      : [];
+
+    return {
+      month,
+      dailyTotal: dailyItems.reduce((sum, item) => sum + item.amount, 0),
+      fixedTotal: snapshot ? snapshot.totalFixedBills : 0,
+      dailyItems,
+      fixedItems,
+      hasFixedSnapshot,
+    };
+  });
+
+  const current = months.find((month) => month.month === currentMonth) || months[months.length - 1];
+  const currentIndex = months.findIndex((month) => month.month === current.month);
+  const previous = currentIndex > 0 ? months[currentIndex - 1] : undefined;
+  const dailyComparison = previous ? compareSubAccounts(current.dailyItems, previous.dailyItems) : { increased: [], decreased: [] };
+  const topDaily = [...current.dailyItems].sort((a, b) => b.amount - a.amount)[0];
+  const topFixed = [...current.fixedItems].sort((a, b) => b.amount - a.amount)[0];
+
+  const overfunded = Math.max(0, finance.billFundBalance - fixedBills);
+  const progress = fixedBills > 0 ? Math.min(finance.billFundBalance / fixedBills, 1) : 1;
+
+  return {
+    target: spendingLimit + fixedBills,
+    dailyLimit: spendingLimit,
+    fixedBillsTotal: fixedBills,
+    monthlyExpense,
+    billFundBalance: finance.billFundBalance,
+    remainingDaily: Math.max(0, spendingLimit - monthlyExpense),
+    fixedBillsOverfunded: overfunded,
+    fixedBillsProgress: progress,
+    months,
+    comparison: {
+      increased: dailyComparison.increased,
+      decreased: dailyComparison.decreased,
+      topDaily,
+      topFixed,
+      previousMonth: previous?.month,
+    },
+  };
+}
+
+export function buildAccountOverviewSnapshot({
+  finance,
+  budget,
+  dashboard,
+  walletBank,
+}: BuildSnapshotParams): AccountOverviewSnapshot {
+  const currentMonth = finance.getCurrentMonthKey();
+  const monthlyIncome = finance.getIncomeForMonth(currentMonth);
+  const monthlyExpense = finance.getExpenseForMonth(currentMonth);
+  const spendingLimit = budget.getTotalCategoryLimits();
+  const fixedBills = finance.getTotalFixedBillsAmount();
+  const fixedBillsFundingTarget = fixedBills;
+  const monthlySavings = dashboard.getTotalMonthlySavings();
+  const carryOver = budget.carryOver;
+
+  const safeToSpend = calculateSafeToSpend({
+    monthlyIncome,
+    carryOver,
+    spendingLimit,
+    fixedBills,
+    monthlySavings,
+  });
+  const spentPercent = Math.min(100, Math.round((monthlyExpense / Math.max(spendingLimit, 1)) * 100));
+
+  const reserveMonthly = dashboard.getMonthlyFundTotal('reserve');
+  const goalsMonthly = dashboard.getMonthlyFundTotal('goals');
+  const investmentMonthly = dashboard.getMonthlyFundTotal('investment');
+  const savingsBalance =
+    dashboard.accounts.reserve.balance +
+    dashboard.accounts.goals.balance +
+    dashboard.accounts.investment.balance;
+  const expenseFunding = buildExpenseFundingOverview(
+    finance,
+    budget,
+    spendingLimit,
+    fixedBillsFundingTarget,
+    monthlyExpense,
+  );
+
+  const income: OverviewAccount = {
+    id: 'income',
+    label: 'Thu nhập',
+    amount: monthlyIncome,
+    wallet: findWallet(walletBank, 'income'),
+    source: 'Monthly income transactions',
+    subAccounts: [
+      {
+        id: 'main-income',
+        label: 'Thu nhập tháng',
+        amount: monthlyIncome,
+        source: 'useFinanceStore.getIncomeForMonth(currentMonth)',
+      },
+    ],
+    meta: {
+      mainBalance: finance.mainBalance,
+      transactionCount: finance.transactions.filter((txn) => txn.type === 'income').length,
+    },
+  };
+
+  const expense: OverviewAccount = {
+    id: 'expense',
+    label: 'Chi tiêu',
+    amount: monthlyExpense,
+    wallet: findWallet(walletBank, 'expense'),
+    source: 'Monthly expense transactions plus budget and bills',
+    subAccounts: [
+      {
+        id: 'daily-expense',
+        label: 'Chi tiêu tháng',
+        amount: monthlyExpense,
+        source: 'useFinanceStore.getExpenseForMonth(currentMonth)',
+      },
+      {
+        id: 'fixed-bills',
+        label: 'Bill cố định',
+        amount: fixedBills,
+        source: 'useFinanceStore.getTotalFixedBillsAmount()',
+      },
+      {
+        id: 'bill-fund',
+        label: 'Quỹ bill đã tích lũy',
+        amount: finance.billFundBalance,
+        source: 'useFinanceStore.billFundBalance',
+      },
+    ],
+    meta: {
+      spendingLimit,
+      fundingTarget: expenseFunding.target,
+      remainingToSpend: Math.max(0, spendingLimit - monthlyExpense),
+      billFundBalance: finance.billFundBalance,
+      unpaidBills: finance.fixedBills.filter((bill) => !bill.isPaid).length,
+    },
+    expenseFunding,
+  };
+
+  const saving: OverviewAccount = {
+    id: 'saving',
+    label: 'Tiết kiệm',
+    amount: monthlySavings,
+    wallet: findWallet(walletBank, 'saving'),
+    source: 'Dashboard savings funds',
+    subAccounts: [
+      {
+        id: 'reserve',
+        label: 'Dự phòng',
+        amount: reserveMonthly,
+        source: 'useDashboardStore.getMonthlyFundTotal(reserve)',
+      },
+      {
+        id: 'goals',
+        label: 'Mục tiêu',
+        amount: goalsMonthly,
+        source: 'useDashboardStore.getMonthlyFundTotal(goals)',
+      },
+      {
+        id: 'investment',
+        label: 'Đầu tư',
+        amount: investmentMonthly,
+        source: 'useDashboardStore.getMonthlyFundTotal(investment)',
+      },
+    ],
+    meta: {
+      savingsBalance,
+      reserveBalance: dashboard.accounts.reserve.balance,
+      goalsBalance: dashboard.accounts.goals.balance,
+      investmentBalance: dashboard.accounts.investment.balance,
+    },
+  };
+
+  return {
+    accounts: { income, expense, saving },
+    safeToSpend: {
+      amount: safeToSpend,
+      monthlyIncome,
+      carryOver,
+      spendingLimit,
+      fixedBills,
+      monthlySavings,
+      monthlyExpense,
+      spentPercent,
+      status: getSafeToSpendStatus(safeToSpend),
+    },
+    sourceMap: SOURCE_MAP,
+  };
+}
+
+export function getAccountOverviewSnapshot(): AccountOverviewSnapshot {
+  return buildAccountOverviewSnapshot({
+    finance: useFinanceStore.getState(),
+    budget: useBudgetStore.getState(),
+    dashboard: useDashboardStore.getState(),
+    walletBank: useWalletBankStore.getState(),
+  });
+}
+
+export const useAccountOverviewStore = create<AccountOverviewState>(() => ({
+  getSnapshot: getAccountOverviewSnapshot,
+  getAccount: (id) => getAccountOverviewSnapshot().accounts[id],
+  getSafeToSpend: () => getAccountOverviewSnapshot().safeToSpend,
+}));
+
+// React components should use this hook so they subscribe to every source store.
+// useAccountOverviewStore methods are imperative snapshots for non-rendering code.
+export function useAccountOverviewSnapshot(): AccountOverviewSnapshot {
+  const finance = useFinanceStore();
+  const budget = useBudgetStore();
+  const dashboard = useDashboardStore();
+  const walletBank = useWalletBankStore();
+
+  return buildAccountOverviewSnapshot({
+    finance,
+    budget,
+    dashboard,
+    walletBank,
+  });
+}
