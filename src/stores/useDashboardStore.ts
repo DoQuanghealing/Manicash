@@ -320,6 +320,47 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   splitFunds: (params) => {
     const { sourceAmount, billPercent, savingsPercent, savingsBreakdown, sourceTransactionId, occurredAt } = params;
 
+    // ── Validation (defense layer — UI should prevent these) ──
+
+    // sourceAmount must be positive
+    if (sourceAmount <= 0) {
+      throw new Error(`Số tiền chia phải > 0 (hiện ${sourceAmount})`);
+    }
+
+    // No individual percent may be negative
+    if (billPercent < 0) {
+      throw new Error(`billPercent không được âm (${billPercent}%)`);
+    }
+    if (savingsPercent < 0) {
+      throw new Error(`savingsPercent không được âm (${savingsPercent}%)`);
+    }
+    if (savingsBreakdown.reserve < 0) {
+      throw new Error(`reserve không được âm (${savingsBreakdown.reserve}%)`);
+    }
+    if (savingsBreakdown.goals < 0) {
+      throw new Error(`goals không được âm (${savingsBreakdown.goals}%)`);
+    }
+    if (savingsBreakdown.investment < 0) {
+      throw new Error(`investment không được âm (${savingsBreakdown.investment}%)`);
+    }
+
+    // Bill + Savings must not exceed 100 (tolerance 0.01 for float rounding)
+    const totalPercent = billPercent + savingsPercent;
+    if (totalPercent > 100.01) {
+      throw new Error(`Tổng % vượt 100 (${totalPercent}%)`);
+    }
+    if (totalPercent < 0) {
+      throw new Error(`Tổng % âm (${totalPercent}%)`);
+    }
+
+    // Sub-savings must sum to 100 when savings > 0 (tolerance 0.1)
+    if (savingsPercent > 0) {
+      const subTotal = savingsBreakdown.reserve + savingsBreakdown.goals + savingsBreakdown.investment;
+      if (Math.abs(subTotal - 100) > 0.1) {
+        throw new Error(`Sub-percent tiết kiệm phải = 100% (hiện ${subTotal}%)`);
+      }
+    }
+
     const splitOccurredAt = occurredAt ?? (() => {
       if (sourceTransactionId) {
         const txn = useFinanceStore.getState().transactions.find(t => t.id === sourceTransactionId);

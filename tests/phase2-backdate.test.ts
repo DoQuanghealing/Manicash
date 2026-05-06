@@ -288,3 +288,147 @@ describe('Phase 2 - Fix B: Fund Contribution Date Propagation', () => {
     expect(contrib.month).toBe(txn.dateKey.substring(0, 7));
   });
 });
+
+describe('Phase 2 - Fix D: Split funds validation', () => {
+  function setupForSplit() {
+    useFinanceStore.setState({ transactions: [], mainBalance: 10_000_000, billFundBalance: 0 });
+    useDashboardStore.setState({ monthlyContributions: {} });
+  }
+
+  it('tổng bill+savings > 100 → throw', () => {
+    setupForSplit();
+    expect(() => {
+      useDashboardStore.getState().splitFunds({
+        sourceAmount: 1_000_000,
+        billPercent: 60,
+        savingsPercent: 50,
+        savingsBreakdown: { reserve: 40, goals: 40, investment: 20 },
+      });
+    }).toThrow('Tổng % vượt 100');
+  });
+
+  it('% âm cho billPercent → throw', () => {
+    setupForSplit();
+    expect(() => {
+      useDashboardStore.getState().splitFunds({
+        sourceAmount: 1_000_000,
+        billPercent: -10,
+        savingsPercent: 50,
+        savingsBreakdown: { reserve: 40, goals: 40, investment: 20 },
+      });
+    }).toThrow('billPercent không được âm');
+  });
+
+  it('% âm cho sub-savings (reserve) → throw', () => {
+    setupForSplit();
+    expect(() => {
+      useDashboardStore.getState().splitFunds({
+        sourceAmount: 1_000_000,
+        billPercent: 10,
+        savingsPercent: 90,
+        savingsBreakdown: { reserve: -10, goals: 60, investment: 50 },
+      });
+    }).toThrow('reserve không được âm');
+  });
+
+  it('sub-savings tổng = 0 (0/0/0) khi savings > 0 → throw', () => {
+    setupForSplit();
+    expect(() => {
+      useDashboardStore.getState().splitFunds({
+        sourceAmount: 1_000_000,
+        billPercent: 10,
+        savingsPercent: 90,
+        savingsBreakdown: { reserve: 0, goals: 0, investment: 0 },
+      });
+    }).toThrow('Sub-percent tiết kiệm phải = 100%');
+  });
+
+  it('sub-savings = 100 đúng → PASS (happy path)', () => {
+    setupForSplit();
+    const result = useDashboardStore.getState().splitFunds({
+      sourceAmount: 1_000_000,
+      billPercent: 10,
+      savingsPercent: 90,
+      savingsBreakdown: { reserve: 50, goals: 30, investment: 20 },
+    });
+    expect(result.billAmount).toBe(100_000);
+    expect(result.totalDeducted).toBe(1_000_000);
+  });
+
+  it('rounding tolerance: 33.33 + 33.33 + 33.34 = 100.00 → PASS', () => {
+    setupForSplit();
+    const result = useDashboardStore.getState().splitFunds({
+      sourceAmount: 1_000_000,
+      billPercent: 10,
+      savingsPercent: 90,
+      savingsBreakdown: { reserve: 33.33, goals: 33.33, investment: 33.34 },
+    });
+    // Should not throw — within tolerance
+    expect(result.sourceAmount).toBe(1_000_000);
+  });
+
+  it('rounding tolerance: 33.33 + 33.33 + 33.33 = 99.99 → PASS', () => {
+    setupForSplit();
+    const result = useDashboardStore.getState().splitFunds({
+      sourceAmount: 1_000_000,
+      billPercent: 10,
+      savingsPercent: 90,
+      savingsBreakdown: { reserve: 33.33, goals: 33.33, investment: 33.33 },
+    });
+    // 99.99 → |99.99 - 100| = 0.01 < 0.1 tolerance → PASS
+    expect(result.sourceAmount).toBe(1_000_000);
+  });
+
+  it('sub-savings 33.33+33.33+33.32 = 99.98 → within tolerance → PASS', () => {
+    setupForSplit();
+    // |99.98 - 100| = 0.02 < 0.1 tolerance → should PASS
+    const result = useDashboardStore.getState().splitFunds({
+      sourceAmount: 1_000_000,
+      billPercent: 10,
+      savingsPercent: 90,
+      savingsBreakdown: { reserve: 33.33, goals: 33.33, investment: 33.32 },
+    });
+    expect(result.sourceAmount).toBe(1_000_000);
+  });
+
+  it('sub-savings drifts beyond tolerance (99.5) → throw', () => {
+    setupForSplit();
+    expect(() => {
+      useDashboardStore.getState().splitFunds({
+        sourceAmount: 1_000_000,
+        billPercent: 10,
+        savingsPercent: 90,
+        savingsBreakdown: { reserve: 33, goals: 33, investment: 33.5 },
+      });
+    }).toThrow('Sub-percent tiết kiệm phải = 100%');
+  });
+
+  it('sourceAmount = 0 → throw early, không tạo split transaction', () => {
+    setupForSplit();
+    const txnCountBefore = useFinanceStore.getState().transactions.length;
+    expect(() => {
+      useDashboardStore.getState().splitFunds({
+        sourceAmount: 0,
+        billPercent: 50,
+        savingsPercent: 50,
+        savingsBreakdown: { reserve: 40, goals: 40, investment: 20 },
+      });
+    }).toThrow('Số tiền chia phải > 0');
+    // No transaction should have been created
+    expect(useFinanceStore.getState().transactions.length).toBe(txnCountBefore);
+  });
+
+  it('savingsPercent = 0 → skip sub-savings validation → PASS', () => {
+    setupForSplit();
+    // When savings is 0, sub-savings breakdown doesn't matter
+    const result = useDashboardStore.getState().splitFunds({
+      sourceAmount: 1_000_000,
+      billPercent: 100,
+      savingsPercent: 0,
+      savingsBreakdown: { reserve: 0, goals: 0, investment: 0 },
+    });
+    expect(result.billAmount).toBe(1_000_000);
+    expect(result.reserveAmount).toBe(0);
+  });
+});
+

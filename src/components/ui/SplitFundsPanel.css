@@ -391,6 +391,23 @@
   padding: 0 4px;
 }
 
+/* ═══ Validation warnings ═══ */
+.sfp-sub-warning,
+.sfp-pct-warning {
+  font-size: 0.7rem;
+  color: #f87171;
+  padding: 6px 10px;
+  margin-top: 6px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.sfp-pct-warning {
+  margin-bottom: 4px;
+}
+
 /* ═══ Summary ═══ */
 .sfp-summary {
   padding: 4px 0;

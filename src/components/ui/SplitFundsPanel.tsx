@@ -58,6 +58,12 @@ export default function SplitFundsPanel({ totalAmount, sourceTransactionId, onCo
   const investAmount = savingsTotal - reserveAmount - goalsAmount;
   const remaining = totalAmount - billAmount - savingsTotal;
 
+  // ── Validation flags (UI guard — defense layer 2) ──
+  const totalPct = billPercent + savingsPercent;
+  const totalPctOverflow = totalPct > 100.01;
+  const subSavingsTotal = reservePct + goalsPct + investPct;
+  const subSavingsInvalid = savingsPercent > 0 && Math.abs(subSavingsTotal - 100) > 0.1;
+
   // Manual mode amounts
   const manualBillAmt = parseInt(manualBill.replace(/\D/g, ''), 10) || 0;
   const manualReserveAmt = parseInt(manualReserve.replace(/\D/g, ''), 10) || 0;
@@ -194,7 +200,9 @@ export default function SplitFundsPanel({ totalAmount, sourceTransactionId, onCo
     }
   }, [isManualMode, manualOverflow, totalAmount, manualBillAmt, manualReserveAmt, manualGoalsAmt, manualInvestAmt, splitFunds, onConfirm, billPercent, savingsPercent, reservePct, goalsPct, investPct]);
 
-  const isConfirmDisabled = isManualMode ? manualOverflow || manualTotal === 0 : totalAmount === 0;
+  const isConfirmDisabled = isManualMode
+    ? manualOverflow || manualTotal === 0
+    : totalAmount === 0 || totalPctOverflow || subSavingsInvalid;
 
   return (
     <div className="sfp-root">
@@ -311,6 +319,10 @@ export default function SplitFundsPanel({ totalAmount, sourceTransactionId, onCo
                     />
                     <span className="sfp-sub-value">{investPct}% <span className="sfp-slider-amt">{formatVND(investAmount)}</span></span>
                   </div>
+                  {/* Sub-savings validation warning */}
+                  {subSavingsInvalid && (
+                    <p className="sfp-sub-warning">⚠️ Tổng phụ tiết kiệm = {subSavingsTotal.toFixed(1)}% (cần = 100%)</p>
+                  )}
                 </div>
               )}
             </div>
@@ -391,6 +403,10 @@ export default function SplitFundsPanel({ totalAmount, sourceTransactionId, onCo
 
       {/* ═══ Summary & Confirm ═══ */}
       <div className="sfp-summary">
+        {/* Total % overflow warning (slider mode only) */}
+        {!isManualMode && totalPctOverflow && (
+          <p className="sfp-pct-warning">⚠️ Tổng phần trăm = {totalPct.toFixed(1)}% — vượt quá 100%!</p>
+        )}
         {!isManualMode ? (
           <p className="sfp-remaining">
             💰 Còn lại trong ví: <strong>{formatVNDFull(Math.max(0, remaining))}</strong>
