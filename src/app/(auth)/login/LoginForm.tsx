@@ -123,7 +123,8 @@ export default function LoginForm() {
         </span>
       </button>
 
-      {/* DEV BYPASS BUTTON */}
+      {/* ⚠️ DEV ONLY — Remove before public launch
+          Tracked in PENDING_FEATURES.md "Pre-launch checklist" */}
       <button
         onClick={handleDevBypass}
         disabled={isLoading}
