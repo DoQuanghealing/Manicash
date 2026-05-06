@@ -24,10 +24,11 @@ interface BillFundReminderProps {
   isOpen: boolean;
   onClose: () => void;
   incomeAmount: number;
+  sourceTransactionId?: string;
   onSplitComplete?: (result: SplitResult) => void;
 }
 
-export default function BillFundReminder({ isOpen, onClose, incomeAmount, onSplitComplete }: BillFundReminderProps) {
+export default function BillFundReminder({ isOpen, onClose, incomeAmount, sourceTransactionId, onSplitComplete }: BillFundReminderProps) {
   const butlerName = useSettingsStore((s) => s.butlerName);
   const [message] = useState(() => {
     const raw = REMINDER_MESSAGES[Math.floor(Math.random() * REMINDER_MESSAGES.length)];
@@ -58,6 +59,7 @@ export default function BillFundReminder({ isOpen, onClose, incomeAmount, onSpli
         {/* SplitFundsPanel — shared component */}
         <SplitFundsPanel
           totalAmount={incomeAmount}
+          sourceTransactionId={sourceTransactionId}
           onConfirm={handleSplitConfirm}
           onCancel={onClose}
         />

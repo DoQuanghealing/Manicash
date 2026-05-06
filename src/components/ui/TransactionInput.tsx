@@ -35,12 +35,14 @@ export default function TransactionInput() {
   const [showCelebration, setShowCelebration] = useState(false);
   const [showBillReminder, setShowBillReminder] = useState(false);
   const [lastIncomeAmount, setLastIncomeAmount] = useState(0);
+  const [lastIncomeTxnId, setLastIncomeTxnId] = useState<string | undefined>(undefined);
   const [splitResult, setSplitResult] = useState<SplitResult | null>(null);
   const [celebrationData, setCelebrationData] = useState({
     type: 'expense' as TxnType,
     amount: 0,
     categoryName: '',
     xpEarned: 0,
+    txnId: '',
   });
 
   const { play } = useAudio();
@@ -94,7 +96,7 @@ export default function TransactionInput() {
     const catName = categories.find((c) => c.id === selectedCategory)?.name || 'Giao dịch';
 
     // 4. Show Celebration Modal with confetti + audio
-    setCelebrationData({ type, amount: numericAmount, categoryName: catName, xpEarned });
+    setCelebrationData({ type, amount: numericAmount, categoryName: catName, xpEarned, txnId: txn.id });
     setShowCelebration(true);
 
     // 5. Show butler sarcastic comment for expenses
@@ -300,6 +302,7 @@ export default function TransactionInput() {
           // If income, show bill fund reminder before navigating
           if (celebrationData.type === 'income') {
             setLastIncomeAmount(celebrationData.amount);
+            setLastIncomeTxnId(celebrationData.txnId);
             setShowBillReminder(true);
           } else {
             router.push('/ledger');
@@ -319,6 +322,7 @@ export default function TransactionInput() {
           router.push('/ledger');
         }}
         incomeAmount={lastIncomeAmount}
+        sourceTransactionId={lastIncomeTxnId}
         onSplitComplete={(result) => {
           setSplitResult(result);
           setShowBillReminder(false);

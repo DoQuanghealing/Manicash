@@ -13,6 +13,7 @@ import './SplitFundsPanel.css';
 
 interface SplitFundsPanelProps {
   totalAmount: number;
+  sourceTransactionId?: string;
   onConfirm: (result: SplitResult) => void;
   onCancel: () => void;
 }
@@ -25,7 +26,7 @@ const formatVND = (n: number) => {
 
 const formatVNDFull = (n: number) => n.toLocaleString('vi-VN') + 'đ';
 
-export default function SplitFundsPanel({ totalAmount, onConfirm, onCancel }: SplitFundsPanelProps) {
+export default function SplitFundsPanel({ totalAmount, sourceTransactionId, onConfirm, onCancel }: SplitFundsPanelProps) {
   const splitFunds = useDashboardStore((s) => s.splitFunds);
 
   // ── Preset & slider state ──
@@ -171,6 +172,7 @@ export default function SplitFundsPanel({ totalAmount, onConfirm, onCancel }: Sp
       const savTotal = manualReserveAmt + manualGoalsAmt + manualInvestAmt;
       const result = splitFunds({
         sourceAmount: totalAmount,
+        sourceTransactionId,
         billPercent: bPct,
         savingsPercent: sPct,
         savingsBreakdown: {
@@ -183,6 +185,7 @@ export default function SplitFundsPanel({ totalAmount, onConfirm, onCancel }: Sp
     } else {
       const result = splitFunds({
         sourceAmount: totalAmount,
+        sourceTransactionId,
         billPercent,
         savingsPercent,
         savingsBreakdown: { reserve: reservePct, goals: goalsPct, investment: investPct },
