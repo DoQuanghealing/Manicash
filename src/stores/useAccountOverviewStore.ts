@@ -334,10 +334,22 @@ export function buildAccountOverviewSnapshot({
   const reserveMonthly = dashboard.getMonthlyFundTotal('reserve');
   const goalsMonthly = dashboard.getMonthlyFundTotal('goals');
   const investmentMonthly = dashboard.getMonthlyFundTotal('investment');
-  const savingsBalance =
+  const legacySavingsBalance =
     dashboard.accounts.reserve.balance +
     dashboard.accounts.goals.balance +
     dashboard.accounts.investment.balance;
+  const reserveBalance = hasCoreLedgerEntries
+    ? coreBalances.emergencyFundBalance
+    : dashboard.accounts.reserve.balance;
+  const goalsBalance = hasCoreLedgerEntries
+    ? coreBalances.goalFundBalance
+    : dashboard.accounts.goals.balance;
+  const investmentBalance = hasCoreLedgerEntries
+    ? coreBalances.investmentFundBalance
+    : dashboard.accounts.investment.balance;
+  const savingsBalance = hasCoreLedgerEntries
+    ? coreBalances.totalSavingsBalance
+    : reserveBalance + goalsBalance + investmentBalance;
   const mainBalance = hasCoreLedgerEntries
     ? coreBalances.mainBankBalance
     : finance.mainBalance;
@@ -349,7 +361,7 @@ export function buildAccountOverviewSnapshot({
     legacy: {
       mainBalance: finance.mainBalance,
       billFundBalance: finance.billFundBalance,
-      savingsBalance,
+      savingsBalance: legacySavingsBalance,
     },
     core: {
       mainBankBalance: coreBalances.mainBankBalance,
@@ -451,9 +463,9 @@ export function buildAccountOverviewSnapshot({
     ],
     meta: {
       savingsBalance,
-      reserveBalance: dashboard.accounts.reserve.balance,
-      goalsBalance: dashboard.accounts.goals.balance,
-      investmentBalance: dashboard.accounts.investment.balance,
+      reserveBalance,
+      goalsBalance,
+      investmentBalance,
     },
   };
 
