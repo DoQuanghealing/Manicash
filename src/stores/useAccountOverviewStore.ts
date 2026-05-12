@@ -101,6 +101,7 @@ interface BuildSnapshotParams {
   dashboard: DashboardSource;
   walletBank: WalletBankSource;
   coreBalances: CoreDashboardBalances;
+  hasCoreLedgerEntries: boolean;
 }
 
 interface AccountOverviewState {
@@ -309,6 +310,7 @@ export function buildAccountOverviewSnapshot({
   dashboard,
   walletBank,
   coreBalances,
+  hasCoreLedgerEntries,
 }: BuildSnapshotParams): AccountOverviewSnapshot {
   const currentMonth = finance.getCurrentMonthKey();
   const monthlyIncome = finance.getIncomeForMonth(currentMonth);
@@ -335,6 +337,9 @@ export function buildAccountOverviewSnapshot({
     dashboard.accounts.reserve.balance +
     dashboard.accounts.goals.balance +
     dashboard.accounts.investment.balance;
+  const mainBalance = hasCoreLedgerEntries
+    ? coreBalances.mainBankBalance
+    : finance.mainBalance;
 
   warnFinanceMismatchIfNeeded({
     legacy: {
@@ -372,7 +377,7 @@ export function buildAccountOverviewSnapshot({
       },
     ],
     meta: {
-      mainBalance: finance.mainBalance,
+      mainBalance,
       transactionCount: finance.transactions.filter((txn) => txn.type === 'income').length,
     },
   };
@@ -468,6 +473,7 @@ export function buildAccountOverviewSnapshot({
 export function getAccountOverviewSnapshot(): AccountOverviewSnapshot {
   const ledgerEntries = useFinanceCoreStore.getState().ledgerEntries;
   const coreBalances = buildCoreDashboardBalances(ledgerEntries);
+  const hasCoreLedgerEntries = ledgerEntries.length > 0;
 
   return buildAccountOverviewSnapshot({
     finance: useFinanceStore.getState(),
@@ -475,6 +481,7 @@ export function getAccountOverviewSnapshot(): AccountOverviewSnapshot {
     dashboard: useDashboardStore.getState(),
     walletBank: useWalletBankStore.getState(),
     coreBalances,
+    hasCoreLedgerEntries,
   });
 }
 
@@ -493,6 +500,7 @@ export function useAccountOverviewSnapshot(): AccountOverviewSnapshot {
   const walletBank = useWalletBankStore();
   const ledgerEntries = useFinanceCoreStore((s) => s.ledgerEntries);
   const coreBalances = buildCoreDashboardBalances(ledgerEntries);
+  const hasCoreLedgerEntries = ledgerEntries.length > 0;
 
   return buildAccountOverviewSnapshot({
     finance,
@@ -500,5 +508,6 @@ export function useAccountOverviewSnapshot(): AccountOverviewSnapshot {
     dashboard,
     walletBank,
     coreBalances,
+    hasCoreLedgerEntries,
   });
 }
