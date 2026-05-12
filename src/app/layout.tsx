@@ -2,6 +2,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter, Outfit } from 'next/font/google';
 import { AuthProvider } from '@/components/providers/AuthProvider';
+import { FinanceCorePersistenceProvider } from '@/components/providers/FinanceCorePersistenceProvider';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import './globals.css';
 
@@ -52,7 +53,9 @@ export default function RootLayout({
     <html lang="vi" className={`${inter.variable} ${outfit.variable}`} data-theme="dark" suppressHydrationWarning>
       <body>
         <AuthProvider>
-          <ThemeProvider>{children}</ThemeProvider>
+          <FinanceCorePersistenceProvider>
+            <ThemeProvider>{children}</ThemeProvider>
+          </FinanceCorePersistenceProvider>
         </AuthProvider>
       </body>
     </html>

@@ -17,6 +17,7 @@ interface FinanceCoreState {
 
   execute: (event: FinanceEvent) => void;
   executeMany: (events: FinanceEvent[]) => void;
+  hydrate: (state: { ledgerEntries: LedgerEntry[]; events: FinanceEvent[] }) => void;
   getBalances: () => AccountBalances;
   getAccountBalance: (accountId: AccountId) => number;
   clear: () => void;
@@ -79,6 +80,13 @@ export const useFinanceCoreStore = create<FinanceCoreState>((set, get) => ({
 
   getAccountBalance: (accountId) =>
     getAccountBalance(get().ledgerEntries, accountId),
+
+  hydrate: (state) =>
+    set({
+      ledgerEntries: state.ledgerEntries,
+      events: state.events,
+      lastError: undefined,
+    }),
 
   clear: () =>
     set({
