@@ -127,6 +127,37 @@ const SOURCE_MAP: Record<OverviewAccountId, string[]> = {
   ],
 };
 
+let lastFinanceMismatchKey: string | null = null;
+
+function warnFinanceMismatchIfNeeded(params: {
+  legacy: { mainBalance: number; billFundBalance: number; savingsBalance: number };
+  core: { mainBankBalance: number; billFundBalance: number; totalSavingsBalance: number };
+}): void {
+  if (process.env.NODE_ENV !== 'development') return;
+
+  const { legacy, core } = params;
+  const hasMismatch =
+    Math.abs(legacy.mainBalance - core.mainBankBalance) > 1 ||
+    Math.abs(legacy.billFundBalance - core.billFundBalance) > 1 ||
+    Math.abs(legacy.savingsBalance - core.totalSavingsBalance) > 1;
+
+  if (!hasMismatch) {
+    lastFinanceMismatchKey = null;
+    return;
+  }
+
+  const payload = {
+    type: 'FINANCE_MISMATCH',
+    legacy,
+    core,
+  };
+  const nextKey = JSON.stringify(payload);
+  if (nextKey === lastFinanceMismatchKey) return;
+
+  lastFinanceMismatchKey = nextKey;
+  console.warn('[finance-core] dashboard balance mismatch', payload);
+}
+
 function findWallet(walletBank: WalletBankSource, id: OverviewAccountId): WalletGroupData | undefined {
   return walletBank.wallets.find((wallet) => wallet.id === id);
 }
@@ -304,6 +335,20 @@ export function buildAccountOverviewSnapshot({
     dashboard.accounts.reserve.balance +
     dashboard.accounts.goals.balance +
     dashboard.accounts.investment.balance;
+
+  warnFinanceMismatchIfNeeded({
+    legacy: {
+      mainBalance: finance.mainBalance,
+      billFundBalance: finance.billFundBalance,
+      savingsBalance,
+    },
+    core: {
+      mainBankBalance: coreBalances.mainBankBalance,
+      billFundBalance: coreBalances.billFundBalance,
+      totalSavingsBalance: coreBalances.totalSavingsBalance,
+    },
+  });
+
   const expenseFunding = buildExpenseFundingOverview(
     finance,
     budget,
