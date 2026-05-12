@@ -16,6 +16,7 @@ interface FinanceCoreState {
   lastError?: string;
 
   execute: (event: FinanceEvent) => void;
+  executeMany: (events: FinanceEvent[]) => void;
   getBalances: () => AccountBalances;
   getAccountBalance: (accountId: AccountId) => number;
   clear: () => void;
@@ -41,6 +42,30 @@ export const useFinanceCoreStore = create<FinanceCoreState>((set, get) => ({
       set((state) => ({
         ledgerEntries: result.allLedgerEntries,
         events: [...state.events, event],
+        lastError: undefined,
+      }));
+    } catch (error) {
+      const message = getErrorMessage(error);
+      set({ lastError: message });
+      throw error;
+    }
+  },
+
+  executeMany: (events) => {
+    try {
+      let nextLedgerEntries = get().ledgerEntries;
+
+      for (const event of events) {
+        const result = executeFinanceEvent({
+          event,
+          ledgerEntries: nextLedgerEntries,
+        });
+        nextLedgerEntries = result.allLedgerEntries;
+      }
+
+      set((state) => ({
+        ledgerEntries: nextLedgerEntries,
+        events: [...state.events, ...events],
         lastError: undefined,
       }));
     } catch (error) {
