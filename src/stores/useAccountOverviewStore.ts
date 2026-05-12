@@ -4,8 +4,13 @@
 import { create } from 'zustand';
 import { useBudgetStore } from '@/stores/useBudgetStore';
 import { useDashboardStore } from '@/stores/useDashboardStore';
+import { useFinanceCoreStore } from '@/stores/useFinanceCoreStore';
 import { useFinanceStore } from '@/stores/useFinanceStore';
 import { useWalletBankStore, type WalletGroupData } from '@/stores/useWalletBankStore';
+import {
+  buildCoreDashboardBalances,
+  type CoreDashboardBalances,
+} from '@/core/finance/dashboardSelectors';
 import {
   calculateSafeToSpend,
   getSafeToSpendStatus,
@@ -81,6 +86,7 @@ export interface SafeToSpendSnapshot {
 export interface AccountOverviewSnapshot {
   accounts: Record<OverviewAccountId, OverviewAccount>;
   safeToSpend: SafeToSpendSnapshot;
+  coreBalances: CoreDashboardBalances;
   sourceMap: Record<OverviewAccountId, string[]>;
 }
 
@@ -94,6 +100,7 @@ interface BuildSnapshotParams {
   budget: BudgetSource;
   dashboard: DashboardSource;
   walletBank: WalletBankSource;
+  coreBalances: CoreDashboardBalances;
 }
 
 interface AccountOverviewState {
@@ -270,6 +277,7 @@ export function buildAccountOverviewSnapshot({
   budget,
   dashboard,
   walletBank,
+  coreBalances,
 }: BuildSnapshotParams): AccountOverviewSnapshot {
   const currentMonth = finance.getCurrentMonthKey();
   const monthlyIncome = finance.getIncomeForMonth(currentMonth);
@@ -407,16 +415,21 @@ export function buildAccountOverviewSnapshot({
       spentPercent,
       status: getSafeToSpendStatus(safeToSpend),
     },
+    coreBalances,
     sourceMap: SOURCE_MAP,
   };
 }
 
 export function getAccountOverviewSnapshot(): AccountOverviewSnapshot {
+  const ledgerEntries = useFinanceCoreStore.getState().ledgerEntries;
+  const coreBalances = buildCoreDashboardBalances(ledgerEntries);
+
   return buildAccountOverviewSnapshot({
     finance: useFinanceStore.getState(),
     budget: useBudgetStore.getState(),
     dashboard: useDashboardStore.getState(),
     walletBank: useWalletBankStore.getState(),
+    coreBalances,
   });
 }
 
@@ -433,11 +446,14 @@ export function useAccountOverviewSnapshot(): AccountOverviewSnapshot {
   const budget = useBudgetStore();
   const dashboard = useDashboardStore();
   const walletBank = useWalletBankStore();
+  const ledgerEntries = useFinanceCoreStore((s) => s.ledgerEntries);
+  const coreBalances = buildCoreDashboardBalances(ledgerEntries);
 
   return buildAccountOverviewSnapshot({
     finance,
     budget,
     dashboard,
     walletBank,
+    coreBalances,
   });
 }
