@@ -48,6 +48,18 @@ interface AuthStore {
    * Trả về { streakAdvanced, currentStreak, xpAwarded } — caller dùng để show feedback.
    */
   updateStreak: () => { streakAdvanced: boolean; currentStreak: number; xpAwarded: number };
+
+  /**
+   * Tăng biến đếm resist và số tiền tiết kiệm được khi user từ chối mua sắm.
+   */
+  incrementResist: (savedAmount: number) => void;
+
+  /**
+   * Patch các trường identity/profile của user (displayName, email, photoURL,
+   * yearOfBirth, ...). Không sửa rank/xp/streak — gọi action chuyên dụng cho
+   * gamification. No-op khi user null.
+   */
+  updateUserProfile: (updates: Partial<UserProfile>) => void;
 }
 
 export const useAuthStore = create<AuthStore>((set, get) => ({
@@ -146,5 +158,39 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       currentStreak: newStreak,
       xpAwarded: baseAwarded + bonusAwarded,
     };
+  },
+
+  incrementResist: (savedAmount) => {
+    const user = get().user;
+    if (!user) return;
+    set({
+      user: {
+        ...user,
+        resistCount: user.resistCount + 1,
+        totalResistSaved: user.totalResistSaved + savedAmount,
+        updatedAt: new Date().toISOString(),
+      },
+    });
+  },
+
+  updateUserProfile: (updates) => {
+    const user = get().user;
+    if (!user) return;
+    // Guard: never let caller overwrite stats via this action.
+    const safeUpdates: Partial<UserProfile> = { ...updates };
+    delete safeUpdates.xp;
+    delete safeUpdates.rank;
+    delete safeUpdates.streak;
+    delete safeUpdates.resistCount;
+    delete safeUpdates.totalResistSaved;
+    delete safeUpdates.uid;
+    delete safeUpdates.createdAt;
+    set({
+      user: {
+        ...user,
+        ...safeUpdates,
+        updatedAt: new Date().toISOString(),
+      },
+    });
   },
 }));

@@ -1,6 +1,7 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useTaskStore } from '@/stores/useTaskStore';
 import { useGoalsStore } from '@/stores/useGoalsStore';
@@ -10,7 +11,10 @@ import { useBadgeStore } from '@/stores/useBadgeStore';
 import { getRankProgress } from '@/data/rankDefinitions';
 import BadgeImage from '@/components/ui/BadgeImage';
 import HexagonLevelBadge from '@/components/ui/HexagonLevelBadge';
-import { Flame, Shield, Target, CheckSquare } from 'lucide-react';
+import ProfileEditModal from '@/components/ui/ProfileEditModal';
+import WipeDataConfirm from '@/components/ui/WipeDataConfirm';
+import { getEmojiFromAvatar, isEmojiAvatar } from '@/data/avatarIcons';
+import { Flame, Pencil, Shield, Target, CheckSquare, Trash2 } from 'lucide-react';
 import './ProfileContent.css';
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -22,7 +26,10 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 export default function ProfileContent() {
+  const router = useRouter();
   const { user, firebaseUser } = useAuthStore();
+  const [editOpen, setEditOpen] = useState(false);
+  const [wipeOpen, setWipeOpen] = useState(false);
   const tasks = useTaskStore((s) => s.tasks);
   const goals = useGoalsStore((s) => s.goals);
   const transactions = useFinanceStore((s) => s.transactions);
@@ -33,6 +40,8 @@ export default function ProfileContent() {
 
   const displayName = user?.displayName || firebaseUser?.displayName || 'Chiến binh';
   const photoURL = user?.photoURL || firebaseUser?.photoURL;
+  const avatarEmoji = getEmojiFromAvatar(photoURL);
+  const isPhotoAvatar = !!photoURL && !isEmojiAvatar(photoURL);
   const initials = displayName.substring(0, 2).toUpperCase();
 
   // Fallback to zero/defaults when UserProfile hasn't loaded yet (Firestore
@@ -79,8 +88,11 @@ export default function ProfileContent() {
           style={{ background: `linear-gradient(135deg, ${rankData.current.gradientFrom}, ${rankData.current.gradientTo})` }}
         />
         <div className="profile-avatar-container">
-          {photoURL ? (
-            <img src={photoURL} alt="Avatar" className="profile-avatar" />
+          {isPhotoAvatar ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={photoURL!} alt="Avatar" className="profile-avatar" />
+          ) : avatarEmoji ? (
+            <div className="profile-avatar-emoji">{avatarEmoji}</div>
           ) : (
             <div className="profile-avatar-fallback">{initials}</div>
           )}
@@ -106,6 +118,16 @@ export default function ProfileContent() {
         <div className="profile-rank-badge">
           <HexagonLevelBadge rank={rankData.current} size={72} />
         </div>
+
+        <button
+          type="button"
+          className="profile-edit-btn"
+          onClick={() => setEditOpen(true)}
+          aria-label="Sửa hồ sơ"
+        >
+          <Pencil size={14} />
+          <span>Sửa hồ sơ</span>
+        </button>
       </section>
 
       {/* ═══ Stats Grid ═══ */}
@@ -181,6 +203,29 @@ export default function ProfileContent() {
           );
         })}
       </section>
+
+      {/* ═══ Danger zone ═══ */}
+      <section className="profile-danger">
+        <h2 className="profile-section-title">Vùng nguy hiểm</h2>
+        <button
+          type="button"
+          className="profile-wipe-btn"
+          onClick={() => setWipeOpen(true)}
+        >
+          <Trash2 size={14} />
+          <span>Xóa toàn bộ dữ liệu</span>
+        </button>
+        <p className="profile-wipe-hint">
+          Mọi số dư, giao dịch, mục tiêu sẽ về 0. Tên + email + ảnh đại diện được giữ.
+        </p>
+      </section>
+
+      <ProfileEditModal isOpen={editOpen} onClose={() => setEditOpen(false)} />
+      <WipeDataConfirm
+        isOpen={wipeOpen}
+        onClose={() => setWipeOpen(false)}
+        onConfirmed={() => router.refresh()}
+      />
     </div>
   );
 }

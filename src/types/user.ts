@@ -25,6 +25,8 @@ export interface UserProfile {
   premiumExpiresAt: string | null;
   createdAt: string;
   updatedAt: string;
+  /** Năm sinh user (optional). Dùng cho rule gợi ý theo độ tuổi sau này. */
+  yearOfBirth?: number;
 }
 
 export interface AuthState {
