@@ -54,8 +54,6 @@ export default function TransactionInput() {
   const { play } = useAudio();
   const router = useRouter();
   const addTransaction = useFinanceStore((s) => s.addTransaction);
-  const financeCoreLedgerEntries = useFinanceCoreStore((s) => s.ledgerEntries);
-  const financeCoreLastError = useFinanceCoreStore((s) => s.lastError);
   const butlerName = useSettingsStore((s) => s.butlerName);
 
   const expenseCategories = useCategoryStore((s) => s.expenseCategories);
@@ -65,18 +63,6 @@ export default function TransactionInput() {
   }, [type, expenseCategories]);
 
   const numericAmount = parseInt(amount.replace(/\D/g, ''), 10) || 0;
-  const financeCoreDebug = useMemo(() => {
-    if (process.env.NODE_ENV !== 'development') return null;
-
-    const store = useFinanceCoreStore.getState();
-    return {
-      balances: store.getBalances(),
-      lastError: store.lastError,
-      ledgerEntryCount: store.ledgerEntries.length,
-      eventCount: store.events.length,
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [financeCoreLedgerEntries, financeCoreLastError]);
 
   const dateConstraints = useMemo(() => {
     const now = new Date();
@@ -303,24 +289,6 @@ export default function TransactionInput() {
         id="txn-note"
       />
 
-      {financeCoreDebug && (
-        <pre
-          style={{
-            marginTop: '0.75rem',
-            padding: '0.75rem',
-            borderRadius: '10px',
-            background: 'rgba(255,255,255,0.06)',
-            border: '1px solid rgba(255,255,255,0.08)',
-            color: 'var(--c-text-secondary)',
-            fontSize: '0.68rem',
-            lineHeight: 1.45,
-            whiteSpace: 'pre-wrap',
-            wordBreak: 'break-word',
-          }}
-        >
-          {JSON.stringify(financeCoreDebug, null, 2)}
-        </pre>
-      )}
 
       {/* Submit */}
       <button
