@@ -21,12 +21,9 @@ export default function FixedBillsPanel() {
   const addBill = useFinanceStore((s) => s.addBill);
   const updateBill = useFinanceStore((s) => s.updateBill);
   const removeBill = useFinanceStore((s) => s.removeBill);
-  const addToBillFund = useFinanceStore((s) => s.addToBillFund);
 
   const [showAddForm, setShowAddForm] = useState(false);
-  const [showFundForm, setShowFundForm] = useState(false);
   const [newBill, setNewBill] = useState({ name: '', icon: '', amount: '', dueDay: '' });
-  const [fundAmount, setFundAmount] = useState('');
   const [editingBillId, setEditingBillId] = useState<string | null>(null);
   const [editBill, setEditBill] = useState({ name: '', icon: '', amount: '', dueDay: '' });
   const [showIconPicker, setShowIconPicker] = useState<'add' | 'edit' | null>(null);
@@ -94,14 +91,6 @@ export default function FixedBillsPanel() {
     setShowIconPicker(null);
   };
 
-  const handleAddFund = () => {
-    const amt = parseInt(fundAmount.replace(/\D/g, ''), 10);
-    if (!amt || amt <= 0) return;
-    addToBillFund(amt);
-    setFundAmount('');
-    setShowFundForm(false);
-  };
-
   const startEdit = (bill: FixedBill) => {
     setEditingBillId(bill.id);
     setEditBill({
@@ -160,28 +149,6 @@ export default function FixedBillsPanel() {
           <span className="bills-progress-target">/ {formatVND(total)}</span>
         </div>
       </div>
-
-      <button className="bills-add-fund-btn" onClick={() => setShowFundForm(!showFundForm)}>
-        💰 Nạp tiền vào quỹ bill
-      </button>
-
-      {/* Fund form */}
-      {showFundForm && (
-        <div className="bills-add-form">
-          <input
-            type="text"
-            inputMode="numeric"
-            placeholder="Số tiền nạp..."
-            value={fundAmount}
-            onChange={(e) => {
-              const raw = e.target.value.replace(/\D/g, '');
-              setFundAmount(raw ? parseInt(raw, 10).toLocaleString('vi-VN') : '');
-            }}
-            className="bills-input"
-          />
-          <button className="bills-confirm-btn" onClick={handleAddFund}>Nạp</button>
-        </div>
-      )}
 
       {/* ═══ Bill list ═══ */}
       <div className="bills-list">

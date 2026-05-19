@@ -78,7 +78,6 @@ interface FinanceState {
   updateBill: (billId: string, updates: Partial<Omit<FixedBill, 'id'>>) => void;
   removeBill: (billId: string) => void;
   payBill: (billId: string) => void;
-  addToBillFund: (amount: number) => void;
   /** Reset tất cả bill về chưa đóng — gọi khi sang tháng mới (rollover). */
   resetBillsPaid: () => void;
   getTotalBills: () => number;
@@ -355,13 +354,6 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
 
       return { fixedBills: updatedBills, billFundBalance: newFund };
     });
-  },
-
-  addToBillFund: (amount) => {
-    set((state) => ({
-      billFundBalance: state.billFundBalance + amount,
-      mainBalance: state.mainBalance - amount,
-    }));
   },
 
   resetBillsPaid: () =>
