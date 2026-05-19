@@ -205,6 +205,7 @@ function buildExpenseFundingOverview(
   spendingLimit: number,
   fixedBills: number,
   monthlyExpense: number,
+  billFundBalance: number,
 ): ExpenseFundingOverview {
   const monthKeys = getRecentMonthKeys(6);
   const currentMonth = budget.currentMonth;
@@ -281,15 +282,15 @@ function buildExpenseFundingOverview(
   const topDaily = [...current.dailyItems].sort((a, b) => b.amount - a.amount)[0];
   const topFixed = [...current.fixedItems].sort((a, b) => b.amount - a.amount)[0];
 
-  const overfunded = Math.max(0, finance.billFundBalance - fixedBills);
-  const progress = fixedBills > 0 ? Math.min(finance.billFundBalance / fixedBills, 1) : 1;
+  const overfunded = Math.max(0, billFundBalance - fixedBills);
+  const progress = fixedBills > 0 ? Math.min(billFundBalance / fixedBills, 1) : 1;
 
   return {
     target: spendingLimit + fixedBills,
     dailyLimit: spendingLimit,
     fixedBillsTotal: fixedBills,
     monthlyExpense,
-    billFundBalance: finance.billFundBalance,
+    billFundBalance,
     remainingDaily: Math.max(0, spendingLimit - monthlyExpense),
     fixedBillsOverfunded: overfunded,
     fixedBillsProgress: progress,
@@ -340,6 +341,9 @@ export function buildAccountOverviewSnapshot({
   const mainBalance = hasCoreLedgerEntries
     ? coreBalances.mainBankBalance
     : finance.mainBalance;
+  const billFundBalance = hasCoreLedgerEntries
+    ? coreBalances.billFundBalance
+    : finance.billFundBalance;
 
   warnFinanceMismatchIfNeeded({
     legacy: {
@@ -360,6 +364,7 @@ export function buildAccountOverviewSnapshot({
     spendingLimit,
     fixedBillsFundingTarget,
     monthlyExpense,
+    billFundBalance,
   );
 
   const income: OverviewAccount = {
@@ -404,7 +409,7 @@ export function buildAccountOverviewSnapshot({
       {
         id: 'bill-fund',
         label: 'Quỹ bill đã tích lũy',
-        amount: finance.billFundBalance,
+        amount: billFundBalance,
         source: 'useFinanceStore.billFundBalance',
       },
     ],
@@ -412,7 +417,7 @@ export function buildAccountOverviewSnapshot({
       spendingLimit,
       fundingTarget: expenseFunding.target,
       remainingToSpend: Math.max(0, spendingLimit - monthlyExpense),
-      billFundBalance: finance.billFundBalance,
+      billFundBalance,
       unpaidBills: finance.fixedBills.filter((bill) => !bill.isPaid).length,
     },
     expenseFunding,
