@@ -955,3 +955,229 @@
 .ebb-spending-status--warn {
   color: #F59E0B;
 }
+
+/* ═══ Chi tiêu card (redesign) ═══ */
+.ebb-spend-line {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-top: 6px;
+}
+.ebb-spend-line-label {
+  font-size: 11px;
+  color: var(--c-text-secondary, #A1A1AA);
+}
+.ebb-spend-line-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--c-text-primary, #F4F4F5);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+.ebb-spend-line-value--danger {
+  color: #F97316;
+}
+
+.ebb-spend-remaining {
+  font-size: 11px;
+  color: var(--c-text-secondary, #A1A1AA);
+  margin: 4px 0 8px;
+  line-height: 1.4;
+}
+.ebb-spend-remaining strong {
+  color: #22C55E;
+  font-weight: 700;
+}
+
+.ebb-spend-progress-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.ebb-spend-progress-cap {
+  align-self: flex-end;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--c-text-secondary, #A1A1AA);
+  line-height: 1;
+}
+.ebb-spend-progress-current {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--c-text-primary, #F4F4F5);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+/* ═══ Hóa đơn card (redesign) ═══ */
+.ebb-card--complete {
+  border-color: rgba(34, 197, 94, 0.35) !important;
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.06), rgba(34, 197, 94, 0.02)) !important;
+}
+
+.ebb-bill-medal {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  font-size: 20px;
+  filter: drop-shadow(0 2px 6px rgba(255, 200, 50, 0.4));
+  animation: ebb-medal-shine 2.4s ease-in-out infinite;
+}
+@keyframes ebb-medal-shine {
+  0%, 100% { transform: scale(1) rotate(-4deg); }
+  50% { transform: scale(1.12) rotate(4deg); }
+}
+
+.ebb-bill-summary {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  margin-top: 4px;
+  color: var(--c-text-secondary, #A1A1AA);
+  line-height: 1.35;
+}
+.ebb-bill-summary strong {
+  color: var(--c-text-primary, #F4F4F5);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.ebb-bill-summary--paid { color: #22C55E; }
+.ebb-bill-summary--paid strong { color: #22C55E; }
+.ebb-bill-summary--pending { color: #F59E0B; }
+.ebb-bill-summary--pending strong { color: #F59E0B; }
+.ebb-bill-summary--complete { color: #22C55E; font-weight: 700; }
+
+/* ═══ Modal — Chi tiêu tuần (bar chart) ═══ */
+.ebb-week-chart {
+  margin: 14px 18px 4px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+}
+.ebb-week-chart-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-text-secondary, #A1A1AA);
+  margin: 0 0 12px;
+}
+.ebb-week-bars {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  align-items: end;
+  height: 130px;
+}
+.ebb-week-bar-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  gap: 4px;
+}
+.ebb-week-bar-amt {
+  font-size: 9px;
+  color: var(--c-text-secondary, #A1A1AA);
+  font-variant-numeric: tabular-nums;
+  min-height: 11px;
+  line-height: 1;
+}
+.ebb-week-bar-track {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 6px 6px 3px 3px;
+  overflow: hidden;
+}
+.ebb-week-bar-fill {
+  width: 100%;
+  background: linear-gradient(180deg, #F97316, #EA580C);
+  border-radius: 6px 6px 0 0;
+  min-height: 1px;
+  transition: height 0.3s ease;
+}
+.ebb-week-bar-day {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--c-text-primary, #F4F4F5);
+  line-height: 1;
+}
+.ebb-week-bar-date {
+  font-size: 9px;
+  color: var(--c-text-secondary, #A1A1AA);
+  line-height: 1;
+}
+
+/* ═══ Modal CTA — Xem đầy đủ ═══ */
+.ebb-modal-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: calc(100% - 36px);
+  margin: 12px 18px 18px;
+  padding: 12px;
+  background: linear-gradient(135deg, #7C3AED, #6D28D9);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+  font-family: inherit;
+}
+.ebb-modal-cta:hover {
+  transform: translateY(-1px);
+}
+
+/* ═══ Bill detail modal sections ═══ */
+.ebb-modal-medal {
+  display: inline-block;
+  margin-left: 6px;
+  animation: ebb-medal-shine 2.4s ease-in-out infinite;
+}
+
+.ebb-bill-complete-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 18px 4px;
+  padding: 12px;
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.12), rgba(34, 197, 94, 0.04));
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 12px;
+  color: #22C55E;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.ebb-bill-section {
+  margin: 14px 0 0;
+}
+.ebb-bill-section-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 18px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--c-text-secondary, #A1A1AA);
+}
+
+.ebb-bill-item--paid {
+  opacity: 0.85;
+}
+.ebb-bill-item--paid .ebb-bill-name {
+  text-decoration: line-through;
+  text-decoration-color: rgba(34, 197, 94, 0.4);
+}
