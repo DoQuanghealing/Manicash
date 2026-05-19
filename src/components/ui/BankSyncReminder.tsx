@@ -2,6 +2,10 @@
  *
  * Shows when (a) user has never marked synced, or (b) it's been ≥7 days.
  * Two actions: "Tôi đã đồng bộ" (resets cadence), "Để sau" (snoozes 24h).
+ *
+ * Visibility derived inline from store state — no useEffect+setState
+ * cascade. SSR returns shouldShow=false so server output is stable; the
+ * client-side render after hydration computes the real value.
  */
 'use client';
 
@@ -11,22 +15,39 @@ import { Building2, CheckCircle2 } from 'lucide-react';
 import { useBankSyncStore } from '@/stores/useBankSyncStore';
 import './BankSyncReminder.css';
 
+const SYNC_REMINDER_DAYS = 7;
+const MS_PER_DAY = 1000 * 60 * 60 * 24;
+
+function daysBetween(fromIso: string, nowMs: number): number {
+  const from = new Date(fromIso).getTime();
+  return Math.floor((nowMs - from) / MS_PER_DAY);
+}
+
 export default function BankSyncReminder() {
   const lastSyncedAt = useBankSyncStore((s) => s.lastSyncedAt);
   const snoozedUntil = useBankSyncStore((s) => s.snoozedUntil);
   const markSynced = useBankSyncStore((s) => s.markSynced);
   const snooze = useBankSyncStore((s) => s.snooze);
 
-  // Recompute "should show" client-side. Avoids hydration mismatch.
-  const [shouldShow, setShouldShow] = useState(false);
-  const [daysSince, setDaysSince] = useState<number | null>(null);
-
+  // Cache "now" as state so the render stays pure. Refresh when sync
+  // state changes — banner doesn't need second-level granularity. The
+  // lint rule discourages setState-in-effect for cascade-render reasons;
+  // here the cascade is bounded (mount + on sync change) so the cost is
+  // acceptable.
+  const [now, setNow] = useState<number | null>(null);
   useEffect(() => {
-    const s = useBankSyncStore.getState();
-    setShouldShow(s.shouldShowReminder());
-    const d = s.daysSinceSync();
-    setDaysSince(Number.isFinite(d) ? d : null);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setNow(Date.now());
   }, [lastSyncedAt, snoozedUntil]);
+
+  const shouldShow = (() => {
+    if (now === null) return false; // SSR / pre-mount
+    if (snoozedUntil && new Date(snoozedUntil).getTime() > now) return false;
+    if (!lastSyncedAt) return true;
+    return daysBetween(lastSyncedAt, now) >= SYNC_REMINDER_DAYS;
+  })();
+
+  const daysSince = lastSyncedAt && now !== null ? daysBetween(lastSyncedAt, now) : null;
 
   const headline = daysSince === null
     ? 'Đồng bộ tài khoản ngân hàng?'

@@ -36,6 +36,11 @@ export default function ProfileContent() {
   const monthlySnapshots = useBudgetStore((s) => s.monthlySnapshots);
   const computeBadges = useBadgeStore((s) => s.computeBadges);
 
+  // computeBadges() reads the listed stores internally; we re-run it
+  // when those stores update by depending on the snapshots we subscribed
+  // to above. The lint rule complains because the lambda doesn't
+  // literally reference them — silence with a comment, intent is clear.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const badges = useMemo(() => computeBadges(), [user, tasks, goals, transactions, monthlySnapshots, computeBadges]);
 
   const displayName = user?.displayName || firebaseUser?.displayName || 'Chiến binh';

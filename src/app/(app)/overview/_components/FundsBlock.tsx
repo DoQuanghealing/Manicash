@@ -172,7 +172,6 @@ export default function FundsBlock() {
 /* ═══ Fund Detail Modal — Tháng / Năm toggle ═══ */
 function FundDetailModal({ type, accounts, onClose }: { type: FundType, accounts: DashboardAccounts, onClose: () => void }) {
   const [viewMode, setViewMode] = useState<'month' | 'year'>('month');
-  const account = accounts[type];
   const getMonthlyFundTotal = useDashboardStore((s) => s.getMonthlyFundTotal);
   const getYearlyFundTotal = useDashboardStore((s) => s.getYearlyFundTotal);
   const getYearlyBreakdown = useDashboardStore((s) => s.getYearlyFundBreakdown);

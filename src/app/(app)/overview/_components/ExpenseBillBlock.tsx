@@ -31,7 +31,6 @@ export default function ExpenseBillBlock() {
   const fixedBills = useFinanceStore((s) => s.fixedBills);
   const mainBalance = useFinanceStore((s) => s.mainBalance);
   const billFundBalance = useFinanceStore((s) => s.billFundBalance);
-  const getAccumulatedBillTarget = useFinanceStore((s) => s.getAccumulatedBillTarget);
 
   // ── Tài khoản chi tiêu hiện có (legacy mapping: main + billFund) ──
   // Theo ADR 0001 3-account model, "Tài khoản chi tiêu" gộp main + billFund.
@@ -51,15 +50,9 @@ export default function ExpenseBillBlock() {
   const spendingPercent = spendingLimit > 0 ? Math.min(100, (totalExpense / spendingLimit) * 100) : 0;
   const isOverBudget = totalExpense > spendingLimit;
 
-  const billData = getAccumulatedBillTarget();
   const unpaidBills = fixedBills.filter((b) => !b.isPaid);
   const today = new Date().getDate();
-
   const paidBills = fixedBills.filter((b) => b.isPaid);
-  const upcomingBills = unpaidBills.filter((b) => {
-    const daysUntilDue = b.dueDay - today;
-    return daysUntilDue >= 0 && daysUntilDue <= 7;
-  });
 
   // ── Bill aggregates (paid vs unpaid sums) ──
   const paidBillsTotal = paidBills.reduce((s, b) => s + b.amount, 0);
