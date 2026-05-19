@@ -460,17 +460,16 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         { id: 'investment', amount: investmentAmount, targetAccountId: DEFAULT_ACCOUNT_IDS.INVESTMENT_FUND },
       ];
 
-      for (const transfer of transfers) {
-        if (transfer.amount <= 0) continue;
-        coreStore.execute({
+      coreStore.executeMany(transfers
+        .filter((transfer) => transfer.amount > 0)
+        .map((transfer) => ({
           ...baseEvent,
           id: `legacy-${splitTransactionId}-${transfer.id}`,
           type: 'TRANSFER_MONEY',
           amount: transfer.amount,
           sourceAccountId: DEFAULT_ACCOUNT_IDS.MAIN_BANK,
           targetAccountId: transfer.targetAccountId,
-        });
-      }
+        })));
     } catch (error) {
       // TODO: make legacy split + finance core transfers atomic and rollback together.
       if (process.env.NODE_ENV === 'development') {
