@@ -6,22 +6,28 @@
   background: rgba(10, 10, 18, 0.72);
   backdrop-filter: blur(8px);
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
   z-index: 100;
-  padding: 0;
+  padding: 16px;
+  /* Clear bottom-nav (~68px) + iPhone safe area */
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 84px);
+  padding-top: calc(env(safe-area-inset-top, 0px) + 16px);
+  overflow-y: auto;
 }
 
 .sdh-modal {
   width: 100%;
-  max-width: 480px;
-  max-height: 80vh;
+  max-width: 460px;
+  max-height: calc(100vh - 180px);
   background: var(--c-bg-secondary, #14132A);
-  border-radius: 20px 20px 0 0;
+  border-radius: 18px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  margin: auto;
 }
 
 .sdh-header {
