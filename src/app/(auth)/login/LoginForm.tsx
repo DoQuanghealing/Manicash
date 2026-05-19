@@ -59,10 +59,17 @@ export default function LoginForm() {
     setUserProfile({
       uid: 'demo-user-123',
       displayName: 'Nhà Phát Triển',
+      email: 'dev@manicash.local',
+      photoURL: null,
       xp: 1500,
       rank: 'gold',
       streak: 5,
-      totalMoney: 5000000,
+      lastActiveDate: new Date().toISOString(),
+      resistCount: 50,
+      totalResistSaved: 5000000,
+      isPremium: true,
+      plan: 'premium',
+      premiumExpiresAt: null,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
