@@ -10,30 +10,42 @@ import './FundsBlock.css';
 
 type FundType = 'reserve' | 'goals' | 'investment';
 
-function generateDemoHistory(baseAmount: number, isGrowth: boolean) {
-  const points = [];
-  let currentVal = baseAmount * 0.4; // Start at 40%
+/** Build last-7-months chart data from real monthly contributions.
+ *  Each point = total contribution for that month (per-month, not cumulative).
+ *  Returns array of { date: 'Tx', val: number } for 7 most-recent months,
+ *  oldest first. */
+function buildMonthlyChartData(
+  contributions: { month: string; amount: number }[],
+): { date: string; val: number }[] {
   const today = new Date();
-  
-  for(let i=6; i>=0; i--) {
-    const d = new Date(today);
-    d.setMonth(d.getMonth() - i);
-    points.push({
-      date: `T${d.getMonth() + 1}`,
-      val: currentVal
+  const months: { date: string; val: number; key: string }[] = [];
+
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today.getUTCFullYear(), today.getUTCMonth() - i, 1);
+    const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+    months.push({
+      date: `T${d.getUTCMonth() + 1}`,
+      val: 0,
+      key,
     });
-    
-    // Growth step
-    if (isGrowth) {
-      const factor = 0.85 + ((6 - i) % 3) * 0.1;
-      currentVal += (baseAmount * 0.6) / 6 * factor;
-    } else {
-      currentVal += (baseAmount * 0.6) / 6;
-    }
   }
-  // Ensure last point is exactly the current balance
-  points[points.length-1].val = baseAmount;
-  return points;
+
+  // Aggregate per-month totals
+  for (const c of contributions) {
+    const slot = months.find((m) => m.key === c.month);
+    if (slot) slot.val += c.amount;
+  }
+
+  return months.map(({ date, val }) => ({ date, val }));
+}
+
+function formatContribDate(iso?: string): string {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '—';
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  return `${dd}/${mm}/${d.getFullYear()}`;
 }
 
 export default function FundsBlock() {
@@ -190,11 +202,29 @@ function FundDetailModal({ type, accounts, onClose }: { type: FundType, accounts
   const monthlyTotal = getMonthlyFundTotal(type);
   const yearlyTotal = getYearlyFundTotal(type);
   const yearlyBreakdown = getYearlyBreakdown(type);
+  const allContributions = useDashboardStore((s) => s.monthlyContributions[type] ?? []);
   const currentMonth = new Date().getMonth() + 1;
-  const recentContributionAmounts = [260_000, 340_000, 220_000];
+  const currentMonthKey = `${new Date().getFullYear()}-${String(currentMonth).padStart(2, '0')}`;
 
-  // Demo chart data for monthly view (daily accumulation)
-  const monthHistory = generateDemoHistory(monthlyTotal > 0 ? monthlyTotal : account.balance, type === 'investment');
+  // Lịch sử tích lũy trong tháng hiện tại — newest first
+  const monthContributions = allContributions
+    .filter((c) => c.month === currentMonthKey)
+    .slice()
+    .sort((a, b) => {
+      const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return tb - ta;
+    });
+
+  // Chart 7 tháng gần nhất — real per-month totals
+  const monthHistory = buildMonthlyChartData(allContributions);
+  const maxMonthVal = Math.max(...monthHistory.map((p) => p.val), 1);
+
+  const sourceLabel = type === 'reserve'
+    ? 'Nạp vào Dự phòng'
+    : type === 'goals'
+      ? 'Nạp vào Mục tiêu'
+      : 'Nạp vào Đầu tư';
 
   // Yearly bar chart data
   const maxMonthly = Math.max(...yearlyBreakdown.map(m => m.amount), 1);
@@ -209,7 +239,7 @@ function FundDetailModal({ type, accounts, onClose }: { type: FundType, accounts
   // Monthly chart
   const points = monthHistory.map((d, i) => ({
     x: pd + (i / (monthHistory.length - 1)) * w,
-    y: pd + h - (d.val / (Math.max(...monthHistory.map(p => p.val), 1) * 1.1)) * h,
+    y: pd + h - (d.val / (maxMonthVal * 1.1)) * h,
   }));
 
   let pathStr = `M ${points[0].x} ${points[0].y}`;
@@ -351,20 +381,24 @@ function FundDetailModal({ type, accounts, onClose }: { type: FundType, accounts
           </p>
           <div className="fb-history-list">
             {viewMode === 'month' ? (
-              // Monthly: show recent contributions
-              [1, 2, 3].map(i => (
-                <div key={i} className="fb-history-item">
-                  <div className="fb-history-left">
-                    <span className="fb-history-date">{22 - i * 7}/0{currentMonth}/2026</span>
-                    <span className="fb-history-source">
-                      {type === 'reserve' ? 'Trích tự động từ lương' : type === 'goals' ? 'Chuyển khoản thủ công' : 'Lãi quỹ mở'}
+              // Monthly: real contributions in current month, newest first
+              monthContributions.length === 0 ? (
+                <p style={{ fontSize: '0.7rem', color: 'var(--c-text-muted)', textAlign: 'center', padding: '12px' }}>
+                  Chưa có lần nạp nào trong tháng này
+                </p>
+              ) : (
+                monthContributions.map((c, i) => (
+                  <div key={`${c.createdAt ?? c.month}-${i}`} className="fb-history-item">
+                    <div className="fb-history-left">
+                      <span className="fb-history-date">{formatContribDate(c.createdAt)}</span>
+                      <span className="fb-history-source">{sourceLabel}</span>
+                    </div>
+                    <span className="fb-history-amt" style={{ color: accentColor }}>
+                      +{formatCurrencyShort(c.amount)}
                     </span>
                   </div>
-                  <span className="fb-history-amt" style={{ color: accentColor }}>
-                    +{formatCurrencyShort(recentContributionAmounts[i - 1])}
-                  </span>
-                </div>
-              ))
+                ))
+              )
             ) : (
               // Yearly: show monthly summaries
               yearlyBreakdown
