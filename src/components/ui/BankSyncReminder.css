@@ -1,0 +1,92 @@
+/* ═══ BankSyncReminder — banner styles ═══ */
+
+.bsr-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.1), rgba(124, 58, 237, 0.04));
+  border: 1px solid rgba(124, 58, 237, 0.25);
+  border-radius: 14px;
+  margin-bottom: 12px;
+}
+
+.bsr-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: rgba(124, 58, 237, 0.18);
+  color: #C4B5FD;
+  flex-shrink: 0;
+}
+
+.bsr-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.bsr-headline {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--c-text-primary, #F4F4F5);
+  margin: 0 0 2px;
+}
+
+.bsr-subline {
+  font-size: 11px;
+  color: var(--c-text-secondary, #A1A1AA);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.bsr-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.bsr-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+  border: 1px solid transparent;
+}
+
+.bsr-btn--primary {
+  background: #7C3AED;
+  color: #fff;
+  border-color: #7C3AED;
+}
+
+.bsr-btn--primary:hover {
+  background: #6D28D9;
+}
+
+.bsr-btn--ghost {
+  background: transparent;
+  color: var(--c-text-secondary, #A1A1AA);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.bsr-btn--ghost:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--c-text-primary, #F4F4F5);
+}
+
+@media (max-width: 360px) {
+  .bsr-actions {
+    flex-direction: row;
+  }
+}

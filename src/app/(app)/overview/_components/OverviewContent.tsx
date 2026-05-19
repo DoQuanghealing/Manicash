@@ -7,6 +7,7 @@ import PendingTransactionBanner from './PendingTransactionBanner';
 import MissionChecklist from './MissionChecklist';
 import WishlistPopup from './WishlistPopup';
 import MonthlyReportModal from './MonthlyReportModal';
+import BankSyncReminder from '@/components/ui/BankSyncReminder';
 
 // Nạp 3 khối vừa tạo (1-2-3)
 import IncomeBlock from './IncomeBlock';
@@ -24,6 +25,7 @@ export default function OverviewContent() {
         <SafeToSpendCard />
         <PendingTransactionBanner />
         <BudgetWarningBanner />
+        <BankSyncReminder />
 
         {/* ═══ NEW: GIAO DIỆN 1-2-3 ═══ */}
         {/* Khối 1: Thu nhập (Full-width) */}
