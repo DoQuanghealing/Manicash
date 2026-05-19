@@ -1,0 +1,33 @@
+.badge-img {
+  object-fit: contain;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.badge-img.locked {
+  filter: grayscale(1) opacity(0.4);
+}
+
+.badge-img.unlocked {
+  filter: drop-shadow(0 4px 12px rgba(255, 200, 50, 0.3));
+}
+
+.badge-fallback {
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.badge-fallback.locked {
+  background: var(--surface-mute);
+  opacity: 0.4;
+  color: var(--text-muted);
+}
+
+.badge-fallback.unlocked {
+  background: linear-gradient(135deg, var(--gradient-primary));
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+  color: #fff;
+}
