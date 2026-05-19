@@ -11,12 +11,19 @@ import {
   buildCoreDashboardBalances,
   type CoreDashboardBalances,
 } from '@/core/finance/dashboardSelectors';
+import type { FixedBillView } from '@/core/finance/threeAccountSelectors';
+import {
+  buildThreeAccountSnapshot,
+  type ThreeAccountSnapshot,
+  type ThreeAccountSnapshotInput,
+} from '@/core/finance/threeAccountSnapshot';
 import {
   calculateSafeToSpend,
   getSafeToSpendStatus,
   type SafeToSpendStatus,
 } from '@/lib/accountOverviewMath';
 import { getMonthKeyFromDate } from '@/lib/dateHelpers';
+import { isFeatureEnabled } from '@/lib/featureFlags';
 
 export type OverviewAccountId = 'income' | 'expense' | 'saving';
 
@@ -527,4 +534,119 @@ export function useAccountOverviewSnapshot(): AccountOverviewSnapshot {
     coreBalances,
     hasCoreLedgerEntries,
   });
+}
+
+// ════════════════════════════════════════════════════════════════════
+//  Phase 1 Day 4 — New ThreeAccountSnapshot wiring (flag-gated)
+//
+//  This layer reads from the same source stores BUT produces the new
+//  ThreeAccountSnapshot shape via the pure builder in
+//  `src/core/finance/threeAccountSnapshot.ts`.
+//
+//  Behavior:
+//    - Flag NEW_THREE_ACCOUNT_MODEL OFF  → returns `null` so UI knows
+//      to fall back to legacy `getAccountOverviewSnapshot()`.
+//    - Flag NEW_THREE_ACCOUNT_MODEL ON   → returns full ThreeAccountSnapshot.
+//
+//  Legacy `getAccountOverviewSnapshot()` and `useAccountOverviewSnapshot()`
+//  are NEVER touched here — they continue to work identically regardless
+//  of flag (LA1 invariant).
+//
+//  Reference: docs/plans/phase-1-read-model.md §8.1, Day 4 scope.
+// ════════════════════════════════════════════════════════════════════
+
+interface AssembleInputArgs {
+  finance: FinanceSource;
+  budget: BudgetSource;
+  dashboard: DashboardSource;
+  ledgerEntries: ReturnType<typeof useFinanceCoreStore.getState>['ledgerEntries'];
+}
+
+/**
+ * Pure helper — given store states, builds the snapshot input.
+ *
+ * Exported for testability. Does NOT check the feature flag — caller is
+ * responsible for gating. Does NOT read Zustand state internally — all
+ * data comes through the args.
+ */
+export function assembleThreeAccountSnapshotInput(
+  args: AssembleInputArgs,
+): ThreeAccountSnapshotInput {
+  const { finance, budget, dashboard, ledgerEntries } = args;
+
+  const monthKey = finance.getCurrentMonthKey();
+  const monthlyIncome = finance.getIncomeForMonth(monthKey);
+  const dailySpendingLimit = budget.getTotalCategoryLimits();
+  const carryOver = budget.carryOver;
+
+  // Phase 1 caveat: `monthlySavingsTarget` is a future field (ADR §4.2
+  // Q3). For now we mirror the legacy deduction by reading actual
+  // monthly contributions, which preserves Safe-to-Spend numerical
+  // continuity with the legacy snapshot. Phase 2+ introduces a real
+  // target field in `useBudgetStore`.
+  const monthlySavingsTarget = dashboard.getTotalMonthlySavings();
+
+  // `today` is day-of-month for overdue bill detection. Use UTC to stay
+  // consistent with dateHelpers convention used elsewhere.
+  const today = new Date().getUTCDate();
+
+  const fixedBills: FixedBillView[] = finance.fixedBills.map((bill) => ({
+    id: bill.id,
+    amount: bill.amount,
+    dueDay: bill.dueDay,
+    isPaid: bill.isPaid,
+    name: bill.name,
+    icon: bill.icon,
+  }));
+
+  return {
+    ledger: ledgerEntries,
+    monthKey,
+    today,
+    fixedBills,
+    dailySpendingLimit,
+    carryOver,
+    monthlySavingsTarget,
+    monthlyIncome,
+  };
+}
+
+/**
+ * Imperative getter for the new ThreeAccountSnapshot.
+ *
+ * Returns `null` when the feature flag is OFF. UI/consumer code that
+ * needs the new shape MUST handle the null case and fall back to legacy.
+ */
+export function getThreeAccountSnapshot(): ThreeAccountSnapshot | null {
+  if (!isFeatureEnabled('NEW_THREE_ACCOUNT_MODEL')) return null;
+
+  const ledgerEntries = useFinanceCoreStore.getState().ledgerEntries;
+  const input = assembleThreeAccountSnapshotInput({
+    finance: useFinanceStore.getState(),
+    budget: useBudgetStore.getState(),
+    dashboard: useDashboardStore.getState(),
+    ledgerEntries,
+  });
+  return buildThreeAccountSnapshot(input);
+}
+
+/**
+ * React hook variant. Subscribes to every source store so the component
+ * re-renders when any input changes. Returns `null` when flag is OFF.
+ */
+export function useThreeAccountSnapshot(): ThreeAccountSnapshot | null {
+  const finance = useFinanceStore();
+  const budget = useBudgetStore();
+  const dashboard = useDashboardStore();
+  const ledgerEntries = useFinanceCoreStore((s) => s.ledgerEntries);
+
+  if (!isFeatureEnabled('NEW_THREE_ACCOUNT_MODEL')) return null;
+
+  const input = assembleThreeAccountSnapshotInput({
+    finance,
+    budget,
+    dashboard,
+    ledgerEntries,
+  });
+  return buildThreeAccountSnapshot(input);
 }
