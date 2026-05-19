@@ -4,6 +4,14 @@
 import { create } from 'zustand';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useFinanceStore } from '@/stores/useFinanceStore';
+import { useFinanceCoreStore } from '@/stores/useFinanceCoreStore';
+import {
+  BILL_FUND_ACCOUNT_ID,
+  EMERGENCY_FUND_ACCOUNT_ID,
+  GOAL_FUND_ACCOUNT_ID,
+  INVESTMENT_FUND_ACCOUNT_ID,
+  MAIN_BANK_ACCOUNT_ID,
+} from '@/core/finance/accounts';
 import { getMonthKeyFromDate, getCurrentMonthKey, isInCurrentWeek } from '@/lib/dateHelpers';
 
 /* ── Split Funds types (shared across all entry points) ── */
@@ -33,6 +41,13 @@ export interface SplitResult {
 
 export type SavingsPeriod = 'week' | 'month' | 'year';
 export type SavingsFund = 'reserve' | 'goals' | 'investment';
+const DEFAULT_ACCOUNT_IDS = {
+  MAIN_BANK: MAIN_BANK_ACCOUNT_ID,
+  BILL_FUND: BILL_FUND_ACCOUNT_ID,
+  EMERGENCY_FUND: EMERGENCY_FUND_ACCOUNT_ID,
+  GOAL_FUND: GOAL_FUND_ACCOUNT_ID,
+  INVESTMENT_FUND: INVESTMENT_FUND_ACCOUNT_ID,
+} as const;
 
 export interface FundContribution {
   month: string;
@@ -427,6 +442,41 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     if (reserveAmount > 0) addContrib('reserve', reserveAmount, splitOccurredAt);
     if (goalsAmount > 0) addContrib('goals', goalsAmount, splitOccurredAt);
     if (investmentAmount > 0) addContrib('investment', investmentAmount, splitOccurredAt);
+
+    try {
+      const coreStore = useFinanceCoreStore.getState();
+      const baseEvent = {
+        occurredAt: splitOccurredAt.toISOString(),
+        description: 'Legacy split funds mirror',
+        metadata: {
+          legacySplitTransactionId: splitTransactionId,
+          sourceTransactionId: sourceTransactionId ?? null,
+        },
+      };
+      const transfers = [
+        { id: 'bill', amount: billAmount, targetAccountId: DEFAULT_ACCOUNT_IDS.BILL_FUND },
+        { id: 'reserve', amount: reserveAmount, targetAccountId: DEFAULT_ACCOUNT_IDS.EMERGENCY_FUND },
+        { id: 'goals', amount: goalsAmount, targetAccountId: DEFAULT_ACCOUNT_IDS.GOAL_FUND },
+        { id: 'investment', amount: investmentAmount, targetAccountId: DEFAULT_ACCOUNT_IDS.INVESTMENT_FUND },
+      ];
+
+      for (const transfer of transfers) {
+        if (transfer.amount <= 0) continue;
+        coreStore.execute({
+          ...baseEvent,
+          id: `legacy-${splitTransactionId}-${transfer.id}`,
+          type: 'TRANSFER_MONEY',
+          amount: transfer.amount,
+          sourceAccountId: DEFAULT_ACCOUNT_IDS.MAIN_BANK,
+          targetAccountId: transfer.targetAccountId,
+        });
+      }
+    } catch (error) {
+      // TODO: make legacy split + finance core transfers atomic and rollback together.
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[finance-core] failed to mirror split funds', error);
+      }
+    }
 
     return {
       billAmount,
