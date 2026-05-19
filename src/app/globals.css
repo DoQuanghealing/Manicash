@@ -124,6 +124,7 @@ img, svg { display: block; max-width: 100%; }
   /* Layout */
   --bottom-nav-height: 68px;
   --header-height: 56px;
+  --shell-max-width: 430px;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-top: env(safe-area-inset-top, 0px);
   --page-padding: var(--space-lg);

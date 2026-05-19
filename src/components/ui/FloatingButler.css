@@ -87,20 +87,22 @@
   50% { transform: scale(1.2); }
 }
 
-/* ═══ NOTIFICATION BANNER — Inside shell-content, below header ═══ */
+/* ═══ NOTIFICATION BANNER — Absolute inside mobile-shell, stays in phone frame ═══ */
 .fb-notif {
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  width: calc(100% - var(--space-lg) * 2);
-  margin: 0 auto var(--space-sm);
+  position: absolute;
+  top: calc(var(--header-height) + 8px);
+  left: var(--space-lg);
+  right: var(--space-lg);
+  z-index: 160;
   padding: 10px 14px;
   border-radius: var(--radius-lg);
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  cursor: pointer;
+  cursor: grab;
   pointer-events: auto;
+  user-select: none;
+  -webkit-user-select: none;
 
   /* Semi-transparent glassmorphism */
   background: rgba(22, 18, 40, 0.72);
@@ -110,12 +112,6 @@
   box-shadow:
     0 4px 20px rgba(0,0,0,0.2),
     0 1px 4px rgba(124,58,237,0.08);
-}
-
-/* Fit within mobile shell */
-.mobile-shell .fb-notif,
-.mobile-shell ~ .fb-notif {
-  /* Handled by fixed positioning — works inside shell viewport */
 }
 
 .fb-notif--high {
