@@ -219,7 +219,7 @@ export default function LedgerContent() {
                             </div>
                             {isSplit && isExpanded && splitBreakdown && (
                               <div className="ledger-split-breakdown">
-                                <div><span>Quỹ bill</span><strong>{formatCurrency(splitBreakdown.billFund)}</strong></div>
+                                <div><span>Tài khoản chi tiêu</span><strong>{formatCurrency(splitBreakdown.billFund)}</strong></div>
                                 <div><span>Dự phòng</span><strong>{formatCurrency(splitBreakdown.reserve)}</strong></div>
                                 <div><span>Mục tiêu</span><strong>{formatCurrency(splitBreakdown.goals)}</strong></div>
                                 <div><span>Đầu tư</span><strong>{formatCurrency(splitBreakdown.investment)}</strong></div>

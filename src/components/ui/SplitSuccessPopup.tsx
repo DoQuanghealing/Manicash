@@ -5,6 +5,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { SplitResult } from '@/stores/useDashboardStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
+import { useOverlayRegistration } from '@/hooks/useOverlayRegistration';
 import './SplitSuccessPopup.css';
 
 const CONGRATS_MESSAGES = [
@@ -35,6 +36,7 @@ const confettiParticles = Array.from({ length: CONFETTI_COUNT }, (_, i) => ({
 }));
 
 export default function SplitSuccessPopup({ isOpen, result, onClose }: SplitSuccessPopupProps) {
+  useOverlayRegistration('split-success', isOpen);
   const butlerName = useSettingsStore((s) => s.butlerName);
   const message = useMemo(() => {
     const raw = CONGRATS_MESSAGES[Math.floor(Math.random() * CONGRATS_MESSAGES.length)];
@@ -96,7 +98,7 @@ export default function SplitSuccessPopup({ isOpen, result, onClose }: SplitSucc
             <div className="ssp-breakdown">
               {result.billAmount > 0 && (
                 <div className="ssp-row">
-                  <span className="ssp-row-label">🏦 Quỹ Bill</span>
+                  <span className="ssp-row-label">🏦 Tài khoản chi tiêu</span>
                   <span className="ssp-row-amount ssp-row-amount--bill">+{formatVND(result.billAmount)}</span>
                 </div>
               )}

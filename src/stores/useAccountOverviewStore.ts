@@ -420,7 +420,7 @@ export function buildAccountOverviewSnapshot({
       },
       {
         id: 'bill-fund',
-        label: 'Quỹ bill đã tích lũy',
+        label: 'Tài khoản chi tiêu hiện có',
         amount: billFundBalance,
         source: 'useFinanceStore.billFundBalance',
       },

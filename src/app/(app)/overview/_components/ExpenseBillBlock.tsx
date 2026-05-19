@@ -63,11 +63,11 @@ export default function ExpenseBillBlock() {
               </p>
               {expenseFunding.fixedBillsOverfunded && expenseFunding.fixedBillsOverfunded > 0 ? (
                 <p className="ebb-funding-status" style={{ color: '#10B981', fontSize: '11px', fontWeight: 600, marginTop: '4px' }}>
-                  ✅ Quỹ bill đã đủ + dư {formatCurrencyShort(expenseFunding.fixedBillsOverfunded)}
+                  ✅ Tài khoản chi tiêu đã đủ + dư {formatCurrencyShort(expenseFunding.fixedBillsOverfunded)}
                 </p>
               ) : expenseFunding.fixedBillsProgress !== undefined && expenseFunding.fixedBillsProgress < 1 ? (
                 <p className="ebb-funding-status" style={{ color: '#F59E0B', fontSize: '11px', fontWeight: 600, marginTop: '4px' }}>
-                  ⚠️ Quỹ bill còn thiếu {formatCurrencyShort(expenseFunding.fixedBillsTotal - expenseFunding.billFundBalance)}
+                  ⚠️ Tài khoản chi tiêu còn thiếu {formatCurrencyShort(expenseFunding.fixedBillsTotal - expenseFunding.billFundBalance)}
                 </p>
               ) : null}
             </div>
@@ -245,7 +245,7 @@ export default function ExpenseBillBlock() {
 
               {/* Fund balance */}
               <div className="ebb-modal-safe">
-                <span className="ebb-modal-safe-label">Quỹ Bill đã tích lũy</span>
+                <span className="ebb-modal-safe-label">Tài khoản chi tiêu hiện có</span>
                 <span className="ebb-modal-safe-val ebb-modal-safe-val--purple">
                   {formatCurrency(billFundBalance)}
                 </span>

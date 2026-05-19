@@ -140,7 +140,7 @@ export default function FixedBillsPanel() {
       <div className="bills-fund-header">
         <div className="bills-fund-label">
           <span className="bills-fund-icon">🏦</span>
-          <span>Quỹ Bill Cố Định</span>
+          <span>Bill Cố Định</span>
         </div>
         <span className="bills-fund-total-badge">{formatVND(total)}</span>
       </div>

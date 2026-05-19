@@ -261,7 +261,7 @@ export default function SplitFundsPanel({ totalAmount, sourceTransactionId, onCo
               {/* Bill slider */}
               <div className="sfp-slider-group">
                 <div className="sfp-slider-row">
-                  <span className="sfp-slider-label">🏦 Quỹ Bill</span>
+                  <span className="sfp-slider-label">🏦 Tài khoản chi tiêu</span>
                   <span className="sfp-slider-value">{billPercent}% <span className="sfp-slider-amt">{formatVND(billAmount)}</span></span>
                 </div>
                 <input
@@ -348,7 +348,7 @@ export default function SplitFundsPanel({ totalAmount, sourceTransactionId, onCo
           >
             <div className="sfp-manual-grid">
               <div className="sfp-manual-field">
-                <label className="sfp-manual-label">🏦 Quỹ Bill</label>
+                <label className="sfp-manual-label">🏦 Tài khoản chi tiêu</label>
                 <input
                   type="text" inputMode="numeric" placeholder="0"
                   value={manualBill} onChange={handleManualInput(setManualBill)}

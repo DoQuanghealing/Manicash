@@ -42,7 +42,7 @@ export default function FixedBillsSummary() {
       {/* Fund status */}
       <div className="fbs-fund-row">
         <div className="fbs-fund-item">
-          <span className="fbs-fund-label">Quỹ bill</span>
+          <span className="fbs-fund-label">Tài khoản chi tiêu</span>
           <span className="fbs-fund-value">{formatCurrencyShort(billFundBalance)}</span>
         </div>
         <div className="fbs-fund-divider" />
