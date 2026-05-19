@@ -282,6 +282,33 @@ export default function ExpenseBillBlock() {
                 </span>
               </div>
             )}
+
+            {/* Row 5: Box-per-bill status indicator */}
+            {billsSortedByDueDay.length > 0 && (
+              <div className="ebb-bill-boxes" aria-label="Trạng thái từng hóa đơn">
+                {billsSortedByDueDay.map((bill, idx) => {
+                  const isHighValue = bill.amount > 5_000_000;
+                  const titleParts = [
+                    bill.name,
+                    formatCurrencyShort(bill.amount),
+                    bill.isPaid ? 'đã đóng' : `hạn ngày ${bill.dueDay}`,
+                  ];
+                  if (isHighValue) titleParts.push('quan trọng');
+                  return (
+                    <div
+                      key={bill.id}
+                      className={`ebb-bill-box ${bill.isPaid ? 'ebb-bill-box--paid' : 'ebb-bill-box--unpaid'}`}
+                      title={titleParts.join(' — ')}
+                      style={!bill.isPaid ? { animationDelay: `${(idx % 4) * 0.12}s` } : undefined}
+                    >
+                      {isHighValue && (
+                        <span className="ebb-bill-box-star" aria-hidden="true">★</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </motion.button>
         </div>
       </div>

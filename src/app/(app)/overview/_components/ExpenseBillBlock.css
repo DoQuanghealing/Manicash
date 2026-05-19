@@ -1181,3 +1181,67 @@
   text-decoration: line-through;
   text-decoration-color: rgba(34, 197, 94, 0.4);
 }
+
+/* ═══ Row of status boxes — 1 box / bill ═══ */
+.ebb-bill-boxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.06);
+}
+
+.ebb-bill-box {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  border: 2px solid transparent;
+  flex-shrink: 0;
+}
+
+.ebb-bill-box--paid {
+  background: linear-gradient(135deg, #22C55E, #16A34A);
+  border-color: rgba(34, 197, 94, 0.7);
+  box-shadow: 0 1px 4px rgba(34, 197, 94, 0.25);
+}
+
+.ebb-bill-box--paid::after {
+  content: '✓';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1;
+}
+
+.ebb-bill-box--unpaid {
+  background: transparent;
+  border-color: #F97316;
+  animation: ebb-bill-box-bounce 1.6s ease-in-out infinite;
+  transform-origin: center bottom;
+}
+
+@keyframes ebb-bill-box-bounce {
+  0%, 100% { transform: translateY(0) scale(1); }
+  35% { transform: translateY(-3px) scale(1.04); }
+  60% { transform: translateY(0) scale(1); }
+  70% { transform: translateY(-1px) scale(1.02); }
+  85% { transform: translateY(0) scale(1); }
+}
+
+.ebb-bill-box-star {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  font-size: 11px;
+  color: #EF4444;
+  line-height: 1;
+  text-shadow: 0 0 4px rgba(239, 68, 68, 0.6);
+  z-index: 1;
+}
