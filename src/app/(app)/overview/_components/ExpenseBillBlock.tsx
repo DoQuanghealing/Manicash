@@ -3,18 +3,20 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingBag, CreditCard, X, AlertTriangle, BarChart3 } from 'lucide-react';
+import { ShoppingBag, CreditCard, X, AlertTriangle, BarChart3, ArrowDownToLine } from 'lucide-react';
 import { useFinanceStore } from '@/stores/useFinanceStore';
 import { useBudgetStore } from '@/stores/useBudgetStore';
 import { useAccountOverviewSnapshot } from '@/stores/useAccountOverviewStore';
 import { formatCurrency, formatCurrencyShort } from '@/utils/formatCurrency';
 import ExpenseFundingChartModal from './ExpenseFundingChartModal';
+import SpendingDepositHistory from './SpendingDepositHistory';
 import './ExpenseBillBlock.css';
 
 export default function ExpenseBillBlock() {
   const [showExpenseModal, setShowExpenseModal] = useState(false);
   const [showBillModal, setShowBillModal] = useState(false);
   const [showFundingChart, setShowFundingChart] = useState(false);
+  const [showDepositHistory, setShowDepositHistory] = useState(false);
   const { accounts } = useAccountOverviewSnapshot();
   const expenseFunding = accounts.expense.expenseFunding;
 
@@ -22,8 +24,20 @@ export default function ExpenseBillBlock() {
   const totalExpense = useFinanceStore((s) => s.getExpenseForMonth(s.getCurrentMonthKey()));
   const transactions = useFinanceStore((s) => s.transactions);
   const fixedBills = useFinanceStore((s) => s.fixedBills);
+  const mainBalance = useFinanceStore((s) => s.mainBalance);
   const billFundBalance = useFinanceStore((s) => s.billFundBalance);
   const getAccumulatedBillTarget = useFinanceStore((s) => s.getAccumulatedBillTarget);
+
+  // ── Tài khoản chi tiêu hiện có (legacy mapping: main + billFund) ──
+  // Theo ADR 0001 3-account model, "Tài khoản chi tiêu" gộp main + billFund.
+  // Khi Phase 1 read model merged + flag bật, đoạn này sẽ refactor sang
+  // useThreeAccountSnapshot().spending.balance.
+  const spendingAccountBalance = mainBalance + billFundBalance;
+  const spendingTarget = expenseFunding?.target ?? 0;
+  const spendingSurplus = spendingAccountBalance - spendingTarget;
+  const spendingFundedPercent = spendingTarget > 0
+    ? Math.min(100, (spendingAccountBalance / spendingTarget) * 100)
+    : 100;
 
   // Ngưỡng chi tiêu từ budgetStore (đồng bộ với Sổ sách → Ngưỡng)
   const spendingLimit = useBudgetStore((s) => s.getTotalCategoryLimits());
@@ -50,6 +64,54 @@ export default function ExpenseBillBlock() {
   return (
     <>
       <div className="ebb-funding-wrap">
+        {/* ═══ Tài khoản chi tiêu hiện có ═══ */}
+        <div className="ebb-spending-account">
+          <div className="ebb-spending-row">
+            <div className="ebb-spending-copy">
+              <div className="ebb-spending-title-row">
+                <span className="ebb-spending-icon">🏦</span>
+                <p className="ebb-spending-label">TÀI KHOẢN CHI TIÊU HIỆN CÓ</p>
+              </div>
+              <p className="ebb-spending-amount">{formatCurrencyShort(spendingAccountBalance)}</p>
+              {spendingTarget > 0 && (
+                <p className="ebb-spending-meta">
+                  Cần {formatCurrencyShort(spendingTarget)} cho tháng này
+                </p>
+              )}
+            </div>
+            <button
+              className="ebb-spending-history-btn"
+              type="button"
+              onClick={() => setShowDepositHistory(true)}
+              aria-label="Xem lịch sử nạp Tài khoản chi tiêu"
+            >
+              <ArrowDownToLine size={14} />
+              <span>Lịch sử nạp</span>
+            </button>
+          </div>
+          {spendingTarget > 0 && (
+            <>
+              <div className="ebb-spending-progress">
+                <div
+                  className={`ebb-spending-progress-fill ${
+                    spendingSurplus < 0 ? 'ebb-spending-progress-fill--warn' : ''
+                  }`}
+                  style={{ width: `${spendingFundedPercent}%` }}
+                />
+              </div>
+              {spendingSurplus >= 0 ? (
+                <p className="ebb-spending-status ebb-spending-status--ok">
+                  ✅ Đã nạp đủ {spendingSurplus > 0 && `+ dư ${formatCurrencyShort(spendingSurplus)}`}
+                </p>
+              ) : (
+                <p className="ebb-spending-status ebb-spending-status--warn">
+                  ⚠️ Thiếu {formatCurrencyShort(Math.abs(spendingSurplus))} — chuyển thêm từ Thu nhập
+                </p>
+              )}
+            </>
+          )}
+        </div>
+
         {expenseFunding && (
           <div className="ebb-funding-header">
             <div className="ebb-funding-copy">
@@ -297,6 +359,11 @@ export default function ExpenseBillBlock() {
           />
         )}
       </AnimatePresence>
+
+      <SpendingDepositHistory
+        isOpen={showDepositHistory}
+        onClose={() => setShowDepositHistory(false)}
+      />
     </>
   );
 }
