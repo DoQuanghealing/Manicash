@@ -331,9 +331,17 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
    *  Updates BOTH FinanceStore (mainBalance, billFundBalance) and
    *  DashboardStore (reserve, goals, investment) in one atomic call.
    *  Returns SplitResult for the success popup to display breakdown.
+   *
+   *  Sub-bucket normalization (per user spec):
+   *    - If savingsPercent > 0 but reserve/goals/investment all 0 →
+   *      default to reserve=100% (giả định user muốn dồn vào Dự phòng).
+   *    - If subTotal != 100 (and > 0) → normalize proportionally so the
+   *      ratios stick but sum to 100%.
+   *    Previously this case threw and silently broke the split flow.
    */
   splitFunds: (params) => {
-    const { sourceAmount, billPercent, savingsPercent, savingsBreakdown, sourceTransactionId, occurredAt } = params;
+    const { sourceAmount, billPercent, savingsPercent, sourceTransactionId, occurredAt } = params;
+    let { savingsBreakdown } = params;
 
     // ── Validation (defense layer — UI should prevent these) ──
 
@@ -368,11 +376,21 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       throw new Error(`Tổng % âm (${totalPercent}%)`);
     }
 
-    // Sub-savings must sum to 100 when savings > 0 (tolerance 0.1)
+    // Sub-savings must sum to 100 when savings > 0.
+    // Per user spec: tiết kiệm = dự phòng + mục tiêu + đầu tư.
+    // Nếu user kéo cả 3 về 0 → default 100% vào Dự phòng.
+    // Nếu sum != 100 nhưng > 0 → normalize theo tỷ lệ giữ nguyên.
     if (savingsPercent > 0) {
       const subTotal = savingsBreakdown.reserve + savingsBreakdown.goals + savingsBreakdown.investment;
-      if (Math.abs(subTotal - 100) > 0.1) {
-        throw new Error(`Sub-percent tiết kiệm phải = 100% (hiện ${subTotal}%)`);
+      if (subTotal === 0) {
+        savingsBreakdown = { reserve: 100, goals: 0, investment: 0 };
+      } else if (Math.abs(subTotal - 100) > 0.1) {
+        const factor = 100 / subTotal;
+        savingsBreakdown = {
+          reserve: savingsBreakdown.reserve * factor,
+          goals: savingsBreakdown.goals * factor,
+          investment: savingsBreakdown.investment * factor,
+        };
       }
     }
 

@@ -331,16 +331,21 @@ describe('Phase 2 - Fix D: Split funds validation', () => {
     }).toThrow('reserve không được âm');
   });
 
-  it('sub-savings tổng = 0 (0/0/0) khi savings > 0 → throw', () => {
+  it('sub-savings tổng = 0 (0/0/0) khi savings > 0 → default 100% vào Dự phòng', () => {
+    // Per user spec: tiết kiệm = dự phòng + mục tiêu + đầu tư. Khi user
+    // không phân bổ sub-bucket nào → mặc định dồn hết vào Dự phòng.
     setupForSplit();
-    expect(() => {
-      useDashboardStore.getState().splitFunds({
-        sourceAmount: 1_000_000,
-        billPercent: 10,
-        savingsPercent: 90,
-        savingsBreakdown: { reserve: 0, goals: 0, investment: 0 },
-      });
-    }).toThrow('Sub-percent tiết kiệm phải = 100%');
+    const result = useDashboardStore.getState().splitFunds({
+      sourceAmount: 1_000_000,
+      billPercent: 10,
+      savingsPercent: 90,
+      savingsBreakdown: { reserve: 0, goals: 0, investment: 0 },
+    });
+    expect(result.billAmount).toBe(100_000);
+    expect(result.reserveAmount).toBe(900_000);
+    expect(result.goalsAmount).toBe(0);
+    expect(result.investmentAmount).toBe(0);
+    expect(result.totalDeducted).toBe(1_000_000);
   });
 
   it('sub-savings = 100 đúng → PASS (happy path)', () => {
@@ -391,16 +396,19 @@ describe('Phase 2 - Fix D: Split funds validation', () => {
     expect(result.sourceAmount).toBe(1_000_000);
   });
 
-  it('sub-savings drifts beyond tolerance (99.5) → throw', () => {
+  it('sub-savings drifts (99.5) → normalize theo tỷ lệ giữ nguyên', () => {
+    // Per user spec: drift ngoài tolerance → normalize, không throw.
+    // factor = 100/99.5 ≈ 1.00503
     setupForSplit();
-    expect(() => {
-      useDashboardStore.getState().splitFunds({
-        sourceAmount: 1_000_000,
-        billPercent: 10,
-        savingsPercent: 90,
-        savingsBreakdown: { reserve: 33, goals: 33, investment: 33.5 },
-      });
-    }).toThrow('Sub-percent tiết kiệm phải = 100%');
+    const result = useDashboardStore.getState().splitFunds({
+      sourceAmount: 1_000_000,
+      billPercent: 10,
+      savingsPercent: 90,
+      savingsBreakdown: { reserve: 33, goals: 33, investment: 33.5 },
+    });
+    // Sum of sub-amounts == savingsTotal (900_000), no fund lost to drift.
+    expect(result.totalDeducted).toBe(1_000_000);
+    expect(result.reserveAmount + result.goalsAmount + result.investmentAmount).toBe(900_000);
   });
 
   it('sourceAmount = 0 → throw early, không tạo split transaction', () => {
