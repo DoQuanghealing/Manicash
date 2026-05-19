@@ -72,6 +72,7 @@ export default function WishlistPopup() {
       type: 'RESIST_SPENDING',
       savedAmount: currentItem.price,
     });
+    useAuthStore.getState().incrementResist(currentItem.price);
     const praise = REJECT_PRAISE[Math.floor(Math.random() * REJECT_PRAISE.length)];
     setShowResult({
       type: 'rejected',

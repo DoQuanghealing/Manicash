@@ -19,10 +19,11 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
         {/* Scrollable content area */}
         <main className="shell-content">
-          {/* Butler notification: slides below header */}
-          <ButlerNotifBanner />
           {children}
         </main>
+
+        {/* Butler notification: absolute overlay inside shell, route-aware */}
+        <ButlerNotifBanner />
 
         {/* Nav: absolute bottom inside shell */}
         <BottomNav />
@@ -36,4 +37,3 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     </div>
   );
 }
-

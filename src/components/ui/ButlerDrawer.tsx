@@ -12,7 +12,6 @@ import type { SplitResult } from '@/stores/useDashboardStore';
 import SplitFundsPanel from './SplitFundsPanel';
 import SplitSuccessPopup from './SplitSuccessPopup';
 import ButlerSettings from './ButlerSettings';
-import { useOverlayRegistration } from '@/hooks/useOverlayRegistration';
 import './ButlerDrawer.css';
 
 interface ButlerDrawerProps {
@@ -23,7 +22,6 @@ interface ButlerDrawerProps {
 const formatVND = (n: number) => n.toLocaleString('vi-VN') + 'đ';
 
 export default function ButlerDrawer({ isOpen, onClose }: ButlerDrawerProps) {
-  useOverlayRegistration('butler-drawer', isOpen);
   const mainBalance = useFinanceStore((s) => s.mainBalance);
   const billFundBalance = useFinanceStore((s) => s.billFundBalance);
   const emergencyBalance = useFinanceStore((s) => s.emergencyBalance);
