@@ -5,6 +5,8 @@ import SafeToSpendCard from './SafeToSpendCard';
 import BudgetWarningBanner from './BudgetWarningBanner';
 import PendingTransactionBanner from './PendingTransactionBanner';
 import MissionChecklist from './MissionChecklist';
+import OnboardingQuestPanel from './OnboardingQuestPanel';
+import DailyQuestCard from './DailyQuestCard';
 import WishlistPopup from './WishlistPopup';
 import MonthlyReportModal from './MonthlyReportModal';
 import BankSyncReminder from '@/components/ui/BankSyncReminder';
@@ -41,10 +43,16 @@ export default function OverviewContent() {
         {/* ═══ BLOCK 5: Wishlist Popup (auto khi hết cooling) ═══ */}
         <WishlistPopup />
 
-        {/* ═══ BLOCK 6: Gợi ý nhiệm vụ tối ưu tài chính ═══ */}
+        {/* ═══ BLOCK 6a: Lộ trình tân thủ 7 bước (tự ẩn khi xong) ═══ */}
+        <OnboardingQuestPanel />
+
+        {/* ═══ BLOCK 6b: 3 nhiệm vụ hàng ngày ═══ */}
+        <DailyQuestCard />
+
+        {/* ═══ BLOCK 6c: Gói nhiệm vụ tối ưu tài chính (legacy 3-bước) ═══ */}
         <MissionChecklist />
 
-        {/* ═══ BLOCK 6: Wellness & Chữa lành ═══ */}
+        {/* ═══ BLOCK 7: Wellness & Chữa lành ═══ */}
         <WellnessCard />
       </div>
 

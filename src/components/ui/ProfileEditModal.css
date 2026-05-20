@@ -6,7 +6,8 @@
   background: rgba(10, 10, 18, 0.72);
   backdrop-filter: blur(8px);
   display: flex;
-  align-items: center;
+  /* flex-start + margin:auto trên modal cho phép scroll khi bàn phím ảo bật lên */
+  align-items: flex-start;
   justify-content: center;
   z-index: 100;
   padding: 16px;
@@ -14,12 +15,15 @@
   padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 84px);
   padding-top: calc(env(safe-area-inset-top, 0px) + 16px);
   overflow-y: auto;
+  /* Đảm bảo scroll hoạt động khi bàn phím ảo thu nhỏ viewport */
+  overscroll-behavior: contain;
 }
 
 .pem-modal {
   width: 100%;
   max-width: 460px;
-  max-height: calc(100vh - 180px);
+  /* Bỏ max-height cứng — body bên trong có overflow-y:auto nên tự scroll;
+     footer luôn hiển thị ngay cả khi bàn phím ảo thu nhỏ màn hình */
   background: var(--c-bg-secondary, #14132A);
   border-radius: 18px;
   display: flex;
@@ -28,6 +32,8 @@
   border: 1px solid rgba(255, 255, 255, 0.06);
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
   margin: auto;
+  /* Chiếm tối đa không gian có sẵn mà không bị cắt */
+  max-height: calc(100dvh - 120px);
 }
 
 .pem-header {

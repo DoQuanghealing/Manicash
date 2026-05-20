@@ -1,0 +1,47 @@
+/* ═══ ZodiacRunner — Con giáp linh vật trên header ═══ */
+
+.zodiac-runner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  margin-right: 4px;
+}
+
+.zodiac-runner-emoji {
+  font-size: 20px;
+  line-height: 1;
+  display: inline-block;
+  animation: zodiac-float 3.2s ease-in-out infinite;
+  filter: drop-shadow(0 0 6px rgba(124, 58, 237, 0.5));
+  transition: transform 0.2s ease;
+}
+
+.zodiac-runner:hover .zodiac-runner-emoji {
+  transform: scale(1.18);
+}
+
+.zodiac-runner:active .zodiac-runner-emoji {
+  transform: scale(0.92);
+}
+
+/* Trạng thái khóa (chưa unlock): mờ + grayscale nhẹ */
+.zodiac-runner--locked .zodiac-runner-emoji {
+  filter: grayscale(60%) drop-shadow(0 0 4px rgba(156, 163, 175, 0.3));
+  opacity: 0.55;
+}
+
+@keyframes zodiac-float {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50% { transform: translateY(-2px) rotate(3deg); }
+}
+
+[data-theme="light"] .zodiac-runner-emoji {
+  filter: drop-shadow(0 0 4px rgba(124, 58, 237, 0.3));
+}

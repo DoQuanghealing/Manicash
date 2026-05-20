@@ -1,0 +1,369 @@
+/* ═══ OnboardingQuestPanel styles ═══ */
+
+/* ── Trigger card ── */
+.obq-trigger {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.12), rgba(34, 197, 94, 0.06));
+  border: 1px solid rgba(124, 58, 237, 0.25);
+  border-radius: 14px;
+  cursor: pointer;
+  color: var(--c-text-primary, #F4F4F5);
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.obq-trigger:hover {
+  border-color: rgba(124, 58, 237, 0.5);
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.18), rgba(34, 197, 94, 0.1));
+}
+
+.obq-trigger--ready {
+  border-color: rgba(249, 115, 22, 0.55);
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.15), rgba(234, 179, 8, 0.1));
+  animation: obq-ready-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes obq-ready-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.5); }
+  50% { box-shadow: 0 0 0 6px rgba(249, 115, 22, 0); }
+}
+
+.obq-trigger-icon {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.obq-trigger-emoji { font-size: 22px; line-height: 1; }
+
+.obq-trigger-pulse {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 18px;
+  height: 18px;
+  background: #F97316;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  animation: obq-spin 1.6s linear infinite;
+}
+
+@keyframes obq-spin {
+  to { transform: rotate(360deg); }
+}
+
+.obq-trigger-content { flex: 1; min-width: 0; text-align: left; }
+
+.obq-trigger-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.obq-trigger-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-purple-light, #A78BFA);
+}
+
+.obq-trigger-ready-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: #F97316;
+  color: white;
+}
+
+.obq-trigger-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--c-text-primary, #F4F4F5);
+  margin: 0 0 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.obq-trigger-progress {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.obq-trigger-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #7C3AED, #22C55E);
+  transition: width 0.4s ease;
+}
+
+.obq-trigger-arrow { color: var(--c-text-secondary, #A1A1AA); flex-shrink: 0; }
+
+/* ── Modal backdrop ── */
+.obq-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 10, 18, 0.78);
+  backdrop-filter: blur(8px);
+  z-index: 100;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 16px;
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 84px);
+  padding-top: calc(env(safe-area-inset-top, 0px) + 16px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.obq-panel {
+  width: 100%;
+  max-width: 480px;
+  background: var(--c-bg-secondary, #14132A);
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 20px;
+  margin: auto;
+  position: relative;
+  max-height: calc(100dvh - 120px);
+  overflow-y: auto;
+}
+
+.obq-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: none;
+  color: var(--c-text-secondary, #A1A1AA);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.obq-close:hover { background: rgba(255, 255, 255, 0.12); }
+
+.obq-header { margin-bottom: 18px; padding-right: 40px; }
+
+.obq-header-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--c-purple-light, #A78BFA);
+  margin: 0 0 4px;
+}
+
+.obq-header-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--c-text-primary, #F4F4F5);
+  margin: 0 0 10px;
+}
+
+.obq-header-progress {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.obq-header-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #7C3AED, #22C55E);
+  transition: width 0.5s ease;
+}
+
+/* ── Active quest card ── */
+.obq-active-card {
+  display: flex;
+  gap: 14px;
+  padding: 16px;
+  background: rgba(124, 58, 237, 0.08);
+  border: 1px solid rgba(124, 58, 237, 0.25);
+  border-radius: 14px;
+  margin-bottom: 16px;
+}
+
+.obq-active-icon {
+  font-size: 36px;
+  line-height: 1;
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.obq-active-body { flex: 1; min-width: 0; }
+
+.obq-active-step {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-purple-light, #A78BFA);
+  margin: 0 0 2px;
+}
+
+.obq-active-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--c-text-primary, #F4F4F5);
+  margin: 0 0 6px;
+}
+
+.obq-active-scenario {
+  font-size: 12px;
+  color: var(--c-text-secondary, #A1A1AA);
+  line-height: 1.5;
+  margin: 0 0 8px;
+}
+
+.obq-active-hint {
+  font-size: 11px;
+  color: var(--c-text-primary, #F4F4F5);
+  line-height: 1.5;
+  margin: 0 0 12px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+}
+
+.obq-hint-label { color: var(--c-orange, #F97316); font-weight: 600; }
+
+.obq-rewards-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.obq-reward-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(124, 58, 237, 0.2);
+  color: #A78BFA;
+  border: 1px solid rgba(124, 58, 237, 0.4);
+}
+
+.obq-reward-chip--item {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.obq-claim-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #F97316, #EAB308);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform 0.15s ease;
+}
+
+.obq-claim-btn:hover { transform: scale(1.03); }
+.obq-claim-btn:active { transform: scale(0.97); }
+
+.obq-pending {
+  font-size: 11px;
+  color: var(--c-text-secondary, #A1A1AA);
+  margin: 0;
+}
+
+/* ── Future list ── */
+.obq-future-list { margin-bottom: 14px; }
+
+.obq-future-label,
+.obq-done-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-text-secondary, #A1A1AA);
+  margin: 0 0 8px;
+}
+
+.obq-future-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  margin-bottom: 4px;
+  opacity: 0.5;
+}
+
+.obq-future-icon { font-size: 16px; }
+.obq-future-title { flex: 1; font-size: 12px; color: var(--c-text-secondary, #A1A1AA); }
+.obq-future-xp { font-size: 11px; color: #7C3AED; font-weight: 600; }
+
+/* ── Done list ── */
+.obq-done-list {
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.obq-done-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+  color: #22C55E;
+}
+
+/* ── Claim toast ── */
+.obq-claim-toast {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #F97316, #EAB308);
+  color: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 24px rgba(249, 115, 22, 0.4);
+}
+
+.obq-claim-title { font-size: 13px; font-weight: 700; margin: 0; }
+.obq-claim-body { font-size: 11px; opacity: 0.9; margin: 2px 0 0; }

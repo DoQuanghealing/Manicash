@@ -4,6 +4,7 @@
 import { useAuthStore } from '@/stores/useAuthStore';
 import { getRankByXP } from '@/data/rankDefinitions';
 import { useRouter } from 'next/navigation';
+import ZodiacRunner from './ZodiacRunner';
 import './AppHeader.css';
 
 export default function AppHeader() {
@@ -45,6 +46,7 @@ export default function AppHeader() {
 
         <div className="header-greeting-block">
           <p className="header-greeting-text">
+            <ZodiacRunner />
             {greetVerb},{' '}
             <span className="header-greeting-name">{firstName}</span>
           </p>

@@ -16,7 +16,7 @@ const XP_REWARDS: Record<string, (action: XPAction) => number> = {
     return (base + Math.min(savingsBonus, 50)) * 2; // x2 DISCIPLINE BONUS
   },
 
-  MISSION_COMPLETE: () => 50,
+  MISSION_COMPLETE: (action) => action.amount || 50,
 
   DAILY_STREAK: (action) => {
     const days = action.days || 1;

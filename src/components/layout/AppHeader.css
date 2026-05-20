@@ -63,6 +63,9 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
 }
 
 .header-greeting-name {

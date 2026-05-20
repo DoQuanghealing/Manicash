@@ -15,6 +15,7 @@ import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Camera, Loader2, Save, Smile, X } from 'lucide-react';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { useRewardStore } from '@/stores/useRewardStore';
 import {
   AVATAR_EMOJIS,
   buildEmojiAvatar,
@@ -38,6 +39,7 @@ const MIN_YEAR_OF_BIRTH = 1900;
 export default function ProfileEditModal({ isOpen, onClose }: ProfileEditModalProps) {
   const user = useAuthStore((s) => s.user);
   const updateUserProfile = useAuthStore((s) => s.updateUserProfile);
+  const unlockMenhChu = useRewardStore((s) => s.unlockMenhChu);
 
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
@@ -102,25 +104,33 @@ export default function ProfileEditModal({ isOpen, onClose }: ProfileEditModalPr
   };
 
   const yearValid = (() => {
-    if (yearOfBirth === '') return true; // optional
-    const n = Number(yearOfBirth);
+    const trimmed = yearOfBirth.trim();
+    if (trimmed === '') return true; // optional
+    const n = Number(trimmed);
     return Number.isInteger(n) && n >= MIN_YEAR_OF_BIRTH && n <= CURRENT_YEAR;
   })();
 
   const nameValid = displayName.trim().length > 0;
-  const emailValid = email === '' || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  // Trim trước khi validate — mobile keyboard hay thêm trailing space vào email
+  const emailValid = email.trim() === '' || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   const canSave = !!user && nameValid && emailValid && yearValid && !uploading && !saving;
 
   const handleSave = () => {
     if (!user || !canSave) return;
     setSaving(true);
     try {
+      const yobNum = yearOfBirth.trim() === '' ? undefined : Number(yearOfBirth.trim());
       updateUserProfile({
         displayName: displayName.trim(),
         email: email.trim(),
         photoURL,
-        yearOfBirth: yearOfBirth === '' ? undefined : Number(yearOfBirth),
+        yearOfBirth: yobNum,
       });
+      // Auto-unlock con giáp theo bản mệnh khi user nhập năm sinh
+      if (yobNum) {
+        // Trì hoãn 1 tick để authStore update xong rồi mới đọc yearOfBirth
+        setTimeout(() => unlockMenhChu(), 0);
+      }
       onClose();
     } finally {
       setSaving(false);
@@ -276,8 +286,9 @@ export default function ProfileEditModal({ isOpen, onClose }: ProfileEditModalPr
                 <label className="pem-label" htmlFor="pem-yob">Năm sinh</label>
                 <input
                   id="pem-yob"
-                  type="number"
+                  type="text"
                   inputMode="numeric"
+                  pattern="[0-9]*"
                   className="pem-input"
                   value={yearOfBirth}
                   onChange={(e) => setYearOfBirth(e.target.value)}
