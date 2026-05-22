@@ -227,6 +227,14 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     delete safeUpdates.totalResistSaved;
     delete safeUpdates.uid;
     delete safeUpdates.createdAt;
+
+    // Auto-derive yearOfBirth từ birthDate (giữ backward compat với code đọc yearOfBirth)
+    if (safeUpdates.birthDate && !safeUpdates.yearOfBirth) {
+      const year = parseInt(safeUpdates.birthDate.slice(0, 4), 10);
+      if (Number.isFinite(year) && year >= 1900 && year <= 2100) {
+        safeUpdates.yearOfBirth = year;
+      }
+    }
     set({
       user: {
         ...user,

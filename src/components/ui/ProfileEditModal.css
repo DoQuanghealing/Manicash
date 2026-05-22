@@ -342,3 +342,29 @@
   border-top: 1px solid rgba(255, 255, 255, 0.06);
   background: rgba(255, 255, 255, 0.02);
 }
+
+/* ═══ Optional label suffix ═══ */
+.pem-optional {
+  font-weight: 500;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.45);
+  text-transform: none;
+  letter-spacing: 0;
+  margin-left: 4px;
+}
+
+[data-theme="light"] .pem-optional {
+  color: rgba(26, 26, 46, 0.5);
+}
+
+/* Native date/time picker phù hợp với theme tối */
+input.pem-input[type="date"],
+input.pem-input[type="time"] {
+  color-scheme: dark;
+  font-variant-numeric: tabular-nums;
+}
+
+[data-theme="light"] input.pem-input[type="date"],
+[data-theme="light"] input.pem-input[type="time"] {
+  color-scheme: light;
+}

@@ -37,6 +37,8 @@ interface ProfileEditModalProps {
 
 const CURRENT_YEAR = new Date().getFullYear();
 const MIN_YEAR_OF_BIRTH = 1900;
+const TODAY_ISO = new Date().toISOString().slice(0, 10);
+const MIN_DATE_ISO = `${MIN_YEAR_OF_BIRTH}-01-01`;
 
 export default function ProfileEditModal({ isOpen, onClose }: ProfileEditModalProps) {
   const user = useAuthStore((s) => s.user);
@@ -47,7 +49,8 @@ export default function ProfileEditModal({ isOpen, onClose }: ProfileEditModalPr
 
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
-  const [yearOfBirth, setYearOfBirth] = useState('');
+  const [birthDate, setBirthDate] = useState('');  // YYYY-MM-DD
+  const [birthTime, setBirthTime] = useState('');  // HH:mm
   const [photoURL, setPhotoURL] = useState<string | null>(null);
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -62,7 +65,11 @@ export default function ProfileEditModal({ isOpen, onClose }: ProfileEditModalPr
     if (!isOpen) return;
     setDisplayName(user?.displayName ?? '');
     setEmail(user?.email ?? '');
-    setYearOfBirth(user?.yearOfBirth ? String(user.yearOfBirth) : '');
+    // Ưu tiên birthDate có sẵn; fallback từ yearOfBirth → "YYYY-01-01"
+    const initBirthDate = user?.birthDate
+      || (user?.yearOfBirth ? `${user.yearOfBirth}-01-01` : '');
+    setBirthDate(initBirthDate);
+    setBirthTime(user?.birthTime ?? '');
     setPhotoURL(user?.photoURL ?? null);
     setEmojiPickerOpen(false);
     setUploadError(null);
@@ -107,31 +114,46 @@ export default function ProfileEditModal({ isOpen, onClose }: ProfileEditModalPr
     setPhotoSizeKB(null);
   };
 
-  const yearValid = (() => {
-    const trimmed = yearOfBirth.trim();
+  const birthDateValid = (() => {
+    const trimmed = birthDate.trim();
     if (trimmed === '') return true; // optional
-    const n = Number(trimmed);
-    return Number.isInteger(n) && n >= MIN_YEAR_OF_BIRTH && n <= CURRENT_YEAR;
+    // Phải đúng format YYYY-MM-DD và parse được
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return false;
+    const d = new Date(trimmed);
+    if (Number.isNaN(d.getTime())) return false;
+    const y = d.getFullYear();
+    return y >= MIN_YEAR_OF_BIRTH && y <= CURRENT_YEAR;
+  })();
+
+  const birthTimeValid = (() => {
+    const trimmed = birthTime.trim();
+    if (trimmed === '') return true; // optional
+    return /^\d{2}:\d{2}$/.test(trimmed);
   })();
 
   const nameValid = displayName.trim().length > 0;
   // Trim trước khi validate — mobile keyboard hay thêm trailing space vào email
   const emailValid = email.trim() === '' || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-  const canSave = !!user && nameValid && emailValid && yearValid && !uploading && !saving;
+  const canSave = !!user && nameValid && emailValid && birthDateValid && birthTimeValid && !uploading && !saving;
 
   const handleSave = () => {
     if (!user || !canSave) return;
     setSaving(true);
     try {
-      const yobNum = yearOfBirth.trim() === '' ? undefined : Number(yearOfBirth.trim());
+      const bd = birthDate.trim();
+      const bt = birthTime.trim();
+      // Derive yearOfBirth từ birthDate cho backward compat (bản mệnh, vibe)
+      const yob = bd ? parseInt(bd.slice(0, 4), 10) : undefined;
       updateUserProfile({
         displayName: displayName.trim(),
         email: email.trim(),
         photoURL,
-        yearOfBirth: yobNum,
+        birthDate: bd || undefined,
+        birthTime: bt || undefined,
+        yearOfBirth: yob,
       });
       // Auto-unlock con giáp theo bản mệnh khi user nhập năm sinh
-      if (yobNum) {
+      if (yob) {
         // Trì hoãn 1 tick để authStore update xong rồi mới đọc yearOfBirth
         setTimeout(() => unlockMenhChu(), 0);
       }
@@ -285,26 +307,43 @@ export default function ProfileEditModal({ isOpen, onClose }: ProfileEditModalPr
                 )}
               </section>
 
-              {/* ═══ Year of birth ═══ */}
+              {/* ═══ Ngày sinh (đầy đủ) + Giờ sinh (tùy chọn cho Bát Tự) ═══ */}
               <section className="pem-section">
-                <label className="pem-label" htmlFor="pem-yob">Năm sinh</label>
+                <label className="pem-label" htmlFor="pem-birthdate">Ngày sinh</label>
                 <input
-                  id="pem-yob"
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
+                  id="pem-birthdate"
+                  type="date"
                   className="pem-input"
-                  value={yearOfBirth}
-                  onChange={(e) => setYearOfBirth(e.target.value)}
-                  placeholder="vd 1995"
-                  min={MIN_YEAR_OF_BIRTH}
-                  max={CURRENT_YEAR}
+                  value={birthDate}
+                  onChange={(e) => setBirthDate(e.target.value)}
+                  min={MIN_DATE_ISO}
+                  max={TODAY_ISO}
                 />
-                {!yearValid && (
+                {!birthDateValid && (
                   <p className="pem-error">
-                    Năm phải trong {MIN_YEAR_OF_BIRTH}–{CURRENT_YEAR}.
+                    Ngày sinh phải từ {MIN_YEAR_OF_BIRTH} đến hôm nay.
                   </p>
                 )}
+              </section>
+
+              <section className="pem-section">
+                <label className="pem-label" htmlFor="pem-birthtime">
+                  Giờ sinh <span className="pem-optional">(tùy chọn — phục vụ Bát Tự)</span>
+                </label>
+                <input
+                  id="pem-birthtime"
+                  type="time"
+                  className="pem-input"
+                  value={birthTime}
+                  onChange={(e) => setBirthTime(e.target.value)}
+                />
+                {!birthTimeValid && (
+                  <p className="pem-error">Giờ sinh sai định dạng (cần HH:MM).</p>
+                )}
+                <p className="pem-hint">
+                  Nếu nhớ chính xác giờ sinh, app sẽ tính được lá số Bát Tự đầy
+                  đủ trong các tính năng phong thủy sau này.
+                </p>
               </section>
 
               {/* ═══ App Vibe — phong cách text/giọng app ═══ */}

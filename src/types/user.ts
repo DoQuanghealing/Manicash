@@ -35,6 +35,10 @@ export interface UserProfile {
   updatedAt: string;
   /** Năm sinh user (optional). Dùng cho rule gợi ý theo độ tuổi sau này. */
   yearOfBirth?: number;
+  /** Ngày sinh đầy đủ YYYY-MM-DD (optional). Phục vụ Bát Tự, mệnh, sinh nhật. */
+  birthDate?: string;
+  /** Giờ sinh HH:mm (optional, dùng cho Bát Tự / Tử Vi). */
+  birthTime?: string;
 }
 
 export interface AuthState {
