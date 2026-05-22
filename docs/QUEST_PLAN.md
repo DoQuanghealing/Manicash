@@ -443,72 +443,45 @@ Banner thường trực trên destination window khi user đang làm 1 quest:
 
 > 5 phase. Mỗi phase commit + push độc lập.
 
-### **Phase A — Completion Popup Host + Quest Hint Bar** (1-2h)
+### **Phase A — Completion Popup Host + Quest Hint Bar** ✅ DONE
 
-🎯 Mục tiêu: Mỗi quest có popup "Đã hoàn thành" chuẩn + hint bar khi đang làm quest.
+- [x] `QuestCompletionPopup.tsx` — mount app shell, subscribe 4 store layers (onboarding/daily/weekly/seasonal), queue, confetti + sound 'levelUp', 2 buttons + 8s auto-dismiss timer bar
+- [x] `QuestHintBar.tsx` — sticky-top dưới header, mini show button khi user ẩn, stale 30s timeout, computePreview cho 4 quest type
+- [x] `useQuestStore.activeContext` + `setActiveContext` + `clearActiveContext` + `toggleHintBarHidden`
+- [x] Wire vào DailyQuestCard, OnboardingQuestPanel, WeeklyChallengeCard, SeasonalEventBanner
 
-- [ ] Tạo `src/components/ui/QuestCompletionPopup.tsx`
-  - Mount ở `(app)/layout.tsx`
-  - Subscribe quest store, watch transition `in-progress → completed`
-  - Queue + show 1 popup at a time
-  - Confetti + sound + 2 buttons (Nhận thưởng / Để sau)
-- [ ] Tạo `src/components/ui/QuestHintBar.tsx`
-  - Sticky-top under header
-  - Đọc `useQuestStore.activeContext` (cần thêm field này)
-  - Progress bar realtime
-- [ ] Update `useQuestStore` thêm `activeContext: { questId, returnPath } | null`
-  - `setActiveContext` khi user bấm "Làm ngay"
-  - `clearActiveContext` khi quest complete hoặc timeout 30s
+### **Phase B — Fix Quest Metrics thiếu** ✅ DONE
 
-### **Phase B — Fix Quest Metrics thiếu** (1h)
+- [x] `UserProfile.resistByDate` + `lastResistAt` — `incrementResist` ghi YYYY-MM-DD → count, trim last 30 days
+- [x] `SubTask.completedAt?: string` — set khi tick (đã sẵn trong types/task.ts)
+- [x] `questMetrics.ts`:
+  - `resist_today` → `user.resistByDate[today]`
+  - `subtask_today` → filter `st.completedAt` theo dateKey hôm nay
+  - `budget_viewed` → `usePageVisitStore.visitedToday('ledger')`
+  - `wishlist_viewed` → `usePageVisitStore.visitedToday('wishlist')`
 
-🎯 Mục tiêu: 4 daily quest hiện đang "luôn 0" sẽ track đúng.
+### **Phase C — Weekly Challenge Engine + Card UI** ✅ DONE
 
-- [ ] `useAuthStore`: thêm `resistEventsByDate: Record<dateKey, count>` — increment trong `incrementResist`
-- [ ] `useTaskStore`: thêm `completedAt: ISO` cho `SubTask` interface
-- [ ] `questMetrics.ts`: 
-  - `resist_today` → đọc `user.resistEventsByDate[today]`
-  - `subtask_today` → filter `subTask.completedAt.startsWith(today)`
-  - `budget_viewed` → đọc `usePageVisitStore.visitsByDate['ledger'][today]`
-  - `wishlist_viewed` → tương tự
+- [x] `useQuestStore.weeklyInstance` + `ensureCurrentWeekly` + `evaluateWeekly(metrics, target)` + `claimWeekly`
+- [x] `questMetrics.ts` collect weekly: saved_this_week / resist_count_this_week / tasks_completed_this_week / wishlist_rejected_this_week + lastMonthIncome
+- [x] `WeeklyChallengeCard.tsx`: action button "Làm ngay" → setActiveContext + dispatchAction, progress, reward chips
+- [x] `weeklyChallenges.ts` thêm `action` cho mỗi template (saver→input, discipline→wishlist, earner→money, wishlist→wishlist)
 
-### **Phase C — Weekly Challenge Engine + Card UI** (2-3h)
+### **Phase D — Seasonal Event Engine** ✅ DONE
 
-🎯 Mục tiêu: Weekly Challenge có dynamic threshold + completion flow đầy đủ.
+- [x] `useQuestStore.seasonalEventId` + `seasonalStartedAt` + `seasonalChapterInstances` + `seasonalFinalClaimedAt` + 4 actions
+- [x] `seasonalMetrics`: `collectSeasonalDelta(startedAt)` đếm từ event start
+- [x] `SeasonalEventBanner.tsx`: hero + chapter list sequential gating + final reward + **CTA mỗi chapter theo metric** (actionForMetric helper)
 
-- [ ] `useQuestStore`: thêm `weeklyInstance: { templateId, weekKey, target, baseline, completedAt, claimedAt } | null`
-  - `ensureCurrentWeekly()`: pick template theo `getWeekIndex()`, lưu baseline & target dynamic
-  - `evaluateWeekly(metrics)`: check current >= target
-  - `claimWeekly()`: grant XP + items
-- [ ] `weeklyMetrics.ts`:
-  - `saved_this_week`: sum `transactions.kind === 'split'` trong tuần
-  - `resist_count_this_week`: sum từ `resistEventsByDate`
-  - `tasks_completed_this_week`: filter `task.completedAt` trong tuần
-  - `wishlist_rejected_this_week`: filter `wishlist.items.status === 'rejected' && resolvedAt` trong tuần
-- [ ] `WeeklyChallengeCard.tsx` (rebuild): action button + progress + reward chip
-- [ ] Test rotation: tuần 0 → saver, tuần 1 → discipline, ...
+### **Phase E — Polish UX & Edge Cases** ✅ DONE (core)
 
-### **Phase D — Seasonal Event Engine** (3-4h)
-
-🎯 Mục tiêu: 10 chapter của 3 event chạy được + final reward.
-
-- [ ] `useQuestStore`: thêm `seasonalInstances: Record<chapterId, instance>` + `currentSeasonalEventId`
-  - `ensureCurrentSeasonal()`: detect active event theo `getActiveSeasonalEvent()`
-  - `evaluateSeasonal(metrics)`: từng chapter
-  - `claimSeasonalChapter(chapterId)`: grant + mở chapter kế
-  - `claimSeasonalFinal(eventId)`: khi tất cả chapter claimed → grant `finalRewardItemIds`
-- [ ] `seasonalMetrics.ts`: 5 metrics filter theo `event.startDate`
-- [ ] `SeasonalEventBanner.tsx` rebuild: hero + accordion chapter list + final reward preview + action button per chapter
-
-### **Phase E — Polish UX & Edge Cases** (1-2h)
-
-- [ ] Sound effect khi popup show (`useAudio`)
-- [ ] Animation icon nhảy khi reward unlock
-- [ ] Queue popup nếu nhiều quest complete cùng lúc (max 3 popups stacked, vertical slide)
-- [ ] Nếu user navigate ra giữa chừng → giữ hint bar 30s rồi clear
-- [ ] Nếu user complete quest nhưng không claim → badge "NHẬN THƯỞNG NGAY" pulse trên trigger card
-- [ ] "Đã claim" state có animation chiến thắng (check mark + scale)
-- [ ] Empty state khi tất cả 3 daily claimed: confetti nhỏ + "Quay lại 0h sáng mai"
+- [x] Sound effect 'levelUp' khi popup show
+- [x] Icon nhảy + sparkle rotate animation trên popup
+- [x] Queue popup — show 1 tại 1 thời điểm
+- [x] Hint bar timeout 30s → clear context
+- [x] Hint bar có toggle Ẩn/Hiện (mini button quay lại)
+- [x] Auto-dismiss 8s với timer bar visual feedback
+- [x] Completion popup confetti khi mount + rankUp confetti khi claim
 
 ### **Phase F (optional) — Guided Flow cho onboarding** (2h)
 

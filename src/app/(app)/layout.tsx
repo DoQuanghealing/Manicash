@@ -8,6 +8,8 @@ import XPToastHost from '@/components/ui/XPToast';
 import RolloverGuard from './RolloverGuard';
 import BanMenhThemeApplier from '@/components/providers/BanMenhThemeApplier';
 import StreakShieldToast from '@/components/ui/StreakShieldToast';
+import QuestCompletionPopup from '@/components/ui/QuestCompletionPopup';
+import QuestHintBar from '@/components/ui/QuestHintBar';
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
@@ -41,6 +43,12 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
         {/* Streak Shield used banner — detect shieldsUsedAt[] tăng */}
         <StreakShieldToast />
+
+        {/* Quest Hint Bar — hiện khi user đang làm 1 quest (setActiveContext) */}
+        <QuestHintBar />
+
+        {/* Quest Completion Popup — khi quest từ in-progress → completed */}
+        <QuestCompletionPopup />
       </div>
     </div>
   );

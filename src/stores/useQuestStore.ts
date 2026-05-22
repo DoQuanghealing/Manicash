@@ -50,6 +50,18 @@ export interface QuestInstance {
   baselineValue?: number;
 }
 
+/** Loại quest — để popup + hint bar phân biệt context. */
+export type QuestType = 'onboarding' | 'daily' | 'weekly' | 'seasonal';
+
+/** Context quest user đang làm (set khi bấm "Làm ngay", clear khi xong/timeout). */
+export interface QuestActiveContext {
+  questId: string;
+  questType: QuestType;
+  startedAt: string;
+  returnPath: string;
+  hintHidden?: boolean;  // user toggle "Ẩn" trên hint bar
+}
+
 interface QuestState {
   // ── Onboarding ─────────────────────────────────────────────
   onboardingInstances: Record<string, QuestInstance>; // key = quest id
@@ -99,6 +111,14 @@ interface QuestState {
   /** Nhận thưởng cuối khi tất cả chapter đã claim. */
   claimSeasonalFinal: () => { granted: boolean; rewardIds: string[] };
 
+  // ── Active Quest Context (Hint Bar) ────────────────────────
+  /** Quest user đang làm sau khi bấm "Làm ngay". Null khi không có. */
+  activeContext: QuestActiveContext | null;
+  setActiveContext: (ctx: QuestActiveContext) => void;
+  clearActiveContext: () => void;
+  /** User toggle ẩn/hiện hint bar — context vẫn còn. */
+  toggleHintBarHidden: () => void;
+
   // ── Helpers (đọc) ──────────────────────────────────────────
   getOnboardingActive: () => OnboardingQuest | null;
   getOnboardingCompletedCount: () => number;
@@ -119,6 +139,18 @@ export const useQuestStore = create<QuestState>((set, get) => ({
   seasonalStartedAt: null,
   seasonalChapterInstances: {},
   seasonalFinalClaimedAt: null,
+  activeContext: null,
+
+  // ═══ ACTIVE CONTEXT (Hint Bar) ════════════════════════════════
+
+  setActiveContext: (ctx) => set({ activeContext: ctx }),
+  clearActiveContext: () => set({ activeContext: null }),
+  toggleHintBarHidden: () =>
+    set((s) =>
+      s.activeContext
+        ? { activeContext: { ...s.activeContext, hintHidden: !s.activeContext.hintHidden } }
+        : {}
+    ),
 
   // ═══ ONBOARDING ═══════════════════════════════════════════════
 

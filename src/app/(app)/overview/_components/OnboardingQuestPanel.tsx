@@ -181,6 +181,13 @@ export default function OnboardingQuestPanel() {
                           className="obq-action-btn"
                           onClick={() => {
                             setIsOpen(false);
+                            // Set context cho Hint Bar
+                            useQuestStore.getState().setActiveContext({
+                              questId: activeQuest.id,
+                              questType: 'onboarding',
+                              startedAt: new Date().toISOString(),
+                              returnPath: '/overview',
+                            });
                             dispatchAction(activeQuest.action, () => {
                               setCheckinOpen(true);
                             });

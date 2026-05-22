@@ -7,7 +7,7 @@
 
 import { useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { CalendarDays, Gift, CheckCircle2 } from 'lucide-react';
+import { CalendarDays, Gift, CheckCircle2, ChevronRight } from 'lucide-react';
 import { useQuestStore } from '@/stores/useQuestStore';
 import { collectAllMetrics } from '@/lib/questMetrics';
 import { useAuthStore } from '@/stores/useAuthStore';
@@ -15,17 +15,20 @@ import { useFinanceStore } from '@/stores/useFinanceStore';
 import { useTaskStore } from '@/stores/useTaskStore';
 import { useWishlistStore } from '@/stores/useWishlistStore';
 import { useConfetti } from '@/hooks/useConfetti';
+import { useQuestAction } from '@/hooks/useQuestAction';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { getRewardById, RARITY_META } from '@/data/rewardCatalog';
 import './WeeklyChallengeCard.css';
 
 export default function WeeklyChallengeCard() {
   const { fireConfetti } = useConfetti();
+  const dispatchAction = useQuestAction();
   const ensureWeekly = useQuestStore((s) => s.ensureCurrentWeekly);
   const evaluateWeekly = useQuestStore((s) => s.evaluateWeekly);
   const claimWeekly = useQuestStore((s) => s.claimWeekly);
   const weeklyInstance = useQuestStore((s) => s.weeklyInstance);
   const getCurrent = useQuestStore((s) => s.getCurrentWeekly);
+  const setActiveContext = useQuestStore((s) => s.setActiveContext);
 
   // Subscribe data sources cần thiết để re-eval
   const user = useAuthStore((s) => s.user);
@@ -139,9 +142,21 @@ export default function WeeklyChallengeCard() {
           Nhận thưởng tuần
         </button>
       ) : (
-        <div className="wcc-status">
-          <span>⏳ Tiếp tục tích lũy — đạt ngưỡng để claim quà</span>
-        </div>
+        <button
+          className="wcc-action-btn"
+          onClick={() => {
+            setActiveContext({
+              questId: template.id,
+              questType: 'weekly',
+              startedAt: new Date().toISOString(),
+              returnPath: '/overview',
+            });
+            dispatchAction(template.action);
+          }}
+        >
+          <span>{template.action?.buttonLabel || 'Làm ngay'}</span>
+          <ChevronRight size={14} />
+        </button>
       )}
     </motion.div>
   );

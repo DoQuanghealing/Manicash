@@ -454,3 +454,25 @@
 .seb-final-status--locked {
   color: var(--c-text-secondary, #A1A1AA);
 }
+
+/* ═══ Chapter action button ═══ */
+.seb-chapter-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: linear-gradient(135deg, #7C3AED, #6366F1);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  margin-top: 4px;
+  box-shadow: 0 4px 10px rgba(124, 58, 237, 0.3);
+  transition: transform 0.15s ease;
+}
+
+.seb-chapter-action:hover { transform: translateY(-1px); }
+.seb-chapter-action:active { transform: translateY(0); }

@@ -196,3 +196,26 @@
   0%, 100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.5); }
   50% { box-shadow: 0 0 0 6px rgba(249, 115, 22, 0); }
 }
+
+/* ═══ Action button (Làm ngay) ═══ */
+.wcc-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, #7C3AED, #6366F1);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+  transition: transform 0.15s ease;
+}
+
+.wcc-action-btn:hover { transform: translateY(-1px); }
+.wcc-action-btn:active { transform: translateY(0); }

@@ -14,12 +14,35 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { useFinanceStore } from '@/stores/useFinanceStore';
 import { useTaskStore } from '@/stores/useTaskStore';
 import { useConfetti } from '@/hooks/useConfetti';
+import { useQuestAction } from '@/hooks/useQuestAction';
 import { getRewardById, RARITY_META } from '@/data/rewardCatalog';
+import CheckInModal from '@/components/ui/CheckInModal';
+import type { SeasonalMetric } from '@/data/seasonalEvents';
+import type { QuestAction } from '@/data/dailyQuestPool';
 import './SeasonalEventBanner.css';
+
+/** Map seasonal metric → default action — destination user cần làm. */
+function actionForMetric(metric: SeasonalMetric): QuestAction {
+  switch (metric) {
+    case 'event_app_days':
+      return { kind: 'checkin', buttonLabel: 'Điểm danh' };
+    case 'event_task_completed':
+      return { kind: 'openMoney', buttonLabel: 'Mở Tab Tiền' };
+    case 'event_saved':
+      return { kind: 'navigate', target: '/input', query: { type: 'income' }, buttonLabel: 'Mở Ghi tiền' };
+    case 'event_resist':
+      return { kind: 'openWishlist', buttonLabel: 'Mở Wishlist' };
+    case 'event_income_logged':
+      return { kind: 'navigate', target: '/input', query: { type: 'income' }, buttonLabel: 'Ghi thu nhập' };
+  }
+}
 
 export default function SeasonalEventBanner() {
   const [isOpen, setIsOpen] = useState(false);
+  const [checkinOpen, setCheckinOpen] = useState(false);
   const { fireConfetti } = useConfetti();
+  const dispatchAction = useQuestAction();
+  const setActiveContext = useQuestStore((s) => s.setActiveContext);
 
   const ensureSeasonal = useQuestStore((s) => s.ensureSeasonalEvent);
   const evaluateSeasonal = useQuestStore((s) => s.evaluateSeasonal);
@@ -213,7 +236,23 @@ export default function SeasonalEventBanner() {
                                 Nhận thưởng chương
                               </button>
                             ) : (
-                              <p className="seb-chapter-pending">⏳ Đang theo dõi tiến độ...</p>
+                              <button
+                                className="seb-chapter-action"
+                                onClick={() => {
+                                  setIsOpen(false);
+                                  const act = actionForMetric(chapter.metric);
+                                  setActiveContext({
+                                    questId: chapter.id,
+                                    questType: 'seasonal',
+                                    startedAt: new Date().toISOString(),
+                                    returnPath: '/overview',
+                                  });
+                                  dispatchAction(act, () => setCheckinOpen(true));
+                                }}
+                              >
+                                <span>{actionForMetric(chapter.metric).buttonLabel}</span>
+                                <ChevronRight size={14} />
+                              </button>
                             )}
                           </>
                         )}
@@ -261,6 +300,8 @@ export default function SeasonalEventBanner() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <CheckInModal isOpen={checkinOpen} onClose={() => setCheckinOpen(false)} />
     </>
   );
 }

@@ -18,6 +18,8 @@ export type WeeklyMetric =
   | 'tasks_completed_this_week' // earning task hoàn thành tuần này
   | 'wishlist_rejected_this_week'; // wishlist items rejected tuần này
 
+import type { QuestAction } from '@/data/dailyQuestPool';
+
 export interface WeeklyChallengeTemplate {
   id: string;
   rotationIndex: 0 | 1 | 2 | 3;
@@ -33,6 +35,8 @@ export interface WeeklyChallengeTemplate {
   computeTarget: (lastMonthIncome: number) => { target: number; displayHint: string };
   xpReward: number;
   rewardItemIds?: string[];
+  /** Deep-link action — dẫn user thẳng tới nơi cần làm. */
+  action?: QuestAction;
 }
 
 export const WEEKLY_CHALLENGES: WeeklyChallengeTemplate[] = [
@@ -57,6 +61,12 @@ export const WEEKLY_CHALLENGES: WeeklyChallengeTemplate[] = [
     },
     xpReward: 300,
     rewardItemIds: ['effect-coinrain'],
+    action: {
+      kind: 'navigate',
+      target: '/input',
+      query: { type: 'income' },
+      buttonLabel: 'Mở Ghi tiền',
+    },
   },
   {
     id: 'weekly-discipline',
@@ -80,6 +90,10 @@ export const WEEKLY_CHALLENGES: WeeklyChallengeTemplate[] = [
     },
     xpReward: 350,
     rewardItemIds: ['title-saver'],
+    action: {
+      kind: 'openWishlist',
+      buttonLabel: 'Mở Wishlist',
+    },
   },
   {
     id: 'weekly-earner',
@@ -96,6 +110,10 @@ export const WEEKLY_CHALLENGES: WeeklyChallengeTemplate[] = [
     }),
     xpReward: 400,
     rewardItemIds: ['elearning-vitien'],
+    action: {
+      kind: 'openMoney',
+      buttonLabel: 'Mở Tab Tiền',
+    },
   },
   {
     id: 'weekly-wishlist',
@@ -112,6 +130,10 @@ export const WEEKLY_CHALLENGES: WeeklyChallengeTemplate[] = [
     }),
     xpReward: 300,
     rewardItemIds: ['elearning-thieuduc'],
+    action: {
+      kind: 'openWishlist',
+      buttonLabel: 'Mở Wishlist',
+    },
   },
 ];
 

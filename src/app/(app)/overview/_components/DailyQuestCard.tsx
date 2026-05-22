@@ -31,6 +31,7 @@ export default function DailyQuestCard() {
   const claimDaily = useQuestStore((s) => s.claimDaily);
   const dailyInstances = useQuestStore((s) => s.dailyInstances);
   const getTemplates = useQuestStore((s) => s.getDailyTemplates);
+  const setActiveContext = useQuestStore((s) => s.setActiveContext);
 
   const user = useAuthStore((s) => s.user);
   const transactions = useFinanceStore((s) => s.transactions);
@@ -106,13 +107,20 @@ export default function DailyQuestCard() {
             // Click hành vi:
             //  - Đã claim: nothing
             //  - Đã complete chưa claim: claim ngay
-            //  - Chưa complete: dispatch action
+            //  - Chưa complete: setActiveContext + dispatch action
             const handleRowClick = () => {
               if (isClaimed) return;
               if (canClaim) {
                 handleClaim(t.id);
                 return;
               }
+              // Set context để Hint Bar hiện trên destination
+              setActiveContext({
+                questId: t.id,
+                questType: 'daily',
+                startedAt: new Date().toISOString(),
+                returnPath: '/overview',
+              });
               dispatchAction(t.action, () => setCheckinOpen(true));
             };
 
