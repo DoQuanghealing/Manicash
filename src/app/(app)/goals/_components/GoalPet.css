@@ -1,0 +1,31 @@
+.goal-pet {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  line-height: 1;
+}
+
+.goal-pet-emoji {
+  line-height: 1;
+  filter: drop-shadow(0 0 8px var(--gp-glow));
+  display: inline-block;
+}
+
+.goal-pet-emoji--final {
+  filter: drop-shadow(0 0 14px var(--gp-glow));
+  animation: pet-shimmer 3s ease-in-out infinite;
+}
+
+@keyframes pet-shimmer {
+  0%, 100% { filter: drop-shadow(0 0 12px rgba(249, 115, 22, 0.6)); }
+  50% { filter: drop-shadow(0 0 22px rgba(249, 115, 22, 0.95)); }
+}
+
+.goal-pet-stage {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c-text-secondary, #A1A1AA);
+}

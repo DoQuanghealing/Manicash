@@ -1,0 +1,99 @@
+.gsc-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  backdrop-filter: blur(14px) saturate(180%);
+  z-index: 240;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.gsc-panel {
+  width: 100%;
+  max-width: 360px;
+  background: linear-gradient(180deg, rgba(34, 32, 52, 0.96), rgba(24, 22, 38, 0.98));
+  border-radius: 22px;
+  border: 0.5px solid rgba(255, 255, 255, 0.12);
+  padding: 22px 18px;
+  position: relative;
+  text-align: center;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
+}
+
+.gsc-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.gsc-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #F4F4F5;
+  margin: 0 0 4px;
+}
+
+.gsc-sub {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 0 0 16px;
+}
+
+.gsc-preview {
+  width: 100%;
+  aspect-ratio: 9 / 16;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+
+.gsc-preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.gsc-preview-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 13px;
+}
+
+.gsc-download {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 13px 16px;
+  background: linear-gradient(135deg, #7C3AED, #F97316);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  box-shadow: 0 10px 24px rgba(124, 58, 237, 0.4);
+}
+
+.gsc-download:disabled { opacity: 0.5; cursor: not-allowed; }

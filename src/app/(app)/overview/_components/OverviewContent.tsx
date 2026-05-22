@@ -14,6 +14,7 @@ import DailyQuestCard from './DailyQuestCard';
 import WeeklyChallengeCard from './WeeklyChallengeCard';
 import SeasonalEventBanner from './SeasonalEventBanner';
 import UpcomingHolidayHint from './UpcomingHolidayHint';
+import IdleMoneyBanner from './IdleMoneyBanner';
 import WishlistPopup from './WishlistPopup';
 import MonthlyReportModal from './MonthlyReportModal';
 import BankSyncReminder from '@/components/ui/BankSyncReminder';
@@ -41,6 +42,9 @@ export default function OverviewContent() {
         <PendingTransactionBanner />
         <BudgetWarningBanner />
         <BankSyncReminder />
+
+        {/* ═══ BLOCK 1b: Cảnh báo tiền nhàn rỗi → CTA chia vào mục tiêu ═══ */}
+        <IdleMoneyBanner />
 
         {/* ═══ NEW: GIAO DIỆN 1-2-3 ═══ */}
         {/* Khối 1: Thu nhập (Full-width) */}

@@ -84,6 +84,12 @@ export interface Goal {
   deposits?: GoalDeposit[];
   /** Tài khoản ngân hàng liên kết (gợi ý khi targetAmount > 100M). */
   bankInfo?: GoalBankInfo;
+  /** Ảnh dán "ngôi nhà mơ ước" — data URL compressed. */
+  photoUrl?: string;
+  /** Lý do user muốn đạt — hiển thị khi yếu lòng. */
+  whyNote?: string;
+  /** % milestone cuối cùng đã hiện confetti (25/50/75/100). Tránh retrigger. */
+  lastCelebratedMilestone?: 25 | 50 | 75 | 100;
 }
 
 /** Mốc nhỏ trong mục tiêu */

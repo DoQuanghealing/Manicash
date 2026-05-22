@@ -12,12 +12,18 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X, Landmark, Plus, Trash2, Calendar, Wallet, ShieldCheck, Target, Coins,
-  ArrowDownToLine,
+  ArrowDownToLine, Camera, Quote, Flame, Share2,
 } from 'lucide-react';
 import type { Goal, GoalDepositSource } from '@/types/budget';
 import { useGoalsStore } from '@/stores/useGoalsStore';
 import { formatCurrency, formatCurrencyShort } from '@/utils/formatCurrency';
+import { calcDepositStreakWeeks, calcUrgency } from '@/lib/goalStats';
+import { pickQuoteForGoal } from '@/data/goalQuotes';
+import { compressImageToDataURL } from '@/lib/imageCompression';
 import BankLinkModal from './BankLinkModal';
+import GoalCalendar from './GoalCalendar';
+import GoalPet from './GoalPet';
+import GoalShareCard from './GoalShareCard';
 import './GoalDetailModal.css';
 
 interface Props {
@@ -52,7 +58,13 @@ function daysUntil(deadline: string): number {
 export default function GoalDetailModal({ goal, isOpen, onClose, onOpenDeposit }: Props) {
   const getDeposits = useGoalsStore((s) => s.getDeposits);
   const unlinkBank = useGoalsStore((s) => s.unlinkBankAccount);
+  const setPhoto = useGoalsStore((s) => s.setPhoto);
+  const setWhyNote = useGoalsStore((s) => s.setWhyNote);
   const [bankLinkOpen, setBankLinkOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [editingWhy, setEditingWhy] = useState(false);
+  const [whyDraft, setWhyDraft] = useState('');
 
   if (!goal) return null;
 
@@ -66,6 +78,40 @@ export default function GoalDetailModal({ goal, isOpen, onClose, onOpenDeposit }
 
   // Gợi ý liên kết bank khi target > 100M và chưa liên kết
   const shouldSuggestBank = goal.targetAmount > 100_000_000 && !goal.bankInfo;
+
+  // Streak + quote + urgency
+  const streakWeeks = calcDepositStreakWeeks(deposits);
+  const quote = pickQuoteForGoal(goal.id);
+  const urgency = calcUrgency(goal);
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingPhoto(true);
+    try {
+      const dataUrl = await compressImageToDataURL(file, {
+        maxSize: 1280,
+        quality: 0.82,
+        mimeType: 'image/jpeg',
+      });
+      setPhoto(goal.id, dataUrl);
+    } catch (err) {
+      console.error('Photo upload failed:', err);
+    } finally {
+      setUploadingPhoto(false);
+      if (e.target) e.target.value = '';
+    }
+  };
+
+  const handleSaveWhy = () => {
+    setWhyNote(goal.id, whyDraft.trim());
+    setEditingWhy(false);
+  };
+
+  const startEditWhy = () => {
+    setWhyDraft(goal.whyNote || '');
+    setEditingWhy(true);
+  };
 
   return (
     <AnimatePresence>
@@ -90,6 +136,12 @@ export default function GoalDetailModal({ goal, isOpen, onClose, onOpenDeposit }
               <X size={18} />
             </button>
 
+            {/* Photo backdrop nếu có */}
+            {goal.photoUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img className="gdt-photo-bg" src={goal.photoUrl} alt="" />
+            )}
+
             {/* Hero */}
             <header className="gdt-hero">
               <div className="gdt-hero-icon" style={{ background: goal.color }}>
@@ -99,6 +151,24 @@ export default function GoalDetailModal({ goal, isOpen, onClose, onOpenDeposit }
               <p className="gdt-deadline">
                 <Calendar size={11} /> Đến {goal.deadline.slice(0, 10)} · còn {days} ngày
               </p>
+              {/* Pet + Streak badges */}
+              <div className="gdt-meta-row">
+                <span className="gdt-meta-chip">
+                  <GoalPet progress={progress} size={18} />
+                  <span className="gdt-meta-chip-label">Linh vật</span>
+                </span>
+                {streakWeeks > 0 && (
+                  <span className="gdt-meta-chip gdt-meta-chip--streak">
+                    <Flame size={13} />
+                    <span>{streakWeeks} tuần liên tiếp</span>
+                  </span>
+                )}
+                {urgency !== 'ok' && (
+                  <span className={`gdt-meta-chip gdt-meta-chip--urgency-${urgency}`}>
+                    ⚠️ {urgency === 'critical' ? 'Sắp hết hạn!' : 'Cần đẩy nhanh'}
+                  </span>
+                )}
+              </div>
             </header>
 
             {/* Progress */}
@@ -118,14 +188,77 @@ export default function GoalDetailModal({ goal, isOpen, onClose, onOpenDeposit }
               </div>
             </div>
 
-            {/* Quick action */}
-            <button
-              className="gdt-deposit-btn"
-              onClick={() => { onClose(); onOpenDeposit(); }}
-            >
-              <ArrowDownToLine size={16} />
-              <span>Nạp tiền vào mục tiêu</span>
-            </button>
+            {/* Quick actions: Deposit + Share */}
+            <div className="gdt-quick-actions">
+              <button
+                className="gdt-deposit-btn"
+                onClick={() => { onClose(); onOpenDeposit(); }}
+              >
+                <ArrowDownToLine size={16} />
+                <span>Nạp tiền</span>
+              </button>
+              <button
+                className="gdt-share-btn"
+                onClick={() => setShareOpen(true)}
+                aria-label="Chia sẻ tiến độ"
+                title="Chia sẻ tiến độ"
+              >
+                <Share2 size={15} />
+              </button>
+            </div>
+
+            {/* Inspirational quote */}
+            <div className="gdt-quote">
+              <Quote size={14} className="gdt-quote-mark" />
+              <div className="gdt-quote-body">
+                <p className="gdt-quote-text">{quote.text}</p>
+                {quote.author && <p className="gdt-quote-author">— {quote.author}</p>}
+              </div>
+            </div>
+
+            {/* Why note + Photo upload */}
+            <section className="gdt-personal">
+              {editingWhy ? (
+                <div className="gdt-why-edit">
+                  <textarea
+                    className="gdt-why-textarea"
+                    placeholder="Vì sao bạn muốn đạt mục tiêu này?"
+                    value={whyDraft}
+                    onChange={(e) => setWhyDraft(e.target.value)}
+                    rows={3}
+                    maxLength={240}
+                    autoFocus
+                  />
+                  <div className="gdt-why-actions">
+                    <button className="gdt-why-cancel" onClick={() => setEditingWhy(false)}>
+                      Hủy
+                    </button>
+                    <button className="gdt-why-save" onClick={handleSaveWhy}>
+                      Lưu
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button className="gdt-why-display" onClick={startEditWhy}>
+                  <p className="gdt-why-label">📝 Lý do tôi muốn</p>
+                  <p className="gdt-why-text">
+                    {goal.whyNote || 'Bấm để thêm lý do — đọc lại khi cám dỗ.'}
+                  </p>
+                </button>
+              )}
+
+              <label className="gdt-photo-upload">
+                <Camera size={14} />
+                <span>{goal.photoUrl ? 'Đổi ảnh' : 'Thêm ảnh'}</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoUpload}
+                  disabled={uploadingPhoto}
+                  style={{ display: 'none' }}
+                />
+              </label>
+            </section>
 
             {/* Bank link */}
             {goal.bankInfo ? (
@@ -170,6 +303,14 @@ export default function GoalDetailModal({ goal, isOpen, onClose, onOpenDeposit }
                 </div>
                 <Plus size={14} />
               </button>
+            )}
+
+            {/* Calendar heatmap */}
+            {deposits.length > 0 && (
+              <section className="gdt-calendar-section">
+                <p className="gdt-section-label">Hoạt động 90 ngày qua</p>
+                <GoalCalendar deposits={deposits} color={goal.color} />
+              </section>
             )}
 
             {/* History */}
@@ -223,6 +364,12 @@ export default function GoalDetailModal({ goal, isOpen, onClose, onOpenDeposit }
         goal={goal}
         isOpen={bankLinkOpen}
         onClose={() => setBankLinkOpen(false)}
+      />
+
+      <GoalShareCard
+        goal={goal}
+        isOpen={shareOpen}
+        onClose={() => setShareOpen(false)}
       />
     </AnimatePresence>
   );

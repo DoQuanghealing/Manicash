@@ -1,0 +1,72 @@
+/* ═══ GoalCalendar — Heatmap 13 weeks × 7 days ═══ */
+
+.goal-cal {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.goal-cal-grid {
+  display: flex;
+  gap: 3px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.goal-cal-grid::-webkit-scrollbar { display: none; }
+
+.goal-cal-week {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.goal-cal-cell {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.05);
+  transition: transform 0.12s ease;
+}
+
+.goal-cal-cell:hover {
+  transform: scale(1.4);
+  z-index: 2;
+}
+
+.goal-cal-cell--lv0 { background: rgba(255, 255, 255, 0.05); }
+.goal-cal-cell--lv1 { background: color-mix(in srgb, var(--gcal-color, #22C55E) 25%, transparent); }
+.goal-cal-cell--lv2 { background: color-mix(in srgb, var(--gcal-color, #22C55E) 45%, transparent); }
+.goal-cal-cell--lv3 { background: color-mix(in srgb, var(--gcal-color, #22C55E) 70%, transparent); }
+.goal-cal-cell--lv4 { background: var(--gcal-color, #22C55E); }
+
+.goal-cal-cell--today {
+  outline: 1px solid white;
+  outline-offset: 1px;
+}
+
+.goal-cal-legend {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.goal-cal-legend-cells {
+  display: flex;
+  gap: 2px;
+}
+
+.goal-cal-legend-cells .goal-cal-cell {
+  width: 9px;
+  height: 9px;
+}
+
+[data-theme="light"] .goal-cal { background: rgba(0, 0, 0, 0.03); }
+[data-theme="light"] .goal-cal-cell--lv0 { background: rgba(0, 0, 0, 0.06); }
+[data-theme="light"] .goal-cal-cell--today { outline-color: #1A1A2E; }
+[data-theme="light"] .goal-cal-legend { color: rgba(26, 26, 46, 0.6); }

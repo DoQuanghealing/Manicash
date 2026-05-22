@@ -19,6 +19,9 @@ import { usePageVisitStore } from '@/stores/usePageVisitStore';
 import { useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Plus } from 'lucide-react';
+import { checkNewMilestone, findAnniversaryDeposit } from '@/lib/goalStats';
+import { useConfetti } from '@/hooks/useConfetti';
+import { useAudio } from '@/hooks/useAudio';
 
 type GoalsTab = 'goals' | 'wishlist';
 
@@ -48,6 +51,33 @@ export default function GoalsContent() {
   const addGoal = useGoalsStore((s) => s.addGoal);
   const deleteGoal = useGoalsStore((s) => s.deleteGoal);
   const completeMilestone = useGoalsStore((s) => s.completeMilestone);
+  const markMilestoneCelebrated = useGoalsStore((s) => s.markMilestoneCelebrated);
+  const { fireConfetti } = useConfetti();
+  const { play } = useAudio();
+
+  // ── Milestone watcher: auto confetti khi vượt 25/50/75/100% ──
+  useEffect(() => {
+    for (const goal of goals) {
+      const newMilestone = checkNewMilestone(goal);
+      if (newMilestone) {
+        // Defer để tránh setState trong render
+        queueMicrotask(() => {
+          markMilestoneCelebrated(goal.id, newMilestone);
+          fireConfetti(newMilestone === 100 ? 'rankUp' : 'mission');
+          try { play(newMilestone === 100 ? 'levelUp' : 'missionComplete'); } catch {}
+        });
+        break; // chỉ 1 milestone/render
+      }
+    }
+  }, [goals, markMilestoneCelebrated, fireConfetti, play]);
+
+  // ── Memory bump: cùng ngày năm trước có deposit ──
+  const anniversaryGoal = goals.find((g) =>
+    g.deposits && findAnniversaryDeposit(g.deposits)
+  );
+  const anniversaryDeposit = anniversaryGoal?.deposits
+    ? findAnniversaryDeposit(anniversaryGoal.deposits)
+    : null;
 
   const [showForm, setShowForm] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
@@ -103,6 +133,22 @@ export default function GoalsContent() {
                 / {formatCurrencyShort(totalTarget)} tổng mục tiêu
               </p>
             </div>
+
+            {/* Memory bump — cùng ngày năm trước */}
+            {anniversaryDeposit && anniversaryGoal && (
+              <div className="memory-bump-card">
+                <span className="memory-bump-icon">🕰️</span>
+                <div className="memory-bump-body">
+                  <p className="memory-bump-title">
+                    Cùng ngày này năm trước
+                  </p>
+                  <p className="memory-bump-text">
+                    Bạn nạp <strong>{formatCurrencyShort(anniversaryDeposit.amount)}</strong> vào &ldquo;{anniversaryGoal.name}&rdquo;.
+                    Hành trình đã đi xa rồi đó 💪
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Goal list */}
             {goals.map((goal) => (

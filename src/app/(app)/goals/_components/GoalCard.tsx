@@ -6,6 +6,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, ArrowDownToLine, FileClock, Landmark } from 'lucide-react';
 import type { Goal } from '@/types/budget';
 import { formatCurrencyShort } from '@/utils/formatCurrency';
+import { calcUrgency } from '@/lib/goalStats';
+import GoalPet from './GoalPet';
 import './GoalCard.css';
 
 interface GoalCardProps {
@@ -23,10 +25,11 @@ export default function GoalCard({ goal, onDelete, onCompleteMilestone, onDeposi
     : 0;
 
   const completedMs = goal.milestones.filter((m) => m.isCompleted).length;
+  const urgency = calcUrgency(goal);
 
   return (
     <motion.div
-      className="gc-card"
+      className={`gc-card gc-card--urgency-${urgency}`}
       layout
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
@@ -46,6 +49,7 @@ export default function GoalCard({ goal, onDelete, onCompleteMilestone, onDeposi
           </div>
         </div>
         <div className="gc-header-right">
+          <GoalPet progress={progress} size={20} />
           <span className="gc-pct-badge" style={{ background: `${goal.color}20`, color: goal.color }}>
             {progress}%
           </span>

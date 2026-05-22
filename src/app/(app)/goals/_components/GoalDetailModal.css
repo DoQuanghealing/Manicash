@@ -393,3 +393,259 @@
 
 [data-theme="light"] .gdt-title { color: #1A1A2E; }
 [data-theme="light"] .gdt-history-item { background: rgba(0, 0, 0, 0.03); }
+
+/* ═══ Photo backdrop ═══ */
+.gdt-photo-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 200px;
+  object-fit: cover;
+  opacity: 0.25;
+  filter: blur(6px);
+  pointer-events: none;
+  border-radius: 24px 24px 0 0;
+  mask-image: linear-gradient(180deg, black 0%, transparent 100%);
+  -webkit-mask-image: linear-gradient(180deg, black 0%, transparent 100%);
+}
+
+/* ═══ Meta chips (pet + streak + urgency) ═══ */
+.gdt-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.gdt-meta-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px 4px 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 0.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.gdt-meta-chip-label {
+  letter-spacing: 0.05em;
+}
+
+.gdt-meta-chip--streak {
+  background: rgba(249, 115, 22, 0.15);
+  border-color: rgba(249, 115, 22, 0.4);
+  color: #F97316;
+}
+
+.gdt-meta-chip--urgency-warning {
+  background: rgba(234, 179, 8, 0.15);
+  border-color: rgba(234, 179, 8, 0.4);
+  color: #EAB308;
+}
+
+.gdt-meta-chip--urgency-critical {
+  background: rgba(239, 68, 68, 0.18);
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #EF4444;
+  animation: gdt-critical-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes gdt-critical-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  50% { box-shadow: 0 0 0 4px rgba(239, 68, 68, 0); }
+}
+
+/* ═══ Quick action row (Deposit + Share) ═══ */
+.gdt-quick-actions {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.gdt-quick-actions .gdt-deposit-btn {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.gdt-share-btn {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.gdt-share-btn:hover {
+  background: rgba(124, 58, 237, 0.2);
+  color: #A78BFA;
+  border-color: rgba(124, 58, 237, 0.4);
+}
+
+/* ═══ Inspirational quote ═══ */
+.gdt-quote {
+  display: flex;
+  gap: 10px;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.08), rgba(249, 115, 22, 0.04));
+  border-left: 3px solid var(--gdt-color, #7C3AED);
+  border-radius: 10px;
+  margin-bottom: 14px;
+}
+
+.gdt-quote-mark {
+  color: var(--gdt-color, #7C3AED);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.gdt-quote-body { flex: 1; }
+
+.gdt-quote-text {
+  font-size: 12px;
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.gdt-quote-author {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 4px 0 0;
+  font-weight: 600;
+}
+
+/* ═══ Personal section (why + photo) ═══ */
+.gdt-personal {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.gdt-why-display {
+  flex: 1;
+  text-align: left;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  border-radius: 11px;
+  cursor: pointer;
+  font-family: inherit;
+  color: inherit;
+}
+
+.gdt-why-display:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.gdt-why-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0 0 4px;
+}
+
+.gdt-why-text {
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0;
+  line-height: 1.45;
+  font-style: italic;
+}
+
+.gdt-why-edit {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.gdt-why-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(124, 58, 237, 0.4);
+  border-radius: 11px;
+  color: #F4F4F5;
+  font-size: 12px;
+  font-family: inherit;
+  outline: none;
+  resize: none;
+}
+
+.gdt-why-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.gdt-why-cancel,
+.gdt-why-save {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.gdt-why-cancel {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.gdt-why-save {
+  background: linear-gradient(135deg, #7C3AED, #6366F1);
+  color: white;
+}
+
+.gdt-photo-upload {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  width: 70px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px dashed rgba(255, 255, 255, 0.16);
+  border-radius: 11px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.gdt-photo-upload:hover {
+  background: rgba(124, 58, 237, 0.12);
+  color: #A78BFA;
+  border-color: rgba(124, 58, 237, 0.4);
+}
+
+/* ═══ Calendar section ═══ */
+.gdt-calendar-section {
+  margin-bottom: 14px;
+}
+
+.gdt-section-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0 0 8px;
+}

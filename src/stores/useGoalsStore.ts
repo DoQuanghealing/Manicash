@@ -69,6 +69,13 @@ interface GoalsState {
   linkBankAccount: (goalId: string, info: Omit<GoalBankInfo, 'linkedAt'>) => void;
   unlinkBankAccount: (goalId: string) => void;
 
+  // Photo + Why note (sticky)
+  setPhoto: (goalId: string, dataUrl: string | undefined) => void;
+  setWhyNote: (goalId: string, note: string) => void;
+
+  // Milestone tracking (cho confetti)
+  markMilestoneCelebrated: (goalId: string, milestone: 25 | 50 | 75 | 100) => void;
+
   // Milestones
   addMilestone: (goalId: string, data: Omit<Milestone, 'id' | 'isCompleted'>) => void;
   completeMilestone: (goalId: string, milestoneId: string) => void;
@@ -138,6 +145,27 @@ export const useGoalsStore = create<GoalsState>((set, get) => ({
         void _omit;
         return rest;
       }),
+    })),
+
+  setPhoto: (goalId, dataUrl) =>
+    set((s) => ({
+      goals: s.goals.map((g) =>
+        g.id === goalId ? { ...g, photoUrl: dataUrl } : g
+      ),
+    })),
+
+  setWhyNote: (goalId, note) =>
+    set((s) => ({
+      goals: s.goals.map((g) =>
+        g.id === goalId ? { ...g, whyNote: note } : g
+      ),
+    })),
+
+  markMilestoneCelebrated: (goalId, milestone) =>
+    set((s) => ({
+      goals: s.goals.map((g) =>
+        g.id === goalId ? { ...g, lastCelebratedMilestone: milestone } : g
+      ),
     })),
 
   addMilestone: (goalId, data) =>
