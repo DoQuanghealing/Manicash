@@ -14,8 +14,26 @@ import HexagonLevelBadge from '@/components/ui/HexagonLevelBadge';
 import ProfileEditModal from '@/components/ui/ProfileEditModal';
 import WipeDataConfirm from '@/components/ui/WipeDataConfirm';
 import { getEmojiFromAvatar, isEmojiAvatar } from '@/data/avatarIcons';
-import { Flame, Pencil, Shield, Target, CheckSquare, Trash2 } from 'lucide-react';
+import { getBanMenh } from '@/lib/banMenh';
+import { Flame, Pencil, Shield, Target, CheckSquare, Trash2, Mail, Calendar, Clock, Sparkles } from 'lucide-react';
 import './ProfileContent.css';
+
+function formatBirthDate(iso?: string): string {
+  if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return '';
+  const [y, m, d] = iso.split('-');
+  return `${parseInt(d, 10)}/${parseInt(m, 10)}/${y}`;
+}
+
+function calcAge(birthDate?: string): number | null {
+  if (!birthDate || !/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) return null;
+  const b = new Date(birthDate);
+  if (Number.isNaN(b.getTime())) return null;
+  const now = new Date();
+  let age = now.getFullYear() - b.getFullYear();
+  const m = now.getMonth() - b.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < b.getDate())) age--;
+  return age;
+}
 
 const CATEGORY_LABELS: Record<string, string> = {
   earner: 'Kiếm Tiền',
@@ -56,6 +74,14 @@ export default function ProfileContent() {
   const avatarEmoji = getEmojiFromAvatar(photoURL);
   const isPhotoAvatar = !!photoURL && !isEmojiAvatar(photoURL);
   const initials = displayName.substring(0, 2).toUpperCase();
+
+  // ── Personal info section ──
+  const email = user?.email || firebaseUser?.email || '';
+  const birthDateISO = user?.birthDate || (user?.yearOfBirth ? `${user.yearOfBirth}-01-01` : '');
+  const birthDateDisplay = formatBirthDate(birthDateISO);
+  const birthTime = user?.birthTime || '';
+  const age = calcAge(birthDateISO);
+  const menh = useMemo(() => getBanMenh(user?.yearOfBirth), [user?.yearOfBirth]);
 
   // Fallback to zero/defaults when UserProfile hasn't loaded yet (Firestore
   // fetch pending or anonymous session). AppHeader uses the same pattern so
@@ -141,6 +167,54 @@ export default function ProfileContent() {
           <Pencil size={14} />
           <span>Sửa hồ sơ</span>
         </button>
+      </section>
+
+      {/* ═══ Personal Info Card ═══ */}
+      <section className="profile-info-card">
+        {email && (
+          <div className="profile-info-row">
+            <span className="profile-info-icon"><Mail size={14} /></span>
+            <span className="profile-info-label">Email</span>
+            <span className="profile-info-value">{email}</span>
+          </div>
+        )}
+        {birthDateDisplay && (
+          <div className="profile-info-row">
+            <span className="profile-info-icon"><Calendar size={14} /></span>
+            <span className="profile-info-label">Ngày sinh</span>
+            <span className="profile-info-value">
+              {birthDateDisplay}
+              {age !== null && <span className="profile-info-sub"> · {age} tuổi</span>}
+            </span>
+          </div>
+        )}
+        {birthTime && (
+          <div className="profile-info-row">
+            <span className="profile-info-icon"><Clock size={14} /></span>
+            <span className="profile-info-label">Giờ sinh</span>
+            <span className="profile-info-value">{birthTime}</span>
+          </div>
+        )}
+        {menh && (
+          <div className="profile-info-row profile-info-row--menh">
+            <span className="profile-info-icon"><Sparkles size={14} /></span>
+            <span className="profile-info-label">Bản mệnh</span>
+            <span className="profile-info-value">
+              <strong>{menh.fullName}</strong>
+              <span className="profile-info-sub"> · {menh.menhDetail} ({menh.menh})</span>
+            </span>
+          </div>
+        )}
+        {!email && !birthDateDisplay && !birthTime && !menh && (
+          <button
+            type="button"
+            className="profile-info-empty"
+            onClick={() => setEditOpen(true)}
+          >
+            <Pencil size={12} />
+            <span>Bấm &ldquo;Sửa hồ sơ&rdquo; để bổ sung thông tin cá nhân</span>
+          </button>
+        )}
       </section>
 
       {/* ═══ Stats Grid ═══ */}
