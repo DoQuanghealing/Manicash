@@ -61,22 +61,35 @@ export default function ProfileEditModal({ isOpen, onClose }: ProfileEditModalPr
   const [saving, setSaving] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Track last "open" transition để hydrate chỉ 1 lần per session
+  const lastHydratedKeyRef = useRef<string>('');
 
-  // Hydrate from store when modal opens
+  // Hydrate from store ONLY khi modal transitions false → true.
+  // KHÔNG depend vào `user` — nếu user đổi giữa lúc modal mở (vd awardXP từ
+  // quest, updateStreak…), không được reset state đang nhập của user.
   useEffect(() => {
-    if (!isOpen) return;
-    setDisplayName(user?.displayName ?? '');
-    setEmail(user?.email ?? '');
+    if (!isOpen) {
+      lastHydratedKeyRef.current = '';
+      return;
+    }
+    // Snapshot user 1 lần khi modal vừa mở
+    const snapshot = useAuthStore.getState().user;
+    const key = `${snapshot?.uid ?? 'anon'}:${isOpen ? '1' : '0'}`;
+    if (lastHydratedKeyRef.current === key) return;
+    lastHydratedKeyRef.current = key;
+
+    setDisplayName(snapshot?.displayName ?? '');
+    setEmail(snapshot?.email ?? '');
     // Ưu tiên birthDate có sẵn; fallback từ yearOfBirth → "YYYY-01-01"
-    const initBirthDate = user?.birthDate
-      || (user?.yearOfBirth ? `${user.yearOfBirth}-01-01` : '');
+    const initBirthDate = snapshot?.birthDate
+      || (snapshot?.yearOfBirth ? `${snapshot.yearOfBirth}-01-01` : '');
     setBirthDate(initBirthDate);
-    setBirthTime(user?.birthTime ?? '');
-    setPhotoURL(user?.photoURL ?? null);
+    setBirthTime(snapshot?.birthTime ?? '');
+    setPhotoURL(snapshot?.photoURL ?? null);
     setEmojiPickerOpen(false);
     setUploadError(null);
     setPhotoSizeKB(null);
-  }, [isOpen, user]);
+  }, [isOpen]);
 
   const handlePickFile = () => {
     setUploadError(null);
