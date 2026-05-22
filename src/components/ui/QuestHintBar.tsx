@@ -98,10 +98,10 @@ export default function QuestHintBar() {
       <motion.div
         key={activeContext.questId}
         className={`qhb-bar ${isDone ? 'qhb-bar--done' : ''}`}
-        initial={{ y: -40, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        exit={{ y: -40, opacity: 0 }}
-        transition={{ type: 'spring', stiffness: 280, damping: 22 }}
+        initial={{ y: -80, opacity: 0, scale: 0.92 }}
+        animate={{ y: 0, opacity: 1, scale: 1 }}
+        exit={{ y: -60, opacity: 0, scale: 0.95 }}
+        transition={{ type: 'spring', stiffness: 360, damping: 26, mass: 0.8 }}
       >
         <div className="qhb-icon">{preview.icon}</div>
         <div className="qhb-body">

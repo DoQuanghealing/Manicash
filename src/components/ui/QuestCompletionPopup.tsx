@@ -195,10 +195,10 @@ export default function QuestCompletionPopup() {
         >
           <motion.div
             className="qcp-panel"
-            initial={{ y: 60, scale: 0.9, opacity: 0 }}
+            initial={{ y: -120, scale: 0.88, opacity: 0 }}
             animate={{ y: 0, scale: 1, opacity: 1 }}
-            exit={{ y: 40, opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 320, damping: 24 }}
+            exit={{ y: -60, scale: 0.92, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 340, damping: 26, mass: 0.85 }}
             onClick={(e) => e.stopPropagation()}
           >
             <button className="qcp-close" onClick={handleDismiss} aria-label="Để sau">

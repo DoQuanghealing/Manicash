@@ -38,10 +38,10 @@ export default function StreakShieldToast() {
       {show && (
         <motion.div
           className="sst-banner"
-          initial={{ y: -80, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: -80, opacity: 0 }}
-          transition={{ type: 'spring', stiffness: 280, damping: 22 }}
+          initial={{ y: -100, opacity: 0, scale: 0.92 }}
+          animate={{ y: 0, opacity: 1, scale: 1 }}
+          exit={{ y: -80, opacity: 0, scale: 0.95 }}
+          transition={{ type: 'spring', stiffness: 380, damping: 28, mass: 0.8 }}
         >
           <div className="sst-icon">
             <Shield size={20} />
