@@ -18,6 +18,8 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { useRewardStore } from '@/stores/useRewardStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { VIBE_LABELS, type VibeMode } from '@/lib/ageGroup';
+import IOSDatePicker from './IOSDatePicker';
+import IOSTimePicker from './IOSTimePicker';
 import {
   AVATAR_EMOJIS,
   buildEmojiAvatar,
@@ -307,17 +309,14 @@ export default function ProfileEditModal({ isOpen, onClose }: ProfileEditModalPr
                 )}
               </section>
 
-              {/* ═══ Ngày sinh (đầy đủ) + Giờ sinh (tùy chọn cho Bát Tự) ═══ */}
+              {/* ═══ Ngày sinh (wheel picker iOS) ═══ */}
               <section className="pem-section">
-                <label className="pem-label" htmlFor="pem-birthdate">Ngày sinh</label>
-                <input
-                  id="pem-birthdate"
-                  type="date"
-                  className="pem-input"
-                  value={birthDate}
-                  onChange={(e) => setBirthDate(e.target.value)}
-                  min={MIN_DATE_ISO}
-                  max={TODAY_ISO}
+                <label className="pem-label">Ngày sinh</label>
+                <IOSDatePicker
+                  value={birthDate || TODAY_ISO}
+                  onChange={setBirthDate}
+                  minDate={MIN_DATE_ISO}
+                  maxDate={TODAY_ISO}
                 />
                 {!birthDateValid && (
                   <p className="pem-error">
@@ -326,19 +325,27 @@ export default function ProfileEditModal({ isOpen, onClose }: ProfileEditModalPr
                 )}
               </section>
 
+              {/* ═══ Giờ sinh (wheel picker iOS) — TÙY CHỌN ═══ */}
               <section className="pem-section">
-                <label className="pem-label" htmlFor="pem-birthtime">
+                <label className="pem-label">
                   Giờ sinh <span className="pem-optional">(tùy chọn — phục vụ Bát Tự)</span>
                 </label>
-                <input
-                  id="pem-birthtime"
-                  type="time"
-                  className="pem-input"
+                <IOSTimePicker
                   value={birthTime}
-                  onChange={(e) => setBirthTime(e.target.value)}
+                  onChange={setBirthTime}
                 />
+                {birthTime && (
+                  <button
+                    type="button"
+                    className="pem-btn pem-btn--text"
+                    onClick={() => setBirthTime('')}
+                    style={{ alignSelf: 'flex-start', marginTop: 4 }}
+                  >
+                    Xóa giờ sinh
+                  </button>
+                )}
                 {!birthTimeValid && (
-                  <p className="pem-error">Giờ sinh sai định dạng (cần HH:MM).</p>
+                  <p className="pem-error">Giờ sinh sai định dạng.</p>
                 )}
                 <p className="pem-hint">
                   Nếu nhớ chính xác giờ sinh, app sẽ tính được lá số Bát Tự đầy

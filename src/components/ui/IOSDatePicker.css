@@ -1,0 +1,161 @@
+/* ═══ IOSDatePicker — Wheel picker iOS style ═══
+ *
+ * Item height 40px, 5 items visible (200px tall column).
+ * Gradient mask top/bottom làm fade items xa center.
+ * 2 đường ngang ở giữa highlight selected row.
+ */
+
+.iosp-wrap {
+  position: relative;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  overflow: hidden;
+  padding: 4px 0;
+}
+
+/* 2 đường ngang highlight item ở giữa */
+.iosp-highlight {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 40px;
+  background: rgba(124, 58, 237, 0.08);
+  border-radius: 10px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.iosp-highlight::before,
+.iosp-highlight::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(124, 58, 237, 0.35);
+}
+
+.iosp-highlight::before { top: 0; }
+.iosp-highlight::after { bottom: 0; }
+
+.iosp-cols {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr 1.2fr;
+  height: 200px; /* 5 items × 40px */
+}
+
+.iosp-col {
+  overflow-y: scroll;
+  scroll-snap-type: y mandatory;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  /* Fade items xa center bằng mask gradient */
+  -webkit-mask-image: linear-gradient(
+    180deg,
+    transparent 0%,
+    black 30%,
+    black 70%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    180deg,
+    transparent 0%,
+    black 30%,
+    black 70%,
+    transparent 100%
+  );
+  position: relative;
+  z-index: 2;
+}
+
+.iosp-col::-webkit-scrollbar { display: none; }
+
+.iosp-pad {
+  height: 80px; /* 2 × 40px = padding để first/last item căn giữa được */
+  pointer-events: none;
+}
+
+.iosp-item {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  scroll-snap-align: center;
+  font-size: 16px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  transition: color 0.15s ease, transform 0.15s ease;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.iosp-item:hover {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.iosp-item--selected {
+  color: #F4F4F5;
+  font-weight: 700;
+  font-size: 17px;
+  transform: scale(1.02);
+}
+
+/* ── Light mode ── */
+[data-theme="light"] .iosp-wrap {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .iosp-highlight {
+  background: rgba(124, 58, 237, 0.06);
+}
+
+[data-theme="light"] .iosp-highlight::before,
+[data-theme="light"] .iosp-highlight::after {
+  background: rgba(124, 58, 237, 0.3);
+}
+
+[data-theme="light"] .iosp-item {
+  color: rgba(26, 26, 46, 0.4);
+}
+
+[data-theme="light"] .iosp-item:hover {
+  color: rgba(26, 26, 46, 0.75);
+}
+
+[data-theme="light"] .iosp-item--selected {
+  color: #1A1A2E;
+}
+
+/* ═══ Time picker variant — 2 cột + dấu : ═══ */
+.iosp-wrap--time {
+  max-width: 220px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.iosp-cols--time {
+  grid-template-columns: 1fr 1fr;
+}
+
+.iosp-time-sep {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -55%);
+  font-size: 20px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.85);
+  pointer-events: none;
+  z-index: 3;
+}
+
+[data-theme="light"] .iosp-time-sep { color: rgba(26, 26, 46, 0.85); }
