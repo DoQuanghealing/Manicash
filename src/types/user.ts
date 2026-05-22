@@ -18,6 +18,10 @@ export interface UserProfile {
   lastActiveDate: string;
   resistCount: number;
   totalResistSaved: number;
+  /** ISO timestamp của lần resist gần nhất — dùng cho daily quest counter. */
+  lastResistAt?: string;
+  /** Lưu YYYY-MM-DD → count resist trong ngày đó. Giới hạn last 30 ngày. */
+  resistByDate?: Record<string, number>;
   isPremium: boolean;
   plan: SubscriptionPlan;
   /** Pro tier — optional, default 'free' khi đọc. Enforce ở proGating.ts. */

@@ -183,7 +183,19 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     set((s) => ({
       tasks: s.tasks.map((t) =>
         t.id === taskId
-          ? { ...t, subTasks: t.subTasks.map((st) => st.id === subTaskId ? { ...st, isCompleted: !st.isCompleted } : st) }
+          ? {
+              ...t,
+              subTasks: t.subTasks.map((st) => {
+                if (st.id !== subTaskId) return st;
+                const nextCompleted = !st.isCompleted;
+                return {
+                  ...st,
+                  isCompleted: nextCompleted,
+                  // Set timestamp khi chuyển false → true; xóa khi un-tick
+                  completedAt: nextCompleted ? new Date().toISOString() : undefined,
+                };
+              }),
+            }
           : t
       ),
     })),

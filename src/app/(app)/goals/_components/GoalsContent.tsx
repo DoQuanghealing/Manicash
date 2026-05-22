@@ -11,6 +11,9 @@ import WishlistPanel from './WishlistPanel';
 import DeleteConfirmDialog from '@/components/ui/DeleteConfirmDialog';
 import MilestoneCelebration from '@/components/ui/MilestoneCelebration';
 import TabSwitcher from '@/components/ui/TabSwitcher';
+import { usePageVisitTracker } from '@/hooks/usePageVisitTracker';
+import { usePageVisitStore } from '@/stores/usePageVisitStore';
+import { useEffect } from 'react';
 import { Plus } from 'lucide-react';
 
 type GoalsTab = 'goals' | 'wishlist';
@@ -21,7 +24,15 @@ const GOALS_TABS = [
 ];
 
 export default function GoalsContent() {
+  usePageVisitTracker('goals');
   const [activeTab, setActiveTab] = useState<GoalsTab>('goals');
+
+  // Cũng record visit cho 'wishlist' khi user switch tab
+  useEffect(() => {
+    if (activeTab === 'wishlist') {
+      usePageVisitStore.getState().recordVisit('wishlist');
+    }
+  }, [activeTab]);
 
   const goals = useGoalsStore((s) => s.goals);
   const totalSaved = useGoalsStore((s) => s.getTotalSaved());

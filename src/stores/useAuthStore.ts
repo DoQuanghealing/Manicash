@@ -163,12 +163,27 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   incrementResist: (savedAmount) => {
     const user = get().user;
     if (!user) return;
+    const now = new Date();
+    const today = getDateKey(now);
+
+    // Trim resistByDate giữ last 30 ngày
+    const prev = user.resistByDate || {};
+    const cutoff = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const cutoffKey = getDateKey(cutoff);
+    const trimmed: Record<string, number> = {};
+    for (const [k, v] of Object.entries(prev)) {
+      if (k >= cutoffKey) trimmed[k] = v;
+    }
+    trimmed[today] = (trimmed[today] || 0) + 1;
+
     set({
       user: {
         ...user,
         resistCount: user.resistCount + 1,
         totalResistSaved: user.totalResistSaved + savedAmount,
-        updatedAt: new Date().toISOString(),
+        lastResistAt: now.toISOString(),
+        resistByDate: trimmed,
+        updatedAt: now.toISOString(),
       },
     });
   },

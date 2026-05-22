@@ -7,6 +7,8 @@ import PendingTransactionBanner from './PendingTransactionBanner';
 import MissionChecklist from './MissionChecklist';
 import OnboardingQuestPanel from './OnboardingQuestPanel';
 import DailyQuestCard from './DailyQuestCard';
+import WeeklyChallengeCard from './WeeklyChallengeCard';
+import SeasonalEventBanner from './SeasonalEventBanner';
 import WishlistPopup from './WishlistPopup';
 import MonthlyReportModal from './MonthlyReportModal';
 import BankSyncReminder from '@/components/ui/BankSyncReminder';
@@ -23,6 +25,9 @@ export default function OverviewContent() {
   return (
     <>
       <div className="stack stack-md">
+        {/* ═══ BLOCK 0: Sự kiện theo mùa (tự ẩn khi không có event active) ═══ */}
+        <SeasonalEventBanner />
+
         {/* ═══ BLOCK 1: Safe-to-Spend Balance & Warning ═══ */}
         <SafeToSpendCard />
         <PendingTransactionBanner />
@@ -49,7 +54,10 @@ export default function OverviewContent() {
         {/* ═══ BLOCK 6b: 3 nhiệm vụ hàng ngày ═══ */}
         <DailyQuestCard />
 
-        {/* ═══ BLOCK 6c: Gói nhiệm vụ tối ưu tài chính (legacy 3-bước) ═══ */}
+        {/* ═══ BLOCK 6c: Thử thách tuần (xoay vòng 4 theme) ═══ */}
+        <WeeklyChallengeCard />
+
+        {/* ═══ BLOCK 6d: Gói nhiệm vụ tối ưu tài chính (legacy 3-bước) ═══ */}
         <MissionChecklist />
 
         {/* ═══ BLOCK 7: Wellness & Chữa lành ═══ */}

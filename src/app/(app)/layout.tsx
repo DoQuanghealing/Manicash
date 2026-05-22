@@ -6,6 +6,7 @@ import FloatingButler from '@/components/ui/FloatingButler';
 import ButlerNotifBanner from '@/components/ui/ButlerNotifBanner';
 import XPToastHost from '@/components/ui/XPToast';
 import RolloverGuard from './RolloverGuard';
+import BanMenhThemeApplier from '@/components/providers/BanMenhThemeApplier';
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
@@ -16,6 +17,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
         {/* Budget month rollover — runs once per app load */}
         <RolloverGuard />
+
+        {/* Apply theme accent theo bản mệnh (activeTheme=banmenh) hoặc theme tĩnh */}
+        <BanMenhThemeApplier />
 
         {/* Scrollable content area */}
         <main className="shell-content">

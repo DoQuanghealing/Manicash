@@ -11,6 +11,8 @@ export interface SubTask {
   id: string;
   name: string;
   isCompleted: boolean;
+  /** ISO timestamp khi sub-task chuyển sang true. Undefined nếu chưa bao giờ tick. */
+  completedAt?: string;
 }
 
 /** Nhiệm vụ kiếm tiền */

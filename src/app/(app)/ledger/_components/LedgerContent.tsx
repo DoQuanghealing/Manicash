@@ -11,6 +11,7 @@ import CalendarModal from '@/components/ui/CalendarModal';
 import '@/components/ui/CalendarModal.css';
 import FixedBillsPanel from '@/components/ui/FixedBillsPanel';
 import BudgetSettingsModal from './BudgetSettingsModal';
+import { usePageVisitTracker } from '@/hooks/usePageVisitTracker';
 import './ledger.css';
 
 type FilterType = 'all' | 'income' | 'expense';
@@ -22,6 +23,7 @@ const LEDGER_TABS = [
 ];
 
 export default function LedgerContent() {
+  usePageVisitTracker('ledger');
   const [activeTab, setActiveTab] = useState<LedgerTab>('daily');
   const [filter, setFilter] = useState<FilterType>('all');
   const [showCalendar, setShowCalendar] = useState(false);

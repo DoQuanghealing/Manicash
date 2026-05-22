@@ -13,9 +13,12 @@ import { useFinanceStore } from '@/stores/useFinanceStore';
 import { useTaskStore } from '@/stores/useTaskStore';
 import { useGoalsStore } from '@/stores/useGoalsStore';
 import { useWishlistStore } from '@/stores/useWishlistStore';
-import { getDateKey } from '@/lib/dateHelpers';
+import { usePageVisitStore } from '@/stores/usePageVisitStore';
+import { getDateKey, isInCurrentWeek } from '@/lib/dateHelpers';
 import type { OnboardingMetric } from '@/data/onboardingQuests';
 import type { DailyMetric } from '@/data/dailyQuestPool';
+import type { WeeklyMetric } from '@/data/weeklyChallenges';
+import type { SeasonalMetric } from '@/data/seasonalEvents';
 
 /** Đếm số ngày unique user đã active (theo lastActiveDate + createdAt). */
 function countAppOpenDays(): number {
@@ -36,28 +39,27 @@ function countTodayTransactions(type: 'income' | 'expense' | 'all'): number {
   }).length;
 }
 
-/** Số sub-task hoàn thành hôm nay (xấp xỉ qua isCompleted, không có timestamp riêng). */
+/** Số sub-task hoàn thành hôm nay (chính xác qua completedAt timestamp). */
 function countSubtasksCompletedToday(): number {
-  // Task store hiện tại không tracking khi sub-task được tick. Tạm dùng tổng
-  // sub-task completed như xấp xỉ — sẽ cải thiện khi thêm completedAt cho sub-task.
   const tasks = useTaskStore.getState().tasks;
+  const today = getDateKey(new Date());
   let count = 0;
   for (const t of tasks) {
-    if (t.completedAt) continue; // task chính chưa xong
     for (const st of t.subTasks) {
-      if (st.isCompleted) count++;
+      if (st.isCompleted && st.completedAt) {
+        if (getDateKey(new Date(st.completedAt)) === today) count++;
+      }
     }
   }
-  // Trả 0 nếu không có sub-task vừa tick — daily quest sẽ chờ
-  // user thực sự tick để engine tăng. Đây là limitation hiện tại.
-  // Workaround: dùng total > baseline (đã handle bằng baselineValue trong instance).
   return count;
 }
 
-/** Collect tất cả metrics — đọc 1 lần, dùng cho cả onboarding & daily. */
+/** Collect tất cả metrics — đọc 1 lần, dùng cho onboarding + daily + weekly. */
 export function collectAllMetrics(): {
   onboarding: Record<OnboardingMetric, number>;
   daily: Record<DailyMetric, number>;
+  weekly: Record<WeeklyMetric, number>;
+  lastMonthIncome: number;
 } {
   const user = useAuthStore.getState().user;
   const wishlist = useWishlistStore.getState().items || [];
@@ -83,6 +85,55 @@ export function collectAllMetrics(): {
   const lastActive = (user?.lastActiveDate || '').slice(0, 10);
   const streakAdvancedToday = lastActive === today ? 1 : 0;
 
+  // Resist hôm nay từ resistByDate map mới
+  const resistToday = user?.resistByDate?.[today] || 0;
+
+  // Page visits hôm nay
+  const pageVisits = usePageVisitStore.getState();
+
+  // ── Weekly metrics ──────────────────────────────────────────
+  const finance = useFinanceStore.getState();
+
+  // saved_this_week: tổng tiền transfer kind=split vào goals/reserve/investment trong tuần
+  let savedThisWeek = 0;
+  for (const txn of finance.transactions) {
+    if (txn.type !== 'transfer' || txn.kind !== 'split') continue;
+    if (!isInCurrentWeek(txn.date)) continue;
+    const split = txn.splitBreakdown;
+    if (split) {
+      savedThisWeek += (split.reserve || 0) + (split.goals || 0) + (split.investment || 0);
+    }
+  }
+
+  // resist_count_this_week: sum resistByDate trong các ngày tuần này
+  let resistThisWeek = 0;
+  if (user?.resistByDate) {
+    for (const [dateStr, count] of Object.entries(user.resistByDate)) {
+      // dateStr là YYYY-MM-DD; parse và check isInCurrentWeek
+      if (isInCurrentWeek(dateStr)) resistThisWeek += count;
+    }
+  }
+
+  // tasks_completed_this_week: earning task có completedAt trong tuần này
+  let tasksThisWeek = 0;
+  for (const t of tasks) {
+    if (t.completedAt && isInCurrentWeek(t.completedAt)) tasksThisWeek++;
+  }
+
+  // wishlist_rejected_this_week: items status=rejected với resolvedAt trong tuần
+  let wishlistRejectedThisWeek = 0;
+  for (const item of wishlist) {
+    if (item.status === 'rejected' && item.resolvedAt && isInCurrentWeek(item.resolvedAt)) {
+      wishlistRejectedThisWeek++;
+    }
+  }
+
+  // lastMonthIncome: thu nhập tháng trước (dùng tính dynamic threshold)
+  const now = new Date();
+  const lastMonth = new Date(now.getUTCFullYear(), now.getUTCMonth() - 1, 1);
+  const lastMonthKey = `${lastMonth.getUTCFullYear()}-${String(lastMonth.getUTCMonth() + 1).padStart(2, '0')}`;
+  const lastMonthIncome = finance.getIncomeForMonth(lastMonthKey);
+
   return {
     onboarding: {
       profile_completed: profileCompleted ? 1 : 0,
@@ -98,12 +149,83 @@ export function collectAllMetrics(): {
       expense_today: expenseToday,
       income_today: incomeToday,
       transactions_today: txnToday,
-      resist_today: 0,        // future: cần resistEvents[] có timestamp
+      resist_today: resistToday,
       subtask_today: countSubtasksCompletedToday(),
       streak_advanced: streakAdvancedToday,
       overview_opened: 1,
-      budget_viewed: 0,       // future: cần page visit tracking
-      wishlist_viewed: 0,     // future: cần page visit tracking
+      budget_viewed: pageVisits.visitedToday('ledger') ? 1 : 0,
+      wishlist_viewed: pageVisits.visitedToday('wishlist') ? 1 : 0,
     },
+    weekly: {
+      saved_this_week: savedThisWeek,
+      resist_count_this_week: resistThisWeek,
+      tasks_completed_this_week: tasksThisWeek,
+      wishlist_rejected_this_week: wishlistRejectedThisWeek,
+    },
+    lastMonthIncome,
+  };
+}
+
+/**
+ * Tính delta metric cho seasonal event — count từ startedAt đến now.
+ * Khác `collectAllMetrics` (giá trị tuyệt đối/theo period cố định).
+ */
+export function collectSeasonalDelta(startedAt: string): Record<SeasonalMetric, number> {
+  const startTs = new Date(startedAt).getTime();
+  if (!startTs) {
+    return {
+      event_saved: 0,
+      event_resist: 0,
+      event_income_logged: 0,
+      event_task_completed: 0,
+      event_app_days: 0,
+    };
+  }
+
+  const finance = useFinanceStore.getState();
+  const tasks = useTaskStore.getState().tasks || [];
+  const user = useAuthStore.getState().user;
+
+  // event_saved: tổng split vào quỹ từ startTs
+  let eventSaved = 0;
+  for (const txn of finance.transactions) {
+    if (txn.type !== 'transfer' || txn.kind !== 'split') continue;
+    if (new Date(txn.date).getTime() < startTs) continue;
+    const split = txn.splitBreakdown;
+    if (split) {
+      eventSaved += (split.reserve || 0) + (split.goals || 0) + (split.investment || 0);
+    }
+  }
+
+  // event_income_logged: số income txn từ startTs
+  const eventIncomeLogged = finance.transactions.filter(
+    (t) => t.type === 'income' && new Date(t.date).getTime() >= startTs
+  ).length;
+
+  // event_task_completed: earning task hoàn thành từ startTs
+  const eventTaskCompleted = tasks.filter(
+    (t) => t.completedAt && new Date(t.completedAt).getTime() >= startTs
+  ).length;
+
+  // event_resist: sum resistByDate từ startTs (chỉ counts theo ngày, không chính xác giờ)
+  const startDateKey = getDateKey(new Date(startTs));
+  let eventResist = 0;
+  if (user?.resistByDate) {
+    for (const [dateStr, count] of Object.entries(user.resistByDate)) {
+      if (dateStr >= startDateKey) eventResist += count;
+    }
+  }
+
+  // event_app_days: ước lượng qua streak (nếu streak >= delta-ngày-từ-startedAt)
+  // Đơn giản: số ngày unique đã active từ startedAt = min(streak, daysSinceStart)
+  const daysSinceStart = Math.floor((Date.now() - startTs) / (24 * 60 * 60 * 1000)) + 1;
+  const eventAppDays = Math.min(user?.streak || 0, daysSinceStart);
+
+  return {
+    event_saved: eventSaved,
+    event_resist: eventResist,
+    event_income_logged: eventIncomeLogged,
+    event_task_completed: eventTaskCompleted,
+    event_app_days: eventAppDays,
   };
 }

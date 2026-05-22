@@ -100,9 +100,12 @@ export const useRewardStore = create<RewardState>((set, get) => ({
     if (!menh) return null;
     const zodiac = getZodiacByChiIndex(menh.chiIndex);
     if (!zodiac) return null;
-    const result = get().unlockReward(zodiac.id);
-    if (result.granted) {
-      // Auto-set làm active zodiac nếu chưa có
+
+    // Unlock cả zodiac mệnh chủ + theme-banmenh (cùng điều kiện: có yearOfBirth)
+    const zodiacResult = get().unlockReward(zodiac.id);
+    get().unlockReward('theme-banmenh');
+
+    if (zodiacResult.granted) {
       if (!get().activeZodiac) {
         set({ activeZodiac: zodiac.id });
       }
