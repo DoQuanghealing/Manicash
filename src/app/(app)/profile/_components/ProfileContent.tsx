@@ -12,6 +12,7 @@ import { getRankProgress } from '@/data/rankDefinitions';
 import BadgeImage from '@/components/ui/BadgeImage';
 import HexagonLevelBadge from '@/components/ui/HexagonLevelBadge';
 import ProfileEditModal from '@/components/ui/ProfileEditModal';
+import BatTuCard from '@/components/ui/BatTuCard';
 import WipeDataConfirm from '@/components/ui/WipeDataConfirm';
 import { getEmojiFromAvatar, isEmojiAvatar } from '@/data/avatarIcons';
 import { getBanMenh } from '@/lib/banMenh';
@@ -205,6 +206,12 @@ export default function ProfileContent() {
         </button>
       </section>
 
+      {/* ═══ Lá Số Bát Tự — tự ẩn nếu chưa có ngày sinh ═══ */}
+      <BatTuCard
+        birthDate={birthDateISO || undefined}
+        birthTime={birthTime || undefined}
+        onAddTime={() => setEditOpen(true)}
+      />
 
       {/* ═══ Stats Grid ═══ */}
       <section className="profile-stats-grid">

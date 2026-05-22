@@ -1,0 +1,237 @@
+/* ═══ BatTuCard — Lá số Bát Tự ═══ */
+
+.bat-tu-card {
+  background: linear-gradient(135deg,
+    rgba(249, 115, 22, 0.06),
+    rgba(124, 58, 237, 0.04),
+    rgba(14, 165, 233, 0.04));
+  border: 1px solid rgba(249, 115, 22, 0.18);
+  border-radius: 16px;
+  padding: 14px 12px 12px;
+  margin: 0 var(--space-md, 16px) var(--space-md, 16px);
+  position: relative;
+  overflow: hidden;
+}
+
+.bat-tu-card::before {
+  content: '';
+  position: absolute;
+  top: -20px;
+  right: -20px;
+  width: 120px;
+  height: 120px;
+  background: radial-gradient(circle, rgba(249, 115, 22, 0.18), transparent 70%);
+  pointer-events: none;
+  filter: blur(20px);
+}
+
+/* ── Header ── */
+.bat-tu-header {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+  position: relative;
+  z-index: 1;
+}
+
+.bat-tu-header-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #F97316, #EAB308);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 10px rgba(249, 115, 22, 0.35);
+}
+
+.bat-tu-header-body { flex: 1; min-width: 0; }
+
+.bat-tu-label {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(249, 115, 22, 0.9);
+  margin: 0 0 1px;
+}
+
+.bat-tu-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--c-text-primary, #F4F4F5);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.bat-tu-trait {
+  font-size: 10.5px;
+  color: var(--c-text-secondary, #A1A1AA);
+  margin: 1px 0 0;
+  font-style: italic;
+}
+
+/* ── 4-pillar grid ── */
+.bat-tu-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
+  position: relative;
+  z-index: 1;
+}
+
+.bat-tu-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 8px 4px 7px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.bat-tu-col--highlight {
+  background: linear-gradient(180deg,
+    rgba(124, 58, 237, 0.15),
+    rgba(124, 58, 237, 0.05));
+  border-color: rgba(124, 58, 237, 0.4);
+  box-shadow: 0 0 14px rgba(124, 58, 237, 0.2);
+}
+
+.bat-tu-col-label {
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+  margin-bottom: 2px;
+}
+
+.bat-tu-col--highlight .bat-tu-col-label {
+  color: #C4B5FD;
+}
+
+.bat-tu-can {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--c-text-primary, #F4F4F5);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.bat-tu-chi {
+  font-size: 14px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+
+.bat-tu-menh {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 5px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 5px;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--menh-color, white);
+  margin-top: 3px;
+}
+
+.bat-tu-menh-emoji { font-size: 10px; line-height: 1; }
+.bat-tu-menh-name { letter-spacing: -0.01em; }
+
+.bat-tu-detail {
+  font-size: 8.5px;
+  color: rgba(255, 255, 255, 0.55);
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  text-align: center;
+  letter-spacing: -0.02em;
+}
+
+/* ── Empty hour pillar ── */
+.bat-tu-col--empty {
+  cursor: pointer;
+  border-style: dashed;
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.02);
+  color: rgba(255, 255, 255, 0.5);
+  font-family: inherit;
+  justify-content: center;
+  min-height: 95px;
+}
+
+.bat-tu-col--empty:hover {
+  background: rgba(124, 58, 237, 0.08);
+  border-color: rgba(124, 58, 237, 0.4);
+  color: #A78BFA;
+}
+
+.bat-tu-empty-icon {
+  opacity: 0.5;
+  margin: 4px 0;
+}
+
+.bat-tu-empty-hint {
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+
+/* ── Footer ── */
+.bat-tu-footer {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.5;
+  margin: 10px 0 0;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  position: relative;
+  z-index: 1;
+}
+
+.bat-tu-footer strong {
+  color: #C4B5FD;
+  font-weight: 700;
+}
+
+/* ── Light mode ── */
+[data-theme="light"] .bat-tu-card {
+  background: linear-gradient(135deg,
+    rgba(249, 115, 22, 0.05),
+    rgba(124, 58, 237, 0.03),
+    rgba(14, 165, 233, 0.03));
+  border-color: rgba(249, 115, 22, 0.25);
+}
+
+[data-theme="light"] .bat-tu-col {
+  background: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .bat-tu-can,
+[data-theme="light"] .bat-tu-chi {
+  color: #1A1A2E;
+}
+
+[data-theme="light"] .bat-tu-col-label,
+[data-theme="light"] .bat-tu-detail,
+[data-theme="light"] .bat-tu-footer {
+  color: rgba(26, 26, 46, 0.6);
+}
+
+[data-theme="light"] .bat-tu-trait {
+  color: rgba(26, 26, 46, 0.65);
+}

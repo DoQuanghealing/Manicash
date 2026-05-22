@@ -156,15 +156,26 @@ Hiện tại chỉ tính Trụ Năm. Mở rộng sau khi data ổn.
 
 ## 6. Roadmap
 
-### Phase 1 (NOW) — Fix bug + UI
-- [ ] `updateUserProfile` handle null user → create new
-- [ ] Gộp info card vào hero
-- [ ] Xóa empty state purple box
+### Phase 1 ✅ DONE — Fix bug + UI
+- [x] `updateUserProfile` handle null user → create new
+- [x] Gộp info card vào hero (4 chip inline dưới XP bar)
+- [x] Xóa empty state purple box
 
-### Phase 2 (next) — Bát Tự đầy đủ
-- [ ] Helper tính 4 trụ Bát Tự từ birthDate + birthTime
-- [ ] UI "Lá số Bát Tự" trong profile
+### Phase 2 ✅ DONE — Bát Tự đầy đủ
+- [x] `src/lib/batTu.ts`: tính 4 trụ Can-Chi từ birthDate + birthTime
+  * `getYearPillar(year)` — anchor 1984 = Giáp Tý
+  * `getMonthPillar(year, month)` — Ngũ Hổ Độn rule
+  * `getDayPillar(date)` — 60-day cycle, anchor 1900-01-31 = Giáp Tý
+  * `getHourPillar(hour, dayCan)` — Ngũ Thử Độn rule
+  * Mỗi trụ có Can/Chi/Nạp âm/Mệnh ngũ hành
+- [x] `BatTuCard` UI — 4 cột pillar grid với highlight Trụ Ngày
+  * Header: tên mệnh chính + trait phú quý
+  * Empty state cho Trụ Giờ nếu chưa nhập → click → mở edit modal
+  * Footer giải thích Bát Tự
+- [x] Mount trong ProfileContent dưới hero
 
 ### Phase 3 (later) — Identity polish
 - [ ] Verify Firebase email không bị overwrite khi user edit
 - [ ] Sync birthDate sang Firestore khi non-demo
+- [ ] Lưu ý tiết khí: chuyển sang dùng lịch âm/tiết khí cho biên tháng
+  (phong thủy chuẩn). Hiện dùng tháng dương lịch — đủ phổ thông.
