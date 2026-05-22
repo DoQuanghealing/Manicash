@@ -104,7 +104,7 @@
 
 /* ── Modal backdrop + panel ── */
 .seb-backdrop {
-  position: fixed;
+  position: absolute;
   inset: 0;
   background: rgba(10, 10, 18, 0.78);
   backdrop-filter: blur(8px);

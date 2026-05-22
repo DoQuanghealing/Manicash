@@ -1,12 +1,11 @@
 /* ═══ QuestHintBar — Sticky banner trên destination ═══ */
 
 .qhb-bar {
-  position: fixed;
-  top: calc(env(safe-area-inset-top, 0px) + 64px); /* dưới AppHeader */
-  left: 50%;
-  transform: translateX(-50%);
-  width: calc(100% - 16px);
-  max-width: 430px;
+  position: absolute;
+  top: 64px; /* dưới AppHeader (height 56px) */
+  left: 8px;
+  right: 8px;
+  width: auto;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -27,8 +26,8 @@
 }
 
 @keyframes qhb-done-pulse {
-  0%, 100% { transform: translateX(-50%) scale(1); }
-  50% { transform: translateX(-50%) scale(1.02); }
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
 }
 
 .qhb-icon {
@@ -115,9 +114,9 @@
 
 /* ── Mini show button khi user đã ẩn ── */
 .qhb-mini-show {
-  position: fixed;
-  top: calc(env(safe-area-inset-top, 0px) + 70px);
-  left: 16px;
+  position: absolute;
+  top: 70px;
+  left: 12px;
   width: 36px;
   height: 36px;
   background: linear-gradient(135deg, #7C3AED, #6366F1);

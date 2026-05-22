@@ -1,12 +1,12 @@
 /* ═══ StreakShieldToast — Banner shield used ═══ */
 
 .sst-banner {
-  position: fixed;
-  top: calc(env(safe-area-inset-top, 0px) + 12px);
-  left: 50%;
-  transform: translateX(-50%);
-  max-width: 360px;
-  width: calc(100% - 24px);
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  width: auto;
+  max-width: none;
   display: flex;
   align-items: center;
   gap: 12px;

@@ -1,7 +1,7 @@
 /* ═══ XPToast — Stack top-right, glassmorphism ═══ */
 
 .xp-toast-host {
-  position: fixed;
+  position: absolute;
   top: 76px; /* dưới AppHeader */
   right: 12px;
   z-index: 1100; /* trên BreathGate (1000) nhưng dưới CelebrationModal nếu cần */
