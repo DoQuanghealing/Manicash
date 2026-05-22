@@ -1,17 +1,22 @@
-/* ═══ useSettingsStore — Theme + Butler Name (persisted) ═══ */
+/* ═══ useSettingsStore — Theme + Butler Name + App Vibe (persisted) ═══ */
 import { create } from 'zustand';
+import type { VibeMode } from '@/lib/ageGroup';
 
 export type ThemeMode = 'dark' | 'light';
 
 interface SettingsState {
   theme: ThemeMode;
   butlerName: string;
+  /** Phong cách text/tone — 'auto' detect từ yearOfBirth, hoặc override 'young'/'pro'/'classic'. */
+  appVibe: VibeMode;
   setTheme: (t: ThemeMode) => void;
   toggleTheme: () => void;
   setButlerName: (name: string) => void;
+  setAppVibe: (vibe: VibeMode) => void;
 }
 
 const DEFAULT_BUTLER_NAME = 'Lord Diamond';
+const DEFAULT_APP_VIBE: VibeMode = 'auto';
 
 /* ── Safely read from localStorage (SSR-safe) ── */
 function readStorage<T>(key: string, fallback: T): T {
@@ -36,6 +41,7 @@ function writeStorage(key: string, value: unknown) {
 export const useSettingsStore = create<SettingsState>((set) => ({
   theme: readStorage<ThemeMode>('manicash-theme', 'dark'),
   butlerName: readStorage<string>('manicash-butler-name', DEFAULT_BUTLER_NAME),
+  appVibe: readStorage<VibeMode>('manicash-app-vibe', DEFAULT_APP_VIBE),
 
   setTheme: (t) => {
     writeStorage('manicash-theme', t);
@@ -53,5 +59,10 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     const trimmed = name.trim() || DEFAULT_BUTLER_NAME;
     writeStorage('manicash-butler-name', trimmed);
     set({ butlerName: trimmed });
+  },
+
+  setAppVibe: (vibe) => {
+    writeStorage('manicash-app-vibe', vibe);
+    set({ appVibe: vibe });
   },
 }));

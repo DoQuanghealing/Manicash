@@ -2,8 +2,11 @@
 'use client';
 
 import { useAuthStore } from '@/stores/useAuthStore';
+import { useSettingsStore } from '@/stores/useSettingsStore';
 import { getRankByXP } from '@/data/rankDefinitions';
 import { useRouter } from 'next/navigation';
+import { resolveVibe } from '@/lib/ageGroup';
+import { getCopy } from '@/data/vibedCopy';
 import ZodiacRunner from './ZodiacRunner';
 import './AppHeader.css';
 
@@ -18,15 +21,19 @@ export default function AppHeader() {
 
   const rank = getRankByXP(user?.xp || 0);
   const streak = user?.streak || 0;
+  const shields = user?.streakShields || 0;
 
   let firstName = displayName.split(' ').pop() || displayName;
   firstName = firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
 
-  // Time-based greeting verb
+  // Time-based greeting verb — vibed theo app vibe + yearOfBirth
+  const appVibe = useSettingsStore((s) => s.appVibe);
+  const vibe = resolveVibe(appVibe, user?.yearOfBirth);
   const hour = new Date().getHours();
-  let greetVerb = 'Chào buổi sáng';
-  if (hour >= 12 && hour < 18) greetVerb = 'Chào buổi chiều';
-  else if (hour >= 18) greetVerb = 'Chào buổi tối';
+  let greetKey = 'greeting.morning';
+  if (hour >= 12 && hour < 18) greetKey = 'greeting.afternoon';
+  else if (hour >= 18) greetKey = 'greeting.evening';
+  const greetVerb = getCopy(greetKey, vibe);
 
   return (
     <header className="app-header" id="app-header">
@@ -53,13 +60,19 @@ export default function AppHeader() {
         </div>
       </div>
 
-      {/* Right: Unified Streak + Rank block */}
+      {/* Right: Unified Streak + Shield + Rank block */}
       <div className="header-right">
         <div className="header-badge-group">
           {streak > 0 && (
-            <div className="header-streak">
+            <div className="header-streak" title={`Streak ${streak} ngày`}>
               <span className="header-streak-icon">🔥</span>
               <span className="header-streak-count">{streak}</span>
+            </div>
+          )}
+          {shields > 0 && (
+            <div className="header-shield" title={`${shields} shield bảo vệ streak`}>
+              <span className="header-shield-icon">🛡️</span>
+              <span className="header-shield-count">{shields}</span>
             </div>
           )}
           <div className="header-rank-mini">

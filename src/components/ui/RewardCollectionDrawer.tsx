@@ -17,6 +17,7 @@ import {
   type RewardType,
 } from '@/data/rewardCatalog';
 import { useRewardStore } from '@/stores/useRewardStore';
+import ELearningPreviewModal from './ELearningPreviewModal';
 import './RewardCollectionDrawer.css';
 
 interface Props {
@@ -57,6 +58,7 @@ export default function RewardCollectionDrawer({ isOpen, onClose }: Props) {
   const activeTheme = useRewardStore((s) => s.activeTheme);
   const activeTitle = useRewardStore((s) => s.activeTitle);
   const [filter, setFilter] = useState<'all' | 'unlocked' | 'locked'>('all');
+  const [previewItem, setPreviewItem] = useState<RewardItem | null>(null);
 
   const grouped = useMemo(() => {
     const out: Record<string, RewardItem[]> = {};
@@ -74,6 +76,11 @@ export default function RewardCollectionDrawer({ isOpen, onClose }: Props) {
   }, [isUnlocked]);
 
   const handleSelect = (item: RewardItem) => {
+    // eLearning luôn mở preview, kể cả khi chưa unlock (cho user xem nội dung sắp có)
+    if (item.type === 'elearning') {
+      setPreviewItem(item);
+      return;
+    }
     if (!isUnlocked(item.id)) return;
     if (item.type === 'zodiac') setActiveZodiac(item.id === activeZodiac ? null : item.id);
     else if (item.type === 'theme') setActiveTheme(item.id);
@@ -153,11 +160,13 @@ export default function RewardCollectionDrawer({ isOpen, onClose }: Props) {
                         const unlocked = isUnlocked(item.id);
                         const active = isActive(item);
                         const rarity = RARITY_META[item.rarity];
+                        // eLearning luôn click được (preview); các loại khác cần unlocked + selectable type
                         const canSelect =
-                          unlocked &&
-                          (item.type === 'zodiac' ||
-                            item.type === 'theme' ||
-                            item.type === 'title');
+                          item.type === 'elearning' ||
+                          (unlocked &&
+                            (item.type === 'zodiac' ||
+                              item.type === 'theme' ||
+                              item.type === 'title'));
                         return (
                           <button
                             key={item.id}
@@ -215,6 +224,13 @@ export default function RewardCollectionDrawer({ isOpen, onClose }: Props) {
           </motion.div>
         </motion.div>
       )}
+
+      {/* eLearning preview modal — click vào item type='elearning' */}
+      <ELearningPreviewModal
+        item={previewItem}
+        unlocked={previewItem ? isUnlocked(previewItem.id) : false}
+        onClose={() => setPreviewItem(null)}
+      />
     </AnimatePresence>
   );
 }

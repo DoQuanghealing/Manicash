@@ -16,6 +16,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Camera, Loader2, Save, Smile, X } from 'lucide-react';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useRewardStore } from '@/stores/useRewardStore';
+import { useSettingsStore } from '@/stores/useSettingsStore';
+import { VIBE_LABELS, type VibeMode } from '@/lib/ageGroup';
 import {
   AVATAR_EMOJIS,
   buildEmojiAvatar,
@@ -40,6 +42,8 @@ export default function ProfileEditModal({ isOpen, onClose }: ProfileEditModalPr
   const user = useAuthStore((s) => s.user);
   const updateUserProfile = useAuthStore((s) => s.updateUserProfile);
   const unlockMenhChu = useRewardStore((s) => s.unlockMenhChu);
+  const appVibe = useSettingsStore((s) => s.appVibe);
+  const setAppVibe = useSettingsStore((s) => s.setAppVibe);
 
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
@@ -301,6 +305,31 @@ export default function ProfileEditModal({ isOpen, onClose }: ProfileEditModalPr
                     Năm phải trong {MIN_YEAR_OF_BIRTH}–{CURRENT_YEAR}.
                   </p>
                 )}
+              </section>
+
+              {/* ═══ App Vibe — phong cách text/giọng app ═══ */}
+              <section className="pem-section">
+                <label className="pem-label">Phong cách app</label>
+                <div className="pem-vibe-grid">
+                  {(['auto', 'young', 'pro', 'classic'] as VibeMode[]).map((v) => {
+                    const meta = v === 'auto'
+                      ? { label: 'Tự động', subtitle: 'Theo năm sinh', emoji: '✨' }
+                      : VIBE_LABELS[v];
+                    const isActive = appVibe === v;
+                    return (
+                      <button
+                        key={v}
+                        type="button"
+                        className={`pem-vibe-card ${isActive ? 'pem-vibe-card--active' : ''}`}
+                        onClick={() => setAppVibe(v)}
+                      >
+                        <span className="pem-vibe-emoji">{meta.emoji}</span>
+                        <span className="pem-vibe-label">{meta.label}</span>
+                        <span className="pem-vibe-sub">{meta.subtitle}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </section>
             </div>
 

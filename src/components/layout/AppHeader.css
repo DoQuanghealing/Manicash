@@ -105,6 +105,22 @@
   color: var(--c-orange);
 }
 
+.header-shield {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.header-shield-icon { font-size: 11px; }
+
+.header-shield-count {
+  font-size: 11px;
+  font-weight: 700;
+  color: #0EA5E9;
+}
+
 .header-rank-mini {
   display: flex;
   align-items: center;

@@ -37,6 +37,10 @@ export interface SeasonalEvent {
   themeColor: string;   // accent CSS color
   startDate: string;    // YYYY-MM-DD
   endDate: string;      // YYYY-MM-DD
+  /** Nhãn âm lịch (tùy chọn) — hiển thị bên cạnh dương lịch. */
+  lunarLabel?: string;
+  /** Ngày chính dương lịch (nếu event xoay quanh 1 ngày cụ thể như Tết, Trung Thu). */
+  primaryDate?: string;
   chapters: SeasonalChapter[];
   /** Reward cuối cùng khi hoàn thành tất cả chương — limited cosmetic + eLearning. */
   finalRewardItemIds: string[];
@@ -118,6 +122,8 @@ export const SEASONAL_EVENTS: SeasonalEvent[] = [
     themeColor: '#EAB308',
     startDate: '2026-09-01',
     endDate: '2026-10-15',
+    lunarLabel: 'Rằm tháng 8 âm lịch',
+    primaryDate: '2026-09-25',
     chapters: [
       {
         id: 'midautumn-c1',
@@ -169,6 +175,8 @@ export const SEASONAL_EVENTS: SeasonalEvent[] = [
     themeColor: '#DC2626',
     startDate: '2026-01-15',
     endDate: '2026-02-28',
+    lunarLabel: 'Mùng 1 Tết Nguyên Đán',
+    primaryDate: '2026-02-17',
     chapters: [
       {
         id: 'tet-c1',

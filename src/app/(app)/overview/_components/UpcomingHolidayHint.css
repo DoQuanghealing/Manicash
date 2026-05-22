@@ -1,0 +1,50 @@
+/* ═══ UpcomingHolidayHint styles ═══ */
+
+.uhh-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, rgba(234, 179, 8, 0.1), rgba(220, 38, 38, 0.06));
+  border: 1px solid rgba(234, 179, 8, 0.3);
+  border-radius: 12px;
+}
+
+.uhh-icon {
+  font-size: 26px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 6px rgba(234, 179, 8, 0.4));
+}
+
+.uhh-body { flex: 1; min-width: 0; }
+
+.uhh-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #EAB308;
+  margin-bottom: 1px;
+}
+
+.uhh-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--c-text-primary, #F4F4F5);
+  margin: 0;
+}
+
+.uhh-lunar {
+  font-size: 10px;
+  color: var(--c-text-secondary, #A1A1AA);
+  margin: 1px 0 0;
+}
+
+.uhh-spark {
+  color: #EAB308;
+  flex-shrink: 0;
+  opacity: 0.7;
+}

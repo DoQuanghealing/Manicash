@@ -22,6 +22,10 @@ export interface UserProfile {
   lastResistAt?: string;
   /** Lưu YYYY-MM-DD → count resist trong ngày đó. Giới hạn last 30 ngày. */
   resistByDate?: Record<string, number>;
+  /** Số shield đang giữ — protect streak khi bỏ lỡ 1 ngày. Tự tăng mỗi mốc 7-day streak. */
+  streakShields?: number;
+  /** Lịch sử dùng shield — ISO timestamp, để UI hiện toast. */
+  shieldsUsedAt?: string[];
   isPremium: boolean;
   plan: SubscriptionPlan;
   /** Pro tier — optional, default 'free' khi đọc. Enforce ở proGating.ts. */

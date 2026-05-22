@@ -133,25 +133,52 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       return { streakAdvanced: false, currentStreak: user.streak, xpAwarded: 0 };
     }
 
-    // Tính streak mới: liên tiếp (gap = 1) → +1, gap > 1 hoặc không có lastActive → reset về 1.
+    // Tính streak: gap = 1 → +1. gap = 2 (bỏ lỡ 1 ngày) → nếu có shield, tiêu shield giữ streak.
+    // gap > 2 hoặc không có lastActive → reset về 1.
     const gap = last ? daysBetween(last, today) : Infinity;
-    const newStreak = gap === 1 ? user.streak + 1 : 1;
+    let newStreak = 1;
+    let shieldsUsed: string[] = user.shieldsUsedAt || [];
+    let newShields = user.streakShields || 0;
+    let shieldUsed = false;
 
-    // Update profile trước (để rank tier-XP grant tính đúng).
+    if (gap === 1) {
+      newStreak = user.streak + 1;
+    } else if (gap === 2 && newShields > 0) {
+      // Dùng shield giữ streak (cộng tiếp như liền mạch)
+      newStreak = user.streak + 1;
+      newShields -= 1;
+      shieldUsed = true;
+      shieldsUsed = [...shieldsUsed, new Date().toISOString()].slice(-10); // giữ last 10
+    }
+
+    // Mốc 7-day mới → tặng 1 shield (cap 3 shield tích trữ)
+    const reachedShieldMilestone = newStreak > 0 && newStreak % 7 === 0;
+    if (reachedShieldMilestone && newShields < 3) {
+      newShields += 1;
+    }
+
     set({
       user: {
         ...user,
         streak: newStreak,
         lastActiveDate: today,
+        streakShields: newShields,
+        shieldsUsedAt: shieldsUsed,
         updatedAt: new Date().toISOString(),
       },
     });
 
-    // Grant XP base + bonus mốc 7-day là 2 awardXP riêng → 2 toast event riêng.
     const baseAwarded = get().awardXP({ type: 'DAILY_STREAK', days: newStreak });
-    const bonusAwarded = newStreak > 0 && newStreak % 7 === 0
+    const bonusAwarded = reachedShieldMilestone
       ? get().awardXP({ type: 'STREAK_BONUS' })
       : 0;
+
+    // Emit shield-used event qua xpEvents để toast — dùng MISSION_COMPLETE với amount 0
+    // để chỉ trigger event mà không cộng XP (chỉ thông báo). Component listen sẽ format toast.
+    if (shieldUsed) {
+      // Lưu ý: muốn toast riêng cho shield → cần thêm event type. V1 ghi vào shieldsUsedAt
+      // để UI banner detect; toast XP không emit cho shield.
+    }
 
     return {
       streakAdvanced: true,

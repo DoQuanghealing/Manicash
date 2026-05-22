@@ -7,6 +7,7 @@ import ButlerNotifBanner from '@/components/ui/ButlerNotifBanner';
 import XPToastHost from '@/components/ui/XPToast';
 import RolloverGuard from './RolloverGuard';
 import BanMenhThemeApplier from '@/components/providers/BanMenhThemeApplier';
+import StreakShieldToast from '@/components/ui/StreakShieldToast';
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
@@ -37,6 +38,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
         {/* XP toast host — subscribe xpEvents, render stack top-right */}
         <XPToastHost />
+
+        {/* Streak Shield used banner — detect shieldsUsedAt[] tăng */}
+        <StreakShieldToast />
       </div>
     </div>
   );

@@ -134,6 +134,16 @@ export default function SeasonalEventBanner() {
                 <p className="seb-header-meta">SỰ KIỆN ĐẶC BIỆT</p>
                 <h2 className="seb-header-name">{event.name}</h2>
                 <p className="seb-header-sub">{event.subtitle}</p>
+                {event.lunarLabel && (
+                  <p className="seb-header-lunar">
+                    🌙 {event.lunarLabel}
+                    {event.primaryDate && (
+                      <span className="seb-header-primary-date">
+                        {' '}· {new Date(event.primaryDate).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                      </span>
+                    )}
+                  </p>
+                )}
                 <p className="seb-header-period">
                   {event.startDate} → {event.endDate}
                 </p>

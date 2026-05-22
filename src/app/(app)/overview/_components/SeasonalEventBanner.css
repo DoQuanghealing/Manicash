@@ -196,6 +196,23 @@
   letter-spacing: 0.05em;
 }
 
+.seb-header-lunar {
+  display: inline-block;
+  margin: 4px 0 6px;
+  padding: 3px 10px;
+  background: rgba(234, 179, 8, 0.15);
+  border: 1px solid rgba(234, 179, 8, 0.3);
+  border-radius: 8px;
+  font-size: 11px;
+  color: #EAB308;
+  font-weight: 600;
+}
+
+.seb-header-primary-date {
+  color: var(--c-text-secondary, #A1A1AA);
+  font-weight: 500;
+}
+
 /* ── Progress block ── */
 .seb-progress-block {
   background: rgba(255, 255, 255, 0.04);

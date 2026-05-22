@@ -284,6 +284,55 @@
   to { transform: rotate(360deg); }
 }
 
+/* ── Vibe selector ── */
+.pem-vibe-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+.pem-vibe-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+
+.pem-vibe-card:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.pem-vibe-card--active {
+  background: rgba(124, 58, 237, 0.18);
+  border-color: rgba(124, 58, 237, 0.55);
+}
+
+.pem-vibe-emoji {
+  font-size: 18px;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.pem-vibe-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--c-text-primary, #F4F4F5);
+  margin-bottom: 2px;
+}
+
+.pem-vibe-sub {
+  font-size: 10px;
+  color: var(--c-text-secondary, #A1A1AA);
+  line-height: 1.3;
+}
+
 /* ── Footer ── */
 .pem-footer {
   display: flex;
