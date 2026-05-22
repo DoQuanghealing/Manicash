@@ -139,19 +139,55 @@ export default function ProfileContent() {
         
         <div className="profile-hero-info">
           <h1 className="profile-name">{displayName}</h1>
-          
+
           <div className="profile-xp-bar-container">
             <div className="profile-xp-text">
               <span>{xp.toLocaleString('vi-VN')} XP</span>
               <span>{rankData.next ? `${rankData.next.xpRequired.toLocaleString('vi-VN')} XP` : 'MAX'}</span>
             </div>
             <div className="profile-xp-track">
-              <div 
-                className="profile-xp-fill" 
-                style={{ width: `${rankData.progress}%` }} 
+              <div
+                className="profile-xp-fill"
+                style={{ width: `${rankData.progress}%` }}
               />
             </div>
           </div>
+
+          {/* Personal info inline dưới XP — chỉ hiện khi có data */}
+          {(email || birthDateDisplay || birthTime || menh) && (
+            <div className="profile-hero-meta">
+              {email && (
+                <span className="profile-meta-chip">
+                  <Mail size={11} />
+                  <span className="profile-meta-text">{email}</span>
+                </span>
+              )}
+              {birthDateDisplay && (
+                <span className="profile-meta-chip">
+                  <Calendar size={11} />
+                  <span className="profile-meta-text">
+                    {birthDateDisplay}
+                    {age !== null && <span className="profile-meta-sub"> · {age}t</span>}
+                  </span>
+                </span>
+              )}
+              {birthTime && (
+                <span className="profile-meta-chip">
+                  <Clock size={11} />
+                  <span className="profile-meta-text">{birthTime}</span>
+                </span>
+              )}
+              {menh && (
+                <span className="profile-meta-chip profile-meta-chip--menh">
+                  <Sparkles size={11} />
+                  <span className="profile-meta-text">
+                    <strong>{menh.fullName}</strong>
+                    <span className="profile-meta-sub"> · {menh.menh}</span>
+                  </span>
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="profile-rank-badge">
@@ -169,53 +205,6 @@ export default function ProfileContent() {
         </button>
       </section>
 
-      {/* ═══ Personal Info Card ═══ */}
-      <section className="profile-info-card">
-        {email && (
-          <div className="profile-info-row">
-            <span className="profile-info-icon"><Mail size={14} /></span>
-            <span className="profile-info-label">Email</span>
-            <span className="profile-info-value">{email}</span>
-          </div>
-        )}
-        {birthDateDisplay && (
-          <div className="profile-info-row">
-            <span className="profile-info-icon"><Calendar size={14} /></span>
-            <span className="profile-info-label">Ngày sinh</span>
-            <span className="profile-info-value">
-              {birthDateDisplay}
-              {age !== null && <span className="profile-info-sub"> · {age} tuổi</span>}
-            </span>
-          </div>
-        )}
-        {birthTime && (
-          <div className="profile-info-row">
-            <span className="profile-info-icon"><Clock size={14} /></span>
-            <span className="profile-info-label">Giờ sinh</span>
-            <span className="profile-info-value">{birthTime}</span>
-          </div>
-        )}
-        {menh && (
-          <div className="profile-info-row profile-info-row--menh">
-            <span className="profile-info-icon"><Sparkles size={14} /></span>
-            <span className="profile-info-label">Bản mệnh</span>
-            <span className="profile-info-value">
-              <strong>{menh.fullName}</strong>
-              <span className="profile-info-sub"> · {menh.menhDetail} ({menh.menh})</span>
-            </span>
-          </div>
-        )}
-        {!email && !birthDateDisplay && !birthTime && !menh && (
-          <button
-            type="button"
-            className="profile-info-empty"
-            onClick={() => setEditOpen(true)}
-          >
-            <Pencil size={12} />
-            <span>Bấm &ldquo;Sửa hồ sơ&rdquo; để bổ sung thông tin cá nhân</span>
-          </button>
-        )}
-      </section>
 
       {/* ═══ Stats Grid ═══ */}
       <section className="profile-stats-grid">

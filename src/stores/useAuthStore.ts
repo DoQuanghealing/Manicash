@@ -216,9 +216,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   },
 
   updateUserProfile: (updates) => {
-    const user = get().user;
-    if (!user) return;
-    // Guard: never let caller overwrite stats via this action.
+    const existing = get().user;
+
+    // Auto-derive yearOfBirth từ birthDate (giữ backward compat)
     const safeUpdates: Partial<UserProfile> = { ...updates };
     delete safeUpdates.xp;
     delete safeUpdates.rank;
@@ -227,17 +227,45 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     delete safeUpdates.totalResistSaved;
     delete safeUpdates.uid;
     delete safeUpdates.createdAt;
-
-    // Auto-derive yearOfBirth từ birthDate (giữ backward compat với code đọc yearOfBirth)
     if (safeUpdates.birthDate && !safeUpdates.yearOfBirth) {
       const year = parseInt(safeUpdates.birthDate.slice(0, 4), 10);
       if (Number.isFinite(year) && year >= 1900 && year <= 2100) {
         safeUpdates.yearOfBirth = year;
       }
     }
+
+    // ── Mode 1: CREATE — chưa có user, lập profile lần đầu (anonymous user) ──
+    if (!existing) {
+      const now = new Date().toISOString();
+      set({
+        user: {
+          uid: 'anon-' + Date.now().toString(36),
+          displayName: safeUpdates.displayName ?? 'Chiến binh',
+          email: safeUpdates.email ?? '',
+          photoURL: safeUpdates.photoURL ?? null,
+          rank: 'iron',
+          xp: 0,
+          streak: 0,
+          lastActiveDate: getDateKey(new Date()),
+          resistCount: 0,
+          totalResistSaved: 0,
+          isPremium: false,
+          plan: 'free',
+          premiumExpiresAt: null,
+          createdAt: now,
+          updatedAt: now,
+          birthDate: safeUpdates.birthDate,
+          birthTime: safeUpdates.birthTime,
+          yearOfBirth: safeUpdates.yearOfBirth,
+        },
+      });
+      return;
+    }
+
+    // ── Mode 2: UPDATE existing user ──
     set({
       user: {
-        ...user,
+        ...existing,
         ...safeUpdates,
         updatedAt: new Date().toISOString(),
       },
