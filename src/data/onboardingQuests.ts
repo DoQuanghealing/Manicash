@@ -20,6 +20,8 @@ export type OnboardingMetric =
   | 'app_open_days'             // số ngày unique đã mở app
   | 'overview_visit_count';     // số lần vào trang overview
 
+import type { QuestAction } from '@/data/dailyQuestPool';
+
 export interface OnboardingQuest {
   id: string;
   order: number;             // 1..7
@@ -31,6 +33,8 @@ export interface OnboardingQuest {
   target: number;            // ngưỡng đạt
   xpReward: number;
   rewardItemIds?: string[];  // reward catalog ids
+  /** Deep-link action — dẫn user thẳng tới nơi cần làm. */
+  action?: QuestAction;
 }
 
 export const ONBOARDING_QUESTS: OnboardingQuest[] = [
@@ -46,6 +50,12 @@ export const ONBOARDING_QUESTS: OnboardingQuest[] = [
     target: 1,
     xpReward: 30,
     rewardItemIds: ['title-newbie'],
+    action: {
+      kind: 'navigate',
+      target: '/profile',
+      query: { edit: '1' },
+      buttonLabel: 'Mở Sửa Hồ Sơ',
+    },
   },
   {
     id: 'onb-2-expense',
@@ -58,6 +68,12 @@ export const ONBOARDING_QUESTS: OnboardingQuest[] = [
     metric: 'expense_logged_count',
     target: 1,
     xpReward: 25,
+    action: {
+      kind: 'navigate',
+      target: '/input',
+      query: { type: 'expense' },
+      buttonLabel: 'Ghi chi tiêu ngay',
+    },
   },
   {
     id: 'onb-3-income',
@@ -71,6 +87,12 @@ export const ONBOARDING_QUESTS: OnboardingQuest[] = [
     target: 1,
     xpReward: 25,
     rewardItemIds: ['sound-coin'],
+    action: {
+      kind: 'navigate',
+      target: '/input',
+      query: { type: 'income' },
+      buttonLabel: 'Ghi thu nhập ngay',
+    },
   },
   {
     id: 'onb-4-wishlist',
@@ -83,6 +105,10 @@ export const ONBOARDING_QUESTS: OnboardingQuest[] = [
     metric: 'wishlist_count',
     target: 1,
     xpReward: 30,
+    action: {
+      kind: 'openWishlist',
+      buttonLabel: 'Mở Wishlist',
+    },
   },
   {
     id: 'onb-5-goal',
@@ -95,6 +121,11 @@ export const ONBOARDING_QUESTS: OnboardingQuest[] = [
     metric: 'goal_created',
     target: 1,
     xpReward: 40,
+    action: {
+      kind: 'navigate',
+      target: '/goals',
+      buttonLabel: 'Mở Mục Tiêu',
+    },
   },
   {
     id: 'onb-6-task',
@@ -108,6 +139,10 @@ export const ONBOARDING_QUESTS: OnboardingQuest[] = [
     target: 1,
     xpReward: 50,
     rewardItemIds: ['effect-sparkle'],
+    action: {
+      kind: 'openMoney',
+      buttonLabel: 'Mở Tab Tiền',
+    },
   },
   {
     id: 'onb-7-streak',
@@ -121,6 +156,10 @@ export const ONBOARDING_QUESTS: OnboardingQuest[] = [
     target: 3,
     xpReward: 80,
     rewardItemIds: ['zodiac-ty'], // unlock 1 zodiac mặc định cho ai chưa có mệnh chủ
+    action: {
+      kind: 'checkin',
+      buttonLabel: 'Xem điểm danh',
+    },
   },
 ];
 

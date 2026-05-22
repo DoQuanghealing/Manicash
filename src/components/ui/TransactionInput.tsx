@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { INCOME_CATEGORIES, type CategoryItem } from '@/data/categories';
 import { useCategoryStore } from '@/stores/useCategoryStore';
@@ -28,7 +28,15 @@ const DEFAULT_ACCOUNT_IDS = {
 } as const;
 
 export default function TransactionInput() {
-  const [type, setType] = useState<TxnType>('expense');
+  // Pre-select type từ URL query: /input?type=income hoặc ?type=expense
+  // (dùng cho daily quest deep-link: "Ghi chi tiêu ngay" → /input?type=expense)
+  const searchParams = useSearchParams();
+  const initialType: TxnType = (() => {
+    const q = searchParams.get('type');
+    if (q === 'income' || q === 'expense' || q === 'transfer') return q;
+    return 'expense';
+  })();
+  const [type, setType] = useState<TxnType>(initialType);
   const [amount, setAmount] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [note, setNote] = useState('');

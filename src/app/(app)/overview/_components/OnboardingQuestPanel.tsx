@@ -12,6 +12,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, ChevronRight, Gift, Sparkles, X } from 'lucide-react';
 import { useQuestStore } from '@/stores/useQuestStore';
 import { collectAllMetrics } from '@/lib/questMetrics';
+import { useQuestAction } from '@/hooks/useQuestAction';
+import CheckInModal from '@/components/ui/CheckInModal';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useFinanceStore } from '@/stores/useFinanceStore';
 import { useTaskStore } from '@/stores/useTaskStore';
@@ -24,8 +26,10 @@ import './OnboardingQuestPanel.css';
 
 export default function OnboardingQuestPanel() {
   const [isOpen, setIsOpen] = useState(false);
+  const [checkinOpen, setCheckinOpen] = useState(false);
   const [claimedItems, setClaimedItems] = useState<string[] | null>(null);
   const { fireConfetti } = useConfetti();
+  const dispatchAction = useQuestAction();
 
   // Subscribe các store cần thiết để re-evaluate khi data đổi
   const user = useAuthStore((s) => s.user);
@@ -171,9 +175,25 @@ export default function OnboardingQuestPanel() {
                       Nhận thưởng
                     </button>
                   ) : (
-                    <p className="obq-pending">
-                      🕒 Hoàn thành tình huống trên — app sẽ tự nhận biết
-                    </p>
+                    <div className="obq-active-actions">
+                      {activeQuest.action && (
+                        <button
+                          className="obq-action-btn"
+                          onClick={() => {
+                            setIsOpen(false);
+                            dispatchAction(activeQuest.action, () => {
+                              setCheckinOpen(true);
+                            });
+                          }}
+                        >
+                          {activeQuest.action.buttonLabel || 'Làm ngay'}
+                          <ChevronRight size={14} />
+                        </button>
+                      )}
+                      <p className="obq-pending">
+                        🕒 App tự nhận biết khi bạn hoàn thành
+                      </p>
+                    </div>
                   )}
                 </div>
               </div>
@@ -233,6 +253,8 @@ export default function OnboardingQuestPanel() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <CheckInModal isOpen={checkinOpen} onClose={() => setCheckinOpen(false)} />
     </>
   );
 }

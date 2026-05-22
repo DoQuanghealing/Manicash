@@ -80,7 +80,19 @@
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 10px;
   transition: all 0.2s ease;
+  width: 100%;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--c-text-primary, #F4F4F5);
+  text-align: left;
 }
+
+.dqc-item:not(:disabled):hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(124, 58, 237, 0.3);
+}
+
+.dqc-item:disabled { cursor: default; }
 
 .dqc-item--ready {
   background: rgba(249, 115, 22, 0.1);
@@ -161,10 +173,37 @@
   border-radius: 6px;
   font-size: 11px;
   font-weight: 700;
-  cursor: pointer;
   font-family: inherit;
+  white-space: nowrap;
   transition: transform 0.15s ease;
 }
 
-.dqc-claim-btn:hover { transform: scale(1.05); }
-.dqc-claim-btn:active { transform: scale(0.95); }
+.dqc-go-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 5px 8px 5px 10px;
+  background: rgba(124, 58, 237, 0.15);
+  color: #A78BFA;
+  border: 1px solid rgba(124, 58, 237, 0.3);
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: inherit;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.dqc-item:hover .dqc-go-btn {
+  background: rgba(124, 58, 237, 0.25);
+  border-color: rgba(124, 58, 237, 0.55);
+}
+
+.dqc-go-label {
+  /* Trên màn rất nhỏ ẩn text, chỉ hiện icon */
+}
+
+@media (max-width: 360px) {
+  .dqc-go-label { display: none; }
+  .dqc-go-btn { padding: 5px 6px; }
+}

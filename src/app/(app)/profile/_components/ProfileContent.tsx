@@ -1,7 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useTaskStore } from '@/stores/useTaskStore';
 import { useGoalsStore } from '@/stores/useGoalsStore';
@@ -27,9 +27,17 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 export default function ProfileContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, firebaseUser } = useAuthStore();
   const [editOpen, setEditOpen] = useState(false);
   const [wipeOpen, setWipeOpen] = useState(false);
+
+  // Deep-link từ onboarding quest: /profile?edit=1 → auto-open ProfileEditModal
+  useEffect(() => {
+    if (searchParams.get('edit') === '1') {
+      setEditOpen(true);
+    }
+  }, [searchParams]);
   const tasks = useTaskStore((s) => s.tasks);
   const goals = useGoalsStore((s) => s.goals);
   const transactions = useFinanceStore((s) => s.transactions);

@@ -14,6 +14,7 @@ import TabSwitcher from '@/components/ui/TabSwitcher';
 import { usePageVisitTracker } from '@/hooks/usePageVisitTracker';
 import { usePageVisitStore } from '@/stores/usePageVisitStore';
 import { useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Plus } from 'lucide-react';
 
 type GoalsTab = 'goals' | 'wishlist';
@@ -25,7 +26,11 @@ const GOALS_TABS = [
 
 export default function GoalsContent() {
   usePageVisitTracker('goals');
-  const [activeTab, setActiveTab] = useState<GoalsTab>('goals');
+
+  // Hỗ trợ deep-link từ daily quest "Wishlist": /goals?tab=wishlist
+  const searchParams = useSearchParams();
+  const initialTab: GoalsTab = searchParams.get('tab') === 'wishlist' ? 'wishlist' : 'goals';
+  const [activeTab, setActiveTab] = useState<GoalsTab>(initialTab);
 
   // Cũng record visit cho 'wishlist' khi user switch tab
   useEffect(() => {

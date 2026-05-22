@@ -17,6 +17,21 @@ export type DailyMetric =
   | 'budget_viewed'           // đã xem ngân sách hôm nay
   | 'wishlist_viewed';        // đã mở wishlist hôm nay
 
+/** Action triggered khi user bấm "Làm ngay" trên quest card. */
+export type QuestActionKind =
+  | 'navigate'         // chuyển trang (target = path)
+  | 'highlight'        // scroll tới + highlight element (target = elementId)
+  | 'checkin'          // mở CheckIn modal — explainer + CTA "Ghi giao dịch ngay"
+  | 'openWishlist'     // navigate /goals + tab=wishlist
+  | 'openMoney';       // navigate /money
+
+export interface QuestAction {
+  kind: QuestActionKind;
+  target?: string;             // path or elementId
+  query?: Record<string, string>; // URL query params nếu navigate
+  buttonLabel?: string;        // CTA text trên quest card
+}
+
 export interface DailyQuestTemplate {
   id: string;
   title: string;
@@ -27,6 +42,8 @@ export interface DailyQuestTemplate {
   xpReward: number;
   /** Trọng số để pick — quest cao hơn = hay xuất hiện hơn. Default 1. */
   weight?: number;
+  /** Action khi user bấm "Làm ngay" trên quest card — deep-link đến đúng nơi cần. */
+  action?: QuestAction;
 }
 
 /** Pool nguồn — ~10 quest để xoay vòng. */
@@ -40,6 +57,12 @@ export const DAILY_QUEST_POOL: DailyQuestTemplate[] = [
     target: 2,
     xpReward: 30,
     weight: 3,
+    action: {
+      kind: 'navigate',
+      target: '/input',
+      query: { type: 'expense' },
+      buttonLabel: 'Ghi chi tiêu ngay',
+    },
   },
   {
     id: 'daily-income-1',
@@ -50,36 +73,55 @@ export const DAILY_QUEST_POOL: DailyQuestTemplate[] = [
     target: 1,
     xpReward: 25,
     weight: 2,
+    action: {
+      kind: 'navigate',
+      target: '/input',
+      query: { type: 'income' },
+      buttonLabel: 'Ghi thu nhập ngay',
+    },
   },
   {
     id: 'daily-checkin',
     title: 'Điểm danh hôm nay',
-    hint: 'Streak tự tăng khi bạn ghi giao dịch đầu tiên',
+    hint: 'Streak tăng khi bạn ghi giao dịch đầu tiên trong ngày',
     icon: '🔥',
     metric: 'streak_advanced',
     target: 1,
     xpReward: 15,
     weight: 3,
+    action: {
+      kind: 'checkin',
+      buttonLabel: 'Điểm danh',
+    },
   },
   {
     id: 'daily-overview',
-    title: 'Mở dashboard kiểm tra số dư',
-    hint: 'Bạn đang xem đấy — đã coi như đạt 😄',
+    title: 'Kiểm tra số dư có thể tiêu',
+    hint: 'Xem khối Safe-to-Spend để biết hôm nay tiêu được bao nhiêu',
     icon: '📊',
     metric: 'overview_opened',
     target: 1,
     xpReward: 10,
     weight: 1,
+    action: {
+      kind: 'highlight',
+      target: 'safe-to-spend-card',
+      buttonLabel: 'Xem ngay',
+    },
   },
   {
     id: 'daily-resist-1',
     title: 'Kiềm chế 1 lần chi tiêu',
-    hint: 'Khi sắp tiêu, bấm "Kiềm chế" thay vì "Ghi chi"',
+    hint: 'Mở Wishlist — sau cooling có thể từ chối để +XP',
     icon: '🛡️',
     metric: 'resist_today',
     target: 1,
     xpReward: 50,
     weight: 2,
+    action: {
+      kind: 'openWishlist',
+      buttonLabel: 'Mở Wishlist',
+    },
   },
   {
     id: 'daily-subtask',
@@ -90,6 +132,10 @@ export const DAILY_QUEST_POOL: DailyQuestTemplate[] = [
     target: 1,
     xpReward: 35,
     weight: 2,
+    action: {
+      kind: 'openMoney',
+      buttonLabel: 'Mở Tab Tiền',
+    },
   },
   {
     id: 'daily-transactions-3',
@@ -100,6 +146,11 @@ export const DAILY_QUEST_POOL: DailyQuestTemplate[] = [
     target: 3,
     xpReward: 40,
     weight: 1,
+    action: {
+      kind: 'navigate',
+      target: '/input',
+      buttonLabel: 'Ghi giao dịch',
+    },
   },
   {
     id: 'daily-wishlist',
@@ -110,6 +161,10 @@ export const DAILY_QUEST_POOL: DailyQuestTemplate[] = [
     target: 1,
     xpReward: 20,
     weight: 1,
+    action: {
+      kind: 'openWishlist',
+      buttonLabel: 'Xem Wishlist',
+    },
   },
   {
     id: 'daily-budget',
@@ -120,6 +175,11 @@ export const DAILY_QUEST_POOL: DailyQuestTemplate[] = [
     target: 1,
     xpReward: 20,
     weight: 1,
+    action: {
+      kind: 'navigate',
+      target: '/ledger',
+      buttonLabel: 'Mở Sổ Cái',
+    },
   },
 ];
 

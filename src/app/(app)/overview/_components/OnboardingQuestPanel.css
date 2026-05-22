@@ -306,6 +306,37 @@
   margin: 0;
 }
 
+.obq-active-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.obq-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, #7C3AED, #6366F1);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s ease;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.35);
+}
+
+.obq-action-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(124, 58, 237, 0.45);
+}
+
+.obq-action-btn:active { transform: translateY(0); }
+
 /* ── Future list ── */
 .obq-future-list { margin-bottom: 14px; }
 
