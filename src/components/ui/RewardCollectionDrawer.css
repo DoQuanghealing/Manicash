@@ -50,6 +50,36 @@
   background: linear-gradient(135deg, rgba(124, 58, 237, 0.15), rgba(34, 197, 94, 0.05));
 }
 
+.rcd-back {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 11px 7px 9px;
+  background: rgba(124, 58, 237, 0.2);
+  border: 1px solid rgba(124, 58, 237, 0.4);
+  border-radius: 999px;
+  color: #C4B5FD;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  z-index: 3;
+  transition: all 0.15s ease;
+}
+
+.rcd-back:hover {
+  background: rgba(124, 58, 237, 0.32);
+  color: white;
+  border-color: rgba(124, 58, 237, 0.6);
+}
+
+.rcd-back:active {
+  transform: scale(0.95);
+}
+
 .rcd-close {
   position: absolute;
   top: 12px;
@@ -64,9 +94,19 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  z-index: 3;
 }
 
-.rcd-header-content { padding-right: 40px; }
+.rcd-header-content {
+  padding: 28px 44px 0 90px; /* chừa space cho back trái + close phải */
+  text-align: right;
+}
+
+@media (max-width: 380px) {
+  .rcd-back span { display: none; }
+  .rcd-back { padding: 7px 8px; }
+  .rcd-header-content { padding-left: 56px; }
+}
 
 .rcd-header-label {
   font-size: 10px;

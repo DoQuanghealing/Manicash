@@ -7,9 +7,10 @@
  */
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Lock, Check, Sparkles } from 'lucide-react';
+import { X, Lock, Check, Sparkles, ArrowLeft } from 'lucide-react';
 import {
   REWARD_CATALOG,
   RARITY_META,
@@ -94,13 +95,43 @@ export default function RewardCollectionDrawer({ isOpen, onClose }: Props) {
     return false;
   };
 
+  // Portal target: .mobile-shell — drawer phải render ở root shell,
+  // không phải bên trong AppHeader (z-index/positioning context).
+  const [portalEl, setPortalEl] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const el = document.querySelector('.mobile-shell') as HTMLElement | null;
+    // Defer ra ngoài effect body — subscribe pattern hợp lệ
+    queueMicrotask(() => setPortalEl(el || document.body));
+  }, []);
+
+  // ESC key đóng drawer
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [isOpen, onClose]);
+
   const filterItem = (item: RewardItem): boolean => {
     if (filter === 'all') return true;
     const unlocked = isUnlocked(item.id);
     return filter === 'unlocked' ? unlocked : !unlocked;
   };
 
-  return (
+  if (!portalEl) {
+    return (
+      <ELearningPreviewModal
+        item={previewItem}
+        unlocked={previewItem ? isUnlocked(previewItem.id) : false}
+        onClose={() => setPreviewItem(null)}
+      />
+    );
+  }
+
+  const drawerNode = (
     <AnimatePresence>
       {isOpen && (
         <motion.div
@@ -128,6 +159,11 @@ export default function RewardCollectionDrawer({ isOpen, onClose }: Props) {
             <div className="rcd-handle" aria-hidden="true" />
 
             <header className="rcd-header">
+              {/* Back button góc trái — nổi bật để user dễ thoát */}
+              <button className="rcd-back" onClick={onClose} aria-label="Quay lại">
+                <ArrowLeft size={16} />
+                <span>Quay lại</span>
+              </button>
               <button className="rcd-close" onClick={onClose} aria-label="Đóng">
                 <X size={18} />
               </button>
@@ -238,13 +274,18 @@ export default function RewardCollectionDrawer({ isOpen, onClose }: Props) {
           </motion.div>
         </motion.div>
       )}
+    </AnimatePresence>
+  );
 
-      {/* eLearning preview modal — click vào item type='elearning' */}
+  return createPortal(
+    <>
+      {drawerNode}
       <ELearningPreviewModal
         item={previewItem}
         unlocked={previewItem ? isUnlocked(previewItem.id) : false}
         onClose={() => setPreviewItem(null)}
       />
-    </AnimatePresence>
+    </>,
+    portalEl
   );
 }
