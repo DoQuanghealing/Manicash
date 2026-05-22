@@ -149,10 +149,34 @@ export default function ProfileEditModal({ isOpen, onClose }: ProfileEditModalPr
   const nameValid = displayName.trim().length > 0;
   // Trim trước khi validate — mobile keyboard hay thêm trailing space vào email
   const emailValid = email.trim() === '' || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-  const canSave = !!user && nameValid && emailValid && birthDateValid && birthTimeValid && !uploading && !saving;
+
+  // Diagnostic: liệt kê lý do disable nếu có
+  const blockers: string[] = [];
+  if (!user) blockers.push('user-null');
+  if (!nameValid) blockers.push('name-empty');
+  if (!emailValid) blockers.push('email-invalid');
+  if (!birthDateValid) blockers.push('birthdate-invalid');
+  if (!birthTimeValid) blockers.push('birthtime-invalid');
+  if (uploading) blockers.push('uploading');
+  if (saving) blockers.push('saving');
+
+  // Block CHỈ khi đang upload/save, hoặc field bắt buộc rỗng/sai.
+  // Không block vì user null (vì luôn có user trong demo) hoặc field optional.
+  const isBlocking =
+    !nameValid || !emailValid || !birthDateValid || !birthTimeValid || uploading || saving;
+  const canSave = !isBlocking;
 
   const handleSave = () => {
-    if (!user || !canSave) return;
+    // Bỏ guard `!user` — updateUserProfile có guard riêng bên trong store.
+    // Bỏ guard `!canSave` — đã reflect qua disabled, nhưng để defensive
+    // nếu user click bằng cách nào đó (kbd), validate lại.
+    if (!nameValid || !emailValid || !birthDateValid || !birthTimeValid) {
+      // Log để debug nếu user thấy disabled không hợp lý
+      console.warn('[ProfileEditModal] Save blocked:', { blockers });
+      return;
+    }
+    if (uploading || saving) return;
+
     setSaving(true);
     try {
       const bd = birthDate.trim();
@@ -387,6 +411,22 @@ export default function ProfileEditModal({ isOpen, onClose }: ProfileEditModalPr
             </div>
 
             <footer className="pem-footer">
+              {!canSave && blockers.length > 0 && (
+                <p className="pem-block-reason">
+                  ⚠️ {blockers.map((b) => {
+                    switch (b) {
+                      case 'name-empty': return 'tên chưa nhập';
+                      case 'email-invalid': return 'email sai định dạng';
+                      case 'birthdate-invalid': return 'ngày sinh sai';
+                      case 'birthtime-invalid': return 'giờ sinh sai';
+                      case 'uploading': return 'đang tải ảnh';
+                      case 'saving': return 'đang lưu';
+                      case 'user-null': return 'chưa đăng nhập';
+                      default: return b;
+                    }
+                  }).join(' · ')}
+                </p>
+              )}
               <button
                 type="button"
                 onClick={onClose}
@@ -399,6 +439,7 @@ export default function ProfileEditModal({ isOpen, onClose }: ProfileEditModalPr
                 onClick={handleSave}
                 disabled={!canSave}
                 className="pem-btn pem-btn--primary"
+                title={!canSave ? `Chưa thể lưu: ${blockers.join(', ')}` : 'Lưu thay đổi'}
               >
                 {saving ? <Loader2 size={14} className="pem-spin" /> : <Save size={14} />}
                 <span>Lưu thay đổi</span>

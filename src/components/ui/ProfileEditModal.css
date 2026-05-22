@@ -368,3 +368,14 @@ input.pem-input[type="time"] {
 [data-theme="light"] input.pem-input[type="time"] {
   color-scheme: light;
 }
+
+/* ═══ Diagnostic message khi Save bị block ═══ */
+.pem-block-reason {
+  flex: 1;
+  margin: 0;
+  font-size: 10.5px;
+  color: #F97316;
+  font-weight: 600;
+  line-height: 1.4;
+  align-self: center;
+}
