@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, ArrowDownToLine, FileClock, Landmark } from 'lucide-react';
 import type { Goal } from '@/types/budget';
 import { formatCurrencyShort } from '@/utils/formatCurrency';
 import './GoalCard.css';
@@ -12,9 +12,11 @@ interface GoalCardProps {
   goal: Goal;
   onDelete: (id: string) => void;
   onCompleteMilestone: (goalId: string, msId: string) => void;
+  onDeposit: (goal: Goal) => void;
+  onViewDetail: (goal: Goal) => void;
 }
 
-export default function GoalCard({ goal, onDelete, onCompleteMilestone }: GoalCardProps) {
+export default function GoalCard({ goal, onDelete, onCompleteMilestone, onDeposit, onViewDetail }: GoalCardProps) {
   const [expanded, setExpanded] = useState(false);
   const progress = goal.targetAmount > 0
     ? Math.min(100, Math.round((goal.currentAmount / goal.targetAmount) * 100))
@@ -34,7 +36,12 @@ export default function GoalCard({ goal, onDelete, onCompleteMilestone }: GoalCa
         <div className="gc-header-left">
           <span className="gc-icon">{goal.icon}</span>
           <div>
-            <p className="gc-name">{goal.name}</p>
+            <p className="gc-name">
+              {goal.name}
+              {goal.bankInfo && (
+                <Landmark size={11} className="gc-bank-badge" aria-label="Có TK ngân hàng" />
+              )}
+            </p>
             <p className="gc-deadline">Mục tiêu {goal.deadline.slice(0, 4)}</p>
           </div>
         </div>
@@ -62,6 +69,25 @@ export default function GoalCard({ goal, onDelete, onCompleteMilestone }: GoalCa
       <div className="gc-progress-labels">
         <span>{formatCurrencyShort(goal.currentAmount)}</span>
         <span>{formatCurrencyShort(goal.targetAmount)}</span>
+      </div>
+
+      {/* Action row */}
+      <div className="gc-actions">
+        <button
+          className="gc-action-btn gc-action-btn--primary"
+          onClick={(e) => { e.stopPropagation(); onDeposit(goal); }}
+          style={{ background: `linear-gradient(135deg, ${goal.color}, ${goal.color}cc)` }}
+        >
+          <ArrowDownToLine size={13} />
+          <span>Nạp vào</span>
+        </button>
+        <button
+          className="gc-action-btn gc-action-btn--ghost"
+          onClick={(e) => { e.stopPropagation(); onViewDetail(goal); }}
+        >
+          <FileClock size={13} />
+          <span>Lịch sử ({(goal.deposits?.length ?? 0)})</span>
+        </button>
       </div>
 
       {/* Expandable milestones */}

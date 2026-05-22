@@ -1,8 +1,8 @@
-/* ═══ Goals Store — CRUD Goals + Milestones ═══ */
+/* ═══ Goals Store — CRUD Goals + Milestones + Deposits + Bank Link ═══ */
 'use client';
 
 import { create } from 'zustand';
-import type { Goal, Milestone } from '@/types/budget';
+import type { Goal, Milestone, GoalDeposit, GoalDepositSource, GoalBankInfo } from '@/types/budget';
 import { useAuthStore } from '@/stores/useAuthStore';
 
 function genId(prefix: string) {
@@ -56,7 +56,18 @@ interface GoalsState {
   addGoal: (data: Omit<Goal, 'id' | 'milestones' | 'createdAt'>) => void;
   updateGoal: (id: string, data: Partial<Pick<Goal, 'name' | 'icon' | 'targetAmount' | 'deadline' | 'color'>>) => void;
   deleteGoal: (id: string) => void;
-  addFundsToGoal: (id: string, amount: number) => void;
+
+  // Deposits
+  /**
+   * Nạp tiền vào 1 mục tiêu. Tự ghi vào deposits[] và update currentAmount.
+   * Nếu là amount > 0 → grant SAVINGS_DEPOSIT XP.
+   * `source` mặc định 'manual' (giữ backward-compat với caller cũ).
+   */
+  addFundsToGoal: (id: string, amount: number, source?: GoalDepositSource, note?: string) => void;
+
+  // Bank linking
+  linkBankAccount: (goalId: string, info: Omit<GoalBankInfo, 'linkedAt'>) => void;
+  unlinkBankAccount: (goalId: string) => void;
 
   // Milestones
   addMilestone: (goalId: string, data: Omit<Milestone, 'id' | 'isCompleted'>) => void;
@@ -66,6 +77,7 @@ interface GoalsState {
   getGoalProgress: (id: string) => number;
   getNextMilestone: (id: string) => Milestone | null;
   getTotalSaved: () => number;
+  getDeposits: (id: string) => GoalDeposit[];
 }
 
 export const useGoalsStore = create<GoalsState>((set, get) => ({
@@ -84,17 +96,49 @@ export const useGoalsStore = create<GoalsState>((set, get) => ({
   deleteGoal: (id) =>
     set((s) => ({ goals: s.goals.filter((g) => g.id !== id) })),
 
-  addFundsToGoal: (id, amount) => {
+  addFundsToGoal: (id, amount, source = 'manual', note) => {
+    const deposit: GoalDeposit = {
+      id: genId('dep'),
+      amount,
+      source,
+      note,
+      createdAt: new Date().toISOString(),
+    };
     set((s) => ({
       goals: s.goals.map((g) =>
-        g.id === id ? { ...g, currentAmount: g.currentAmount + amount } : g
+        g.id === id
+          ? {
+              ...g,
+              currentAmount: g.currentAmount + amount,
+              deposits: [...(g.deposits || []), deposit],
+            }
+          : g
       ),
     }));
-    // SAVINGS_DEPOSIT XP — chỉ grant khi deposit dương (rút tiền không grant).
+    // SAVINGS_DEPOSIT XP — chỉ grant khi deposit dương.
     if (amount > 0) {
       useAuthStore.getState().awardXP({ type: 'SAVINGS_DEPOSIT', amount });
     }
   },
+
+  linkBankAccount: (goalId, info) =>
+    set((s) => ({
+      goals: s.goals.map((g) =>
+        g.id === goalId
+          ? { ...g, bankInfo: { ...info, linkedAt: new Date().toISOString() } }
+          : g
+      ),
+    })),
+
+  unlinkBankAccount: (goalId) =>
+    set((s) => ({
+      goals: s.goals.map((g) => {
+        if (g.id !== goalId) return g;
+        const { bankInfo: _omit, ...rest } = g;
+        void _omit;
+        return rest;
+      }),
+    })),
 
   addMilestone: (goalId, data) =>
     set((s) => ({
@@ -132,4 +176,11 @@ export const useGoalsStore = create<GoalsState>((set, get) => ({
   },
 
   getTotalSaved: () => get().goals.reduce((sum, g) => sum + g.currentAmount, 0),
+
+  getDeposits: (id) => {
+    const goal = get().goals.find((g) => g.id === id);
+    if (!goal) return [];
+    // Reverse để mới nhất lên đầu
+    return [...(goal.deposits || [])].reverse();
+  },
 }));

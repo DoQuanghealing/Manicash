@@ -1,13 +1,13 @@
 /* ═══ GoalFormModal Styles ═══ */
 .gfm-backdrop {
-  position: fixed; inset: 0;
+  position: absolute; inset: 0;
   background: rgba(0,0,0,0.6);
   backdrop-filter: blur(6px);
   z-index: 200;
 }
 
 .gfm-panel {
-  position: fixed; bottom: 0; left: 0; right: 0;
+  position: absolute; bottom: 0; left: 0; right: 0;
   z-index: 201;
   max-height: 85dvh;
   overflow-y: auto;

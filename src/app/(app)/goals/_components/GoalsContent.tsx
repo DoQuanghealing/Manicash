@@ -7,10 +7,13 @@ import { useGoalsStore } from '@/stores/useGoalsStore';
 import { formatCurrency, formatCurrencyShort } from '@/utils/formatCurrency';
 import GoalCard from './GoalCard';
 import GoalFormModal from './GoalFormModal';
+import GoalDepositModal from './GoalDepositModal';
+import GoalDetailModal from './GoalDetailModal';
 import WishlistPanel from './WishlistPanel';
 import DeleteConfirmDialog from '@/components/ui/DeleteConfirmDialog';
 import MilestoneCelebration from '@/components/ui/MilestoneCelebration';
 import TabSwitcher from '@/components/ui/TabSwitcher';
+import type { Goal } from '@/types/budget';
 import { usePageVisitTracker } from '@/hooks/usePageVisitTracker';
 import { usePageVisitStore } from '@/stores/usePageVisitStore';
 import { useEffect } from 'react';
@@ -49,20 +52,22 @@ export default function GoalsContent() {
   const [showForm, setShowForm] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [celebration, setCelebration] = useState<string | null>(null);
+  const [depositGoal, setDepositGoal] = useState<Goal | null>(null);
+  const [detailGoal, setDetailGoal] = useState<Goal | null>(null);
 
   const handleCompleteMilestone = useCallback((goalId: string, msId: string) => {
     const goal = goals.find((g) => g.id === goalId);
     const ms = goal?.milestones.find((m) => m.id === msId);
     completeMilestone(goalId, msId);
     if (ms) setCelebration(ms.name);
-  }, [goals, completeMilestone]);
+  }, [goals, completeMilestone, setCelebration]);
 
   const handleConfirmDelete = useCallback(() => {
     if (deleteTarget) {
       deleteGoal(deleteTarget);
       setDeleteTarget(null);
     }
-  }, [deleteTarget, deleteGoal]);
+  }, [deleteTarget, deleteGoal, setDeleteTarget]);
 
   return (
     <div className="stack stack-md">
@@ -106,6 +111,8 @@ export default function GoalsContent() {
                 goal={goal}
                 onDelete={setDeleteTarget}
                 onCompleteMilestone={handleCompleteMilestone}
+                onDeposit={setDepositGoal}
+                onViewDetail={setDetailGoal}
               />
             ))}
 
@@ -151,6 +158,23 @@ export default function GoalsContent() {
         isVisible={!!celebration}
         milestoneName={celebration || ''}
         onDone={() => setCelebration(null)}
+      />
+
+      {/* Deposit modal — chọn nguồn nạp + số tiền */}
+      <GoalDepositModal
+        goal={depositGoal}
+        isOpen={!!depositGoal}
+        onClose={() => setDepositGoal(null)}
+      />
+
+      {/* Detail modal — bank info + lịch sử nạp */}
+      <GoalDetailModal
+        goal={detailGoal}
+        isOpen={!!detailGoal}
+        onClose={() => setDetailGoal(null)}
+        onOpenDeposit={() => {
+          setDepositGoal(detailGoal);
+        }}
       />
     </div>
   );

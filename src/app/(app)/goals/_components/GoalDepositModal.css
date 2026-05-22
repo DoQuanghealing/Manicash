@@ -1,0 +1,317 @@
+/* ═══ GoalDepositModal — iOS-glass deposit sheet ═══ */
+
+.gdm-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  backdrop-filter: blur(14px) saturate(180%);
+  z-index: 220;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 12px;
+}
+
+.gdm-panel {
+  width: 100%;
+  max-width: 430px;
+  max-height: calc(100dvh - 100px);
+  background: linear-gradient(180deg, rgba(34, 32, 52, 0.96), rgba(24, 22, 38, 0.98));
+  -webkit-backdrop-filter: blur(60px) saturate(200%);
+  backdrop-filter: blur(60px) saturate(200%);
+  border-radius: 24px;
+  border: 0.5px solid rgba(255, 255, 255, 0.12);
+  padding: 22px 18px;
+  position: relative;
+  overflow-y: auto;
+  box-shadow:
+    0 -20px 60px rgba(0, 0, 0, 0.5),
+    0 1px 0 0 rgba(255, 255, 255, 0.08) inset;
+}
+
+.gdm-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.gdm-close:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: white;
+}
+
+/* ── Header ── */
+.gdm-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 22px;
+  padding-right: 36px;
+}
+
+.gdm-goal-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  flex-shrink: 0;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+}
+
+.gdm-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  margin: 0 0 2px;
+}
+
+.gdm-title {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #F4F4F5;
+  margin: 0 0 2px;
+}
+
+.gdm-current {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Sections ── */
+.gdm-section { margin-bottom: 18px; }
+
+.gdm-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+  margin: 0 0 8px;
+}
+
+/* ── Source list ── */
+.gdm-source-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.gdm-source {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  color: #F4F4F5;
+  text-align: left;
+  transition: all 0.15s ease;
+}
+
+.gdm-source:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.gdm-source--active {
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.2), rgba(124, 58, 237, 0.08));
+  border-color: rgba(124, 58, 237, 0.5);
+  box-shadow: 0 0 18px rgba(124, 58, 237, 0.2);
+}
+
+.gdm-source--disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.gdm-source-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 9px;
+  color: rgba(255, 255, 255, 0.85);
+  flex-shrink: 0;
+}
+
+.gdm-source--active .gdm-source-icon {
+  background: rgba(124, 58, 237, 0.25);
+  color: #A78BFA;
+}
+
+.gdm-source-body { flex: 1; min-width: 0; }
+
+.gdm-source-label {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.gdm-source-sub {
+  font-size: 10.5px;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 1px 0 0;
+}
+
+.gdm-source-balance {
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.85);
+  flex-shrink: 0;
+}
+
+.gdm-source-balance-na {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* ── Amount input ── */
+.gdm-amount-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 14px 14px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+}
+
+.gdm-amount-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #F4F4F5;
+  font-size: 24px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-family: inherit;
+  width: 100%;
+}
+
+.gdm-amount-input::placeholder { color: rgba(255, 255, 255, 0.25); }
+
+.gdm-currency {
+  font-size: 17px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.gdm-error {
+  font-size: 11px;
+  color: #F97316;
+  margin: 6px 2px 0;
+}
+
+.gdm-quick-amounts {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.gdm-quick-btn {
+  flex: 1;
+  padding: 7px 4px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s ease;
+}
+
+.gdm-quick-btn:hover {
+  background: rgba(124, 58, 237, 0.15);
+  border-color: rgba(124, 58, 237, 0.4);
+  color: #A78BFA;
+}
+
+/* ── Note ── */
+.gdm-note-input {
+  width: 100%;
+  padding: 11px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 11px;
+  color: #F4F4F5;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.gdm-note-input:focus {
+  border-color: rgba(124, 58, 237, 0.5);
+}
+
+.gdm-note-input::placeholder { color: rgba(255, 255, 255, 0.3); }
+
+/* ── Submit ── */
+.gdm-submit {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 18px;
+  background: linear-gradient(135deg, #7C3AED, #F97316);
+  color: white;
+  border: none;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  font-family: inherit;
+  box-shadow:
+    0 10px 24px rgba(124, 58, 237, 0.4),
+    0 1px 0 0 rgba(255, 255, 255, 0.15) inset;
+  transition: transform 0.15s ease;
+}
+
+.gdm-submit:hover:not(:disabled) { transform: translateY(-1px); }
+.gdm-submit:active { transform: translateY(0); }
+
+.gdm-submit:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ── Light mode ── */
+[data-theme="light"] .gdm-panel {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(248, 248, 252, 0.99));
+  color: #1A1A2E;
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .gdm-title { color: #1A1A2E; }
+[data-theme="light"] .gdm-source { background: rgba(0, 0, 0, 0.03); color: #1A1A2E; }
+[data-theme="light"] .gdm-amount-input { color: #1A1A2E; }
+[data-theme="light"] .gdm-note-input { background: rgba(0, 0, 0, 0.03); color: #1A1A2E; }

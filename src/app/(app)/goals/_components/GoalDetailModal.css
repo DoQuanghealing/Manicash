@@ -1,0 +1,395 @@
+/* ═══ GoalDetailModal — Glass sheet với history + bank ═══ */
+
+.gdt-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  backdrop-filter: blur(14px) saturate(180%);
+  z-index: 220;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 12px;
+}
+
+.gdt-panel {
+  width: 100%;
+  max-width: 430px;
+  max-height: calc(100dvh - 100px);
+  background: linear-gradient(180deg, rgba(34, 32, 52, 0.96), rgba(24, 22, 38, 0.98));
+  -webkit-backdrop-filter: blur(60px) saturate(200%);
+  backdrop-filter: blur(60px) saturate(200%);
+  border-radius: 24px;
+  border: 0.5px solid rgba(255, 255, 255, 0.12);
+  padding: 24px 18px 20px;
+  position: relative;
+  overflow-y: auto;
+  box-shadow:
+    0 -20px 60px rgba(0, 0, 0, 0.5),
+    0 1px 0 0 rgba(255, 255, 255, 0.08) inset;
+}
+
+.gdt-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at top, var(--gdt-color, #7C3AED)22, transparent 60%);
+  pointer-events: none;
+  border-radius: 24px 24px 0 0;
+}
+
+.gdt-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+}
+
+/* ── Hero ── */
+.gdt-hero {
+  text-align: center;
+  margin-bottom: 18px;
+  position: relative;
+}
+
+.gdt-hero-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 34px;
+  margin: 0 auto 10px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35), 0 0 24px var(--gdt-color, #7C3AED)55;
+}
+
+.gdt-title {
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #F4F4F5;
+  margin: 0 0 4px;
+}
+
+.gdt-deadline {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 0;
+}
+
+/* ── Progress ── */
+.gdt-progress-block {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 14px;
+  position: relative;
+}
+
+.gdt-progress-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.gdt-amount-current {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--gdt-color, #F4F4F5);
+  font-variant-numeric: tabular-nums;
+}
+
+.gdt-amount-target {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.gdt-progress-bar {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.gdt-progress-fill {
+  height: 100%;
+  border-radius: 6px;
+  transition: width 0.6s ease;
+}
+
+.gdt-progress-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* ── Deposit button ── */
+.gdt-deposit-btn {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px 16px;
+  background: linear-gradient(135deg, var(--gdt-color, #7C3AED), #F97316);
+  color: white;
+  border: none;
+  border-radius: 14px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  font-family: inherit;
+  box-shadow:
+    0 10px 24px rgba(0, 0, 0, 0.3),
+    0 1px 0 0 rgba(255, 255, 255, 0.15) inset;
+  margin-bottom: 14px;
+  position: relative;
+  transition: transform 0.15s ease;
+}
+
+.gdt-deposit-btn:hover { transform: translateY(-1px); }
+
+/* ── Bank ── */
+.gdt-bank-card {
+  background: linear-gradient(135deg, rgba(234, 179, 8, 0.12), rgba(249, 115, 22, 0.06));
+  border: 1px solid rgba(234, 179, 8, 0.3);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 14px;
+  position: relative;
+}
+
+.gdt-bank-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  color: #EAB308;
+}
+
+.gdt-bank-title {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  flex: 1;
+}
+
+.gdt-bank-unlink {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(239, 68, 68, 0.12);
+  border: none;
+  color: #EF4444;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.gdt-bank-name {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0 0 2px;
+  color: #F4F4F5;
+}
+
+.gdt-bank-number {
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0 0 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.gdt-bank-holder {
+  letter-spacing: normal;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.gdt-bank-balance {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 0;
+}
+
+.gdt-link-bank {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px dashed rgba(255, 255, 255, 0.16);
+  border-radius: 14px;
+  cursor: pointer;
+  color: #F4F4F5;
+  font-family: inherit;
+  text-align: left;
+  margin-bottom: 14px;
+  transition: all 0.15s ease;
+}
+
+.gdt-link-bank:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.gdt-link-bank--suggest {
+  background: linear-gradient(135deg, rgba(234, 179, 8, 0.15), rgba(249, 115, 22, 0.08));
+  border-color: rgba(234, 179, 8, 0.5);
+  border-style: solid;
+  animation: gdt-suggest-pulse 2.6s ease-in-out infinite;
+}
+
+@keyframes gdt-suggest-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(234, 179, 8, 0); }
+}
+
+.gdt-link-bank-body { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+
+.gdt-link-bank-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #F4F4F5;
+}
+
+.gdt-link-bank-sub {
+  font-size: 10.5px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* ── History ── */
+.gdt-history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.gdt-history-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.gdt-history-count {
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.gdt-history-empty {
+  text-align: center;
+  padding: 20px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.gdt-history-empty p {
+  font-size: 12px;
+  margin: 6px 0 0;
+}
+
+.gdt-history-empty-hint {
+  font-size: 10.5px !important;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.gdt-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.gdt-history-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 10px;
+}
+
+.gdt-history-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.gdt-history-body { flex: 1; min-width: 0; }
+
+.gdt-history-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.gdt-history-amount {
+  font-size: 13px;
+  font-weight: 700;
+  color: #22C55E;
+  font-variant-numeric: tabular-nums;
+}
+
+.gdt-history-date {
+  font-size: 10.5px;
+  color: rgba(255, 255, 255, 0.45);
+  font-variant-numeric: tabular-nums;
+}
+
+.gdt-history-sub {
+  font-size: 10.5px;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 1px 0 0;
+}
+
+.gdt-history-source {
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.gdt-history-note {
+  font-style: italic;
+}
+
+/* ── Light mode ── */
+[data-theme="light"] .gdt-panel {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(248, 248, 252, 0.99));
+  color: #1A1A2E;
+}
+
+[data-theme="light"] .gdt-title { color: #1A1A2E; }
+[data-theme="light"] .gdt-history-item { background: rgba(0, 0, 0, 0.03); }

@@ -43,6 +43,32 @@ export interface MonthlySnapshot {
   butlerReport?: ButlerReport;
 }
 
+/** Nguồn nạp tiền vào mục tiêu. */
+export type GoalDepositSource =
+  | 'main'           // Tài khoản chính (thu nhập)
+  | 'reserve'        // Quỹ dự phòng
+  | 'goals-fund'     // Quỹ mục tiêu chung (chia từ overview)
+  | 'bank'           // Tài khoản ngân hàng linked
+  | 'manual';        // Manual entry (cash, gift...)
+
+export interface GoalDeposit {
+  id: string;
+  amount: number;
+  source: GoalDepositSource;
+  note?: string;
+  createdAt: string; // ISO
+}
+
+/** Thông tin tài khoản ngân hàng liên kết với mục tiêu lớn. */
+export interface GoalBankInfo {
+  bankName: string;
+  accountNumber: string;
+  accountHolder?: string;
+  /** Số dư khai báo lúc liên kết — để đối chiếu với currentAmount. */
+  declaredBalance: number;
+  linkedAt: string;
+}
+
 /** Mục tiêu tài chính */
 export interface Goal {
   id: string;
@@ -54,6 +80,10 @@ export interface Goal {
   color: string;
   milestones: Milestone[];
   createdAt: string;
+  /** Lịch sử nạp — append-only. */
+  deposits?: GoalDeposit[];
+  /** Tài khoản ngân hàng liên kết (gợi ý khi targetAmount > 100M). */
+  bankInfo?: GoalBankInfo;
 }
 
 /** Mốc nhỏ trong mục tiêu */
