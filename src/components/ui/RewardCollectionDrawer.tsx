@@ -117,7 +117,16 @@ export default function RewardCollectionDrawer({ isOpen, onClose }: Props) {
             exit={{ y: '100%' }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             onClick={(e) => e.stopPropagation()}
+            drag="y"
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={0.2}
+            onDragEnd={(_, info) => {
+              if (info.offset.y > 120 || info.velocity.y > 500) onClose();
+            }}
           >
+            {/* Drag handle — kéo xuống để đóng */}
+            <div className="rcd-handle" aria-hidden="true" />
+
             <header className="rcd-header">
               <button className="rcd-close" onClick={onClose} aria-label="Đóng">
                 <X size={18} />
@@ -220,6 +229,11 @@ export default function RewardCollectionDrawer({ isOpen, onClose }: Props) {
                   Mở khóa thêm bằng cách hoàn thành nhiệm vụ, đạt streak, lên rank, hoặc tham gia sự kiện theo mùa.
                 </span>
               </div>
+
+              {/* Bottom close button — fallback luôn visible khi scroll xuống */}
+              <button className="rcd-bottom-close" onClick={onClose}>
+                Đóng tủ sưu tầm
+              </button>
             </div>
           </motion.div>
         </motion.div>
