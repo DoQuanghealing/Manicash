@@ -18,8 +18,8 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { useRewardStore } from '@/stores/useRewardStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { VIBE_LABELS, type VibeMode } from '@/lib/ageGroup';
-import IOSDatePicker from './IOSDatePicker';
-import IOSTimePicker from './IOSTimePicker';
+import IOSDateField from './IOSDateField';
+import IOSTimeField from './IOSTimeField';
 import {
   AVATAR_EMOJIS,
   buildEmojiAvatar,
@@ -309,14 +309,16 @@ export default function ProfileEditModal({ isOpen, onClose }: ProfileEditModalPr
                 )}
               </section>
 
-              {/* ═══ Ngày sinh (wheel picker iOS) ═══ */}
+              {/* ═══ Ngày sinh (field gọn + sheet picker) ═══ */}
               <section className="pem-section">
                 <label className="pem-label">Ngày sinh</label>
-                <IOSDatePicker
-                  value={birthDate || TODAY_ISO}
+                <IOSDateField
+                  value={birthDate}
                   onChange={setBirthDate}
                   minDate={MIN_DATE_ISO}
                   maxDate={TODAY_ISO}
+                  placeholder="Chọn ngày sinh"
+                  label="Ngày sinh"
                 />
                 {!birthDateValid && (
                   <p className="pem-error">
@@ -325,25 +327,17 @@ export default function ProfileEditModal({ isOpen, onClose }: ProfileEditModalPr
                 )}
               </section>
 
-              {/* ═══ Giờ sinh (wheel picker iOS) — TÙY CHỌN ═══ */}
+              {/* ═══ Giờ sinh (field gọn + sheet picker) — TÙY CHỌN ═══ */}
               <section className="pem-section">
                 <label className="pem-label">
                   Giờ sinh <span className="pem-optional">(tùy chọn — phục vụ Bát Tự)</span>
                 </label>
-                <IOSTimePicker
+                <IOSTimeField
                   value={birthTime}
                   onChange={setBirthTime}
+                  placeholder="Chưa khai báo giờ sinh"
+                  label="Giờ sinh"
                 />
-                {birthTime && (
-                  <button
-                    type="button"
-                    className="pem-btn pem-btn--text"
-                    onClick={() => setBirthTime('')}
-                    style={{ alignSelf: 'flex-start', marginTop: 4 }}
-                  >
-                    Xóa giờ sinh
-                  </button>
-                )}
                 {!birthTimeValid && (
                   <p className="pem-error">Giờ sinh sai định dạng.</p>
                 )}
