@@ -14,9 +14,11 @@ import HexagonLevelBadge from '@/components/ui/HexagonLevelBadge';
 import ProfileEditModal from '@/components/ui/ProfileEditModal';
 import BatTuCard from '@/components/ui/BatTuCard';
 import WipeDataConfirm from '@/components/ui/WipeDataConfirm';
+import AccountDeletionDialog from '@/components/ui/AccountDeletionDialog';
 import { getEmojiFromAvatar, isEmojiAvatar } from '@/data/avatarIcons';
 import { getBanMenh } from '@/lib/banMenh';
-import { Flame, Pencil, Shield, Target, CheckSquare, Trash2, Mail, Calendar, Clock, Sparkles } from 'lucide-react';
+import { Flame, Pencil, Shield, Target, CheckSquare, Trash2, Mail, Calendar, Clock, Sparkles, LogOut, UserX } from 'lucide-react';
+import { useSignOut } from '@/hooks/useSignOut';
 import './ProfileContent.css';
 
 function formatBirthDate(iso?: string): string {
@@ -48,8 +50,10 @@ export default function ProfileContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, firebaseUser } = useAuthStore();
+  const { handleSignOut } = useSignOut();
   const [editOpen, setEditOpen] = useState(false);
   const [wipeOpen, setWipeOpen] = useState(false);
+  const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
 
   // Deep-link từ onboarding quest: /profile?edit=1 → auto-open ProfileEditModal
   useEffect(() => {
@@ -292,13 +296,33 @@ export default function ProfileContent() {
         <h2 className="profile-section-title">Vùng nguy hiểm</h2>
         <button
           type="button"
+          className="profile-wipe-btn profile-wipe-btn--neutral"
+          onClick={handleSignOut}
+        >
+          <LogOut size={14} />
+            <span>Đăng xuất</span>
+        </button>
+        <button
+          type="button"
           className="profile-wipe-btn"
           onClick={() => setWipeOpen(true)}
         >
           <Trash2 size={14} />
           <span>Xóa toàn bộ dữ liệu</span>
         </button>
+        <button
+          type="button"
+          className="profile-wipe-btn profile-wipe-btn--danger"
+          onClick={() => setDeleteAccountOpen(true)}
+        >
+          <UserX size={14} />
+            <span>Xóa tài khoản</span>
+        </button>
         <p className="profile-wipe-hint">
+          Đăng xuất chỉ rời khỏi thiết bị này. Xóa tài khoản sẽ lên lịch xóa
+          vĩnh viễn sau 30 ngày. Nút xóa dữ liệu chỉ reset số liệu tài chính.
+        </p>
+        <p className="profile-wipe-hint profile-wipe-hint--legacy">
           Mọi số dư, giao dịch, mục tiêu sẽ về 0. Tên + email + ảnh đại diện được giữ.
         </p>
       </section>
@@ -308,6 +332,10 @@ export default function ProfileContent() {
         isOpen={wipeOpen}
         onClose={() => setWipeOpen(false)}
         onConfirmed={() => router.refresh()}
+      />
+      <AccountDeletionDialog
+        isOpen={deleteAccountOpen}
+        onClose={() => setDeleteAccountOpen(false)}
       />
     </div>
   );

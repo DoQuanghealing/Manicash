@@ -197,6 +197,48 @@
   background: rgba(124, 58, 237, 0.08);
 }
 
+/* Hover state cho clickable txn — chỉ ra rằng có thể bấm để xem chi tiết */
+.ledger-txn-item:not(.split) {
+  cursor: pointer;
+}
+
+/* Flagged transaction — viền + nền tím nhạt để user thấy ngay */
+.ledger-txn-item.flagged {
+  border-color: rgba(124, 58, 237, 0.35);
+  background: rgba(124, 58, 237, 0.07);
+}
+
+.ledger-txn-item.flagged:hover {
+  background: rgba(124, 58, 237, 0.12);
+}
+
+/* Pill ⚑ inline cạnh tên category */
+.ledger-txn-flag-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 6px;
+  padding: 0 5px;
+  height: 16px;
+  border-radius: var(--radius-full);
+  background: rgba(124, 58, 237, 0.18);
+  color: var(--c-purple-light);
+  font-size: 9px;
+  font-weight: 700;
+  vertical-align: middle;
+  border: 1px solid rgba(124, 58, 237, 0.35);
+}
+
+[data-theme="light"] .ledger-txn-item.flagged {
+  background: rgba(124, 58, 237, 0.04);
+  border-color: rgba(124, 58, 237, 0.22);
+}
+
+[data-theme="light"] .ledger-txn-flag-pill {
+  background: rgba(124, 58, 237, 0.08);
+  border-color: rgba(124, 58, 237, 0.2);
+}
+
 .ledger-txn-wrap.split {
   border-radius: var(--radius-md);
 }

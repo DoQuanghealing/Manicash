@@ -1,4 +1,5 @@
 /* ═══ Goals Page — Tab 4: Mục tiêu ═══ */
+import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import GoalsContent from './_components/GoalsContent';
 
@@ -8,5 +9,9 @@ export const metadata: Metadata = {
 };
 
 export default function GoalsPage() {
-  return <GoalsContent />;
+  return (
+    <Suspense fallback={null}>
+      <GoalsContent />
+    </Suspense>
+  );
 }

@@ -10,13 +10,15 @@ import BanMenhThemeApplier from '@/components/providers/BanMenhThemeApplier';
 import StreakShieldToast from '@/components/ui/StreakShieldToast';
 import QuestCompletionPopup from '@/components/ui/QuestCompletionPopup';
 import QuestHintBar from '@/components/ui/QuestHintBar';
+import AccountDeletionGate from '@/components/ui/AccountDeletionGate';
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="desktop-wrapper">
-      <div className="mobile-shell">
-        {/* Header: absolute top inside shell */}
-        <AppHeader />
+    <AccountDeletionGate>
+      <div className="desktop-wrapper">
+        <div className="mobile-shell">
+          {/* Header: absolute top inside shell */}
+          <AppHeader />
 
         {/* Budget month rollover — runs once per app load */}
         <RolloverGuard />
@@ -48,8 +50,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         <QuestHintBar />
 
         {/* Quest Completion Popup — khi quest từ in-progress → completed */}
-        <QuestCompletionPopup />
+          <QuestCompletionPopup />
+        </div>
       </div>
-    </div>
+    </AccountDeletionGate>
   );
 }

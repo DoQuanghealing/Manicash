@@ -5,20 +5,24 @@ import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '@/data/categories';
-import { useFinanceStore } from '@/stores/useFinanceStore';
+import { useFinanceStore, type Transaction } from '@/stores/useFinanceStore';
+import { useBudgetStore } from '@/stores/useBudgetStore';
 import TabSwitcher from '@/components/ui/TabSwitcher';
 import CalendarModal from '@/components/ui/CalendarModal';
 import '@/components/ui/CalendarModal.css';
 import FixedBillsPanel from '@/components/ui/FixedBillsPanel';
 import BudgetSettingsModal from './BudgetSettingsModal';
+import CategoryBreakdownPanel from './CategoryBreakdownPanel';
+import TransactionDetailSheet from './TransactionDetailSheet';
 import { usePageVisitTracker } from '@/hooks/usePageVisitTracker';
 import './ledger.css';
 
 type FilterType = 'all' | 'income' | 'expense';
-type LedgerTab = 'daily' | 'bills';
+type LedgerTab = 'daily' | 'categories' | 'bills';
 
 const LEDGER_TABS = [
   { key: 'daily', label: 'Chi tiêu', icon: '💸' },
+  { key: 'categories', label: 'Danh mục', icon: '🏷️' },
   { key: 'bills', label: 'Bill cố định', icon: '📋' },
 ];
 
@@ -30,10 +34,13 @@ export default function LedgerContent() {
   const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null);
   const [showBudgetSettings, setShowBudgetSettings] = useState(false);
   const [expandedSplitId, setExpandedSplitId] = useState<string | null>(null);
+  /** Transaction đang xem chi tiết — null = sheet đóng. */
+  const [selectedTxn, setSelectedTxn] = useState<Transaction | null>(null);
 
   const transactions = useFinanceStore((s) => s.transactions);
   const totalIncome = useFinanceStore((s) => s.getTotalIncome());
   const totalExpense = useFinanceStore((s) => s.getTotalExpense());
+  const flaggedTransactionIds = useBudgetStore((s) => s.flaggedTransactionIds);
 
   const allCategories = useMemo(() => [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES], []);
   const getCategory = (id: string) => allCategories.find((c) => c.id === id);
@@ -101,7 +108,7 @@ export default function LedgerContent() {
 
       {/* Tab Content */}
       <AnimatePresence mode="wait">
-        {activeTab === 'daily' ? (
+        {activeTab === 'daily' && (
           <motion.div
             key="daily"
             initial={{ opacity: 0, x: -20 }}
@@ -178,6 +185,7 @@ export default function LedgerContent() {
                         const isSplit = kind === 'split';
                         const isExpanded = expandedSplitId === txn.id;
                         const splitBreakdown = txn.splitBreakdown;
+                        const isFlagged = flaggedTransactionIds.includes(txn.id);
                         const amountColor = isSplit
                           ? 'var(--c-purple-light)'
                           : txn.type === 'income'
@@ -186,22 +194,24 @@ export default function LedgerContent() {
                         const displayCategory = isSplit
                           ? { icon: '🔀', name: 'Phân bổ quỹ', color: '#7C3AED' }
                           : cat;
+                        // Split → toggle inline expand. Khác → mở TransactionDetailSheet.
+                        const handleClick = () => {
+                          if (isSplit) setExpandedSplitId(isExpanded ? null : txn.id);
+                          else setSelectedTxn(txn);
+                        };
                         return (
                           <div key={txn.id} className={`ledger-txn-wrap ${isSplit ? 'split' : ''}`}>
                             <div
-                              className={`ledger-txn-item ${isSplit ? 'split' : ''}`}
+                              className={`ledger-txn-item ${isSplit ? 'split' : ''} ${isFlagged ? 'flagged' : ''}`}
                               id={`txn-${txn.id}`}
-                              role={isSplit ? 'button' : undefined}
-                              tabIndex={isSplit ? 0 : undefined}
+                              role="button"
+                              tabIndex={0}
                               aria-expanded={isSplit ? isExpanded : undefined}
-                              onClick={() => {
-                                if (isSplit) setExpandedSplitId(isExpanded ? null : txn.id);
-                              }}
+                              onClick={handleClick}
                               onKeyDown={(event) => {
-                                if (!isSplit) return;
                                 if (event.key === 'Enter' || event.key === ' ') {
                                   event.preventDefault();
-                                  setExpandedSplitId(isExpanded ? null : txn.id);
+                                  handleClick();
                                 }
                               }}
                             >
@@ -209,7 +219,12 @@ export default function LedgerContent() {
                               {displayCategory?.icon || '📦'}
                             </div>
                             <div className="ledger-txn-info">
-                              <p className="ledger-txn-category">{displayCategory?.name || 'Khác'}</p>
+                              <p className="ledger-txn-category">
+                                {displayCategory?.name || 'Khác'}
+                                {isFlagged && (
+                                  <span className="ledger-txn-flag-pill" title="Đã gắn cảnh báo">⚑</span>
+                                )}
+                              </p>
                               <p className="ledger-txn-note">{txn.note}</p>
                             </div>
                             <div style={{ textAlign: 'right' }}>
@@ -236,7 +251,21 @@ export default function LedgerContent() {
               })
             )}
           </motion.div>
-        ) : (
+        )}
+
+        {activeTab === 'categories' && (
+          <motion.div
+            key="categories"
+            initial={{ opacity: 0, x: 0, y: 8 }}
+            animate={{ opacity: 1, x: 0, y: 0 }}
+            exit={{ opacity: 0, x: 0, y: 8 }}
+            transition={{ duration: 0.2 }}
+          >
+            <CategoryBreakdownPanel />
+          </motion.div>
+        )}
+
+        {activeTab === 'bills' && (
           <motion.div
             key="bills"
             initial={{ opacity: 0, x: 20 }}
@@ -260,6 +289,14 @@ export default function LedgerContent() {
       <BudgetSettingsModal
         isOpen={showBudgetSettings}
         onClose={() => setShowBudgetSettings(false)}
+      />
+
+      {/* Transaction Detail Sheet — mở khi bấm 1 transaction non-split */}
+      <TransactionDetailSheet
+        transaction={selectedTxn}
+        category={selectedTxn ? (getCategory(selectedTxn.categoryId) || null) : null}
+        isOpen={selectedTxn !== null}
+        onClose={() => setSelectedTxn(null)}
       />
     </div>
   );

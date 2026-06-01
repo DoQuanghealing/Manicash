@@ -68,6 +68,7 @@ async function ensureUserDocument(user: User): Promise<void> {
       isPremium: false,
       plan: 'free',
       premiumExpiresAt: null,
+      accountStatus: 'active',
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
@@ -111,6 +112,12 @@ export async function fetchUserProfile(uid: string): Promise<UserProfile | null>
     isPremium: data.isPremium || false,
     plan: data.plan || 'free',
     premiumExpiresAt: data.premiumExpiresAt || null,
+    accountStatus: data.accountStatus || 'active',
+    deletionRequestedAt: data.deletionRequestedAt?.toDate?.()?.toISOString?.() || data.deletionRequestedAt,
+    deletionScheduledAt: data.deletionScheduledAt?.toDate?.()?.toISOString?.() || data.deletionScheduledAt,
+    deletionCancelledAt: data.deletionCancelledAt?.toDate?.()?.toISOString?.() || data.deletionCancelledAt,
+    deletionReason: data.deletionReason,
+    deletionMode: data.deletionMode,
     createdAt: data.createdAt?.toDate?.()?.toISOString?.() || '',
     updatedAt: data.updatedAt?.toDate?.()?.toISOString?.() || '',
   };

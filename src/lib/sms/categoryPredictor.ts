@@ -22,8 +22,10 @@ const EXPENSE_RULES: CategoryRule[] = [
   { keywords: ['grabfood', 'grab food', 'shopeefood', 'shopee food', 'gofood', 'baemin', 'foody', 'loship', 'befood', 'be food'], categoryId: 'food', confidence: 0.95 },
   // === Restaurant chains ===
   { keywords: ['kfc', 'mcdonald', 'jollibee', 'lotteria', 'pizza hut', 'dominos', 'bbq chicken', 'texas chicken'], categoryId: 'food', confidence: 0.9 },
-  // === Supermarket / convenience ===
-  { keywords: ['vinmart', 'winmart', 'bach hoa xanh', 'bhx', 'co.opmart', 'lotte mart', 'big c', 'mega market', 'circle k', 'familymart', 'gs25'], categoryId: 'shopping', confidence: 0.85 },
+  // === Supermarket / groceries — route sang category mới 'groceries' ===
+  { keywords: ['vinmart', 'winmart', 'bach hoa xanh', 'bhx', 'co.opmart', 'lotte mart', 'big c', 'mega market', 'mm mega', 'aeon', 'lan chi', 'satrafoods', 'satra'], categoryId: 'groceries', confidence: 0.9 },
+  { keywords: ['circle k', 'familymart', 'gs25', 'ministop', '7-eleven', 'b\'s mart'], categoryId: 'groceries', confidence: 0.85 },
+  { keywords: ['cho ', 'di cho', 'sieu thi'], categoryId: 'groceries', confidence: 0.8 },
 
   // === Coffee chains ===
   { keywords: ['highland', 'highlands coffee', 'starbucks', 'phuc long', 'phuclong', 'the coffee house', 'cong caphe', 'trung nguyen', 'katinat'], categoryId: 'coffee', confidence: 0.95 },
@@ -35,10 +37,14 @@ const EXPENSE_RULES: CategoryRule[] = [
   // === Parking / public transit ===
   { keywords: ['gui xe', 'guixe', 'parking', 'metro hcm', 'tau dien'], categoryId: 'transport', confidence: 0.85 },
 
-  // === E-commerce ===
-  { keywords: ['shopee', 'lazada', 'tiki', 'sendo'], categoryId: 'shopping', confidence: 0.95 },
-  // === Apparel ===
-  { keywords: ['uniqlo', 'h&m', 'zara', 'nike', 'adidas', 'puma', 'fila', 'mango'], categoryId: 'shopping', confidence: 0.9 },
+  // === E-commerce (catch-all → shopping) ===
+  { keywords: ['shopee', 'lazada', 'tiki', 'sendo'], categoryId: 'shopping', confidence: 0.85 },
+  // === Apparel — route sang 'clothing' ===
+  { keywords: ['uniqlo', 'h&m', 'zara', 'nike', 'adidas', 'puma', 'fila', 'mango', 'gap', 'levi', 'canifa', 'an phuoc', 'ivy moda', 'routine', 'coolmate'], categoryId: 'clothing', confidence: 0.92 },
+  { keywords: ['quan ao', 'quanao', 'thoi trang', 'thoitrang'], categoryId: 'clothing', confidence: 0.8 },
+  // === Cosmetics / beauty ===
+  { keywords: ['sephora', 'the body shop', 'thebodyshop', 'innisfree', 'laneige', 'mac cosmetics', 'maybelline', 'loreal', 'l\'oreal', 'estee lauder', 'shiseido', 'olay', 'olive young', 'guardian'], categoryId: 'cosmetics', confidence: 0.92 },
+  { keywords: ['my pham', 'mypham', 'son moi', 'sonmoi', 'mascara', 'kem chong nang', 'serum', 'toner'], categoryId: 'cosmetics', confidence: 0.85 },
 
   // === Streaming / cinema ===
   { keywords: ['netflix', 'spotify', 'youtube premium', 'disney+', 'cgv', 'galaxy cinema', 'lotte cinema', 'bhd star'], categoryId: 'entertain', confidence: 0.95 },

@@ -8,6 +8,38 @@ import { getHealthTier, type HealthTier } from './cfoHealthScore';
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
+/**
+ * Detail của 1 danh mục cần AI chú ý — đính kèm tên + số tiền thực tế để AI
+ * gợi ý cụ thể theo danh mục (vd "giảm 30% Cà phê" thay vì gợi ý chung).
+ */
+export interface WatchedCategoryDetail {
+  name: string;
+  spent: number;
+  limit: number;       // 0 nếu user chưa đặt ngưỡng
+  overBy: number;      // 0 nếu chưa vượt
+  percent: number;     // 0..∞ — spent/limit*100, 0 nếu limit=0
+  isFlagged: boolean;  // User chủ động flag ⚑
+  isOver: boolean;     // System detect vượt ngưỡng
+  /** Tiết kiệm tháng nếu cắt 20% — preview cho AI. */
+  savingsAt20pct: number;
+}
+
+/**
+ * 1 giao dịch user đã flag ⚑ riêng (per-transaction level — granular hơn category).
+ * AI sẽ dùng note + categoryName để gợi ý CỤ THỂ vào hành vi user (vd "ăn sushi
+ * cuối tuần" thay vì cả "Ăn uống").
+ */
+export interface FlaggedTransactionDetail {
+  /** Tên category — "Ăn uống", "Mua sắm khác", ... */
+  categoryName: string;
+  /** Note user nhập khi tạo txn — vd "Sushi cuối tuần". Có thể empty. */
+  note: string;
+  /** Số tiền (VND). */
+  amount: number;
+  /** Số ngày trước (0 = hôm nay). Giúp AI hiểu mức độ recent. */
+  daysAgo: number;
+}
+
 /** Snapshot data thô gửi cho AI (không kèm healthScore — AI không quyết score). */
 export interface CFOPayload {
   monthlyIncome: number;
@@ -20,6 +52,17 @@ export interface CFOPayload {
   billsDueByNow: number;
   billsPaidOfDue: number;
   transactionCount: number;
+  /**
+   * Danh mục user đã flag ⚑ HOẶC system phát hiện vượt ngưỡng.
+   * Cap ≤5 để giữ prompt gọn. Flagged ưu tiên trước over-budget.
+   * Có thể empty array nếu không có gì cần chú ý.
+   */
+  watchedCategories: WatchedCategoryDetail[];
+  /**
+   * Top giao dịch user đã flag ⚑ riêng — sort desc by amount, cap ≤5.
+   * Empty nếu user chưa flag txn nào.
+   */
+  topFlaggedTransactions: FlaggedTransactionDetail[];
 }
 
 /** Response cuối cùng từ /api/cfo (healthScore inject từ backend, không phải AI). */
@@ -64,10 +107,41 @@ function formatVND(n: number): string {
   return `${sign}${abs}đ`;
 }
 
+/** Format dòng watched-category cho AI. */
+function formatWatchedLine(w: WatchedCategoryDetail): string {
+  const tags: string[] = [];
+  if (w.isFlagged) tags.push('⚑ user-flag');
+  if (w.isOver) tags.push(`vượt ${formatVND(w.overBy)}`);
+  const tagStr = tags.length ? ` [${tags.join(', ')}]` : '';
+  const limitStr = w.limit > 0 ? `/${formatVND(w.limit)}` : ' (chưa đặt ngưỡng)';
+  return `  • ${w.name}: ${formatVND(w.spent)}${limitStr}${tagStr} → cắt 20% = tiết kiệm ${formatVND(w.savingsAt20pct)}/tháng`;
+}
+
+/** Format dòng flagged-transaction cho AI. */
+function formatFlaggedTxnLine(t: FlaggedTransactionDetail): string {
+  const note = t.note?.trim() || '(không note)';
+  const when = t.daysAgo === 0 ? 'hôm nay' : t.daysAgo === 1 ? 'hôm qua' : `${t.daysAgo} ngày trước`;
+  return `  • ${t.categoryName}: "${note}" ${formatVND(t.amount)} (${when})`;
+}
+
 /** Build user prompt từ snapshot + breakdown. */
 function buildUserPrompt(payload: CFOPayload, breakdown: HealthBreakdown): string {
   const tier = getHealthTier(breakdown.total);
   const tierLabel = tier === 'good' ? 'TỐT' : tier === 'fair' ? 'TRUNG BÌNH' : 'YẾU';
+
+  const watchedBlock = payload.watchedCategories.length > 0
+    ? `\n\nDanh mục cậu chủ đang theo dõi / vượt ngưỡng:\n${payload.watchedCategories.map(formatWatchedLine).join('\n')}`
+    : '';
+
+  const flaggedTxnBlock = payload.topFlaggedTransactions.length > 0
+    ? `\n\nGiao dịch cụ thể cậu chủ đã gắn cảnh báo ⚑ (CHI TIẾT TUYỆT VỜI để gợi ý cụ thể):\n${payload.topFlaggedTransactions.map(formatFlaggedTxnLine).join('\n')}`
+    : '';
+
+  const mentionRule = payload.topFlaggedTransactions.length > 0
+    ? `\n\nQUAN TRỌNG: ít nhất 1 suggestion PHẢI nhắc đến 1 giao dịch cụ thể trong danh sách flagged ở trên (dùng đúng note + amount). Vd: "Khoản 'Sushi cuối tuần' 850k tuần trước — tuần này thử thay bằng cơm nhà 1-2 lần, tiết kiệm ~500k."`
+    : payload.watchedCategories.length > 0
+      ? `\n\nQUAN TRỌNG: ít nhất 1 suggestion PHẢI nhắc tên cụ thể của danh mục trong danh sách watched ở trên (ưu tiên dòng có "⚑ user-flag"), kèm con số tiết kiệm thực tế nếu cắt. Vd: "Giảm 30% chi Cà phê → tiết kiệm 195k/tháng".`
+      : '';
 
   return `Data tài chính tháng này của cậu chủ:
 - Thu nhập: ${formatVND(payload.monthlyIncome)}
@@ -77,7 +151,7 @@ function buildUserPrompt(payload: CFOPayload, breakdown: HealthBreakdown): strin
 - Quỹ khẩn cấp: ${formatVND(payload.emergencyBalance)}
 - Danh mục vượt ngân sách: ${payload.categoriesOverBudget}/${payload.categoriesTotal}
 - Bill đã trả đúng hạn: ${payload.billsPaidOfDue}/${payload.billsDueByNow}
-- Số giao dịch: ${payload.transactionCount}
+- Số giao dịch: ${payload.transactionCount}${watchedBlock}${flaggedTxnBlock}${mentionRule}
 
 ĐIỂM SỨC KHỎE (đã tính sẵn, KHÔNG thay đổi): ${breakdown.total}/100 — ${tierLabel}
 Breakdown 5 thành phần:
@@ -145,20 +219,68 @@ export async function getCFONarrative(
   }
 }
 
+/**
+ * Sinh 1 suggestion cụ thể từ watched category đầu tiên — ưu tiên flagged,
+ * fallback over-budget. Trả null nếu không có gì để nhắc.
+ */
+function watchedCategorySuggestion(
+  watched: WatchedCategoryDetail[],
+): string | null {
+  if (watched.length === 0) return null;
+  // Đã sort flagged-first ở useCFOSnapshot, lấy phần tử đầu tiên.
+  const top = watched[0];
+  if (top.isOver && top.overBy > 0) {
+    return `Mục "${top.name}" đang vượt ngưỡng ${formatVND(top.overBy)} — cắt 20% tháng tới sẽ tiết kiệm ${formatVND(top.savingsAt20pct)}.`;
+  }
+  if (top.spent > 0) {
+    return `Mục "${top.name}" cậu chủ đang theo dõi — giảm 20% sẽ tiết kiệm khoảng ${formatVND(top.savingsAt20pct)}/tháng.`;
+  }
+  return null;
+}
+
+/**
+ * Sinh 1 suggestion từ flagged-transaction lớn nhất — granular hơn category.
+ * Vd "Khoản 'Sushi cuối tuần' 850k cách đây 5 ngày — tuần này thử cơm nhà nhé."
+ */
+function flaggedTransactionSuggestion(
+  txns: FlaggedTransactionDetail[],
+): string | null {
+  if (txns.length === 0) return null;
+  // Đã sort desc by amount ở useCFOSnapshot.
+  const top = txns[0];
+  const note = top.note?.trim() || top.categoryName;
+  const when = top.daysAgo === 0 ? 'hôm nay' : top.daysAgo === 1 ? 'hôm qua' : `${top.daysAgo} ngày trước`;
+  const savings = Math.round(top.amount * 0.5); // giả định giảm 50% khoản này nếu skip 1 lần
+  return `Khoản "${note}" ${formatVND(top.amount)} (${when}) — tuần này thử giảm 1 lần, tiết kiệm ~${formatVND(savings)}.`;
+}
+
 /** Fallback narrative theo tier — dùng khi thiếu GROQ_API_KEY hoặc Groq fail. */
 export function getFallbackNarrative(
   breakdown: HealthBreakdown,
+  watched: WatchedCategoryDetail[] = [],
+  flaggedTxns: FlaggedTransactionDetail[] = [],
 ): { summary: string; suggestions: string[] } {
   const tier: HealthTier = getHealthTier(breakdown.total);
+  const txnSugg = flaggedTransactionSuggestion(flaggedTxns);
+  const watchedSugg = watchedCategorySuggestion(watched);
+
+  /** Compose suggestions: txn-level đứng đầu (cụ thể nhất), category-level thứ 2,
+   *  generic suggestions cuối. Dedupe khi cả 2 nói về cùng category. */
+  const prepend: string[] = [];
+  if (txnSugg) prepend.push(txnSugg);
+  if (watchedSugg && (!txnSugg || flaggedTxns[0]?.categoryName !== watched[0]?.name)) {
+    prepend.push(watchedSugg);
+  }
 
   if (tier === 'good') {
+    const generic = [
+      'Cân nhắc tăng tỷ lệ tiết kiệm thêm 5% tháng tới để về đích mục tiêu sớm hơn.',
+      'Phân bổ một phần quỹ khẩn cấp dư sang kênh đầu tư có lãi để tiền không "nằm yên".',
+      'Xem lại các mục tiêu dài hạn (nhà/xe/học) — tháng này đủ khỏe để tăng mức góp hàng tháng 10-15%.',
+    ];
     return {
       summary: `Tuyệt vời cậu chủ! Sức khỏe tài chính tháng này đạt ${breakdown.total}/100 — mức TỐT. 🏆 Tôi tin cậu chủ đang đi rất đúng hướng, giờ là lúc nghĩ xa hơn về đầu tư và mục tiêu dài hạn.`,
-      suggestions: [
-        'Cân nhắc tăng tỷ lệ tiết kiệm thêm 5% tháng tới để về đích mục tiêu sớm hơn.',
-        'Phân bổ một phần quỹ khẩn cấp dư sang kênh đầu tư có lãi để tiền không "nằm yên".',
-        'Xem lại các mục tiêu dài hạn (nhà/xe/học) — tháng này đủ khỏe để tăng mức góp hàng tháng 10-15%.',
-      ],
+      suggestions: [...prepend, ...generic].slice(0, 3),
     };
   }
 
@@ -166,7 +288,7 @@ export function getFallbackNarrative(
     const weakest = findWeakestSubScore(breakdown);
     return {
       summary: `Tháng này cậu chủ đạt ${breakdown.total}/100 — mức TRUNG BÌNH. Tôi ghi nhận nỗ lực của cậu chủ, chỉ cần xử lý phần "${weakest.label}" là bước lên hạng TỐT ngay! 💪`,
-      suggestions: weakest.suggestions,
+      suggestions: [...prepend, ...weakest.suggestions].slice(0, 3),
     };
   }
 
@@ -174,7 +296,7 @@ export function getFallbackNarrative(
   const weakest = findWeakestSubScore(breakdown);
   return {
     summary: `Cậu chủ ơi, tháng này điểm sức khỏe là ${breakdown.total}/100 — hơi căng. Không sao, tôi sẽ đồng hành cùng cậu chủ. 🤝 Ưu tiên trước mắt là xử lý phần "${weakest.label}".`,
-    suggestions: weakest.suggestions,
+    suggestions: [...prepend, ...weakest.suggestions].slice(0, 3),
   };
 }
 

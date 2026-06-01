@@ -344,11 +344,37 @@
   background: rgba(249, 115, 22, 0.1);
 }
 
+.profile-wipe-btn + .profile-wipe-btn {
+  margin-left: 8px;
+}
+
+.profile-wipe-btn--neutral {
+  border-color: rgba(161, 161, 170, 0.35);
+  color: #E4E4E7;
+}
+
+.profile-wipe-btn--neutral:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.profile-wipe-btn--danger {
+  border-color: rgba(248, 113, 113, 0.55);
+  color: #F87171;
+}
+
+.profile-wipe-btn--danger:hover {
+  background: rgba(248, 113, 113, 0.12);
+}
+
 .profile-wipe-hint {
   font-size: 11px;
   color: var(--c-text-secondary, #A1A1AA);
   margin: 8px 0 0;
   line-height: 1.5;
+}
+
+.profile-wipe-hint--legacy {
+  display: none;
 }
 
 /* ═══ Personal Info Card — dưới hero ═══ */

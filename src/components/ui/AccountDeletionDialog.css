@@ -1,0 +1,141 @@
+.acct-del-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.68);
+  padding: 16px;
+}
+
+.acct-del-panel {
+  width: min(100%, 430px);
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  border: 1px solid rgba(248, 113, 113, 0.28);
+  border-radius: 18px;
+  background: #111118;
+  color: #f4f4f5;
+  padding: 18px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+}
+
+.acct-del-header {
+  display: grid;
+  gap: 8px;
+}
+
+.acct-del-eyebrow {
+  margin: 0;
+  color: #f87171;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.acct-del-header h2 {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.15;
+}
+
+.acct-del-header p,
+.acct-del-list span,
+.acct-del-check span,
+.acct-del-field span {
+  color: #a1a1aa;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.acct-del-list {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0;
+  padding: 12px;
+  border: 1px solid rgba(248, 113, 113, 0.18);
+  border-radius: 12px;
+  background: rgba(248, 113, 113, 0.06);
+}
+
+.acct-del-field {
+  display: grid;
+  gap: 8px;
+}
+
+.acct-del-field textarea {
+  width: 100%;
+  resize: vertical;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #f4f4f5;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 13px;
+}
+
+.acct-del-check {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: 10px;
+  align-items: start;
+  margin-top: 14px;
+}
+
+.acct-del-check input {
+  margin-top: 3px;
+}
+
+.acct-del-error {
+  margin: 12px 0 0;
+  color: #fca5a5;
+  font-size: 12px;
+}
+
+.acct-del-actions {
+  display: grid;
+  grid-template-columns: 1fr 1.25fr;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.acct-del-secondary,
+.acct-del-danger {
+  min-height: 42px;
+  border-radius: 12px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.acct-del-secondary {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: #f4f4f5;
+}
+
+.acct-del-danger {
+  border: 1px solid rgba(248, 113, 113, 0.55);
+  background: #dc2626;
+  color: #fff;
+}
+
+.acct-del-danger:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+[data-theme="light"] .acct-del-panel {
+  background: #fff;
+  color: #18181b;
+}
+
+[data-theme="light"] .acct-del-field textarea {
+  background: rgba(0, 0, 0, 0.04);
+  color: #18181b;
+  border-color: rgba(0, 0, 0, 0.12);
+}

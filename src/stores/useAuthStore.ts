@@ -252,6 +252,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
           isPremium: false,
           plan: 'free',
           premiumExpiresAt: null,
+          accountStatus: 'active',
           createdAt: now,
           updatedAt: now,
           birthDate: safeUpdates.birthDate,

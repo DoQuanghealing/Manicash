@@ -9,9 +9,11 @@
  */
 
 import { initializeApp, getApps, cert, type App } from 'firebase-admin/app';
+import { getAuth, type Auth } from 'firebase-admin/auth';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 
 let cachedDb: Firestore | null = null;
+let cachedAuth: Auth | null = null;
 
 function initAdmin(): App {
   // Reuse existing app nếu đã init (Next.js dev server hot-reload có thể call nhiều lần).
@@ -44,4 +46,11 @@ export function getAdminDb(): Firestore {
     cachedDb = getFirestore(initAdmin());
   }
   return cachedDb;
+}
+
+export function getAdminAuth(): Auth {
+  if (!cachedAuth) {
+    cachedAuth = getAuth(initAdmin());
+  }
+  return cachedAuth;
 }

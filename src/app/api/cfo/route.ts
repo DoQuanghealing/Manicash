@@ -20,7 +20,70 @@ import {
   getFallbackNarrative,
   type CFOInsight,
   type CFOPayload,
+  type WatchedCategoryDetail,
+  type FlaggedTransactionDetail,
 } from '@/lib/groqClient';
+
+/** Cap watched-categories từ client — chống abuse + giữ prompt size hợp lý. */
+const MAX_WATCHED = 5;
+/** Cap flagged-transactions từ client. */
+const MAX_FLAGGED_TXNS = 5;
+
+/** Validate + sanitize watched-category từ client. */
+function parseWatched(raw: unknown): WatchedCategoryDetail[] {
+  if (!Array.isArray(raw)) return [];
+  const num = (v: unknown, fb = 0) => {
+    const n = typeof v === 'number' ? v : Number(v);
+    return Number.isFinite(n) ? n : fb;
+  };
+  return raw
+    .map((entry): WatchedCategoryDetail | null => {
+      if (!entry || typeof entry !== 'object') return null;
+      const e = entry as Record<string, unknown>;
+      const name = typeof e.name === 'string' ? e.name.slice(0, 40).trim() : '';
+      if (!name) return null;
+      const spent = Math.max(0, num(e.spent));
+      const limit = Math.max(0, num(e.limit));
+      return {
+        name,
+        spent,
+        limit,
+        overBy: Math.max(0, num(e.overBy)),
+        percent: Math.max(0, Math.min(9999, Math.round(num(e.percent)))),
+        isFlagged: Boolean(e.isFlagged),
+        isOver: Boolean(e.isOver),
+        savingsAt20pct: Math.max(0, num(e.savingsAt20pct, Math.round(spent * 0.2))),
+      };
+    })
+    .filter((x): x is WatchedCategoryDetail => x !== null)
+    .slice(0, MAX_WATCHED);
+}
+
+/** Validate + sanitize flagged-transactions từ client. */
+function parseFlaggedTxns(raw: unknown): FlaggedTransactionDetail[] {
+  if (!Array.isArray(raw)) return [];
+  const num = (v: unknown, fb = 0) => {
+    const n = typeof v === 'number' ? v : Number(v);
+    return Number.isFinite(n) ? n : fb;
+  };
+  return raw
+    .map((entry): FlaggedTransactionDetail | null => {
+      if (!entry || typeof entry !== 'object') return null;
+      const e = entry as Record<string, unknown>;
+      const categoryName = typeof e.categoryName === 'string'
+        ? e.categoryName.slice(0, 40).trim()
+        : '';
+      if (!categoryName) return null;
+      return {
+        categoryName,
+        note: typeof e.note === 'string' ? e.note.slice(0, 80).trim() : '',
+        amount: Math.max(0, num(e.amount)),
+        daysAgo: Math.max(0, Math.min(60, Math.floor(num(e.daysAgo)))),
+      };
+    })
+    .filter((x): x is FlaggedTransactionDetail => x !== null)
+    .slice(0, MAX_FLAGGED_TXNS);
+}
 
 /** Internal log source — dev-only, NOT exposed to client. */
 type CFOSource = 'groq' | 'fallback-no-key' | 'fallback-error';
@@ -57,6 +120,8 @@ function buildPayload(body: unknown, snapshot: HealthSnapshot, savingsRate: numb
   const txCount = typeof b.transactionCount === 'number'
     ? Math.max(0, Math.floor(b.transactionCount))
     : 0;
+  const watchedCategories = parseWatched(b.watchedCategories);
+  const topFlaggedTransactions = parseFlaggedTxns(b.topFlaggedTransactions);
 
   return {
     monthlyIncome: snapshot.monthlyIncome,
@@ -69,6 +134,8 @@ function buildPayload(body: unknown, snapshot: HealthSnapshot, savingsRate: numb
     billsDueByNow: snapshot.billsDueByNow,
     billsPaidOfDue: snapshot.billsPaidOfDue,
     transactionCount: txCount,
+    watchedCategories,
+    topFlaggedTransactions,
   };
 }
 
@@ -103,11 +170,11 @@ export async function POST(req: NextRequest) {
       source = 'groq';
     } catch (error) {
       console.error('CFO Groq error, using fallback:', error);
-      narrative = getFallbackNarrative(breakdown);
+      narrative = getFallbackNarrative(breakdown, payload.watchedCategories, payload.topFlaggedTransactions);
       source = 'fallback-error';
     }
   } else {
-    narrative = getFallbackNarrative(breakdown);
+    narrative = getFallbackNarrative(breakdown, payload.watchedCategories, payload.topFlaggedTransactions);
     source = 'fallback-no-key';
   }
 

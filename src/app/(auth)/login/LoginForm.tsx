@@ -1,18 +1,16 @@
-/* ═══ Login Form — Google Sign-in Client Component ═══ */
+/* Login Form - Google Sign-in Client Component */
 'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { signInWithGoogle } from '@/lib/firebase/auth';
 import { useAudio } from '@/hooks/useAudio';
-import { useAuthStore } from '@/stores/useAuthStore';
 
 export default function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const { play } = useAudio();
-  const { setFirebaseUser, setUserProfile, setLoading, setDemoMode } = useAuthStore();
 
   async function handleGoogleSignIn() {
     setIsLoading(true);
@@ -21,7 +19,6 @@ export default function LoginForm() {
     try {
       const user = await signInWithGoogle();
 
-      // Set session cookie via API route (Proxy needs this)
       await fetch('/api/auth/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -46,53 +43,6 @@ export default function LoginForm() {
       setIsLoading(false);
     }
   }
-
-  async function handleDevBypass() {
-    setIsLoading(true);
-    setDemoMode(true);
-    setFirebaseUser({
-      uid: 'demo-user-123',
-      displayName: 'Nhà Phát Triển',
-      email: 'dev@manicash.local',
-      photoURL: '',
-    });
-    setUserProfile({
-      uid: 'demo-user-123',
-      displayName: 'Nhà Phát Triển',
-      email: 'dev@manicash.local',
-      photoURL: null,
-      xp: 1500,
-      rank: 'gold',
-      streak: 5,
-      lastActiveDate: new Date().toISOString(),
-      resistCount: 50,
-      totalResistSaved: 5000000,
-      isPremium: true,
-      plan: 'premium',
-      premiumExpiresAt: null,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
-    
-    try {
-      await fetch('/api/auth/session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'login',
-          uid: 'demo-user-123',
-          rank: 'gold',
-        }),
-      });
-    } catch (e) {
-      // Ignore
-    }
-
-    play('levelUp');
-    await new Promise((r) => setTimeout(r, 600));
-    router.push('/overview');
-  }
-
 
   return (
     <>
@@ -130,31 +80,6 @@ export default function LoginForm() {
         </span>
       </button>
 
-      {/* ⚠️ DEV ONLY — Remove before public launch
-          Tracked in PENDING_FEATURES.md "Pre-launch checklist" */}
-      <button
-        onClick={handleDevBypass}
-        disabled={isLoading}
-        type="button"
-        style={{
-          marginTop: '12px',
-          background: 'rgba(255, 255, 255, 0.1)',
-          border: '1px dashed rgba(255, 255, 255, 0.3)',
-          color: '#fff',
-          padding: '10px',
-          borderRadius: '12px',
-          cursor: 'pointer',
-          width: '100%',
-          fontSize: '14px',
-          fontFamily: 'var(--font-inter)',
-          transition: 'all 0.2s ease',
-        }}
-        onMouseOver={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)')}
-        onMouseOut={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)')}
-      >
-        🛠️ Dev Bypass Login
-      </button>
-
       {error && <div className="login-error">{error}</div>}
 
       <div className="login-divider">
@@ -166,19 +91,19 @@ export default function LoginForm() {
       <div className="login-features">
         <div className="login-feature">
           <span className="login-feature-icon">🛡️</span>
-          <span>Quản gia AI riêng — xắt xéo nhưng yêu bạn</span>
+          <span>Quản gia AI riêng, nhắc đúng lúc và không phán xét</span>
         </div>
         <div className="login-feature">
           <span className="login-feature-icon">🎮</span>
-          <span>Hệ thống Rank & XP — kiếm tiền như chơi game</span>
+          <span>Rank & XP biến quản lý tiền thành thói quen hằng ngày</span>
         </div>
         <div className="login-feature">
           <span className="login-feature-icon">📊</span>
-          <span>Số dư ảo — che đi sự giàu có để tiết kiệm</span>
+          <span>Số dư an toàn giúp biết còn bao nhiêu tiền được phép tiêu</span>
         </div>
         <div className="login-feature">
           <span className="login-feature-icon">🧘</span>
-          <span>Hít thở 30s trước chi lớn — kỷ luật tài chính</span>
+          <span>Hít thở 30s trước chi lớn để giảm mua theo cảm xúc</span>
         </div>
       </div>
     </>

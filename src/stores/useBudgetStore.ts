@@ -25,6 +25,20 @@ interface BudgetState {
   categoryBudgets: CategoryBudget[];
   rolloverNotified: boolean;    // Đã thông báo rollover chưa
 
+  /**
+   * Danh sách categoryId user đã gắn cờ "chú ý chi quá tay".
+   * AI CFO sẽ ưu tiên nhắc nhở các khoản này. Tồn tại độc lập với over-budget
+   * detection — user có thể flag cả khi chưa vượt ngưỡng (chủ động phòng ngừa).
+   */
+  flaggedCategories: string[];
+
+  /**
+   * Danh sách transactionId user đã gắn cờ riêng từng giao dịch.
+   * Ví dụ: "Ăn sushi cuối tuần 850k" — user flag để CFO nhắc giảm lần sau.
+   * Khác `flaggedCategories` — flag ở MỨC GIAO DỊCH, granular hơn.
+   */
+  flaggedTransactionIds: string[];
+
   // === Monthly butler report state ===
   /** Snapshot tháng cũ kèm butler report — append qua mỗi rollover. */
   monthlySnapshots: MonthlySnapshot[];
@@ -41,12 +55,20 @@ interface BudgetState {
   getCategoryProgress: (catId: string) => number; // 0-100
   isOverBudget: (catId: string) => boolean;
   getOverBudgetCategories: () => CategoryBudget[];
+  isCategoryFlagged: (catId: string) => boolean;
+  isTransactionFlagged: (txnId: string) => boolean;
+  /** Số tiền tiết kiệm được nếu cắt giảm `cutPercent` (0-1) ở category này tháng tới. */
+  getSavingsPotential: (catId: string, cutPercent: number) => number;
   /** Lấy snapshot/report của tháng có unviewedReportMonth. */
   getUnviewedReport: () => MonthlySnapshot | null;
 
   // Actions
   setCategoryBudget: (catId: string, limit: number) => void;
   addSpending: (catId: string, amount: number) => void;
+  toggleCategoryFlag: (catId: string) => void;
+  toggleTransactionFlag: (txnId: string) => void;
+  /** Flag/unflag nhiều transaction cùng lúc — dùng cho "Gắn cảnh báo cả N khoản". */
+  setTransactionFlags: (txnIds: string[], flagged: boolean) => void;
   updateSnapshotTotals: (monthKey: string) => void;
   checkAndRollover: () => { rolled: boolean; carryOver: number };
   markRolloverNotified: () => void;
@@ -59,6 +81,9 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
   currentMonth: getCurrentMonthKey(),
   categoryBudgets: SEED_BUDGETS,
   rolloverNotified: false,
+  // Demo: 'entertain' đã được gắn cờ để user mới có sample trạng thái UI
+  flaggedCategories: ['entertain'],
+  flaggedTransactionIds: [],
   monthlySnapshots: [],
   unviewedReportMonth: null,
   xpAtMonthStart: 0,
@@ -123,6 +148,47 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
       (b) => b.month === currentMonth && b.spent > b.monthlyLimit
     );
   },
+
+  isCategoryFlagged: (catId) => get().flaggedCategories.includes(catId),
+
+  isTransactionFlagged: (txnId) => get().flaggedTransactionIds.includes(txnId),
+
+  /**
+   * Savings potential = spent * cutPercent.
+   * Dùng `spent` thay vì `limit` vì ý nghĩa là "nếu kỷ luật hơn, tiết kiệm bao nhiêu
+   * SO VỚI mức chi thực tế tháng này" — sát thực tế hơn ngưỡng abstract.
+   * cutPercent kẹp [0, 1] để chống misuse.
+   */
+  getSavingsPotential: (catId, cutPercent) => {
+    const pct = Math.max(0, Math.min(1, cutPercent));
+    const budget = get().categoryBudgets.find(
+      (b) => b.categoryId === catId && b.month === get().currentMonth
+    );
+    if (!budget) return 0;
+    return Math.round(budget.spent * pct);
+  },
+
+  toggleCategoryFlag: (catId) =>
+    set((state) => ({
+      flaggedCategories: state.flaggedCategories.includes(catId)
+        ? state.flaggedCategories.filter((id) => id !== catId)
+        : [...state.flaggedCategories, catId],
+    })),
+
+  toggleTransactionFlag: (txnId) =>
+    set((state) => ({
+      flaggedTransactionIds: state.flaggedTransactionIds.includes(txnId)
+        ? state.flaggedTransactionIds.filter((id) => id !== txnId)
+        : [...state.flaggedTransactionIds, txnId],
+    })),
+
+  setTransactionFlags: (txnIds, flagged) =>
+    set((state) => {
+      const set = new Set(state.flaggedTransactionIds);
+      if (flagged) txnIds.forEach((id) => set.add(id));
+      else txnIds.forEach((id) => set.delete(id));
+      return { flaggedTransactionIds: Array.from(set) };
+    }),
 
   setCategoryBudget: (catId, limit) =>
     set((state) => {

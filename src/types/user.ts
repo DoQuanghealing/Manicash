@@ -7,7 +7,18 @@ export type SubscriptionPlan = 'free' | 'premium';
 /** Tier cho feature gating mới (vd SMS Webhook). Hiện chưa enforce — xem utils/proGating.ts. */
 export type UserTier = 'free' | 'pro';
 
-export interface UserProfile {
+export type AccountStatus = 'active' | 'pending_deletion' | 'deleted';
+
+export interface AccountDeletionState {
+  accountStatus?: AccountStatus;
+  deletionRequestedAt?: string;
+  deletionScheduledAt?: string;
+  deletionCancelledAt?: string;
+  deletionReason?: string;
+  deletionMode?: 'grace_30d' | 'immediate';
+}
+
+export interface UserProfile extends AccountDeletionState {
   uid: string;
   displayName: string;
   email: string;

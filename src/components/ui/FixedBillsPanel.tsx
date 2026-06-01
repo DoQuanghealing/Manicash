@@ -15,7 +15,6 @@ const ALL_ICONS = [
 ];
 
 export default function FixedBillsPanel() {
-  const billFundBalance = useFinanceStore((s) => s.billFundBalance);
   const fixedBills = useFinanceStore((s) => s.fixedBills);
   const payBill = useFinanceStore((s) => s.payBill);
   const addBill = useFinanceStore((s) => s.addBill);
@@ -41,27 +40,14 @@ export default function FixedBillsPanel() {
     });
   };
 
-  // Compute bill targets
-  const { total, accumulated, bills } = useMemo(() => {
+  // Compute bill total (bỏ progress vs billFundBalance — user không cần quỹ tích lũy)
+  const { total, bills } = useMemo(() => {
     const sorted = [...fixedBills].sort((a, b) => a.dueDay - b.dueDay);
-    let runningTotal = 0;
-    const billsWithTotals = sorted.map((b) => {
-      runningTotal += b.amount;
-      return {
-        ...b,
-        runningTotal,
-        canPay: billFundBalance >= runningTotal,
-        shortage: Math.max(0, runningTotal - billFundBalance),
-      };
-    });
     return {
       total: sorted.reduce((s, b) => s + b.amount, 0),
-      accumulated: billFundBalance,
-      bills: billsWithTotals,
+      bills: sorted,
     };
-  }, [fixedBills, billFundBalance]);
-
-  const progressPercent = total > 0 ? Math.min(100, (accumulated / total) * 100) : 0;
+  }, [fixedBills]);
 
   // Auto-scroll to add form when opened
   useEffect(() => {
@@ -134,29 +120,10 @@ export default function FixedBillsPanel() {
         <span className="bills-fund-total-badge">{formatVND(total)}</span>
       </div>
 
-      {/* ═══ Progress Bar ═══ */}
-      <div className="bills-progress-wrapper">
-        <div className="bills-progress-bar">
-          <div
-            className="bills-progress-fill"
-            style={{ width: `${progressPercent}%` }}
-          >
-            <div className="bills-progress-shimmer" />
-          </div>
-        </div>
-        <div className="bills-progress-labels">
-          <span className="bills-progress-current">💰 {formatVND(accumulated)}</span>
-          <span className="bills-progress-target">/ {formatVND(total)}</span>
-        </div>
-      </div>
-
       {/* ═══ Bill list ═══ */}
       <div className="bills-list">
         {bills.map((bill) => {
           const isEditing = editingBillId === bill.id;
-          const shortageMsg = !bill.isPaid && !bill.canPay && bill.shortage > 0
-            ? `Cậu chủ ơi, ráng chút xíu nữa! Còn ${formatVND(bill.shortage)} nữa là trả được bill này rồi! 💪`
-            : null;
 
           return (
             <div key={bill.id} className={`bill-card ${bill.isPaid ? 'paid' : ''}`}>
@@ -249,7 +216,6 @@ export default function FixedBillsPanel() {
                           <button
                             className="bill-pay-btn"
                             onClick={() => payBill(bill.id)}
-                            disabled={billFundBalance < bill.amount}
                           >
                             Thanh toán
                           </button>
@@ -258,26 +224,6 @@ export default function FixedBillsPanel() {
                       )}
                     </div>
                   </div>
-
-                  {/* Running total */}
-                  <div className="bill-running-total">
-                    <div className="bill-running-bar">
-                      <div
-                        className="bill-running-fill"
-                        style={{ width: `${Math.min(100, (accumulated / bill.runningTotal) * 100)}%` }}
-                      />
-                    </div>
-                    <span className="bill-running-label">
-                      Cộng dồn: {formatVND(bill.runningTotal)}
-                    </span>
-                  </div>
-
-                  {shortageMsg && (
-                    <div className="bill-shortage-msg">
-                      <span>🎩</span>
-                      <p>{shortageMsg}</p>
-                    </div>
-                  )}
                 </>
               )}
             </div>

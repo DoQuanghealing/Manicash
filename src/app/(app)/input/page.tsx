@@ -1,4 +1,5 @@
 /* ═══ Input Page — Tab 3: Nhập liệu ═══ */
+import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import InputContent from './_components/InputContent';
 
@@ -8,5 +9,9 @@ export const metadata: Metadata = {
 };
 
 export default function InputPage() {
-  return <InputContent />;
+  return (
+    <Suspense fallback={null}>
+      <InputContent />
+    </Suspense>
+  );
 }
