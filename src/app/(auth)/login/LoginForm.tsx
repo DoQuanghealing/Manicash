@@ -6,6 +6,31 @@ import { useRouter } from 'next/navigation';
 import { signInWithGoogle } from '@/lib/firebase/auth';
 import { useAudio } from '@/hooks/useAudio';
 
+function getLoginErrorMessage(error: unknown): string | null {
+  const code = typeof error === 'object' && error !== null && 'code' in error
+    ? String(error.code)
+    : '';
+  const message = error instanceof Error ? error.message : String(error);
+
+  if (code === 'auth/popup-closed-by-user' || message.includes('popup-closed-by-user')) {
+    return null;
+  }
+
+  if (code === 'auth/unauthorized-domain' || message.includes('unauthorized-domain')) {
+    return 'Domain deploy chưa được thêm vào Firebase Authentication. Vào Firebase Console > Authentication > Settings > Authorized domains để thêm domain Vercel.';
+  }
+
+  if (code === 'auth/popup-blocked' || message.includes('popup-blocked')) {
+    return 'Trình duyệt đang chặn popup đăng nhập Google. Hãy cho phép popup rồi thử lại.';
+  }
+
+  if (message.includes('permission-denied')) {
+    return 'Firebase chưa cho phép tạo/cập nhật hồ sơ người dùng. Kiểm tra Firestore Rules cho collection users.';
+  }
+
+  return 'Không thể đăng nhập. Vui lòng thử lại.';
+}
+
 export default function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -19,7 +44,7 @@ export default function LoginForm() {
     try {
       const user = await signInWithGoogle();
 
-      await fetch('/api/auth/session', {
+      const sessionResponse = await fetch('/api/auth/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -29,16 +54,16 @@ export default function LoginForm() {
         }),
       });
 
+      if (!sessionResponse.ok) {
+        throw new Error(`SESSION_FAILED_${sessionResponse.status}`);
+      }
+
       play('levelUp');
       await new Promise((r) => setTimeout(r, 600));
       router.push('/overview');
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Đã có lỗi xảy ra';
-      if (message.includes('popup-closed-by-user')) {
-        setError(null);
-      } else {
-        setError('Không thể đăng nhập. Vui lòng thử lại.');
-      }
+      console.error('[login] Google sign-in failed:', err);
+      setError(getLoginErrorMessage(err));
     } finally {
       setIsLoading(false);
     }

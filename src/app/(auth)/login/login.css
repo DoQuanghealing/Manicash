@@ -3,10 +3,11 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: var(--space-2xl);
+  justify-content: flex-start;
+  gap: 14px;
+  padding: clamp(34px, 6vh, 62px) var(--space-lg) var(--space-lg);
   position: relative;
-  overflow: hidden;
+  overflow: auto;
   background: var(--c-bg-primary);
 }
 
@@ -48,7 +49,7 @@
   z-index: 1;
   width: 100%;
   max-width: 380px;
-  padding: var(--space-3xl) var(--space-2xl);
+  padding: clamp(24px, 4vh, 34px) var(--space-xl) var(--space-xl);
   border-radius: var(--radius-2xl);
   background: rgba(255, 255, 255, 0.04);
   backdrop-filter: blur(40px);
@@ -64,15 +65,15 @@
 
 /* ═══ Logo area ═══ */
 .login-crown {
-  font-size: 3rem;
-  margin-bottom: var(--space-sm);
+  font-size: 2.55rem;
+  margin-bottom: var(--space-xs);
   animation: float 3s ease-in-out infinite both;
   filter: drop-shadow(0 0 20px rgba(124, 58, 237, 0.4));
 }
 
 .login-title {
   font-family: var(--font-display);
-  font-size: 2rem;
+  font-size: 1.85rem;
   font-weight: 800;
   letter-spacing: -0.03em;
   margin-bottom: var(--space-xs);
@@ -85,7 +86,7 @@
 .login-subtitle {
   font-size: var(--text-sm);
   color: var(--c-text-secondary);
-  margin-bottom: var(--space-3xl);
+  margin-bottom: var(--space-2xl);
   line-height: 1.5;
 }
 
@@ -161,7 +162,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-md);
-  margin: var(--space-2xl) 0;
+  margin: var(--space-xl) 0 var(--space-lg);
 }
 
 .login-divider-line {
@@ -179,7 +180,7 @@
 
 /* ═══ Features list ═══ */
 .login-features {
-  margin-top: var(--space-xl);
+  margin-top: 0;
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
@@ -191,6 +192,7 @@
   gap: var(--space-sm);
   font-size: var(--text-xs);
   color: var(--c-text-secondary);
+  text-align: left;
 }
 
 .login-feature-icon {
@@ -250,13 +252,13 @@
 .login-butler {
   position: relative;
   z-index: 1;
-  margin-top: var(--space-2xl);
+  margin-top: 10px;
   max-width: 380px;
   animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards;
 }
 
 .login-butler-bubble {
-  padding: var(--space-md) var(--space-lg);
+  padding: 12px 14px;
   border-radius: var(--radius-lg);
   background: rgba(124, 58, 237, 0.08);
   border: 1px solid rgba(124, 58, 237, 0.15);
@@ -271,9 +273,37 @@
 }
 
 .login-butler-text {
-  font-size: var(--text-sm);
+  font-size: 12px;
   color: var(--c-text-secondary);
   line-height: 1.5;
+}
+
+@media (max-height: 760px) {
+  .login-page {
+    padding-top: 24px;
+    gap: 10px;
+  }
+
+  .login-card {
+    padding: 22px 22px 20px;
+  }
+
+  .login-crown {
+    font-size: 2.2rem;
+  }
+
+  .login-title {
+    font-size: 1.7rem;
+  }
+
+  .login-subtitle {
+    margin-bottom: var(--space-xl);
+  }
+
+  .login-butler,
+  .login-footer {
+    display: none;
+  }
 }
 
 .login-butler-name {
