@@ -124,7 +124,7 @@ export default function WishlistPopup() {
 
             {currentItem.reason && (
               <p className="wlp-reason">
-                💬 Lý do ban đầu: <em>"{currentItem.reason}"</em>
+                💬 Lý do ban đầu: <em>&ldquo;{currentItem.reason}&rdquo;</em>
               </p>
             )}
 

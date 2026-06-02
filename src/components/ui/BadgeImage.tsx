@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import * as LucideIcons from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import type { BadgeDefinition } from '@/data/badgeDefinitions';
 import './BadgeImage.css';
 
@@ -15,7 +16,8 @@ export default function BadgeImage({ badge, unlocked, size = 96 }: Props) {
   const [imgFailed, setImgFailed] = useState(false);
   
   // Try to find the icon from lucide-react dynamically
-  const IconComponent = (LucideIcons as any)[badge.fallbackIcon] || LucideIcons.Award;
+  const iconSet = LucideIcons as unknown as Record<string, LucideIcon>;
+  const IconComponent = iconSet[badge.fallbackIcon] || LucideIcons.Award;
 
   if (imgFailed) {
     return (

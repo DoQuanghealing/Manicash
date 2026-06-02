@@ -80,13 +80,13 @@ function it(name: string, fn: () => void) {
   }
 }
 
-function expect(actual: any) {
+function expect(actual: unknown) {
   return {
-    toBe: (expected: any) => {
+    toBe: (expected: unknown) => {
       if (actual !== expected) throw new Error(`Expected ${expected} but got ${actual}`);
     },
     toMatch: (regex: RegExp) => {
-      if (!regex.test(actual)) throw new Error(`Expected ${actual} to match ${regex}`);
+      if (!regex.test(String(actual))) throw new Error(`Expected ${actual} to match ${regex}`);
     }
   };
 }

@@ -11,6 +11,7 @@
 'use client';
 
 import { useAuthStore } from '@/stores/useAuthStore';
+import { useAiMoneyMemoryStore } from '@/stores/useAiMoneyMemoryStore';
 import { useBankSyncStore } from '@/stores/useBankSyncStore';
 import { useBudgetStore } from '@/stores/useBudgetStore';
 import { useDashboardStore } from '@/stores/useDashboardStore';
@@ -91,6 +92,10 @@ export function wipeAllData(): WipeReport {
   useBankSyncStore.setState({ lastSyncedAt: null, snoozedUntil: null });
   storesReset.push('useBankSyncStore');
 
+  // ── AI Money Chat local memory ──
+  useAiMoneyMemoryStore.getState().clearMemory();
+  storesReset.push('useAiMoneyMemoryStore');
+
   // ── Auth: KEEP identity, RESET gamification stats ──
   const auth = useAuthStore.getState();
   if (auth.user) {
@@ -113,6 +118,7 @@ export function wipeAllData(): WipeReport {
   if (typeof window !== 'undefined' && window.localStorage) {
     try {
       window.localStorage.removeItem('manicash-bank-sync');
+      window.localStorage.removeItem('manicash-ai-money-memory');
     } catch {
       /* localStorage quota / privacy mode — non-fatal */
     }

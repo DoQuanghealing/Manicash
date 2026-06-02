@@ -44,3 +44,9 @@ next-env.d.ts
 # Claude Code / Antigravity — local-only state, never commit
 .claude/worktrees/
 .claude/settings.local.json
+
+# CodeGraph index — local, rebuilt from source
+.codegraph/
+
+# dev server logs
+.next-dev.*.log

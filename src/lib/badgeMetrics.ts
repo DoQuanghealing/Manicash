@@ -52,7 +52,6 @@ export function computeAllMetrics(stores: StoreSnapshot): Record<BadgeMetric, nu
   // Sắp xếp snapshot theo tháng giảm dần
   const sortedSnapshots = [...budget.monthlySnapshots].sort((a, b) => b.month.localeCompare(a.month));
   let mom_income_growth_streak = 0;
-  let prevIncome = -1;
   // Bao gồm cả tháng hiện tại nếu có giao dịch income
   const currentMonthIncome = finance.transactions
     .filter((t) => t.type === 'income' && getMonthKeyFromDate(t.date) === getCurrentMonthKey())

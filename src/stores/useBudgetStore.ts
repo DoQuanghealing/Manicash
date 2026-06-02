@@ -4,7 +4,7 @@
 import { create } from 'zustand';
 import type { CategoryBudget, MonthlySnapshot } from '@/types/budget';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { useFinanceStore } from '@/stores/useFinanceStore';
+import { useFinanceStore, type Transaction } from '@/stores/useFinanceStore';
 import { generateButlerReport } from '@/lib/butlerReport';
 
 import { getCurrentMonthKey, getMonthKeyFromDate } from '@/lib/dateHelpers';
@@ -246,19 +246,17 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
       return;
     }
 
-    const { useFinanceStore } = require('@/stores/useFinanceStore');
     const allTxns = useFinanceStore.getState().transactions;
-    const { getMonthKeyFromDate } = require('@/lib/dateHelpers');
 
-    const txnsInMonth = allTxns.filter((t: any) => getMonthKeyFromDate(t.date) === monthKey);
-    
+    const txnsInMonth = allTxns.filter((t: Transaction) => getMonthKeyFromDate(t.date) === monthKey);
+
     const incomeTotal = txnsInMonth
-      .filter((t: any) => t.type === 'income')
-      .reduce((sum: number, t: any) => sum + t.amount, 0);
-      
+      .filter((t: Transaction) => t.type === 'income')
+      .reduce((sum: number, t: Transaction) => sum + t.amount, 0);
+
     const expenseTotal = txnsInMonth
-      .filter((t: any) => t.type === 'expense')
-      .reduce((sum: number, t: any) => sum + t.amount, 0);
+      .filter((t: Transaction) => t.type === 'expense')
+      .reduce((sum: number, t: Transaction) => sum + t.amount, 0);
 
     set((s) => ({
       monthlySnapshots: s.monthlySnapshots.map((snap) =>

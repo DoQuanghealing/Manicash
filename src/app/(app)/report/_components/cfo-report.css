@@ -1,0 +1,507 @@
+/* ═══ CFO Report — Phase 11 Editorial Finance Report ═══ */
+
+.cfo-report {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  padding-bottom: var(--space-4xl);
+}
+
+/* ─── Back nav ─── */
+.cfo-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding-top: var(--space-sm);
+}
+
+.cfo-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  color: var(--c-text-muted);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  transition: color var(--duration-fast);
+}
+
+.cfo-back-btn:hover { color: var(--c-text-primary); }
+
+.cfo-nav-title {
+  margin-left: auto;
+  color: var(--c-text-muted);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ─── Hero ─── */
+.cfo-hero {
+  padding: var(--space-xl);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--glass-border);
+}
+
+.cfo-hero-good {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(34, 197, 94, 0.06));
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+.cfo-hero-fair {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(249, 115, 22, 0.06));
+  border-color: rgba(245, 158, 11, 0.2);
+}
+
+.cfo-hero-poor {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(220, 38, 38, 0.06));
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.cfo-tier-badge {
+  display: inline-block;
+  margin-bottom: var(--space-sm);
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.cfo-tier-good { background: rgba(16, 185, 129, 0.18); color: var(--c-emerald-light); }
+.cfo-tier-fair { background: rgba(245, 158, 11, 0.18); color: var(--c-warning); }
+.cfo-tier-poor { background: rgba(239, 68, 68, 0.18); color: var(--c-ruby-light); }
+
+.cfo-summary-text {
+  color: var(--c-text-secondary);
+  font-size: var(--text-sm);
+  line-height: 1.55;
+}
+
+/* ─── Generic section ─── */
+.cfo-section {
+  padding: var(--space-lg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  background: var(--glass-bg);
+}
+
+.cfo-section-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+  color: var(--c-text-primary);
+  font-size: var(--text-sm);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.cfo-section-title svg {
+  color: var(--c-purple-light);
+  flex-shrink: 0;
+}
+
+/* ─── Cashflow ─── */
+.cfo-cashflow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.cfo-cf-item { display: flex; flex-direction: column; gap: var(--space-xs); }
+
+.cfo-cf-label-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.cfo-cf-icon-income { color: var(--c-green-light); flex-shrink: 0; }
+.cfo-cf-icon-expense { color: var(--c-orange-light); flex-shrink: 0; }
+
+.cfo-cf-label {
+  flex: 1;
+  color: var(--c-text-secondary);
+  font-size: var(--text-sm);
+}
+
+.cfo-cf-amount {
+  font-size: var(--text-base);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.cfo-cf-amount-income { color: var(--c-green-light); }
+.cfo-cf-amount-expense { color: var(--c-orange-light); }
+
+.cfo-cf-bar-track {
+  height: 5px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+}
+
+.cfo-cf-bar {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 0.8s var(--ease-out-expo);
+}
+
+.cfo-cf-bar-income {
+  background: linear-gradient(90deg, var(--c-green-dark), var(--c-green-light));
+}
+
+.cfo-cf-bar-expense {
+  background: linear-gradient(90deg, var(--c-orange), var(--c-orange-light));
+}
+
+.cfo-cf-savings-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--glass-border);
+  margin-top: var(--space-xs);
+}
+
+.cfo-cf-savings-label {
+  flex: 1;
+  color: var(--c-text-muted);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.cfo-cf-savings-amount {
+  font-size: var(--text-lg);
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.cfo-cf-savings-amount.is-positive { color: var(--c-green-light); }
+.cfo-cf-savings-amount.is-negative { color: var(--c-ruby-light); }
+
+.cfo-cf-savings-rate {
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: 900;
+}
+
+.cfo-cf-savings-rate.is-good  { background: rgba(34, 197, 94, 0.15); color: var(--c-green-light); }
+.cfo-cf-savings-rate.is-fair  { background: rgba(245, 158, 11, 0.15); color: var(--c-warning); }
+.cfo-cf-savings-rate.is-poor  { background: rgba(239, 68, 68, 0.15); color: var(--c-ruby-light); }
+
+/* ─── Categories ─── */
+.cfo-categories {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.cfo-cat-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+}
+
+.cfo-cat-icon {
+  font-size: 1.15rem;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.cfo-cat-detail { flex: 1; min-width: 0; }
+
+.cfo-cat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-xs);
+}
+
+.cfo-cat-name {
+  color: var(--c-text-secondary);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cfo-cat-amount {
+  flex-shrink: 0;
+  color: var(--c-text-primary);
+  font-size: var(--text-sm);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.cfo-cat-bar-track {
+  height: 4px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+}
+
+.cfo-cat-bar {
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: linear-gradient(90deg, var(--c-purple), var(--c-orange-light));
+  transition: width 0.8s var(--ease-out-expo);
+}
+
+/* ─── Goals ─── */
+.cfo-goals {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.cfo-goal-row { display: flex; flex-direction: column; gap: var(--space-xs); }
+
+.cfo-goal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-sm);
+}
+
+.cfo-goal-name {
+  color: var(--c-text-secondary);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cfo-goal-pct {
+  flex-shrink: 0;
+  color: var(--c-purple-light);
+  font-size: var(--text-sm);
+  font-weight: 900;
+}
+
+.cfo-goal-bar-track {
+  height: 5px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+}
+
+.cfo-goal-bar {
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: linear-gradient(90deg, var(--c-purple-dark), var(--c-purple-light));
+  transition: width 0.8s var(--ease-out-expo);
+}
+
+.cfo-goal-remaining {
+  color: var(--c-text-muted);
+  font-size: var(--text-xs);
+}
+
+/* ─── Action Plan ─── */
+.cfo-action-plan {
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.08), rgba(249, 115, 22, 0.06));
+  border-color: rgba(124, 58, 237, 0.2);
+}
+
+.cfo-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.cfo-action-item {
+  display: flex;
+  gap: var(--space-md);
+  align-items: flex-start;
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.cfo-action-item:last-child { border-bottom: none; }
+
+.cfo-action-num {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--c-purple), var(--c-orange));
+  color: white;
+  font-size: var(--text-xs);
+  font-weight: 900;
+}
+
+.cfo-action-item p {
+  color: var(--c-text-secondary);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+/* ─── Lord Diamond narration (Phase 13) ─── */
+.cfo-narration {
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.1), rgba(249, 115, 22, 0.05));
+  border-color: rgba(124, 58, 237, 0.22);
+}
+
+.cfo-narration-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+}
+
+.cfo-narration-avatar {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, #7C3AED, #F97316);
+  color: white;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.4);
+}
+
+.cfo-narration-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.cfo-narration-name {
+  color: var(--c-text-primary);
+  font-size: var(--text-sm);
+  font-weight: 800;
+}
+
+.cfo-narration-tag {
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.cfo-narration-tag-local { background: rgba(255, 255, 255, 0.08); color: var(--c-text-muted); }
+.cfo-narration-tag-ai { background: rgba(124, 58, 237, 0.18); color: var(--c-purple-light); }
+
+.cfo-narration-text {
+  color: var(--c-text-secondary);
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  margin-bottom: var(--space-md);
+}
+
+.cfo-narration-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid rgba(124, 58, 237, 0.3);
+  border-radius: var(--radius-full);
+  background: rgba(124, 58, 237, 0.1);
+  color: var(--c-purple-light);
+  font-size: var(--text-xs);
+  font-weight: 800;
+  transition: all var(--duration-fast) var(--ease-out-expo);
+}
+
+.cfo-narration-btn:not(:disabled):hover {
+  background: rgba(124, 58, 237, 0.18);
+  transform: translateY(-1px);
+}
+
+.cfo-narration-btn:disabled { opacity: 0.7; cursor: progress; }
+
+.cfo-narration-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.cfo-narration-cached {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  color: var(--c-green-light);
+  font-size: var(--text-xs);
+  font-weight: 700;
+}
+
+.cfo-spin { animation: cfo-spin 0.9s linear infinite; }
+@keyframes cfo-spin { to { transform: rotate(360deg); } }
+
+/* ─── Export (Phase 12) ─── */
+.cfo-export {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-sm);
+}
+
+.cfo-export-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  min-height: 46px;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  background: var(--glass-bg);
+  color: var(--c-text-secondary);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  transition: all var(--duration-fast) var(--ease-out-expo);
+}
+
+.cfo-export-btn:hover {
+  background: var(--glass-bg-hover);
+  border-color: var(--glass-border-hover);
+  color: var(--c-text-primary);
+  transform: translateY(-1px);
+}
+
+/* ─── Footnote ─── */
+.cfo-footnote {
+  color: var(--c-text-muted);
+  font-size: var(--text-xs);
+  line-height: 1.45;
+  text-align: center;
+}
+
+/* ─── Print / PDF stylesheet ─── */
+@media print {
+  .cfo-nav,
+  .cfo-narration-btn,
+  .cfo-export,
+  #bottom-nav,
+  .bottom-nav {
+    display: none !important;
+  }
+
+  .cfo-report {
+    color: #111;
+    padding: 0;
+  }
+
+  .cfo-section,
+  .cfo-hero,
+  .cfo-narration {
+    break-inside: avoid;
+    border-color: #ddd;
+    background: #fff !important;
+  }
+}

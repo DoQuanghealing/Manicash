@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Plus, Trash2, Building2, CreditCard, ChevronDown, ChevronUp } from 'lucide-react';
-import { useWalletBankStore, type WalletGroup, type WalletGroupData } from '@/stores/useWalletBankStore';
+import { useWalletBankStore, type WalletGroup, type WalletGroupData, type SubWallet } from '@/stores/useWalletBankStore';
 import './WalletBankModal.css';
 
 interface Props {
@@ -105,7 +105,7 @@ function WalletGroupCard({
   isExpanded: boolean;
   onToggle: () => void;
   onUpdateBank: (bank: string, acc: string) => void;
-  onUpdateSubWallet: (subId: string, updates: any) => void;
+  onUpdateSubWallet: (subId: string, updates: Partial<SubWallet>) => void;
   onRemoveSubWallet: (subId: string) => void;
   addingSubTo: WalletGroup | null;
   setAddingSubTo: (v: WalletGroup | null) => void;

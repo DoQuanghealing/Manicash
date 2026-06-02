@@ -21,9 +21,9 @@ function it(name: string, fn: TestFn): void {
   }
 }
 
-function expect(actual: any) {
+function expect(actual: unknown) {
   return {
-    toBe: (expected: any) => {
+    toBe: (expected: unknown) => {
       if (actual !== expected) {
         throw new Error(`Expected ${expected} but got ${actual}`);
       }
@@ -31,11 +31,12 @@ function expect(actual: any) {
     toThrow: (expectedMsg?: string) => {
       let threw = false;
       try {
-        actual();
-      } catch (e: any) {
+        (actual as () => unknown)();
+      } catch (e) {
         threw = true;
-        if (expectedMsg && !e.message.includes(expectedMsg)) {
-          throw new Error(`Expected error containing "${expectedMsg}" but got "${e.message}"`);
+        const message = e instanceof Error ? e.message : String(e);
+        if (expectedMsg && !message.includes(expectedMsg)) {
+          throw new Error(`Expected error containing "${expectedMsg}" but got "${message}"`);
         }
       }
       if (!threw) {
@@ -253,16 +254,24 @@ describe('Phase 2 - Fix B: Fund Contribution Date Propagation', () => {
     const splitTxn = txns.find(t => t.kind === 'split');
     if (!splitTxn) throw new Error("Expected splitTxn to exist");
     
-    const now = new Date();
     const todayKey = getDateKey(new Date());
     expect(splitTxn.dateKey).toBe(todayKey);
   });
   
   it('addFundContribution timezone consistency với ledger dateKey', () => {
-    // setup: backdate vào edge case ngày cuối tháng
-    const edgeDate = new Date('2026-04-30T22:00:00.000Z');
-    // (tương đương 5h sáng 1/5 ở VN UTC+7)
-    
+    // setup: backdate vào edge case "22:00 UTC" (= 5h sáng hôm sau ở VN UTC+7).
+    // Tính tương đối theo now thay vì hard-code, để test không bị "hết hạn"
+    // theo thời gian và luôn nằm trong cửa sổ backdate 30 ngày của store.
+    // Ưu tiên ngày cuối tháng gần nhất (vẫn exercise ranh giới chuyển tháng);
+    // nếu ngày đó đã quá 30 ngày thì fallback về "hôm qua" lúc 22:00 UTC.
+    const now = new Date();
+    let edgeDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 0, 22, 0, 0));
+    const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+    if (now.getTime() - edgeDate.getTime() > THIRTY_DAYS_MS) {
+      edgeDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      edgeDate.setUTCHours(22, 0, 0, 0);
+    }
+
     useFinanceStore.setState({ transactions: [], mainBalance: 1000000, emergencyBalance: 0, billFundBalance: 0 });
     useDashboardStore.setState({ monthlyContributions: {} });
 

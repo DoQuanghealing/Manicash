@@ -19,7 +19,8 @@ import CFOInsightCard from './CFOInsightCard';
 import StackedBarChart from './StackedBarChart';
 import SavingsLineChart from './SavingsLineChart';
 import HealthScoreGauge from './HealthScoreGauge';
-import { Plus, ChevronRight } from 'lucide-react';
+import Link from 'next/link';
+import { Plus, ChevronRight, BarChart2 } from 'lucide-react';
 import './money.css';
 
 type MoneyTab = 'money' | 'cfo';
@@ -275,6 +276,12 @@ export default function MoneyContent() {
               <StackedBarChart data={weeklyComparison} />
               <SavingsLineChart data={savingsGrowth} />
               <HealthScoreGauge score={breakdown.total} />
+
+              <Link href="/report" className="money-report-cta">
+                <BarChart2 size={16} />
+                <span>Xem báo cáo đầy đủ tháng này</span>
+                <ChevronRight size={16} />
+              </Link>
             </motion.div>
           )}
         </AnimatePresence>

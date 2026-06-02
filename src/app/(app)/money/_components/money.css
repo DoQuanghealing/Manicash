@@ -264,3 +264,26 @@
   background: linear-gradient(135deg, rgba(124, 58, 237, 0.08), rgba(6, 182, 212, 0.05));
   border-color: rgba(124, 58, 237, 0.12);
 }
+
+/* ─── CFO Report CTA link ─── */
+.money-report-cta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md) var(--space-lg);
+  border: 1px solid rgba(124, 58, 237, 0.2);
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.08), rgba(249, 115, 22, 0.05));
+  color: var(--c-purple-light);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  transition: all var(--duration-fast) var(--ease-out-expo);
+}
+
+.money-report-cta span { flex: 1; }
+
+.money-report-cta:hover {
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.14), rgba(249, 115, 22, 0.09));
+  border-color: rgba(124, 58, 237, 0.35);
+  transform: translateY(-1px);
+}
