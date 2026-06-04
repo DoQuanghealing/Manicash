@@ -29,10 +29,11 @@ GROQ_API_KEY=...                          # BẮT BUỘC để AI fallback + CFO
 AI_MONEY_CHAT_GROQ_MODEL=llama-3.3-70b-versatile
 ```
 
-### Feature flags — AI Money Chat
+### Feature flags
 ```
 NEXT_PUBLIC_AI_MONEY_CHAT_ENABLED=true    # hiện tab/CTA chat + cho phép parse
 AI_MONEY_CHAT_AI_FALLBACK_ENABLED=true    # cho phép gọi Groq (fallback + narration)
+NEXT_PUBLIC_SMS_WEBHOOK_ENABLED=false     # ẩn SMS Banking cho v1; bật khi Phase 7 sẵn sàng
 ```
 
 ### Quota / chi phí AI (mặc định đã an toàn)

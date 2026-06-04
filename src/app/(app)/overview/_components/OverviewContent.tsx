@@ -18,6 +18,7 @@ import IdleMoneyBanner from './IdleMoneyBanner';
 import WishlistPopup from './WishlistPopup';
 import MonthlyReportModal from './MonthlyReportModal';
 import BankSyncReminder from '@/components/ui/BankSyncReminder';
+import { isSmsWebhookEnabled } from '@/lib/featureFlags';
 
 // Nạp 3 khối vừa tạo (1-2-3)
 import IncomeBlock from './IncomeBlock';
@@ -41,7 +42,7 @@ export default function OverviewContent() {
         <SafeToSpendCard />
         <PendingTransactionBanner />
         <BudgetWarningBanner />
-        <BankSyncReminder />
+        {isSmsWebhookEnabled() && <BankSyncReminder />}
 
         {/* ═══ BLOCK 1b: Cảnh báo tiền nhàn rỗi → CTA chia vào mục tiêu ═══ */}
         <IdleMoneyBanner />

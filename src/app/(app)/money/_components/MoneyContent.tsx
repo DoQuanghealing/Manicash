@@ -22,6 +22,7 @@ import HealthScoreGauge from './HealthScoreGauge';
 import Link from 'next/link';
 import { Plus, ChevronRight, BarChart2, MessageCircle } from 'lucide-react';
 import { isAiMoneyChatEnabled } from '@/lib/aiMoneyChat/featureFlag';
+import { isSmsWebhookEnabled } from '@/lib/featureFlags';
 import './money.css';
 
 type MoneyTab = 'money' | 'cfo';
@@ -209,52 +210,54 @@ export default function MoneyContent() {
                 </div>
               )}
 
-              {/* ═══ Section: Công cụ — entry point cho các tính năng phụ trợ ═══ */}
-              <div style={{ marginTop: 'var(--space-lg)' }}>
-                <p style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--c-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-sm)' }}>
-                  🛠️ Công cụ
-                </p>
-                <button
-                  type="button"
-                  className="glass-card"
-                  onClick={() => router.push('/settings/sms-webhook')}
-                  aria-label="Mở cài đặt SMS Webhook"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 'var(--space-md)',
-                    width: '100%',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    background: 'linear-gradient(135deg, rgba(124, 58, 237, 0.08), rgba(249, 115, 22, 0.04))',
-                    border: '1px solid rgba(124, 58, 237, 0.18)',
-                  }}
-                >
-                  <span style={{ fontSize: '1.6rem', flexShrink: 0 }} aria-hidden>🤖</span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', marginBottom: 4 }}>
-                      <p style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--c-text-primary)' }}>
-                        Tự động ghi giao dịch SMS
+              {/* ═══ Section: Công cụ — ẩn SMS Webhook cho v1, bật lại khi NEXT_PUBLIC_SMS_WEBHOOK_ENABLED=true ═══ */}
+              {isSmsWebhookEnabled() && (
+                <div style={{ marginTop: 'var(--space-lg)' }}>
+                  <p style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--c-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-sm)' }}>
+                    🛠️ Công cụ
+                  </p>
+                  <button
+                    type="button"
+                    className="glass-card"
+                    onClick={() => router.push('/settings/sms-webhook')}
+                    aria-label="Mở cài đặt SMS Webhook"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 'var(--space-md)',
+                      width: '100%',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      background: 'linear-gradient(135deg, rgba(124, 58, 237, 0.08), rgba(249, 115, 22, 0.04))',
+                      border: '1px solid rgba(124, 58, 237, 0.18)',
+                    }}
+                  >
+                    <span style={{ fontSize: '1.6rem', flexShrink: 0 }} aria-hidden>🤖</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', marginBottom: 4 }}>
+                        <p style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--c-text-primary)' }}>
+                          Tự động ghi giao dịch SMS
+                        </p>
+                        <span style={{
+                          fontSize: 9,
+                          fontWeight: 800,
+                          letterSpacing: '0.06em',
+                          padding: '2px 6px',
+                          borderRadius: 'var(--radius-full)',
+                          background: 'var(--gradient-primary)',
+                          color: '#fff',
+                        }}>
+                          PRO
+                        </span>
+                      </div>
+                      <p style={{ fontSize: 'var(--text-xs)', color: 'var(--c-text-muted)', lineHeight: 1.4 }}>
+                        Liên kết SMS ngân hàng — không cần API
                       </p>
-                      <span style={{
-                        fontSize: 9,
-                        fontWeight: 800,
-                        letterSpacing: '0.06em',
-                        padding: '2px 6px',
-                        borderRadius: 'var(--radius-full)',
-                        background: 'var(--gradient-primary)',
-                        color: '#fff',
-                      }}>
-                        PRO
-                      </span>
                     </div>
-                    <p style={{ fontSize: 'var(--text-xs)', color: 'var(--c-text-muted)', lineHeight: 1.4 }}>
-                      Liên kết SMS ngân hàng — không cần API
-                    </p>
-                  </div>
-                  <ChevronRight size={18} style={{ color: 'var(--c-text-muted)', flexShrink: 0 }} aria-hidden />
-                </button>
-              </div>
+                    <ChevronRight size={18} style={{ color: 'var(--c-text-muted)', flexShrink: 0 }} aria-hidden />
+                  </button>
+                </div>
+              )}
             </motion.div>
           ) : (
             <motion.div
