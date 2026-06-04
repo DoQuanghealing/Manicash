@@ -18,7 +18,8 @@
     "test:ai-cfo-report": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/ai-money-cfo-report.test.ts'))\"",
     "test:ai-earning": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/ai-money-earning-planner.test.ts'))\"",
     "test:analytics": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/analytics-events.test.ts'))\"",
-    "test:ai-all": "npm run test:ai-chat && npm run test:ai-memory && npm run test:ai-fallback && npm run test:ai-quota && npm run test:ai-reaction && npm run test:ai-checkin && npm run test:ai-reconciliation && npm run test:ai-cfo-report && npm run test:ai-earning && npm run test:analytics",
+    "test:monetization": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/monetization-entitlement.test.ts'))\"",
+    "test:ai-all": "npm run test:ai-chat && npm run test:ai-memory && npm run test:ai-fallback && npm run test:ai-quota && npm run test:ai-reaction && npm run test:ai-checkin && npm run test:ai-reconciliation && npm run test:ai-cfo-report && npm run test:ai-earning && npm run test:analytics && npm run test:monetization",
     "test:phase2": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/phase2-backdate.test.ts'))\""
   },
   "dependencies": {

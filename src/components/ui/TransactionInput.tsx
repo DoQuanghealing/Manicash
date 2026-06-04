@@ -74,9 +74,17 @@ export default function TransactionInput() {
 
   const dateConstraints = useMemo(() => {
     const now = new Date();
+    // Use LOCAL date, not UTC, to avoid timezone off-by-one (e.g. UTC+7 before 07:00 UTC
+    // would make today appear as tomorrow in toISOString()).
+    const toLocal = (d: Date) => {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    };
     return {
-      max: now.toISOString().substring(0, 10),
-      min: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10),
+      max: toLocal(now),
+      min: toLocal(new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)),
     };
   }, []);
 

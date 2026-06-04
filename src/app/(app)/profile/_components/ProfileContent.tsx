@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { useProStatus } from '@/hooks/useIsPro';
 import { useTaskStore } from '@/stores/useTaskStore';
 import { useGoalsStore } from '@/stores/useGoalsStore';
 import { useFinanceStore } from '@/stores/useFinanceStore';
@@ -17,7 +19,7 @@ import WipeDataConfirm from '@/components/ui/WipeDataConfirm';
 import AccountDeletionDialog from '@/components/ui/AccountDeletionDialog';
 import { getEmojiFromAvatar, isEmojiAvatar } from '@/data/avatarIcons';
 import { getBanMenh } from '@/lib/banMenh';
-import { Flame, Pencil, Shield, Target, CheckSquare, Trash2, Mail, Calendar, Clock, Sparkles, LogOut, UserX } from 'lucide-react';
+import { Flame, Pencil, Shield, Target, CheckSquare, Trash2, Mail, Calendar, Clock, Sparkles, LogOut, UserX, Crown, ChevronRight } from 'lucide-react';
 import { useSignOut } from '@/hooks/useSignOut';
 import './ProfileContent.css';
 
@@ -50,6 +52,7 @@ export default function ProfileContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, firebaseUser } = useAuthStore();
+  const proStatus = useProStatus();
   const { handleSignOut } = useSignOut();
   const [editOpen, setEditOpen] = useState(false);
   const [wipeOpen, setWipeOpen] = useState(false);
@@ -209,6 +212,24 @@ export default function ProfileContent() {
           <span>Sửa hồ sơ</span>
         </button>
       </section>
+
+      {/* ═══ Pro membership entry ═══ */}
+      <Link href="/upgrade" className={`profile-pro-card ${proStatus.isPro ? 'is-pro' : ''}`}>
+        <div className="profile-pro-icon" aria-hidden="true">
+          <Crown size={18} />
+        </div>
+        <div className="profile-pro-info">
+          <strong>{proStatus.isPro ? 'ManiCash Pro' : 'Nâng cấp lên Pro'}</strong>
+          <span>
+            {proStatus.isPro
+              ? proStatus.daysRemaining > 0
+                ? `Đang kích hoạt · còn ${proStatus.daysRemaining} ngày`
+                : 'Đang kích hoạt'
+              : 'Mở khoá AI Money Chat, CFO riêng & ghi sổ tự động'}
+          </span>
+        </div>
+        <ChevronRight size={18} className="profile-pro-chevron" />
+      </Link>
 
       {/* ═══ Lá Số Bát Tự — tự ẩn nếu chưa có ngày sinh ═══ */}
       <BatTuCard

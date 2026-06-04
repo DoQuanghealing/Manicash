@@ -168,7 +168,15 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
     const { transactionDate, ...restTxnData } = txnData;
     const txnDate = transactionDate ?? new Date();
     
-    const daysAgo = (Date.now() - txnDate.getTime()) / (1000 * 60 * 60 * 24);
+    // Compare calendar DATES in local time, not raw milliseconds.
+    // Using UTC offsets causes off-by-one: e.g. "today noon" in UTC+7 is
+    // "today 05:00 UTC" which appears "in the future" to Date.now() before
+    // that UTC time, even though the calendar date is today.
+    const txnDateOnly = new Date(txnDate.getFullYear(), txnDate.getMonth(), txnDate.getDate());
+    const todayOnly = new Date();
+    todayOnly.setHours(0, 0, 0, 0);
+    const daysAgo = (todayOnly.getTime() - txnDateOnly.getTime()) / (1000 * 60 * 60 * 24);
+
     if (daysAgo > 30) {
       throw new Error('Không thể backdate quá 30 ngày');
     }

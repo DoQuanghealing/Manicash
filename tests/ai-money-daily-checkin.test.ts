@@ -72,12 +72,12 @@ describe('AI Money Chat daily check-ins', () => {
       billFundBalance: 2_500_000,
     });
 
-    expectEqual(report.title, 'Bao cao 12h');
+    expectEqual(report.title, 'Báo cáo 12h');
     expectEqual(report.metrics.todayIncome, 20_000_000);
     expectEqual(report.metrics.todayExpense, 120_000);
     expectEqual(report.metrics.monthlyExpense, 1_000_000);
     expectEqual(report.metrics.monthlySpendingRemaining, 7_000_000);
-    expectContains(report.message, 'Goi y 12h');
+    expectContains(report.message, 'Gợi ý 12h');
   });
 
   it('creates an evening report that asks for bank balance reconciliation', () => {
@@ -88,8 +88,8 @@ describe('AI Money Chat daily check-ins', () => {
       monthlySpendingLimit: 8_000_000,
     });
 
-    expectEqual(report.title, 'Bao cao 21h');
-    expectContains(report.message, 'doi chieu so du ngan hang');
+    expectEqual(report.title, 'Báo cáo 21h');
+    expectContains(report.message, 'đối chiếu số dư ngân hàng');
   });
 
   it('warns when monthly spending limit is exhausted', () => {
@@ -115,7 +115,7 @@ describe('AI Money Chat daily check-ins', () => {
     });
 
     expectEqual(report.metrics.fixedBillsShortage, 2_000_000);
-    expectContains(report.message, 'Quy bill con thieu 2.000.000 VND');
+    expectContains(report.message, 'Quỹ bill còn thiếu 2.000.000 VND');
   });
 });
 

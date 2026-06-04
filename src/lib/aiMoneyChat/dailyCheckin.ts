@@ -74,19 +74,19 @@ function getStatus(todayExpense: number, dailyAllowance: number, monthlyRemainin
 
 function getStatusLine(status: DailyCheckInStatus, slot: DailyCheckInSlot): string {
   if (status === 'overspent') {
-    return 'Canh bao: ngan sach chi tieu thang nay da het. Tu gio moi khoan chi nen co ly do ro rang.';
+    return 'Cảnh báo: ngân sách chi tiêu tháng này đã hết. Từ giờ mỗi khoản chi nên có lý do rõ ràng.';
   }
   if (status === 'watch') {
     return slot === 'midday'
-      ? 'Nua ngay ma toc do chi hoi nhanh. Chieu nay can phanh lai mot chut.'
-      : 'Hom nay chi hoi manh tay. Toi nay dung mua theo cam xuc nua.';
+      ? 'Nửa ngày mà tốc độ chi hơi nhanh. Chiều nay cần phanh lại một chút.'
+      : 'Hôm nay chi hơi mạnh tay. Tối nay đừng mua theo cảm xúc nữa.';
   }
   if (status === 'no-data') {
-    return 'Chua co du lieu du de danh gia. Hay ghi thu/chi trong ngay de bao cao co y nghia.';
+    return 'Chưa có dữ liệu đủ để đánh giá. Hãy ghi thu/chi trong ngày để báo cáo có ý nghĩa.';
   }
   return slot === 'midday'
-    ? 'Dang on. Nua ngay con lai chi can giu nhip nay.'
-    : 'Ngay nay tam on. Viec quan trong la doi chieu lai so du truoc khi ngu.';
+    ? 'Đang ổn. Nửa ngày còn lại chỉ cần giữ nhịp này.'
+    : 'Ngày này tạm ổn. Việc quan trọng là đối chiếu lại số dư trước khi ngủ.';
 }
 
 export function createDailyCheckIn(input: DailyCheckInInput): DailyCheckIn {
@@ -111,16 +111,16 @@ export function createDailyCheckIn(input: DailyCheckInInput): DailyCheckIn {
   const status = getStatus(todayExpense, dailyAllowanceRemaining, monthlySpendingRemaining);
   const nearestGoal = findNearestGoal(input.goals);
 
-  const title = input.slot === 'midday' ? 'Bao cao 12h' : 'Bao cao 21h';
+  const title = input.slot === 'midday' ? 'Báo cáo 12h' : 'Báo cáo 21h';
   const goalLine = nearestGoal
-    ? `Muc tieu gan nhat: "${nearestGoal.name}" con thieu ${formatVnd(nearestGoal.targetAmount - nearestGoal.currentAmount)}.`
-    : 'Chua co muc tieu gan nhat de lien ket hanh dong.';
+    ? `Mục tiêu gần nhất: "${nearestGoal.name}" còn thiếu ${formatVnd(nearestGoal.targetAmount - nearestGoal.currentAmount)}.`
+    : 'Chưa có mục tiêu gần nhất để liên kết hành động.';
   const billLine = fixedBillsShortage > 0
-    ? `Quy bill con thieu ${formatVnd(fixedBillsShortage)} cho cac bill co dinh.`
-    : 'Quy bill co dinh dang du theo du lieu hien tai.';
+    ? `Quỹ bill còn thiếu ${formatVnd(fixedBillsShortage)} cho các bill cố định.`
+    : 'Quỹ bill cố định đang đủ theo dữ liệu hiện tại.';
   const closeLine = input.slot === 'midday'
-    ? 'Goi y 12h: neu chua co thu nhap moi, giu bua chieu toi gian va tranh mua nhanh.'
-    : 'Goi y 21h: doi chieu so du ngan hang voi ManiCash. Lech 1 giao dich la bao cao ngay mai se sai.';
+    ? 'Gợi ý 12h: nếu chưa có thu nhập mới, giữ bữa chiều tối giản và tránh mua nhanh.'
+    : 'Gợi ý 21h: đối chiếu số dư ngân hàng với ManiCash. Lệch 1 giao dịch là báo cáo ngày mai sẽ sai.';
 
   return {
     slot: input.slot,
@@ -128,10 +128,10 @@ export function createDailyCheckIn(input: DailyCheckInInput): DailyCheckIn {
     title,
     message: [
       `${title}: ${getStatusLine(status, input.slot)}`,
-      `Hom nay: thu ${formatVnd(todayIncome)}, chi ${formatVnd(todayExpense)}.`,
-      `Thang nay: thu ${formatVnd(monthlyIncome)}, chi ${formatVnd(monthlyExpense)}, dong tien rong ${formatVnd(monthlyNetCashflow)}.`,
-      `Nguong chi con lai: ${formatVnd(monthlySpendingRemaining)} (~${formatVnd(dailyAllowanceRemaining)}/ngay).`,
-      `Tiet kiem uoc tinh thang nay: ${formatVnd(monthlySavingsEstimate)}.`,
+      `Hôm nay: thu ${formatVnd(todayIncome)}, chi ${formatVnd(todayExpense)}.`,
+      `Tháng này: thu ${formatVnd(monthlyIncome)}, chi ${formatVnd(monthlyExpense)}, dòng tiền ròng ${formatVnd(monthlyNetCashflow)}.`,
+      `Ngưỡng chi còn lại: ${formatVnd(monthlySpendingRemaining)} (~${formatVnd(dailyAllowanceRemaining)}/ngày).`,
+      `Tiết kiệm ước tính tháng này: ${formatVnd(monthlySavingsEstimate)}.`,
       billLine,
       goalLine,
       closeLine,

@@ -287,3 +287,11 @@
   border-color: rgba(124, 58, 237, 0.35);
   transform: translateY(-1px);
 }
+
+/* AI Money Chat CTA — purple accent variant of report CTA */
+.money-chat-cta {
+  margin-top: var(--space-sm);
+  border-color: rgba(124, 58, 237, 0.28);
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.12), rgba(249, 115, 22, 0.06));
+  color: var(--c-purple-light);
+}

@@ -1,0 +1,196 @@
+.upgrade-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  padding-bottom: var(--space-2xl);
+}
+
+.upgrade-nav {
+  display: flex;
+  align-items: center;
+}
+
+.upgrade-back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  color: var(--c-text-secondary);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+/* ─── Hero ─── */
+.upgrade-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-xl) var(--space-lg);
+  border: 1px solid rgba(249, 199, 79, 0.25);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(160deg, rgba(124, 58, 237, 0.16), rgba(249, 115, 22, 0.1));
+  text-align: center;
+}
+
+.upgrade-crown {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, #FBBF24, #F97316);
+  color: #1a1206;
+  box-shadow: 0 6px 20px rgba(249, 115, 22, 0.4);
+}
+
+.upgrade-hero h1 {
+  color: var(--c-text-primary);
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+}
+
+.upgrade-lead {
+  max-width: 32ch;
+  color: var(--c-text-secondary);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+.upgrade-price {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-xs);
+  margin-top: var(--space-sm);
+}
+
+.upgrade-price-value {
+  color: var(--c-text-primary);
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-weight: 800;
+}
+
+.upgrade-price-period {
+  color: var(--c-text-muted);
+  font-size: var(--text-sm);
+}
+
+/* ─── Status banners ─── */
+.upgrade-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+}
+
+.upgrade-status div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.upgrade-status strong { color: var(--c-text-primary); }
+.upgrade-status span { color: var(--c-text-secondary); font-size: var(--text-xs); }
+
+.upgrade-status-pro {
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  background: rgba(34, 197, 94, 0.08);
+  color: var(--c-green-light);
+}
+
+.upgrade-status-expired {
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  background: rgba(245, 158, 11, 0.08);
+  color: var(--c-warning);
+}
+
+/* ─── Features ─── */
+.upgrade-features {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.upgrade-feature {
+  display: flex;
+  gap: var(--space-md);
+  align-items: flex-start;
+  padding: var(--space-md);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  background: var(--glass-bg);
+}
+
+.upgrade-feature-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-full);
+  background: var(--gradient-success);
+  color: white;
+}
+
+.upgrade-feature strong {
+  display: block;
+  color: var(--c-text-primary);
+  font-size: var(--text-sm);
+}
+
+.upgrade-feature p {
+  margin-top: 2px;
+  color: var(--c-text-secondary);
+  font-size: var(--text-xs);
+  line-height: 1.45;
+}
+
+/* ─── CTA ─── */
+.upgrade-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  min-height: 52px;
+  border-radius: var(--radius-md);
+  background: var(--gradient-primary);
+  color: white;
+  font-size: var(--text-base);
+  font-weight: 800;
+  box-shadow: 0 8px 24px rgba(124, 58, 237, 0.35);
+  transition: transform var(--duration-fast) var(--ease-out-expo);
+}
+
+.upgrade-cta:not(:disabled):hover { transform: translateY(-1px); }
+.upgrade-cta:disabled { opacity: 0.7; cursor: progress; }
+
+.upgrade-spin { animation: upgrade-spin 0.9s linear infinite; }
+@keyframes upgrade-spin { to { transform: rotate(360deg); } }
+
+.upgrade-message {
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  text-align: center;
+}
+
+.upgrade-message-ok {
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  background: rgba(34, 197, 94, 0.08);
+  color: var(--c-green-light);
+}
+
+.upgrade-message-err {
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  background: rgba(239, 68, 68, 0.08);
+  color: var(--c-ruby-light);
+}
+
+.upgrade-footnote {
+  color: var(--c-text-muted);
+  font-size: var(--text-xs);
+  line-height: 1.45;
+  text-align: center;
+}

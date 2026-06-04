@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "manicash-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 3000
+    },
+    {
+      "name": "hydra-studio",
+      "runtimeExecutable": "C:\\Users\\ADMIN\\Documents\\manicash\\.claude\\run-studio.bat",
+      "runtimeArgs": [],
+      "port": 4317
+    }
+  ]
+}

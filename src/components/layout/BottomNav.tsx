@@ -6,7 +6,7 @@ import Link from 'next/link';
 import {
   LayoutDashboard,
   BookOpen,
-  Plus,
+  MessageSquare,
   Target,
   Coins,
 } from 'lucide-react';
@@ -22,7 +22,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { href: '/overview', label: 'Tổng quan', icon: LayoutDashboard },
   { href: '/ledger', label: 'Sổ sách', icon: BookOpen },
-  { href: '/input', label: 'Nhập', icon: Plus, isCenter: true },
+  { href: '/chat', label: 'Chat', icon: MessageSquare, isCenter: true },
   { href: '/goals', label: 'Mục tiêu', icon: Target },
   { href: '/money', label: 'Money', icon: Coins },
 ];

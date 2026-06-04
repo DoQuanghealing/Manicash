@@ -14,7 +14,12 @@ export type AnalyticsEvent =
   | 'cfo_report_view'
   | 'report_export'
   | 'earning_task_created'
-  | 'reconciliation_check';
+  | 'reconciliation_check'
+  | 'upgrade_view'
+  | 'upgrade_start'
+  | 'upgrade_success'
+  | 'upgrade_failed'
+  | 'pro_gate_blocked';
 
 export type AnalyticsParamValue = string | number | boolean;
 export type AnalyticsParams = Record<string, AnalyticsParamValue | null | undefined>;

@@ -40,7 +40,7 @@ describe('AI Money Chat balance reconciliation', () => {
 
     expectEqual(report.status, 'matched');
     expectEqual(report.totalDifference, 500);
-    expectContains(report.message, 'khop');
+    expectContains(report.message, 'khớp');
   });
 
   it('marks minor drift for small differences', () => {
@@ -52,7 +52,7 @@ describe('AI Money Chat balance reconciliation', () => {
 
     expectEqual(report.status, 'minor-drift');
     expectEqual(report.accounts[0].status, 'minor-drift');
-    expectContains(report.message, 'Lech nhe');
+    expectContains(report.message, 'Lệch nhẹ');
   });
 
   it('marks major drift when an account is meaningfully off', () => {
@@ -64,7 +64,7 @@ describe('AI Money Chat balance reconciliation', () => {
 
     expectEqual(report.status, 'major-drift');
     expectEqual(report.totalDifference, -1_000_000);
-    expectContains(report.message, 'dung tin bao cao ngay');
+    expectContains(report.message, 'đừng tin báo cáo ngay');
   });
 
   it('keeps the direction clear when bank is higher than ManiCash', () => {
@@ -73,7 +73,7 @@ describe('AI Money Chat balance reconciliation', () => {
     ]);
 
     expectEqual(report.accounts[0].difference, 500_000);
-    expectContains(report.accounts[0].message, 'ngan hang cao hon ManiCash');
+    expectContains(report.accounts[0].message, 'ngân hàng cao hơn ManiCash');
   });
 });
 

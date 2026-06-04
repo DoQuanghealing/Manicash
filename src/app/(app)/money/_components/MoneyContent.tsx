@@ -20,7 +20,8 @@ import StackedBarChart from './StackedBarChart';
 import SavingsLineChart from './SavingsLineChart';
 import HealthScoreGauge from './HealthScoreGauge';
 import Link from 'next/link';
-import { Plus, ChevronRight, BarChart2 } from 'lucide-react';
+import { Plus, ChevronRight, BarChart2, MessageCircle } from 'lucide-react';
+import { isAiMoneyChatEnabled } from '@/lib/aiMoneyChat/featureFlag';
 import './money.css';
 
 type MoneyTab = 'money' | 'cfo';
@@ -282,6 +283,14 @@ export default function MoneyContent() {
                 <span>Xem báo cáo đầy đủ tháng này</span>
                 <ChevronRight size={16} />
               </Link>
+
+              {isAiMoneyChatEnabled() && (
+                <Link href="/chat" className="money-report-cta money-chat-cta">
+                  <MessageCircle size={16} />
+                  <span>Nhập giao dịch bằng AI Money Chat</span>
+                  <ChevronRight size={16} />
+                </Link>
+              )}
             </motion.div>
           )}
         </AnimatePresence>

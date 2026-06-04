@@ -40,11 +40,11 @@ function getAccountStatus(absoluteDifference: number): ReconciliationStatus {
 
 function getAccountMessage(input: ReconciliationAccountInput, difference: number, status: ReconciliationStatus): string {
   if (status === 'matched') {
-    return `${input.label}: khop. So trong ManiCash dang dang tin.`;
+    return `${input.label}: khớp. Số trong ManiCash đang đáng tin.`;
   }
 
-  const direction = difference > 0 ? 'ngan hang cao hon ManiCash' : 'ManiCash cao hon ngan hang';
-  const prefix = status === 'major-drift' ? 'Can xu ly' : 'Lech nhe';
+  const direction = difference > 0 ? 'ngân hàng cao hơn ManiCash' : 'ManiCash cao hơn ngân hàng';
+  const prefix = status === 'major-drift' ? 'Cần xử lý' : 'Lệch nhẹ';
   return `${input.label}: ${prefix}, ${direction} ${formatVnd(Math.abs(difference))}.`;
 }
 
@@ -55,19 +55,19 @@ function getOverallStatus(accounts: ReconciliationAccountResult[]): Reconciliati
 }
 
 function getOverallTitle(status: ReconciliationStatus): string {
-  if (status === 'matched') return 'Doi chieu so du: khop';
-  if (status === 'minor-drift') return 'Doi chieu so du: lech nhe';
-  return 'Doi chieu so du: can kiem tra';
+  if (status === 'matched') return 'Đối chiếu số dư: khớp';
+  if (status === 'minor-drift') return 'Đối chiếu số dư: lệch nhẹ';
+  return 'Đối chiếu số dư: cần kiểm tra';
 }
 
 function getActionLine(status: ReconciliationStatus): string {
   if (status === 'matched') {
-    return 'Ket luan: tiep tuc ghi giao dich deu. Bao cao CFO co nen tang du lieu tot.';
+    return 'Kết luận: tiếp tục ghi giao dịch đều. Báo cáo CFO có nền tảng dữ liệu tốt.';
   }
   if (status === 'minor-drift') {
-    return 'Ket luan: lech nhe. Hay tim giao dich gan nhat bi quen ghi truoc khi tu dieu chinh so du.';
+    return 'Kết luận: lệch nhẹ. Hãy tìm giao dịch gần nhất bị quên ghi trước khi tự điều chỉnh số dư.';
   }
-  return 'Ket luan: dung tin bao cao ngay. Hay doi chieu sao ke, tim giao dich bi thieu, roi moi cap nhat so du.';
+  return 'Kết luận: đừng tin báo cáo ngay. Hãy đối chiếu sao kê, tìm giao dịch bị thiếu, rồi mới cập nhật số dư.';
 }
 
 export function createBalanceReconciliationReport(inputs: ReconciliationAccountInput[]): ReconciliationReport {
@@ -95,9 +95,9 @@ export function createBalanceReconciliationReport(inputs: ReconciliationAccountI
     title,
     message: [
       `${title}.`,
-      `Tong ManiCash: ${formatVnd(totalAppBalance)}.`,
-      `Tong ngan hang ban nhap: ${formatVnd(totalBankBalance)}.`,
-      `Tong chenh lech: ${formatVnd(totalDifference)}.`,
+      `Tổng ManiCash: ${formatVnd(totalAppBalance)}.`,
+      `Tổng ngân hàng bạn nhập: ${formatVnd(totalBankBalance)}.`,
+      `Tổng chênh lệch: ${formatVnd(totalDifference)}.`,
       ...accounts.map((account) => account.message),
       getActionLine(status),
     ].join('\n'),

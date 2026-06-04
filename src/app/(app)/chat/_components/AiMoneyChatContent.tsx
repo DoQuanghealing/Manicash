@@ -1,7 +1,19 @@
 'use client';
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
-import { Bot, Check, Lock, MessageCircle, Plus, Send, ShieldCheck, Target, Trash2, X } from 'lucide-react';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import {
+  ChevronLeft,
+  Check,
+  Lock,
+  Moon,
+  Plus,
+  Scale,
+  Send,
+  Sun,
+  Target,
+  Trash2,
+} from 'lucide-react';
 import { INCOME_CATEGORIES, type CategoryItem } from '@/data/categories';
 import { createBalanceReconciliationReport } from '@/lib/aiMoneyChat/balanceReconciliation';
 import { requestAiMoneyFallback } from '@/lib/aiMoneyChat/clientFallback';
@@ -75,15 +87,23 @@ function formatVnd(amount: number): string {
   return amount.toLocaleString('vi-VN');
 }
 
+/** Format a Date as YYYY-MM-DD in LOCAL time (not UTC). Avoids timezone off-by-one. */
+function toLocalISODate(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 function getTodayInputValue(): string {
-  return new Date().toISOString().substring(0, 10);
+  return toLocalISODate(new Date());
 }
 
 function getDateConstraints() {
   const now = new Date();
   return {
-    max: now.toISOString().substring(0, 10),
-    min: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10),
+    max: toLocalISODate(now),
+    min: toLocalISODate(new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)),
   };
 }
 
@@ -106,12 +126,12 @@ function parseAmountInput(value: string): number {
 
 function TypingIndicator() {
   return (
-    <div className="ai-chat-typing">
-      <div className="ai-chat-avatar ai-chat-avatar-ld" aria-hidden="true">LD</div>
-      <div className="ai-chat-bubble ai-chat-bubble-typing">
-        <span className="ai-typing-dot" />
-        <span className="ai-typing-dot" />
-        <span className="ai-typing-dot" />
+    <div className="tg-msg tg-msg-assistant">
+      <div className="tg-msg-avatar" aria-hidden="true">LD</div>
+      <div className="tg-bubble tg-bubble-typing">
+        <span className="tg-typing-dot" />
+        <span className="tg-typing-dot" />
+        <span className="tg-typing-dot" />
       </div>
     </div>
   );
@@ -146,6 +166,7 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
   const [isAiFallbackLoading, setIsAiFallbackLoading] = useState(false);
   const addEarningTask = useTaskStore((s) => s.addTask);
   const threadRef = useRef<HTMLDivElement>(null);
+  const prefersReduced = useReducedMotion();
 
   const dateConstraints = useMemo(() => getDateConstraints(), []);
 
@@ -592,49 +613,63 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
     parseAmountInput(earningDraft.amount) > 0,
   );
 
+  const activePanel: 'confirm' | 'reconcile' | 'earning' | null =
+    draftIntent && draftForm ? 'confirm' : reconciliationForm ? 'reconcile' : earningDraft ? 'earning' : null;
+  const panelOpen = activePanel !== null;
+  const panelTitle =
+    activePanel === 'confirm'
+      ? draftForm?.type === 'income' ? 'Xác nhận thu nhập' : 'Xác nhận chi tiêu'
+      : activePanel === 'reconcile'
+        ? 'Đối chiếu số dư'
+        : activePanel === 'earning'
+          ? 'Tạo nhiệm vụ kiếm tiền'
+          : '';
+
+  function handlePanelBack() {
+    if (activePanel === 'confirm') handleCancelDraft();
+    else if (activePanel === 'reconcile') handleCancelReconciliation();
+    else if (activePanel === 'earning') handleCancelEarning();
+  }
+
+  const ease = [0.16, 1, 0.3, 1] as const;
+  const baseTransition = { duration: prefersReduced ? 0 : 0.32, ease };
+  const panelTransition = { duration: prefersReduced ? 0 : 0.34, ease };
+
   return (
-    <div className="ai-chat-page">
-      <section className="ai-chat-hero">
-        <div className="ai-chat-hero-icon" aria-hidden="true">
-          <Bot size={26} />
-        </div>
-        <div>
-          <p className="ai-chat-kicker">Local parser beta</p>
-          <h1>AI Money Chat</h1>
-          <p className="ai-chat-lead">
-            Nhập giao dịch bằng ngôn ngữ hàng ngày. ManiCash sẽ tách thông tin và cho bạn xác nhận trước khi lưu.
-          </p>
-          {memoryRuleCount > 0 && (
-            <p className="ai-chat-memory-count">
-              Trí nhớ local: {memoryRuleCount} quy tắc đã học
-            </p>
-          )}
-        </div>
-      </section>
+    <div className="tg-chat">
+      <motion.div
+        className="tg-base"
+        animate={{ x: panelOpen ? '-16%' : '0%' }}
+        transition={baseTransition}
+        style={{ pointerEvents: panelOpen ? 'none' : 'auto' }}
+      >
+        <header className="tg-header">
+          <div className="tg-header-avatar" aria-hidden="true">LD</div>
+          <div className="tg-header-meta">
+            <strong>Lord Diamond</strong>
+            <span className="tg-header-sub">
+              <i className="tg-status-dot" aria-hidden="true" />
+              Quản gia tài chính{memoryRuleCount > 0 ? ` · nhớ ${memoryRuleCount} thói quen` : ''}
+            </span>
+          </div>
+        </header>
 
-      {!enabled && (
-        <div className="ai-chat-disabled">
-          <Lock size={18} />
-          <span>Chat beta đang tắt trên môi trường này. Bật <code>NEXT_PUBLIC_AI_MONEY_CHAT_ENABLED=true</code> để test.</span>
-        </div>
-      )}
+        {!enabled && (
+          <div className="tg-disabled">
+            <Lock size={15} />
+            <span>Chat đang tắt. Bật <code>NEXT_PUBLIC_AI_MONEY_CHAT_ENABLED=true</code> để dùng.</span>
+          </div>
+        )}
 
-      <section className="ai-chat-panel" aria-label="AI Money Chat beta">
-        <div className="ai-chat-thread" ref={threadRef}>
+        <div className="tg-thread" ref={threadRef}>
           {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`ai-chat-message ai-chat-message-${message.role}`}
-            >
+            <div key={message.id} className={`tg-msg tg-msg-${message.role}`}>
               {message.role !== 'user' && (
-                <div className={`ai-chat-avatar${message.role === 'assistant' ? ' ai-chat-avatar-ld' : ''}`}>
-                  {message.role === 'assistant' ? <span>LD</span> : <Check size={14} />}
+                <div className="tg-msg-avatar" aria-hidden="true">
+                  {message.role === 'assistant' ? 'LD' : <Check size={13} />}
                 </div>
               )}
-              <div className="ai-chat-bubble">
-                {message.role !== 'user' && (
-                  <strong>{message.role === 'system' ? 'ManiCash' : 'Lord Diamond'}</strong>
-                )}
+              <div className="tg-bubble">
                 <p>{message.text}</p>
               </div>
             </div>
@@ -642,323 +677,216 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
           {isAiFallbackLoading && <TypingIndicator />}
         </div>
 
-        <div className="ai-chat-examples" aria-label="Ví dụ">
+        <div className="tg-quick" aria-label="Hành động nhanh">
+          <button type="button" className="tg-chip tg-chip-action" disabled={!enabled} onClick={() => handleDailyCheckIn('midday')}>
+            <Sun size={14} /> Báo cáo trưa
+          </button>
+          <button type="button" className="tg-chip tg-chip-action" disabled={!enabled} onClick={() => handleDailyCheckIn('evening')}>
+            <Moon size={14} /> Tổng kết tối
+          </button>
+          <button type="button" className="tg-chip tg-chip-action" disabled={!enabled} onClick={openReconciliationForm}>
+            <Scale size={14} /> Đối chiếu số dư
+          </button>
           {EXAMPLES.map((example) => (
-            <button key={example} type="button" disabled={!enabled} onClick={() => handleExample(example)}>
+            <button key={example} type="button" className="tg-chip" disabled={!enabled} onClick={() => handleExample(example)}>
               {example}
             </button>
           ))}
         </div>
 
-        <div className="ai-chat-checkins" aria-label="Báo cáo nhanh">
-          <span>Check-in nhanh</span>
-          <button type="button" disabled={!enabled} onClick={() => handleDailyCheckIn('midday')}>
-            Báo cáo trưa
-          </button>
-          <button type="button" disabled={!enabled} onClick={() => handleDailyCheckIn('evening')}>
-            Tổng kết tối
-          </button>
-          <button type="button" disabled={!enabled} onClick={openReconciliationForm}>
-            Đối chiếu số dư
-          </button>
-        </div>
-
-        {draftIntent && draftForm && (
-          <section className="ai-chat-confirm-card" aria-label="Xác nhận giao dịch">
-            <div className="ai-chat-confirm-header">
-              <div>
-                <p className="ai-chat-kicker">Kiểm tra trước khi lưu</p>
-                <h2>{draftForm.type === 'income' ? 'Thu nhập' : 'Chi tiêu'} mới</h2>
-              </div>
-              <span className={`ai-chat-confidence ai-chat-confidence-${draftIntent.confidence}`}>
-                {draftIntent.confidence}
-              </span>
-            </div>
-
-            {draftForm.amount && (
-              <div className="ai-chat-amount-hero">
-                <span className={`ai-chat-amount-value ${draftForm.type === 'income' ? 'is-income' : 'is-expense'}`}>
-                  {draftForm.type === 'income' ? '+' : '−'}{draftForm.amount}
-                </span>
-                <span className="ai-chat-amount-currency">VND</span>
-              </div>
-            )}
-
-            <div className="ai-chat-field-grid">
-              <label>
-                <span>Loại</span>
-                <select
-                  value={draftForm.type}
-                  onChange={(event) => updateDraft({ type: event.target.value as TxnType })}
-                >
-                  <option value="expense">Chi tiêu</option>
-                  <option value="income">Thu nhập</option>
-                </select>
-              </label>
-
-              <label>
-                <span>Số tiền</span>
-                <input
-                  value={draftForm.amount}
-                  inputMode="numeric"
-                  onChange={(event) => handleAmountChange(event.target.value)}
-                />
-              </label>
-
-              <label>
-                <span>Danh mục</span>
-                <select
-                  value={draftForm.categoryId}
-                  onChange={(event) => updateDraft({ categoryId: event.target.value })}
-                >
-                  {categories.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label>
-                <span>Ví</span>
-                <select
-                  value={draftForm.wallet}
-                  onChange={(event) => updateDraft({ wallet: event.target.value as WalletType })}
-                >
-                  <option value="main">Ví chính</option>
-                  <option value="emergency">Quỹ dự phòng</option>
-                </select>
-              </label>
-
-              <label>
-                <span>Ngày</span>
-                <input
-                  type="date"
-                  value={draftForm.date}
-                  min={dateConstraints.min}
-                  max={dateConstraints.max}
-                  onChange={(event) => updateDraft({ date: event.target.value })}
-                />
-              </label>
-
-              <label className="ai-chat-field-wide">
-                <span>Ghi chú</span>
-                <input
-                  value={draftForm.note}
-                  onChange={(event) => updateDraft({ note: event.target.value })}
-                />
-              </label>
-            </div>
-
-            {draftIntent.category?.alternatives && draftIntent.category.alternatives.length > 0 && (
-              <div className="ai-chat-alternatives">
-                <span>Gợi ý khác</span>
-                {draftIntent.category.alternatives.map((alternative) => (
-                  <button
-                    key={alternative.categoryId}
-                    type="button"
-                    onClick={() => updateDraft({ categoryId: alternative.categoryId })}
-                  >
-                    {alternative.categoryName || alternative.categoryId}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {error && <p className="ai-chat-error">{error}</p>}
-
-            <div className="ai-chat-confirm-actions">
-              <button type="button" className="ai-chat-secondary-btn" onClick={handleCancelDraft}>
-                <X size={16} />
-                Huỷ
-              </button>
-              <button type="button" className="ai-chat-primary-btn" disabled={!canConfirm} onClick={handleConfirmDraft}>
-                <Check size={16} />
-                Xác nhận lưu
-              </button>
-            </div>
-          </section>
-        )}
-
-        {reconciliationForm && (
-          <section className="ai-chat-confirm-card" aria-label="Đối chiếu số dư">
-            <div className="ai-chat-confirm-header">
-              <div>
-                <p className="ai-chat-kicker">Đối chiếu ngân hàng</p>
-                <h2>Số dư 3 tài khoản</h2>
-              </div>
-              <span className="ai-chat-confidence ai-chat-confidence-medium">review</span>
-            </div>
-
-            <div className="ai-chat-reconcile-list">
-              <label>
-                <span>Tài khoản thu nhập</span>
-                <small>ManiCash: {formatVnd(appAccountBalances.income)} VND</small>
-                <input
-                  value={reconciliationForm.income}
-                  inputMode="numeric"
-                  onChange={(event) => updateReconciliationForm('income', event.target.value)}
-                />
-              </label>
-
-              <label>
-                <span>Tài khoản chi tiêu</span>
-                <small>ManiCash: {formatVnd(appAccountBalances.expense)} VND</small>
-                <input
-                  value={reconciliationForm.expense}
-                  inputMode="numeric"
-                  onChange={(event) => updateReconciliationForm('expense', event.target.value)}
-                />
-              </label>
-
-              <label>
-                <span>Tài khoản tiết kiệm</span>
-                <small>ManiCash: {formatVnd(appAccountBalances.saving)} VND</small>
-                <input
-                  value={reconciliationForm.saving}
-                  inputMode="numeric"
-                  onChange={(event) => updateReconciliationForm('saving', event.target.value)}
-                />
-              </label>
-            </div>
-
-            <p className="ai-chat-reconcile-note">
-              Bước này chỉ kiểm tra lệch số dư, chưa tự động sửa tiền trong app.
-            </p>
-
-            <div className="ai-chat-confirm-actions">
-              <button type="button" className="ai-chat-secondary-btn" onClick={handleCancelReconciliation}>
-                <X size={16} />
-                Huỷ
-              </button>
-              <button type="button" className="ai-chat-primary-btn" onClick={handleConfirmReconciliation}>
-                <Check size={16} />
-                Kiểm tra lệch
-              </button>
-            </div>
-          </section>
-        )}
-
-        {earningDraft && (
-          <section className="ai-chat-confirm-card ai-chat-earning-card" aria-label="Tạo nhiệm vụ kiếm tiền">
-            <div className="ai-chat-confirm-header">
-              <div>
-                <p className="ai-chat-kicker">Kế hoạch kiếm tiền</p>
-                <h2>Nhiệm vụ mới</h2>
-              </div>
-              <span className={`ai-chat-confidence ai-chat-confidence-${earningDraft.confidence}`}>
-                {earningDraft.confidence}
-              </span>
-            </div>
-
-            <div className="ai-chat-field-grid">
-              <label className="ai-chat-field-wide">
-                <span>Tên nhiệm vụ</span>
-                <input
-                  value={earningDraft.name}
-                  onChange={(event) => updateEarningDraft({ name: event.target.value })}
-                />
-              </label>
-
-              <label>
-                <span>Mục tiêu thu nhập</span>
-                <input
-                  value={earningDraft.amount}
-                  inputMode="numeric"
-                  onChange={(event) => handleEarningAmountChange(event.target.value)}
-                />
-              </label>
-
-              <label>
-                <span>Số ngày</span>
-                <input
-                  value={earningDraft.durationDays}
-                  inputMode="numeric"
-                  onChange={(event) =>
-                    updateEarningDraft({ durationDays: event.target.value.replace(/\D/g, '') })
-                  }
-                />
-              </label>
-            </div>
-
-            <div className="ai-chat-subtasks">
-              <span className="ai-chat-subtasks-title">Các bước nhỏ</span>
-              {earningDraft.subTasks.map((subTask, index) => (
-                <div key={index} className="ai-chat-subtask-row">
-                  <Check size={14} className="ai-chat-subtask-icon" />
-                  <input
-                    value={subTask}
-                    placeholder="Mô tả bước này"
-                    onChange={(event) => handleEarningSubTaskChange(index, event.target.value)}
-                  />
-                  <button
-                    type="button"
-                    className="ai-chat-subtask-remove"
-                    aria-label="Xoá bước"
-                    onClick={() => handleEarningSubTaskRemove(index)}
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              ))}
-              <button type="button" className="ai-chat-subtask-add" onClick={handleEarningSubTaskAdd}>
-                <Plus size={14} />
-                Thêm bước
-              </button>
-            </div>
-
-            {error && <p className="ai-chat-error">{error}</p>}
-
-            <div className="ai-chat-confirm-actions">
-              <button type="button" className="ai-chat-secondary-btn" onClick={handleCancelEarning}>
-                <X size={16} />
-                Huỷ
-              </button>
-              <button
-                type="button"
-                className="ai-chat-primary-btn"
-                disabled={!canConfirmEarning}
-                onClick={handleConfirmEarning}
-              >
-                <Target size={16} />
-                Tạo nhiệm vụ
-              </button>
-            </div>
-          </section>
-        )}
-
-        <form className="ai-chat-input-row" onSubmit={handleSubmit}>
-          <div className="ai-chat-input-shell">
-            <MessageCircle size={18} />
-            <input
-              type="text"
-              placeholder="Ví dụ: mua đậu hũ 20k"
-              value={input}
-              onChange={(event) => setInput(event.target.value)}
-              disabled={!enabled}
-              aria-label="Nhập giao dịch bằng ngôn ngữ tự nhiên"
-            />
-          </div>
-          <button type="submit" disabled={!enabled || !input.trim()}>
-            <Send size={16} />
+        <form className="tg-composer" onSubmit={handleSubmit}>
+          <input
+            type="text"
+            placeholder="Nhập giao dịch, vd: mua đậu hũ 20k"
+            value={input}
+            onChange={(event) => setInput(event.target.value)}
+            disabled={!enabled}
+            aria-label="Nhập giao dịch bằng ngôn ngữ tự nhiên"
+          />
+          <button type="submit" className="tg-send" disabled={!enabled || !input.trim()} aria-label="Gửi">
+            <Send size={18} />
           </button>
         </form>
+      </motion.div>
 
-        <p className="ai-chat-footnote">
-          Gợi ý: để ManiCash chính xác hơn, hãy tách 3 tài khoản ngân hàng cho Thu nhập,
-          Chi tiêu và Tiết kiệm. Đối chiếu số dư định kỳ vì thiếu 1 giao dịch có thể làm lệch báo cáo.
-        </p>
-      </section>
+      <AnimatePresence>
+        {panelOpen && (
+          <motion.section
+            key={activePanel}
+            className="tg-panel"
+            aria-label={panelTitle}
+            initial={{ x: '100%' }}
+            animate={{ x: '0%' }}
+            exit={{ x: '100%' }}
+            transition={panelTransition}
+          >
+            <header className="tg-panel-header">
+              <button type="button" className="tg-back" onClick={handlePanelBack}>
+                <ChevronLeft size={20} />
+                <span>Quay lại</span>
+              </button>
+              <h2>{panelTitle}</h2>
+              {activePanel === 'confirm' && draftIntent && (
+                <span className={`tg-confidence tg-confidence-${draftIntent.confidence}`}>{draftIntent.confidence}</span>
+              )}
+            </header>
 
-      <section className="ai-chat-contract">
-        <div>
-          <ShieldCheck size={18} />
-          <span>Phase 2 safety</span>
-        </div>
-        <p>
-          Chat chỉ lưu khi bạn bấm xác nhận. Parser local xử lý trước, memory local ưu tiên các lần bạn đã sửa; AI sẽ thêm sau.
-        </p>
-      </section>
+            <div className="tg-panel-body">
+              {activePanel === 'confirm' && draftIntent && draftForm && (
+                <>
+                  {draftForm.amount && (
+                    <div className="tg-amount">
+                      <span className={`tg-amount-value ${draftForm.type === 'income' ? 'is-income' : 'is-expense'}`}>
+                        {draftForm.type === 'income' ? '+' : '−'}{draftForm.amount}
+                      </span>
+                      <span className="tg-amount-cur">VND</span>
+                    </div>
+                  )}
+
+                  <div className="tg-fields">
+                    <label>
+                      <span>Loại</span>
+                      <select value={draftForm.type} onChange={(event) => updateDraft({ type: event.target.value as TxnType })}>
+                        <option value="expense">Chi tiêu</option>
+                        <option value="income">Thu nhập</option>
+                      </select>
+                    </label>
+
+                    <label>
+                      <span>Số tiền</span>
+                      <input value={draftForm.amount} inputMode="numeric" onChange={(event) => handleAmountChange(event.target.value)} />
+                    </label>
+
+                    <label>
+                      <span>Danh mục</span>
+                      <select value={draftForm.categoryId} onChange={(event) => updateDraft({ categoryId: event.target.value })}>
+                        {categories.map((category) => (
+                          <option key={category.id} value={category.id}>{category.name}</option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label>
+                      <span>Ví</span>
+                      <select value={draftForm.wallet} onChange={(event) => updateDraft({ wallet: event.target.value as WalletType })}>
+                        <option value="main">Ví chính</option>
+                        <option value="emergency">Quỹ dự phòng</option>
+                      </select>
+                    </label>
+
+                    <label>
+                      <span>Ngày</span>
+                      <input
+                        type="date"
+                        value={draftForm.date}
+                        min={dateConstraints.min}
+                        max={dateConstraints.max}
+                        onChange={(event) => updateDraft({ date: event.target.value })}
+                      />
+                    </label>
+
+                    <label className="tg-field-wide">
+                      <span>Ghi chú</span>
+                      <input value={draftForm.note} onChange={(event) => updateDraft({ note: event.target.value })} />
+                    </label>
+                  </div>
+
+                  {draftIntent.category?.alternatives && draftIntent.category.alternatives.length > 0 && (
+                    <div className="tg-alts">
+                      <span>Gợi ý khác</span>
+                      {draftIntent.category.alternatives.map((alternative) => (
+                        <button key={alternative.categoryId} type="button" onClick={() => updateDraft({ categoryId: alternative.categoryId })}>
+                          {alternative.categoryName || alternative.categoryId}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {error && <p className="tg-error">{error}</p>}
+                </>
+              )}
+
+              {activePanel === 'reconcile' && reconciliationForm && (
+                <>
+                  <div className="tg-reconcile">
+                    <label>
+                      <span>Tài khoản thu nhập</span>
+                      <small>ManiCash: {formatVnd(appAccountBalances.income)} VND</small>
+                      <input value={reconciliationForm.income} inputMode="numeric" onChange={(event) => updateReconciliationForm('income', event.target.value)} />
+                    </label>
+                    <label>
+                      <span>Tài khoản chi tiêu</span>
+                      <small>ManiCash: {formatVnd(appAccountBalances.expense)} VND</small>
+                      <input value={reconciliationForm.expense} inputMode="numeric" onChange={(event) => updateReconciliationForm('expense', event.target.value)} />
+                    </label>
+                    <label>
+                      <span>Tài khoản tiết kiệm</span>
+                      <small>ManiCash: {formatVnd(appAccountBalances.saving)} VND</small>
+                      <input value={reconciliationForm.saving} inputMode="numeric" onChange={(event) => updateReconciliationForm('saving', event.target.value)} />
+                    </label>
+                  </div>
+                  <p className="tg-note">Bước này chỉ kiểm tra lệch số dư, chưa tự động sửa tiền trong app.</p>
+                </>
+              )}
+
+              {activePanel === 'earning' && earningDraft && (
+                <>
+                  <div className="tg-fields">
+                    <label className="tg-field-wide">
+                      <span>Tên nhiệm vụ</span>
+                      <input value={earningDraft.name} onChange={(event) => updateEarningDraft({ name: event.target.value })} />
+                    </label>
+                    <label>
+                      <span>Mục tiêu thu nhập</span>
+                      <input value={earningDraft.amount} inputMode="numeric" onChange={(event) => handleEarningAmountChange(event.target.value)} />
+                    </label>
+                    <label>
+                      <span>Số ngày</span>
+                      <input value={earningDraft.durationDays} inputMode="numeric" onChange={(event) => updateEarningDraft({ durationDays: event.target.value.replace(/\D/g, '') })} />
+                    </label>
+                  </div>
+
+                  <div className="tg-subtasks">
+                    <span className="tg-subtasks-title">Các bước nhỏ</span>
+                    {earningDraft.subTasks.map((subTask, index) => (
+                      <div key={index} className="tg-subtask-row">
+                        <Check size={14} className="tg-subtask-icon" />
+                        <input value={subTask} placeholder="Mô tả bước này" onChange={(event) => handleEarningSubTaskChange(index, event.target.value)} />
+                        <button type="button" className="tg-subtask-remove" aria-label="Xoá bước" onClick={() => handleEarningSubTaskRemove(index)}>
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    ))}
+                    <button type="button" className="tg-subtask-add" onClick={handleEarningSubTaskAdd}>
+                      <Plus size={14} /> Thêm bước
+                    </button>
+                  </div>
+
+                  {error && <p className="tg-error">{error}</p>}
+                </>
+              )}
+            </div>
+
+            <footer className="tg-panel-footer">
+              {activePanel === 'confirm' && (
+                <button type="button" className="tg-primary" disabled={!canConfirm} onClick={handleConfirmDraft}>
+                  <Check size={18} /> Xác nhận lưu
+                </button>
+              )}
+              {activePanel === 'reconcile' && (
+                <button type="button" className="tg-primary" onClick={handleConfirmReconciliation}>
+                  <Scale size={18} /> Kiểm tra lệch
+                </button>
+              )}
+              {activePanel === 'earning' && (
+                <button type="button" className="tg-primary" disabled={!canConfirmEarning} onClick={handleConfirmEarning}>
+                  <Target size={18} /> Tạo nhiệm vụ
+                </button>
+              )}
+            </footer>
+          </motion.section>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

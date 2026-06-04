@@ -24,6 +24,8 @@ import { buildLocalCfoNarration, type CfoNarrationInput } from '@/lib/aiMoneyCha
 import { requestCfoNarration } from '@/lib/aiMoneyChat/cfoNarrationClient';
 import { buildMonthlyReportCsv, downloadCsv } from '@/lib/aiMoneyChat/reportExport';
 import { trackEvent } from '@/lib/analytics/events';
+import { useIsPro } from '@/hooks/useIsPro';
+import ProGate from '@/components/ui/ProGate';
 import './cfo-report.css';
 
 function getCurrentMonthLabel(): string {
@@ -165,6 +167,7 @@ export default function CfoReportContent() {
     [monthLabel, tier, healthScore, monthlyIncome, monthlyExpense, monthlySavings, savingsRate, categoryTotals, activeGoals, budgetStats],
   );
 
+  const isPro = useIsPro();
   const [narration, setNarration] = useState<string>(() => buildLocalCfoNarration(narrationInput));
   const [narrationSource, setNarrationSource] = useState<'local' | 'ai'>('local');
   const [narrationCached, setNarrationCached] = useState(false);
@@ -240,20 +243,26 @@ export default function CfoReportContent() {
           </div>
         </div>
         <p className="cfo-narration-text">{narration}</p>
-        <div className="cfo-narration-actions">
-          <button
-            type="button"
-            className="cfo-narration-btn"
-            onClick={handleAskLordDiamond}
-            disabled={narrationLoading}
-          >
-            {narrationLoading ? <Loader2 size={15} className="cfo-spin" /> : <Sparkles size={15} />}
-            {narrationLoading ? 'Lord Diamond đang viết...' : 'Hỏi Lord Diamond (AI Pro)'}
-          </button>
-          {narrationSource === 'ai' && narrationCached && (
-            <span className="cfo-narration-cached">Đã lưu — không tốn credit</span>
-          )}
-        </div>
+        {isPro ? (
+          <div className="cfo-narration-actions">
+            <button
+              type="button"
+              className="cfo-narration-btn"
+              onClick={handleAskLordDiamond}
+              disabled={narrationLoading}
+            >
+              {narrationLoading ? <Loader2 size={15} className="cfo-spin" /> : <Sparkles size={15} />}
+              {narrationLoading ? 'Lord Diamond đang viết...' : 'Hỏi Lord Diamond (AI Pro)'}
+            </button>
+            {narrationSource === 'ai' && narrationCached && (
+              <span className="cfo-narration-cached">Đã lưu — không tốn credit</span>
+            )}
+          </div>
+        ) : (
+          <ProGate feature="cfo_narration" label="CFO Lord Diamond viết riêng">
+            <></>
+          </ProGate>
+        )}
       </section>
 
       {/* Health Score */}

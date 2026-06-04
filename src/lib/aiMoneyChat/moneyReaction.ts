@@ -59,10 +59,10 @@ export function createMoneyReaction(input: MoneyReactionInput): MoneyReaction {
       tone: 'celebrate',
       severity: 'positive',
       relatedGoalName: nearestGoal?.name,
-      text: `Tien ve ${formatVnd(input.amount)}. Dep day. Bay gio chia tien truoc khi dopamine ru ban di mua thu linh tinh.`,
+      text: `Tiền về ${formatVnd(input.amount)}! Đẹp đây. Bây giờ chia tiền trước khi dopamine rủ bạn đi mua thứ linh tinh.`,
       actionHint: nearestGoal
-        ? `Goi y: chuyen it nhat ${formatVnd(saveSuggestion)} vao muc tieu "${nearestGoal.name}".`
-        : `Goi y: cat rieng it nhat ${formatVnd(saveSuggestion)} vao tiet kiem truoc khi chi.`,
+        ? `Gợi ý: chuyển ít nhất ${formatVnd(saveSuggestion)} vào mục tiêu "${nearestGoal.name}".`
+        : `Gợi ý: cất riêng ít nhất ${formatVnd(saveSuggestion)} vào tiết kiệm trước khi chi.`,
     };
   }
 
@@ -71,8 +71,10 @@ export function createMoneyReaction(input: MoneyReactionInput): MoneyReaction {
       tone: 'celebrate',
       severity: 'positive',
       relatedGoalName: nearestGoal?.name,
-      text: `Da chuyen ${formatVnd(input.amount)} vao quy. Day la hanh vi cua nguoi co ke hoach, khong phai nguoi de tien tu troi.`,
-      actionHint: nearestGoal ? `Muc tieu "${nearestGoal.name}" vua co them dong luc.` : 'Hay giu nhip nay moi khi tien ve.',
+      text: `Đã chuyển ${formatVnd(input.amount)} vào quỹ. Đây là hành vi của người có kế hoạch, không phải người để tiền tự trôi.`,
+      actionHint: nearestGoal
+        ? `Mục tiêu "${nearestGoal.name}" vừa có thêm động lực.`
+        : 'Hãy giữ nhịp này mỗi khi tiền về.',
     };
   }
 
@@ -82,15 +84,15 @@ export function createMoneyReaction(input: MoneyReactionInput): MoneyReaction {
 
   if (isLarge || isEmotionalCategory) {
     const goalPart = nearestGoal && delayMonths
-      ? ` Muc tieu "${nearestGoal.name}" vua bi day xa them khoang ${delayMonths} thang neu thoi quen nay lap lai.`
+      ? ` Mục tiêu "${nearestGoal.name}" vừa bị đẩy xa thêm khoảng ${delayMonths} tháng nếu thói quen này lặp lại.`
       : '';
 
     return {
       tone: isLarge ? 'discipline' : 'sarcastic',
       severity: isLarge ? 'warning' : 'watch',
       relatedGoalName: nearestGoal?.name,
-      text: `Omg, ${formatVnd(input.amount)} bay mau.${goalPart} Ban khong nghe tien tiet kiem khoc ha?`,
-      actionHint: 'Lan sau neu la mua theo cam xuc, day vao wishlist va doi cooldown truoc khi quyet.',
+      text: `Omg, ${formatVnd(input.amount)} bay màu.${goalPart} Bạn không nghe tiền tiết kiệm khóc à?`,
+      actionHint: 'Lần sau nếu là mua theo cảm xúc, đẩy vào wishlist và đợi cooldown trước khi quyết.',
     };
   }
 
@@ -98,10 +100,9 @@ export function createMoneyReaction(input: MoneyReactionInput): MoneyReaction {
     tone: 'nudge',
     severity: 'neutral',
     relatedGoalName: nearestGoal?.name,
-    text: `Da ghi chi ${formatVnd(input.amount)}. Khoan nay co the can thiet, nhung van la tien roi khoi tai san cua ban.`,
+    text: `Đã ghi chi ${formatVnd(input.amount)}. Khoản này có thể cần thiết, nhưng vẫn là tiền rời khỏi tài sản của bạn.`,
     actionHint: nearestGoal
-      ? `Neu cat duoc 10% cac khoan tuong tu, muc tieu "${nearestGoal.name}" se nhe hon dang ke.`
-      : 'Cuoi ngay nhin lai tong chi de khong bi cac khoan nho cong don.',
+      ? `Nếu cắt được 10% các khoản tương tự, mục tiêu "${nearestGoal.name}" sẽ nhẹ hơn đáng kể.`
+      : 'Cuối ngày nhìn lại tổng chi để không bị các khoản nhỏ cộng dồn.',
   };
 }
-
