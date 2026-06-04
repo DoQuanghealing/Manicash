@@ -76,13 +76,14 @@ interface BudgetState {
   markReportViewed: () => void;
 }
 
+const isDemoSeed = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+
 export const useBudgetStore = create<BudgetState>((set, get) => ({
-  carryOver: 800_000, // Dư từ tháng trước (demo)
+  carryOver: isDemoSeed ? 800_000 : 0,
   currentMonth: getCurrentMonthKey(),
-  categoryBudgets: SEED_BUDGETS,
+  categoryBudgets: isDemoSeed ? SEED_BUDGETS : [],
   rolloverNotified: false,
-  // Demo: 'entertain' đã được gắn cờ để user mới có sample trạng thái UI
-  flaggedCategories: ['entertain'],
+  flaggedCategories: isDemoSeed ? ['entertain'] : [],
   flaggedTransactionIds: [],
   monthlySnapshots: [],
   unviewedReportMonth: null,

@@ -156,11 +156,13 @@ const SEED_BILLS: FixedBill[] = [
   { id: 'bill-internet', name: 'Internet', icon: '📡', amount: 200000, dueDay: 20, isPaid: false },
 ];
 
+const isDemoSeed = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+
 export const useFinanceStore = create<FinanceState>((set, get) => ({
-  transactions: generateSeedData(),
-  mainBalance: 15000000,
-  emergencyBalance: 5000000,
-  billFundBalance: 8500000, // Demo: partially funded
+  transactions: isDemoSeed ? generateSeedData() : [],
+  mainBalance: isDemoSeed ? 15000000 : 0,
+  emergencyBalance: isDemoSeed ? 5000000 : 0,
+  billFundBalance: isDemoSeed ? 8500000 : 0,
   fixedBills: SEED_BILLS,
   billSnapshots: [],
 

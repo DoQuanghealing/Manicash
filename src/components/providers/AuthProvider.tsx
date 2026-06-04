@@ -6,19 +6,10 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { onAuthStateChanged, fetchUserProfile } from '@/lib/firebase/auth';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { setFirebaseUser, setUserProfile, setLoading, isDemoMode } = useAuthStore();
+  const { setFirebaseUser, setUserProfile, setLoading } = useAuthStore();
 
   useEffect(() => {
-    // Skip Firebase auth listener when in demo mode
-    if (isDemoMode) {
-      setLoading(false);
-      return;
-    }
-
     const unsubscribe = onAuthStateChanged(async (firebaseUser) => {
-      // Double-check demo mode hasn't been set while listener was pending
-      if (useAuthStore.getState().isDemoMode) return;
-
       if (firebaseUser) {
         setFirebaseUser({
           uid: firebaseUser.uid,
@@ -45,7 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => unsubscribe();
-  }, [setFirebaseUser, setUserProfile, setLoading, isDemoMode]);
+  }, [setFirebaseUser, setUserProfile, setLoading]);
 
   return <>{children}</>;
 }

@@ -28,12 +28,10 @@ interface AuthStore {
   firebaseUser: FirebaseUserMinimal | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  isDemoMode: boolean;
 
   setFirebaseUser: (user: FirebaseUserMinimal | null) => void;
   setUserProfile: (profile: UserProfile | null) => void;
   setLoading: (loading: boolean) => void;
-  setDemoMode: (isDemo: boolean) => void;
   logout: () => void;
 
   /**
@@ -67,7 +65,6 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   firebaseUser: null,
   isLoading: true,
   isAuthenticated: false,
-  isDemoMode: false,
 
   setFirebaseUser: (firebaseUser) =>
     set({
@@ -81,16 +78,12 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   setLoading: (isLoading) =>
     set({ isLoading }),
 
-  setDemoMode: (isDemoMode) =>
-    set({ isDemoMode }),
-
   logout: () =>
     set({
       user: null,
       firebaseUser: null,
       isAuthenticated: false,
       isLoading: false,
-      isDemoMode: false,
     }),
 
   awardXP: (action) => {

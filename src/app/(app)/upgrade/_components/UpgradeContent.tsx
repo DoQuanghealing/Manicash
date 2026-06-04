@@ -130,7 +130,7 @@ export default function UpgradeContent() {
 
       <p className="upgrade-footnote">
         Thanh toán qua Google Play. Có thể huỷ bất cứ lúc nào trong cài đặt cửa hàng.
-        {!isMonetizationEnabled() && ' (Môi trường demo: thanh toán đang ở chế độ thử.)'}
+        {!isMonetizationEnabled() && ' (Tính năng thanh toán chưa được kích hoạt.)'}
       </p>
     </div>
   );

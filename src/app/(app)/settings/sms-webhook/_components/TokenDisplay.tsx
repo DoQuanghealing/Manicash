@@ -50,7 +50,7 @@ export default function TokenDisplay() {
     try {
       const idToken = await getFirebaseAuth().currentUser?.getIdToken();
       if (!idToken) {
-        setError('Cần đăng nhập Firebase để tạo token (demo mode chưa hỗ trợ).');
+        setError('Cần đăng nhập để có thể tạo token.');
         return;
       }
       const res = await fetch('/api/webhook-token', {
