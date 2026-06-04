@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7C3AED"/>
+      <stop offset="100%" stop-color="#F97316"/>
+    </linearGradient>
+    <linearGradient id="crown" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FBBF24"/>
+      <stop offset="100%" stop-color="#F59E0B"/>
+    </linearGradient>
+  </defs>
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="256" fill="url(#bg)"/>
+  <!-- Crown shape -->
+  <path d="
+    M 148 320
+    L 172 200
+    L 220 256
+    L 256 160
+    L 292 256
+    L 340 200
+    L 364 320
+    Z
+  " fill="url(#crown)" stroke="#fff" stroke-width="6" stroke-linejoin="round"/>
+  <!-- Crown gems -->
+  <circle cx="256" cy="155" r="14" fill="#fff" opacity="0.9"/>
+  <circle cx="168" cy="195" r="10" fill="#fff" opacity="0.7"/>
+  <circle cx="344" cy="195" r="10" fill="#fff" opacity="0.7"/>
+  <!-- Bottom bar -->
+  <rect x="148" y="328" width="216" height="24" rx="12" fill="#fff" opacity="0.9"/>
+</svg>

@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "generate-icons": "node scripts/generate-pwa-icons.mjs",
     "start": "next start",
     "lint": "eslint",
     "test": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/phase1-foundation.test.ts'))\"",

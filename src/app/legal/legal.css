@@ -1,0 +1,113 @@
+/* ═══ Legal pages — minimal, readable, no app shell ═══ */
+.legal-shell {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: #0A0A12;
+  color: #F4F4F5;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.legal-header {
+  padding: 16px 24px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.legal-logo {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #F4F4F5;
+  text-decoration: none;
+}
+
+.legal-content {
+  flex: 1;
+  max-width: 720px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 40px 24px 60px;
+}
+
+.legal-content h1 {
+  font-size: 1.75rem;
+  font-weight: 800;
+  margin-bottom: 8px;
+  line-height: 1.2;
+}
+
+.legal-content .legal-meta {
+  font-size: 0.8125rem;
+  color: #71717A;
+  margin-bottom: 40px;
+}
+
+.legal-content h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-top: 40px;
+  margin-bottom: 12px;
+  color: #A78BFA;
+}
+
+.legal-content p {
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: #A1A1AA;
+  margin-bottom: 14px;
+}
+
+.legal-content ul {
+  list-style: disc;
+  padding-left: 24px;
+  margin-bottom: 14px;
+}
+
+.legal-content li {
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: #A1A1AA;
+  margin-bottom: 6px;
+}
+
+.legal-content a {
+  color: #A78BFA;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.legal-content strong {
+  color: #F4F4F5;
+  font-weight: 600;
+}
+
+.legal-content .legal-note {
+  padding: 16px 20px;
+  border: 1px solid rgba(124,58,237,0.3);
+  border-radius: 10px;
+  background: rgba(124,58,237,0.08);
+  margin: 24px 0;
+}
+
+.legal-footer {
+  padding: 20px 24px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 0.8125rem;
+  color: #52525B;
+}
+
+.legal-footer nav {
+  display: flex;
+  gap: 16px;
+}
+
+.legal-footer a {
+  color: #71717A;
+  text-decoration: none;
+}
+
+.legal-footer a:hover { color: #A1A1AA; }

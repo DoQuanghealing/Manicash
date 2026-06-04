@@ -312,6 +312,19 @@ export default function ProfileContent() {
         })}
       </section>
 
+      {/* ═══ Legal links ═══ */}
+      <section className="profile-legal">
+        <h2 className="profile-section-title">Pháp lý</h2>
+        <Link href="/legal/privacy" className="profile-legal-link">
+          <span>Chính sách quyền riêng tư</span>
+          <ChevronRight size={16} />
+        </Link>
+        <Link href="/legal/terms" className="profile-legal-link">
+          <span>Điều khoản sử dụng</span>
+          <ChevronRight size={16} />
+        </Link>
+      </section>
+
       {/* ═══ Danger zone ═══ */}
       <section className="profile-danger">
         <h2 className="profile-section-title">Vùng nguy hiểm</h2>

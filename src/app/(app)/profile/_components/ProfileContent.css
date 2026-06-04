@@ -595,3 +595,28 @@
   flex: 0 0 auto;
   color: var(--c-text-muted);
 }
+
+/* ─── Legal section ─── */
+.profile-legal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.profile-legal-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  background: var(--glass-bg);
+  color: var(--c-text-secondary);
+  font-size: var(--text-sm);
+  transition: background var(--duration-fast);
+}
+
+.profile-legal-link:hover {
+  background: var(--glass-bg-hover);
+  color: var(--c-text-primary);
+}

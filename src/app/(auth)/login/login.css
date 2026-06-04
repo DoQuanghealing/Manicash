@@ -220,6 +220,16 @@
   line-height: 1.6;
 }
 
+.login-legal {
+  margin-top: 6px;
+}
+
+.login-legal a {
+  color: var(--c-purple-light);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 /* ═══ Loading spinner ═══ */
 .login-spinner {
   width: 18px;

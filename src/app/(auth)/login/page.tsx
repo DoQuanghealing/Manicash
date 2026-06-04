@@ -40,6 +40,12 @@ export default function LoginPage() {
       {/* Footer */}
       <div className="login-footer">
         <p>Bảo mật bằng Google Authentication</p>
+        <p className="login-legal">
+          Tiếp tục đồng nghĩa với việc đồng ý{' '}
+          <a href="/legal/terms" target="_blank" rel="noopener noreferrer">Điều khoản</a>
+          {' '}và{' '}
+          <a href="/legal/privacy" target="_blank" rel="noopener noreferrer">Quyền riêng tư</a>
+        </p>
       </div>
     </div>
   );

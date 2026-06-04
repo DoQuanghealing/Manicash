@@ -27,6 +27,20 @@ export const metadata: Metadata = {
     'Ứng dụng quản lý tài chính cá nhân với AI quản gia — kiếm nhiều hơn, chi ít hơn, sống tốt hơn. Hệ thống gamification với 7 cấp rank, nhiệm vụ kiếm tiền, và bài tập kỷ luật tài chính.',
   keywords: ['quản lý tài chính', 'tiết kiệm', 'kiếm tiền', 'AI', 'gamification'],
   authors: [{ name: 'ManiCash Team' }],
+  manifest: '/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'ManiCash',
+  },
+  icons: {
+    icon: [
+      { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: [{ url: '/icons/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
+    shortcut: '/icons/icon-192.png',
+  },
   openGraph: {
     title: 'ManiCash — Quản Gia Tài Chính Thông Minh',
     description: 'Kiếm nhiều hơn. Chi ít hơn. Sống tốt hơn.',
