@@ -2,12 +2,14 @@
 import {
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithCredential,
   signOut as firebaseSignOut,
   onAuthStateChanged as firebaseOnAuthStateChanged,
   type User,
   type Unsubscribe,
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { Capacitor } from '@capacitor/core';
 import { getFirebaseAuth, getFirebaseDB } from './config';
 import type { UserProfile } from '@/types/user';
 
@@ -15,21 +17,43 @@ const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 
 /**
- * Sign in with Google popup
+ * Sign in with Google.
+ * - Web: signInWithPopup (flow hiện tại).
+ * - Native (Capacitor WebView): signInWithPopup bị block → dùng plugin native
+ *   lấy Google credential rồi đăng nhập JS SDK qua signInWithCredential.
+ *   capacitor.config đặt skipNativeAuth=true nên chỉ JS SDK giữ session →
+ *   Firestore (JS SDK) hoạt động bình thường, không cần sync 2 lớp.
  */
 export async function signInWithGoogle(): Promise<User> {
   const auth = getFirebaseAuth();
-  const result = await signInWithPopup(auth, googleProvider);
-  await ensureUserDocument(result.user);
-  return result.user;
+  let user: User;
+
+  if (Capacitor.isNativePlatform()) {
+    const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
+    const result = await FirebaseAuthentication.signInWithGoogle();
+    const idToken = result.credential?.idToken;
+    if (!idToken) throw new Error('NATIVE_GOOGLE_NO_ID_TOKEN');
+    const credential = GoogleAuthProvider.credential(idToken);
+    const userCred = await signInWithCredential(auth, credential);
+    user = userCred.user;
+  } else {
+    const result = await signInWithPopup(auth, googleProvider);
+    user = result.user;
+  }
+
+  await ensureUserDocument(user);
+  return user;
 }
 
 /**
- * Sign out
+ * Sign out — native cần sign out cả lớp plugin trước khi sign out JS SDK.
  */
 export async function signOut(): Promise<void> {
-  const auth = getFirebaseAuth();
-  await firebaseSignOut(auth);
+  if (Capacitor.isNativePlatform()) {
+    const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
+    await FirebaseAuthentication.signOut();
+  }
+  await firebaseSignOut(getFirebaseAuth());
 }
 
 /**

@@ -11,9 +11,11 @@ import StreakShieldToast from '@/components/ui/StreakShieldToast';
 import QuestCompletionPopup from '@/components/ui/QuestCompletionPopup';
 import QuestHintBar from '@/components/ui/QuestHintBar';
 import AccountDeletionGate from '@/components/ui/AccountDeletionGate';
+import { AuthGuard } from '@/components/providers/AuthGuard';
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
+    <AuthGuard>
     <AccountDeletionGate>
       <div className="desktop-wrapper">
         <div className="mobile-shell">
@@ -54,5 +56,6 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         </div>
       </div>
     </AccountDeletionGate>
+    </AuthGuard>
   );
 }

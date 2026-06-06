@@ -25,6 +25,7 @@
     "test:phase2": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/phase2-backdate.test.ts'))\""
   },
   "dependencies": {
+    "@capacitor-firebase/authentication": "^8.3.0",
     "@capacitor/android": "^8.4.0",
     "@capacitor/app": "^8.1.0",
     "@capacitor/cli": "^8.4.0",

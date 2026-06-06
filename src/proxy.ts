@@ -34,6 +34,27 @@ const RANK_GATED_COURSES: Record<string, string> = {
 
 const RANK_HIERARCHY = ['iron', 'bronze', 'silver', 'gold', 'platinum', 'emerald', 'diamond'];
 
+/* ── CORS: cho phép app mobile (Capacitor) gọi API cross-origin ── */
+const ALLOWED_ORIGINS = new Set([
+  'https://localhost', // Capacitor Android (androidScheme: 'https')
+  'capacitor://localhost', // iOS (v2)
+  'http://localhost:3000', // dev: test mobile against local API
+]);
+
+/** Trả về CORS headers nếu origin nằm trong allowlist; rỗng nếu không. */
+function corsHeaders(origin: string | null): Record<string, string> {
+  if (origin && ALLOWED_ORIGINS.has(origin)) {
+    return {
+      'Access-Control-Allow-Origin': origin,
+      'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Max-Age': '86400',
+      Vary: 'Origin',
+    };
+  }
+  return {};
+}
+
 /* ── Get real IP from request ── */
 function getClientIP(req: NextRequest): string {
   const forwarded = req.headers.get('x-forwarded-for');
@@ -46,6 +67,13 @@ function getClientIP(req: NextRequest): string {
 /* ═══ Main Proxy Function (Next.js 16 convention) ═══ */
 export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
+  const origin = req.headers.get('origin');
+  const isApi = pathname.startsWith('/api/');
+
+  // CORS preflight cho API — trả lời trước mọi ban/rate-limit/skip check
+  if (isApi && req.method === 'OPTIONS') {
+    return new NextResponse(null, { status: 204, headers: corsHeaders(origin) });
+  }
 
   // Skip static assets and internal routes
   if (SKIP_RATE_LIMIT_PREFIXES.some((p) => pathname.startsWith(p))) {
@@ -181,6 +209,12 @@ export function proxy(req: NextRequest) {
   const response = NextResponse.next();
   response.headers.set('X-RateLimit-Remaining', String(ipCheck.remaining));
   response.headers.set('X-RateLimit-Limit', '30');
+  // CORS cho API response thành công (mobile gọi cross-origin)
+  if (isApi) {
+    for (const [k, v] of Object.entries(corsHeaders(origin))) {
+      response.headers.set(k, v);
+    }
+  }
   return response;
 }
 

@@ -3,6 +3,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Capacitor } from '@capacitor/core';
 import { signInWithGoogle } from '@/lib/firebase/auth';
 import { useAudio } from '@/hooks/useAudio';
 import { apiUrl } from '@/lib/apiBase';
@@ -46,18 +47,23 @@ export default function LoginForm() {
     try {
       const user = await signInWithGoogle();
 
-      const sessionResponse = await fetch(apiUrl('/api/auth/session'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'login',
-          uid: user.uid,
-          rank: 'iron',
-        }),
-      });
+      // Web: set session cookie để proxy guard server-side. Native (mobile):
+      // không có proxy/cookie cùng origin (API ở remote) → guard client-side
+      // bằng Firebase auth state, bỏ qua bước này.
+      if (!Capacitor.isNativePlatform()) {
+        const sessionResponse = await fetch(apiUrl('/api/auth/session'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'login',
+            uid: user.uid,
+            rank: 'iron',
+          }),
+        });
 
-      if (!sessionResponse.ok) {
-        throw new Error(`SESSION_FAILED_${sessionResponse.status}`);
+        if (!sessionResponse.ok) {
+          throw new Error(`SESSION_FAILED_${sessionResponse.status}`);
+        }
       }
 
       play('levelUp');

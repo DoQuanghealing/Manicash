@@ -30,6 +30,12 @@ const config: CapacitorConfig = {
       // backgroundColor chỉ áp dụng khi statusbar KHÔNG overlay (Android < 15)
       overlaysWebView: false,
     },
+    FirebaseAuthentication: {
+      // skipNativeAuth: chỉ lấy Google credential ở native rồi đăng nhập JS SDK
+      // (signInWithCredential) → Firestore qua JS SDK hoạt động, không cần sync 2 lớp.
+      skipNativeAuth: true,
+      providers: ['google.com'],
+    },
   },
 };
 
