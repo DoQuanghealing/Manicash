@@ -1,6 +1,6 @@
 # ManiCash AI Money Chat Roadmap
 
-Last updated: 2026-06-01
+Last updated: 2026-06-05
 
 ## Muc dich tai lieu
 
@@ -44,6 +44,18 @@ Doc docs/AI_MONEY_CHAT_ROADMAP.md roi tiep tuc phase dang lam.
 - Phase 14 (Earning Planner) da hoan thanh ngay 2026-06-02: `src/lib/aiMoneyChat/earningPlanner.ts` (detect intent + parse amount/duration/worktype + suggest checklist), tich hop draft card trong `/chat` luu vao `useTaskStore`. Test: `npm run test:ai-earning`.
 - Phase 15 (QA & Store readiness) da hoan thanh phan analytics + QA ngay 2026-06-02: them `src/lib/analytics/events.ts` (trackEvent production-safe, gate bang NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID), wire event chat_parse/chat_confirm/chat_correction/ai_fallback/cfo_narration/cfo_report_view/report_export/earning_task_created/reconciliation_check; them `test:ai-all` aggregate + `test:analytics`. Test parser/quota tieng Viet pass.
 - Phase 10 (Receipt scan): HOAN lai theo quyet dinh 2026-06-02 (uu tien chot san pham ban duoc truoc). Khi lam: chot huong OCR (tesseract.js client mien phi vs cloud vision + credit).
+- PLAN.md Phase 2 (Remove dev surface) da hoan thanh TOAN BO ngay 2026-06-05:
+  - Phase 2.1: Dev Bypass Login da xoa.
+  - Phase 2.2: SMS Webhook da an sau feature flag `isSmsWebhookEnabled()`.
+  - Phase 2.3: Seed data (transactions, balances, budgets) da gate sau `NEXT_PUBLIC_DEMO_MODE=true`.
+  - Phase 2.4: Audit UI strings sach.
+  - Phase 2.5 Acceptance: 3/3 check pass. Da push len GitHub branch `codex/ai-money-chat`.
+  - Bonus: Xoa dead code `isDemoMode`/`setDemoMode` khoi `useAuthStore` va `AuthProvider`.
+- Bug fixes ngay 2026-06-05:
+  - Them `suppressHydrationWarning` vao `<body>` trong `layout.tsx` (browser extension inject attributes).
+  - Fix `useProStatus` infinite loop bang `useShallow` (Zustand selector tra object moi moi lan).
+  - `.env.local`: da them day du 6 Firebase Client SDK keys (`NEXT_PUBLIC_FIREBASE_*`).
+- Viec tiep theo: PLAN.md Phase 3 (Compliance content) — Privacy Policy, ToS, account deletion flow (da co san mot phan, can kiem tra lai).
 - Da trien khai truoc do tren `main`:
   - Dang xuat.
   - Yeu cau xoa tai khoan.
