@@ -65,7 +65,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="vi" className={`${inter.variable} ${outfit.variable}`} data-theme="dark" suppressHydrationWarning>
-      <body>
+      <body suppressHydrationWarning>
         <AuthProvider>
           <FinanceCorePersistenceProvider>
             <ThemeProvider>{children}</ThemeProvider>

@@ -129,6 +129,53 @@
   opacity: 0.45;
 }
 
+/* Export section */
+.acct-del-export {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid rgba(124, 58, 237, 0.25);
+  border-radius: 10px;
+  background: rgba(124, 58, 237, 0.07);
+  margin-bottom: 14px;
+}
+
+.acct-del-export-label {
+  font-size: 0.875rem;
+  color: #a1a1aa;
+  margin: 0;
+}
+
+.acct-del-export-done {
+  color: #22c55e;
+  font-weight: 600;
+}
+
+.acct-del-export-btn {
+  flex-shrink: 0;
+  padding: 6px 14px;
+  border-radius: 7px;
+  border: 1px solid rgba(124, 58, 237, 0.5);
+  background: rgba(124, 58, 237, 0.15);
+  color: #a78bfa;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.acct-del-export-btn:hover {
+  background: rgba(124, 58, 237, 0.28);
+}
+
+.acct-del-export-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 [data-theme="light"] .acct-del-panel {
   background: #fff;
   color: #18181b;

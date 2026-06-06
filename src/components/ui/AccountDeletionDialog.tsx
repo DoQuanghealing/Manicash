@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { getFirebaseAuth } from '@/lib/firebase/config';
 import { signOut as firebaseSignOut } from '@/lib/firebase/auth';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { downloadUserDataJSON } from '@/lib/exportUserData';
 import './AccountDeletionDialog.css';
 
 interface Props {
@@ -22,6 +23,8 @@ export default function AccountDeletionDialog({ isOpen, onClose }: Props) {
   const [reason, setReason] = useState('');
   const [confirmed, setConfirmed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportDone, setExportDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const logout = useAuthStore((state) => state.logout);
 
@@ -80,6 +83,30 @@ export default function AccountDeletionDialog({ isOpen, onClose }: Props) {
           <span>Dữ liệu tài chính, mục tiêu, wishlist và nhiệm vụ sẽ bị xóa.</span>
           <span>Webhook token và giao dịch đang chờ sẽ bị xóa.</span>
           <span>Sau ngày xóa dự kiến, tài khoản không thể khôi phục.</span>
+        </div>
+
+        {/* Export data before deletion */}
+        <div className="acct-del-export">
+          <p className="acct-del-export-label">
+            💾 Tải dữ liệu trước khi xóa
+            {exportDone && <span className="acct-del-export-done"> ✓ Đã tải</span>}
+          </p>
+          <button
+            type="button"
+            className="acct-del-export-btn"
+            disabled={isExporting}
+            onClick={() => {
+              setIsExporting(true);
+              try {
+                downloadUserDataJSON();
+                setExportDone(true);
+              } finally {
+                setIsExporting(false);
+              }
+            }}
+          >
+            {isExporting ? 'Đang xuất...' : 'Tải JSON'}
+          </button>
         </div>
 
         <label className="acct-del-field">

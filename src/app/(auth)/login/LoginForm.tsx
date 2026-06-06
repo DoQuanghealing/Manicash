@@ -28,7 +28,8 @@ function getLoginErrorMessage(error: unknown): string | null {
     return 'Firebase chưa cho phép tạo/cập nhật hồ sơ người dùng. Kiểm tra Firestore Rules cho collection users.';
   }
 
-  return 'Không thể đăng nhập. Vui lòng thử lại.';
+  const devSuffix = process.env.NODE_ENV === 'development' && code ? ` [${code}]` : '';
+  return `Không thể đăng nhập. Vui lòng thử lại.${devSuffix}`;
 }
 
 export default function LoginForm() {

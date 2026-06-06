@@ -1,5 +1,6 @@
 'use client';
 
+import { useShallow } from 'zustand/react/shallow';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { getProStatus, isProActive, type ProStatus } from '@/lib/monetization/entitlement';
 
@@ -10,5 +11,5 @@ export function useIsPro(): boolean {
 
 /** Full Pro status (tier, expiry, days remaining, enforced) for the current user. */
 export function useProStatus(): ProStatus {
-  return useAuthStore((s) => getProStatus(s.user));
+  return useAuthStore(useShallow((s) => getProStatus(s.user)));
 }
