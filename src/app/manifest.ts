@@ -2,15 +2,17 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'ManiCash — Quản Gia Tài Chính',
+    name: 'ManiCash — Butler tài chính cá nhân',
     short_name: 'ManiCash',
-    description: 'Quản lý tài chính cá nhân với AI quản gia — kiếm nhiều hơn, chi ít hơn, sống tốt hơn.',
-    start_url: '/',
+    description: 'Quản lý tài chính cá nhân với AI CFO — kiếm nhiều hơn, chi ít hơn, sống tốt hơn.',
+    start_url: '/overview',
+    scope: '/',
     display: 'standalone',
     orientation: 'portrait',
     background_color: '#0A0A12',
     theme_color: '#7C3AED',
     lang: 'vi',
+    dir: 'ltr',
     categories: ['finance', 'productivity'],
     icons: [
       {

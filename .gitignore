@@ -50,3 +50,11 @@ next-env.d.ts
 
 # dev server logs
 .next-dev.*.log
+
+# PWA: workbox/fallback files generated at build time — NOT sw.js (handwritten, committed)
+public/workbox-*.js
+public/workbox-*.js.map
+public/fallback-*.js
+public/fallback-*.js.map
+public/swe-worker-*.js
+public/swe-worker-*.js.map

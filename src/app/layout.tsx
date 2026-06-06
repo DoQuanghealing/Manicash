@@ -4,6 +4,7 @@ import { Inter, Outfit } from 'next/font/google';
 import { AuthProvider } from '@/components/providers/AuthProvider';
 import { FinanceCorePersistenceProvider } from '@/components/providers/FinanceCorePersistenceProvider';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
+import { ServiceWorkerProvider } from '@/components/providers/ServiceWorkerProvider';
 import './globals.css';
 
 const inter = Inter({
@@ -54,7 +55,10 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: '#0A0A12',
+  themeColor: [
+    { media: '(prefers-color-scheme: dark)', color: '#7C3AED' },
+    { media: '(prefers-color-scheme: light)', color: '#7C3AED' },
+  ],
   colorScheme: 'dark light',
 };
 
@@ -66,6 +70,7 @@ export default function RootLayout({
   return (
     <html lang="vi" className={`${inter.variable} ${outfit.variable}`} data-theme="dark" suppressHydrationWarning>
       <body suppressHydrationWarning>
+        <ServiceWorkerProvider />
         <AuthProvider>
           <FinanceCorePersistenceProvider>
             <ThemeProvider>{children}</ThemeProvider>
