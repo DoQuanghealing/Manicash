@@ -16,7 +16,7 @@ export default function DeleteRequestPage() {
   return (
     <div className="legal-shell">
       <header className="legal-header">
-        <a href="/" className="legal-logo">💎 ManiCash</a>
+        <Link href="/" className="legal-logo">💎 ManiCash</Link>
       </header>
 
       <main className="legal-content">
@@ -43,7 +43,7 @@ export default function DeleteRequestPage() {
             Vào tab <strong>Hồ sơ</strong> (biểu tượng người dùng góc trên phải)
           </li>
           <li style={{ color: '#A1A1AA', fontSize: '0.9375rem', lineHeight: '1.7', marginBottom: '6px' }}>
-            Kéo xuống dưới cùng, chọn <strong>"Yêu cầu xóa tài khoản"</strong>
+            Kéo xuống dưới cùng, chọn <strong>“Yêu cầu xóa tài khoản”</strong>
           </li>
           <li style={{ color: '#A1A1AA', fontSize: '0.9375rem', lineHeight: '1.7', marginBottom: '6px' }}>
             Tải xuống dữ liệu nếu muốn, sau đó xác nhận yêu cầu
@@ -96,8 +96,8 @@ export default function DeleteRequestPage() {
       <footer className="legal-footer">
         <p>© {new Date().getFullYear()} ManiCash.</p>
         <nav>
-          <a href="/legal/privacy">Quyền riêng tư</a>
-          <a href="/legal/terms">Điều khoản</a>
+          <Link href="/legal/privacy">Quyền riêng tư</Link>
+          <Link href="/legal/terms">Điều khoản</Link>
         </nav>
       </footer>
     </div>

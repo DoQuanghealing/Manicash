@@ -1,5 +1,6 @@
 /* Offline fallback page — hiển thị khi mất kết nối và tài nguyên chưa được cache */
 import type { Metadata } from 'next';
+import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'Mất kết nối — ManiCash',
@@ -36,7 +37,7 @@ export default function OfflinePage() {
       <p style={{ margin: 0, color: '#a1a1aa', fontSize: '0.9375rem', maxWidth: '320px' }}>
         ManiCash cần internet để hoạt động. Kiểm tra kết nối và thử lại nhé.
       </p>
-      <a
+      <Link
         href="/"
         style={{
           marginTop: '8px',
@@ -52,7 +53,7 @@ export default function OfflinePage() {
         }}
       >
         Thử lại
-      </a>
+      </Link>
     </div>
   );
 }

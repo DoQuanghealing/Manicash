@@ -90,7 +90,7 @@ export default function PrivacyPage() {
 
       <div className="legal-note">
         <strong>Về AI và dữ liệu tài chính:</strong> Khi bạn yêu cầu phân tích AI, chúng tôi chỉ
-        gửi các con số tổng hợp (ví dụ: "Thu nhập tháng: 15.000.000 VND, Chi tiêu: 9.000.000 VND").
+        gửi các con số tổng hợp (ví dụ: “Thu nhập tháng: 15.000.000 VND, Chi tiêu: 9.000.000 VND”).
         Chúng tôi <em>không</em> gửi nội dung ghi chú giao dịch, tên người, hay bất kỳ thông tin
         định danh nào đến Groq.
       </div>
@@ -119,7 +119,7 @@ export default function PrivacyPage() {
         <li><strong>Sửa:</strong> Cập nhật thông tin hồ sơ bất kỳ lúc nào</li>
         <li>
           <strong>Xóa:</strong> Yêu cầu xóa toàn bộ tài khoản và dữ liệu qua trang Hồ sơ →
-          "Xóa tài khoản", hoặc gửi email đến{' '}
+          “Xóa tài khoản”, hoặc gửi email đến{' '}
           <a href="mailto:privacy@manicash.app">privacy@manicash.app</a>
         </li>
         <li><strong>Phản đối xử lý:</strong> Liên hệ chúng tôi nếu bạn không đồng ý với cách dữ liệu được dùng</li>
@@ -142,7 +142,7 @@ export default function PrivacyPage() {
       <p>
         Chúng tôi có thể cập nhật chính sách này. Khi có thay đổi quan trọng, chúng tôi sẽ thông
         báo qua email hoặc thông báo trong ứng dụng ít nhất 7 ngày trước khi có hiệu lực. Ngày
-        "Cập nhật lần cuối" ở đầu trang luôn phản ánh phiên bản mới nhất.
+        “Cập nhật lần cuối” ở đầu trang luôn phản ánh phiên bản mới nhất.
       </p>
 
       <h2>10. Liên hệ</h2>
