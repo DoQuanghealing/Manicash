@@ -6,6 +6,7 @@
  */
 
 import { PRO_PRODUCT_ID, type Tier } from './entitlement';
+import { apiUrl } from '@/lib/apiBase';
 
 export interface PurchaseResult {
   ok: boolean;
@@ -55,7 +56,7 @@ export async function purchasePro(): Promise<PurchaseResult> {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (token) headers.Authorization = `Bearer ${token}`;
 
-    const response = await fetch('/api/billing/verify', {
+    const response = await fetch(apiUrl('/api/billing/verify'), {
       method: 'POST',
       headers,
       body: JSON.stringify(purchase),

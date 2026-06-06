@@ -1,4 +1,5 @@
 import type { ParsedMoneyIntent } from './types';
+import { apiUrl } from '@/lib/apiBase';
 
 export interface AiMoneyFallbackClientResult {
   intent: ParsedMoneyIntent | null;
@@ -23,7 +24,7 @@ export async function requestAiMoneyFallback(
       headers.Authorization = `Bearer ${token}`;
     }
 
-    const response = await fetch('/api/ai-money-chat/parse', {
+    const response = await fetch(apiUrl('/api/ai-money-chat/parse'), {
       method: 'POST',
       headers,
       body: JSON.stringify({

@@ -12,6 +12,7 @@
 
 import { useCallback, useRef, useState } from 'react';
 import type { CFOInsight, CFOPayload } from '@/lib/groqClient';
+import { apiUrl } from '@/lib/apiBase';
 
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1h
 const STORAGE_PREFIX = 'manicash:cfo:';
@@ -167,7 +168,7 @@ export function useCFOReport(): UseCFOReportReturn {
       setError(null);
 
       try {
-        const res = await fetch('/api/cfo', {
+        const res = await fetch(apiUrl('/api/cfo'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),

@@ -6,6 +6,7 @@ import { getFirebaseAuth } from '@/lib/firebase/config';
 import { signOut as firebaseSignOut } from '@/lib/firebase/auth';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { downloadUserDataJSON } from '@/lib/exportUserData';
+import { apiUrl } from '@/lib/apiBase';
 import './AccountDeletionDialog.css';
 
 interface Props {
@@ -37,7 +38,7 @@ export default function AccountDeletionDialog({ isOpen, onClose }: Props) {
 
     try {
       const token = await getIdToken();
-      const res = await fetch('/api/account/deletion', {
+      const res = await fetch(apiUrl('/api/account/deletion'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

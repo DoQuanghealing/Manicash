@@ -1,5 +1,8 @@
 import type { MetadataRoute } from 'next';
 
+// Static export cần manifest là static (không đọc Request). Vô hại cho web build.
+export const dynamic = 'force-static';
+
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'ManiCash — Butler tài chính cá nhân',

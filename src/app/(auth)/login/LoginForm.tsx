@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { signInWithGoogle } from '@/lib/firebase/auth';
 import { useAudio } from '@/hooks/useAudio';
+import { apiUrl } from '@/lib/apiBase';
 
 function getLoginErrorMessage(error: unknown): string | null {
   const code = typeof error === 'object' && error !== null && 'code' in error
@@ -45,7 +46,7 @@ export default function LoginForm() {
     try {
       const user = await signInWithGoogle();
 
-      const sessionResponse = await fetch('/api/auth/session', {
+      const sessionResponse = await fetch(apiUrl('/api/auth/session'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -4,6 +4,7 @@ import {
   type CfoNarrationInput,
   type CfoNarrationResult,
 } from './cfoNarration';
+import { apiUrl } from '@/lib/apiBase';
 
 const LOCAL_CACHE_KEY = 'manicash_cfo_narration_v1';
 
@@ -66,7 +67,7 @@ export async function requestCfoNarration(input: CfoNarrationInput): Promise<Cfo
       headers.Authorization = `Bearer ${token}`;
     }
 
-    const response = await fetch('/api/ai-money-chat/cfo-narration', {
+    const response = await fetch(apiUrl('/api/ai-money-chat/cfo-narration'), {
       method: 'POST',
       headers,
       body: JSON.stringify(input),

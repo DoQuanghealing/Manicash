@@ -5,6 +5,7 @@ import { signOut as firebaseSignOut } from '@/lib/firebase/auth';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useRouter } from 'next/navigation';
 import { useCallback } from 'react';
+import { apiUrl } from '@/lib/apiBase';
 
 export function useSignOut() {
   const { logout } = useAuthStore();
@@ -13,7 +14,7 @@ export function useSignOut() {
   const handleSignOut = useCallback(async () => {
     try {
       // Clear session cookie
-      await fetch('/api/auth/session', {
+      await fetch(apiUrl('/api/auth/session'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'logout' }),

@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:mobile": "node scripts/build-mobile.mjs",
     "generate-icons": "node scripts/generate-pwa-icons.mjs",
     "start": "next start",
     "lint": "eslint",

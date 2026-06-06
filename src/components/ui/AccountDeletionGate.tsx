@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { getFirebaseAuth } from '@/lib/firebase/config';
 import { signOut as firebaseSignOut } from '@/lib/firebase/auth';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { apiUrl } from '@/lib/apiBase';
 import './AccountDeletionGate.css';
 
 interface Props {
@@ -63,7 +64,7 @@ export default function AccountDeletionGate({ children }: Props) {
     setError(null);
     try {
       const token = await getIdToken();
-      const res = await fetch('/api/account/deletion', {
+      const res = await fetch(apiUrl('/api/account/deletion'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -91,7 +92,7 @@ export default function AccountDeletionGate({ children }: Props) {
 
   async function continueWaiting() {
     setIsBusy(true);
-    await fetch('/api/auth/session', {
+    await fetch(apiUrl('/api/auth/session'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'logout' }),
@@ -107,7 +108,7 @@ export default function AccountDeletionGate({ children }: Props) {
     setError(null);
     try {
       const token = await getIdToken();
-      const res = await fetch('/api/account/deletion', {
+      const res = await fetch(apiUrl('/api/account/deletion'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { apiUrl } from '@/lib/apiBase';
 import './admin.css';
 
 interface BanRecord {
@@ -45,7 +46,7 @@ export default function AdminDashboardContent() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/admin/bans?key=${encodeURIComponent(adminKey)}`);
+      const res = await fetch(apiUrl(`/api/admin/bans?key=${encodeURIComponent(adminKey)}`));
       if (!res.ok) {
         if (res.status === 401) {
           setError('Sai admin key');
@@ -81,7 +82,7 @@ export default function AdminDashboardContent() {
 
   async function handleUnban(identifier: string, type: 'ip' | 'uid') {
     try {
-      const res = await fetch('/api/admin/bans', {
+      const res = await fetch(apiUrl('/api/admin/bans'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -107,7 +108,7 @@ export default function AdminDashboardContent() {
     }
 
     try {
-      const res = await fetch('/api/admin/bans', {
+      const res = await fetch(apiUrl('/api/admin/bans'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

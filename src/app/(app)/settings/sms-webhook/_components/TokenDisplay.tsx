@@ -12,6 +12,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { getFirebaseDB, getFirebaseAuth } from '@/lib/firebase/config';
 import { useAuthStore } from '@/stores/useAuthStore';
 import type { WebhookToken } from '@/types/webhook';
+import { apiUrl } from '@/lib/apiBase';
 
 const WEBHOOK_URL = `${process.env.NEXT_PUBLIC_APP_URL || 'https://your-domain.com'}/api/sms-webhook`;
 
@@ -53,7 +54,7 @@ export default function TokenDisplay() {
         setError('Cần đăng nhập để có thể tạo token.');
         return;
       }
-      const res = await fetch('/api/webhook-token', {
+      const res = await fetch(apiUrl('/api/webhook-token'), {
         method: 'POST',
         headers: { Authorization: `Bearer ${idToken}` },
       });
