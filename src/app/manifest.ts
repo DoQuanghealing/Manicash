@@ -46,8 +46,8 @@ export default function manifest(): MetadataRoute.Manifest {
     related_applications: [
       {
         platform: 'play',
-        url: 'https://play.google.com/store/apps/details?id=app.manicash',
-        id: 'app.manicash',
+        url: 'https://play.google.com/store/apps/details?id=com.manicash.app',
+        id: 'com.manicash.app',
       },
     ],
     prefer_related_applications: false,
