@@ -51,6 +51,11 @@ next-env.d.ts
 # dev server logs
 .next-dev.*.log
 
+# Android release signing — NEVER commit keystore or its passwords
+*.jks
+*.keystore
+android/keystore.properties
+
 # PWA: workbox/fallback files generated at build time — NOT sw.js (handwritten, committed)
 public/workbox-*.js
 public/workbox-*.js.map

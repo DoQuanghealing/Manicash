@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Capacitor native project — chứa web assets đã build (minified) + gradle
+    "android/**",
   ]),
   {
     // React 19 compiler-era hooks rules flag patterns in several existing
