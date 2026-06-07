@@ -81,8 +81,16 @@ Drive private). Mất keystore = KHÔNG BAO GIỜ update được app trên Play
 
 ## Bước D — Build AAB
 
+**D0. Trỏ mobile tới API đã deploy** (xem `docs/DEPLOY_API.md`):
 ```bash
-npm run build:mobile          # tạo out/ (static export, park api/proxy)
+cp .env.mobile.example .env.mobile     # rồi điền NEXT_PUBLIC_API_BASE_URL=https://<url-vercel>
+```
+Nếu bỏ qua, `build:mobile` cảnh báo vàng và bundle sẽ gọi same-origin → app không
+fetch được API. (Build vẫn chạy để test UI.)
+
+**D1. Build:**
+```bash
+npm run build:mobile          # tạo out/ (in "✓ API base URL" nếu đã set .env.mobile)
 npx cap sync android          # copy out/ + plugin vào android/
 cd android && gradlew.bat bundleRelease
 # → android/app/build/outputs/bundle/release/app-release.aab

@@ -10,11 +10,48 @@
  * Output: out/  (static HTML/JS/CSS) — webDir cho capacitor.config.ts.
  */
 import { execFileSync } from 'node:child_process';
-import { existsSync, renameSync, rmSync } from 'node:fs';
+import { existsSync, readFileSync, renameSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { createRequire } from 'node:module';
 
 const root = process.cwd();
+
+/**
+ * Đọc file .env đơn giản (KEY=VALUE mỗi dòng, bỏ comment). Dùng cho .env.mobile
+ * — config riêng cho mobile build, không ảnh hưởng .env.local của web.
+ */
+function loadEnvFile(path) {
+  const out = {};
+  if (!existsSync(path)) return out;
+  for (const raw of readFileSync(path, 'utf8').split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line || line.startsWith('#')) continue;
+    const eq = line.indexOf('=');
+    if (eq < 0) continue;
+    const key = line.slice(0, eq).trim();
+    let val = line.slice(eq + 1).trim();
+    if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+      val = val.slice(1, -1);
+    }
+    out[key] = val;
+  }
+  return out;
+}
+
+// .env.mobile (gitignored) > shell env. Next không override process.env đã set,
+// nên giá trị này thắng .env.local lúc build.
+const mobileEnv = loadEnvFile(join(root, '.env.mobile'));
+const apiBase = mobileEnv.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || '';
+
+if (!apiBase) {
+  console.warn('\n\x1b[33m⚠️  NEXT_PUBLIC_API_BASE_URL chưa set!\x1b[0m');
+  console.warn('   Bundle mobile sẽ gọi API same-origin (/api/...) → KHÔNG chạy trong Capacitor');
+  console.warn('   (app ở https://localhost, không có /api). Tạo .env.mobile:');
+  console.warn('     NEXT_PUBLIC_API_BASE_URL=https://<url-api-vercel>');
+  console.warn('   Bỏ qua cảnh báo này nếu chỉ build để test UI.\n');
+} else {
+  console.log(`\n\x1b[32m✓ API base URL (mobile): ${apiBase}\x1b[0m\n`);
+}
 
 /** Cặp (live ⇄ park): vị trí thật và vị trí tạm khi build mobile. */
 const PARKED = [
@@ -54,7 +91,7 @@ try {
   const nextBin = require.resolve('next/dist/bin/next');
   execFileSync(process.execPath, [nextBin, 'build'], {
     stdio: 'inherit',
-    env: { ...process.env, BUILD_TARGET: 'mobile' },
+    env: { ...process.env, ...mobileEnv, BUILD_TARGET: 'mobile' },
     cwd: root,
   });
 } finally {
