@@ -128,6 +128,48 @@ describe('AI Money Chat parser - category and safety', () => {
   });
 });
 
+describe('AI Money Chat parser - expanded keywords', () => {
+  it('classifies a brand (Highlands) as coffee', () => {
+    const intent = parseMoneyText('ca phe highlands 60k');
+    expectEqual(intent.category?.categoryId, 'coffee');
+    expectEqual(expectDefined(intent.amount, 'amount').value, 60_000);
+  });
+
+  it('routes perfume to cosmetics, not bills (no bare "nuoc" collision)', () => {
+    const intent = parseMoneyText('mua nuoc hoa 500k');
+    expectEqual(intent.category?.categoryId, 'cosmetics');
+  });
+
+  it('routes water bill to bills via "tien nuoc"', () => {
+    const intent = parseMoneyText('dong tien nuoc 100k');
+    expectEqual(intent.category?.categoryId, 'bills');
+  });
+
+  it('word-boundary: "benh vien" is health, not transport ("be")', () => {
+    const intent = parseMoneyText('kham benh vien 200k');
+    expectEqual(intent.category?.categoryId, 'health');
+  });
+
+  it('classifies pet food as pet', () => {
+    const intent = parseMoneyText('mua thuc an cho meo 150k');
+    expectEqual(intent.category?.categoryId, 'pet');
+  });
+
+  it('parses "m" million suffix (5m) + phone goes to shopping', () => {
+    const intent = parseMoneyText('mua dien thoai 5m');
+    expectEqual(intent.type, 'expense');
+    expectEqual(expectDefined(intent.amount, 'amount').value, 5_000_000);
+    expectEqual(intent.category?.categoryId, 'shopping');
+  });
+
+  it('parses decimal "m" million suffix (1.5m)', () => {
+    const intent = parseMoneyText('nhan luong 1.5m');
+    expectEqual(intent.type, 'income');
+    expectEqual(expectDefined(intent.amount, 'amount').value, 1_500_000);
+    expectEqual(intent.category?.categoryId, 'salary');
+  });
+});
+
 describe('AI Money Chat taxonomy - consistency', () => {
   it('covers all app categories', () => {
     for (const category of [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES]) {

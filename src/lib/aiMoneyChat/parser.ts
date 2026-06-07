@@ -84,7 +84,7 @@ function parseNumber(raw: string): number {
 function parseAmount(input: string): AmountParseResult | undefined {
   const text = normalizeText(input);
 
-  const compactMillionMatch = text.match(/\b(\d+(?:[.,]\d+)?)\s*(tr|trieu)\s*(\d{1,3})?\b/);
+  const compactMillionMatch = text.match(/\b(\d+(?:[.,]\d+)?)\s*(tr|trieu|m)\s*(\d{1,3})?\b/);
   if (compactMillionMatch) {
     const major = parseNumber(compactMillionMatch[1]);
     const minorRaw = compactMillionMatch[3];
@@ -143,12 +143,29 @@ function detectType(text: string): { type?: TxnType; reasons: string[] } {
   return { reasons };
 }
 
+const keywordMatcherCache = new Map<string, RegExp>();
+
+/**
+ * Khớp keyword theo RANH GIỚI TỪ thay vì substring thuần — tránh match nhầm
+ * (vd "be" không còn dính "benh vien", "an" không dính "ban"). Cho phép nạp
+ * bộ keyword phong phú mà không loạn chéo danh mục.
+ */
+function keywordMatches(text: string, keyword: string): boolean {
+  let matcher = keywordMatcherCache.get(keyword);
+  if (!matcher) {
+    const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    matcher = new RegExp(`\\b${escaped}\\b`);
+    keywordMatcherCache.set(keyword, matcher);
+  }
+  return matcher.test(text);
+}
+
 function scoreCategory(text: string, rules: CategoryKeywordRule[]): Array<CategoryKeywordRule & { score: number }> {
   return rules
     .map((rule) => ({
       ...rule,
       score: rule.keywords.reduce((score, keyword) => (
-        text.includes(keyword) ? score + keyword.split(' ').length : score
+        keywordMatches(text, keyword) ? score + keyword.split(' ').length : score
       ), 0),
     }))
     .filter((rule) => rule.score > 0)
