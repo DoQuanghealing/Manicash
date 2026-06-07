@@ -64,3 +64,6 @@ public/fallback-*.js
 public/fallback-*.js.map
 public/swe-worker-*.js
 public/swe-worker-*.js.map
+
+# Superpowers brainstorm mockups (local-only)
+.superpowers/
