@@ -43,12 +43,13 @@
 - **goals monthlyContributionTarget:** thêm field optional; safe-to-spend Phase 1 sẽ trừ contribution/tháng thay vì `currentAmount`.
 
 ## 5. Tests
-- **New tests:** moneybrain-date (22), moneybrain-normalize (4), moneybrain-summary (7), ai-money-spending-period (3) — TDD (RED watched trước GREEN).
+- **New tests (38 assertion):** moneybrain-date (22), moneybrain-normalize (4), moneybrain-summary (7), ai-money-spending-period (5) — TDD (RED watched trước GREEN). Trong đó 2 case last_month-no-data/has-data thêm ở mini-check.
 - **Commands run (project dùng npm + jiti, KHÔNG pnpm):**
   - `npx tsc --noEmit` → exit 0.
   - `npm run test:mb-date | mb-normalize | mb-summary | ai-spending-period | ai-queries | ai-client-snapshot | ai-handlers | ai-cfo-llm | ai-conversation | ai-security | ai-intent`.
   - `npx eslint` trên các file đã đổi → exit 0.
-- **Result:** 11 suite, **135 assertion PASS, 0 FAIL**. tsc 0. eslint 0.
+- **Result:** 11 suite, **134 assertion PASS, 0 FAIL**. tsc 0. eslint 0.
+  (Ghi chú reconcile: lần verify đầu là 132; mini-check THÊM 2 case last_month → 134. Con số "135" ở bản report trước là lỗi cộng tay, KHÔNG mất coverage.)
 
 ## 6. Risks / Follow-up for Phase 1
 - **`buildClientSnapshot` vẫn lọc transactions theo tháng hiện tại (UTC `getCurrentMonthKey`).** Nên `last_month`/giao dịch ngày khác tháng chưa lên snapshot — `detectPeriod` hỗ trợ last_month nhưng dữ liệu chưa đủ. Phase 1: mở rộng cửa sổ snapshot (vd current + last month) hoặc gửi raw rộng hơn.
