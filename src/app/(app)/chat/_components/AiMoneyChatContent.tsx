@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
   ChevronLeft,
@@ -21,6 +21,9 @@ import { shouldRequestAiFallback } from '@/lib/aiMoneyChat/aiFallback';
 import { createDailyCheckIn, type DailyCheckInSlot } from '@/lib/aiMoneyChat/dailyCheckin';
 import { createMoneyReaction } from '@/lib/aiMoneyChat/moneyReaction';
 import { parseMoneyText } from '@/lib/aiMoneyChat/parser';
+import { classifyIntent } from '@/lib/aiMoneyChat/intent/intentClassifier';
+import { buildClientSnapshot } from '@/lib/aiMoneyChat/clientSnapshot';
+import { sendChatMessage } from '@/lib/aiMoneyChat/chatClient';
 import {
   buildEarningTaskDates,
   detectEarningIntent,
@@ -47,6 +50,8 @@ interface ChatMessage {
   id: string;
   role: 'assistant' | 'user' | 'system';
   text: string;
+  /** True nếu text là markdown (báo cáo CFO từ /api/chat) -> render định dạng. */
+  markdown?: boolean;
 }
 
 interface DraftForm {
@@ -74,9 +79,10 @@ interface EarningDraftForm {
 
 const EXAMPLES = [
   'mua tra sua 50k',
-  'di sieu thi het 1300k',
   'nhan luong 20tr',
-  'lam freelance kiem 3tr trong 1 tuan',
+  'toi con bao nhieu tien',
+  'tien dien dong chua',
+  'len bao cao CFO thang nay',
 ];
 
 function makeMessageId(prefix: string): string {
@@ -124,6 +130,46 @@ function parseAmountInput(value: string): number {
   return parseInt(value.replace(/\D/g, ''), 10) || 0;
 }
 
+/** Render inline **bold** trong 1 dòng. */
+function renderInline(text: string): ReactNode {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, i) =>
+    part.startsWith('**') && part.endsWith('**') ? (
+      <strong key={i}>{part.slice(2, -2)}</strong>
+    ) : (
+      part
+    ),
+  );
+}
+
+/** Markdown nhẹ cho báo cáo CFO: ## heading, - bullet, **bold**. */
+function FormattedText({ text }: { text: string }) {
+  const lines = text.split('\n');
+  return (
+    <>
+      {lines.map((line, i) => {
+        const trimmed = line.trim();
+        if (!trimmed) return <div key={i} style={{ height: 6 }} aria-hidden="true" />;
+        if (trimmed.startsWith('## ')) {
+          return (
+            <p key={i} style={{ fontWeight: 700, marginTop: i === 0 ? 0 : 8 }}>
+              {renderInline(trimmed.slice(3))}
+            </p>
+          );
+        }
+        if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+          return (
+            <p key={i} style={{ paddingLeft: 10 }}>
+              • {renderInline(trimmed.slice(2))}
+            </p>
+          );
+        }
+        return <p key={i}>{renderInline(trimmed)}</p>;
+      })}
+    </>
+  );
+}
+
 function TypingIndicator() {
   return (
     <div className="tg-msg tg-msg-assistant">
@@ -146,6 +192,9 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
   const transactions = useFinanceStore((s) => s.transactions);
   const fixedBills = useFinanceStore((s) => s.fixedBills);
   const billFundBalance = useFinanceStore((s) => s.billFundBalance);
+  const mainBalance = useFinanceStore((s) => s.mainBalance);
+  const emergencyBalance = useFinanceStore((s) => s.emergencyBalance);
+  const earningTasks = useTaskStore((s) => s.tasks);
   const dashboardAccounts = useDashboardStore((s) => s.accounts);
   const categoryBudgets = useBudgetStore((s) => s.categoryBudgets);
   const currentBudgetMonth = useBudgetStore((s) => s.currentMonth);
@@ -155,7 +204,7 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
     {
       id: 'welcome',
       role: 'assistant',
-      text: 'Nhập một câu như "mua trà sữa 50k". Tôi sẽ tách số tiền, loại giao dịch và danh mục để bạn xác nhận trước khi lưu.',
+      text: 'Tôi là Lord Diamond. Hãy nhập giao dịch ("mua trà sữa 50k"), hỏi số liệu ("tôi còn bao nhiêu tiền", "tiền điện đóng chưa") hay yêu cầu phân tích ("lên báo cáo CFO tháng này").',
     },
   ]);
   const [draftIntent, setDraftIntent] = useState<ParsedMoneyIntent | null>(null);
@@ -164,9 +213,12 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
   const [earningDraft, setEarningDraft] = useState<EarningDraftForm | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isAiFallbackLoading, setIsAiFallbackLoading] = useState(false);
+  const [isChatLoading, setIsChatLoading] = useState(false);
   const addEarningTask = useTaskStore((s) => s.addTask);
   const threadRef = useRef<HTMLDivElement>(null);
   const prefersReduced = useReducedMotion();
+  // Session ID ổn định cho hội thoại CFO follow-up (Phase 4 conversation state).
+  const sessionIdRef = useRef<string>(makeMessageId('sess'));
 
   const dateConstraints = useMemo(() => getDateConstraints(), []);
 
@@ -174,12 +226,20 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
     if (threadRef.current) {
       threadRef.current.scrollTop = threadRef.current.scrollHeight;
     }
-  }, [messages, isAiFallbackLoading]);
+  }, [messages, isAiFallbackLoading, isChatLoading]);
 
   const categories: CategoryItem[] = useMemo(() => {
     if (!draftForm) return expenseCategories;
     return draftForm.type === 'income' ? INCOME_CATEGORIES : expenseCategories;
   }, [draftForm, expenseCategories]);
+
+  // Map categoryId -> tên hiển thị (gộp expense + income) cho clientSnapshot.
+  const categoryNameMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const c of expenseCategories) map.set(c.id, c.name);
+    for (const c of INCOME_CATEGORIES) map.set(c.id, c.name);
+    return map;
+  }, [expenseCategories]);
 
   const monthlySpendingLimit = useMemo(() => {
     return categoryBudgets
@@ -265,6 +325,54 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
     ]);
   }
 
+  function currentClientSnapshot() {
+    return buildClientSnapshot({
+      wallets: { main: mainBalance, emergency: emergencyBalance, billFund: billFundBalance },
+      transactions,
+      fixedBills,
+      tasks: earningTasks,
+      goals,
+      categoryBudgets,
+      categoryName: (id) => categoryNameMap.get(id) ?? id,
+    });
+  }
+
+  /** Gửi câu truy vấn/phân tích sang /api/chat (số dư, hóa đơn, nhiệm vụ, CFO...). */
+  async function askAssistant(text: string) {
+    appendMessages([{ id: makeMessageId('user'), role: 'user', text }]);
+    setInput('');
+    setError(null);
+    setIsChatLoading(true);
+
+    const result = await sendChatMessage({
+      message: text,
+      sessionId: sessionIdRef.current,
+      clientSnapshot: currentClientSnapshot(),
+    });
+
+    setIsChatLoading(false);
+    trackEvent('chat_parse', {
+      mode: 'assistant',
+      intent: result.intentType ?? 'unknown',
+      source: result.reply?.meta.source ?? result.error ?? 'error',
+    });
+
+    if (result.ok && result.reply) {
+      appendMessages([
+        { id: makeMessageId('assistant'), role: 'assistant', text: result.reply.message, markdown: true },
+      ]);
+      return;
+    }
+
+    const errorText =
+      result.error === 'unauthorized'
+        ? 'Bạn cần đăng nhập lại để dùng trợ lý tài chính.'
+        : result.error === 'license'
+          ? 'Dịch vụ tạm thời khoá. Vui lòng thử lại sau.'
+          : result.reply?.message ?? 'Trợ lý tạm thời bận. Bạn thử lại sau nhé.';
+    appendMessages([{ id: makeMessageId('system'), role: 'system', text: errorText }]);
+  }
+
   function parseInput(rawText: string) {
     const text = rawText.trim();
     if (!text) return;
@@ -298,7 +406,17 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
       return;
     }
 
+    // Phân loại: chỉ NHẬP LIỆU giao dịch mới chạy local (confirm card + memory);
+    // còn lại (truy vấn số dư/hóa đơn/nhiệm vụ, báo cáo CFO, follow-up) -> /api/chat.
+    // Điều kiện LOG: classifier nói LOG_TRANSACTION VÀ parser bóc được số tiền thật
+    // (tránh số lẻ như "1 tháng" bị nhận nhầm là giao dịch).
     const intent = applyMemoryToIntent(parseMoneyText(text));
+    const isLogTransaction = classifyIntent(text).type === 'LOG_TRANSACTION' && intent.amount != null;
+    if (!isLogTransaction) {
+      void askAssistant(text);
+      return;
+    }
+
     trackEvent('chat_parse', {
       mode: 'money',
       confidence: intent.confidence,
@@ -670,11 +788,11 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
                 </div>
               )}
               <div className="tg-bubble">
-                <p>{message.text}</p>
+                {message.markdown ? <FormattedText text={message.text} /> : <p>{message.text}</p>}
               </div>
             </div>
           ))}
-          {isAiFallbackLoading && <TypingIndicator />}
+          {(isAiFallbackLoading || isChatLoading) && <TypingIndicator />}
         </div>
 
         <div className="tg-quick" aria-label="Hành động nhanh">
