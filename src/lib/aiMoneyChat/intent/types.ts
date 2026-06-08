@@ -17,13 +17,21 @@ import type { TxnType } from '@/stores/useFinanceStore';
 export type ChatIntentType =
   // ── Deterministic (0 token) ────────────────────────────────
   | 'LOG_TRANSACTION' // "mua trứng 30k", "nhận lương 20tr"
-  | 'QUERY_BALANCE' // "tôi còn bao nhiêu tiền"
+  | 'QUERY_BALANCE' // "tôi còn bao nhiêu tiền" / "ví chính còn bao nhiêu"
+  | 'QUERY_INCOME' // "tháng này tôi thu bao nhiêu" (Phase 2)
   | 'QUERY_BILL_STATUS' // "tiền điện đóng chưa"
+  | 'QUERY_UPCOMING_BILLS' // "7 ngày tới có bill nào" (Phase 2)
+  | 'QUERY_BILL_COVERAGE' // "quỹ bill có đủ trả bill không" (Phase 2)
+  | 'QUERY_BUDGET_STATUS' // "danh mục nào vượt ngân sách" (Phase 2)
+  | 'QUERY_CATEGORY_SPENDING' // "ăn uống tháng này xài bao nhiêu" (Phase 2)
   | 'QUERY_SAVINGS' // "tiết kiệm tháng này được bao nhiêu"
   | 'QUERY_SAFE_TO_SPEND' // "tháng này còn bao nhiêu để xài"
   | 'QUERY_SPENDING' // "hôm nay/tháng này tôi đã chi bao nhiêu"
-  | 'QUERY_TASKS_TODAY' // "hôm nay tôi có việc gì"
+  | 'QUERY_TASKS_TODAY' // "hôm nay tôi có việc gì" (alias of QUERY_TASKS)
+  | 'QUERY_EARNING_PIPELINE' // "nếu làm hết task thì có thêm bao nhiêu" (Phase 2)
   | 'QUERY_GOAL_PROGRESS' // "mục tiêu mua xe tới đâu rồi"
+  | 'QUERY_HEALTH_SCORE' // "điểm sức khỏe tài chính" (Phase 2)
+  | 'QUERY_STREAK' // "streak của tôi bao nhiêu" (Phase 2)
   // ── Stochastic (LLM) ───────────────────────────────────────
   | 'CFO_REPORT' // "lên báo cáo CFO tháng"
   | 'ANALYZE_FINANCE' // "phân tích năng lực tài chính"

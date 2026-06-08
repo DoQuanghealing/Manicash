@@ -18,12 +18,16 @@ import type { ChatIntent, ChatReply } from '@/lib/aiMoneyChat/intent/types';
 import type { ChatHandlerContext } from '@/lib/aiMoneyChat/aggregation/types';
 import { handleLogTransaction } from '@/lib/aiMoneyChat/handlers/handleLogTransaction';
 import { handleQueryBalance } from '@/lib/aiMoneyChat/handlers/handleQueryBalance';
+import { handleQueryIncome } from '@/lib/aiMoneyChat/handlers/handleQueryIncome';
 import { handleQueryBill } from '@/lib/aiMoneyChat/handlers/handleQueryBill';
+import { handleQueryBudget } from '@/lib/aiMoneyChat/handlers/handleQueryBudget';
 import { handleQueryTasks } from '@/lib/aiMoneyChat/handlers/handleQueryTasks';
 import { handleQuerySpending } from '@/lib/aiMoneyChat/handlers/handleQuerySpending';
 import { handleQuerySavings } from '@/lib/aiMoneyChat/handlers/handleQuerySavings';
 import { handleQuerySafeToSpend } from '@/lib/aiMoneyChat/handlers/handleQuerySafeToSpend';
 import { handleQueryGoals } from '@/lib/aiMoneyChat/handlers/handleQueryGoals';
+import { handleQueryHealth } from '@/lib/aiMoneyChat/handlers/handleQueryHealth';
+import { handleQueryStreak } from '@/lib/aiMoneyChat/handlers/handleQueryStreak';
 import { handleCFOReport } from '@/lib/aiMoneyChat/handlers/handleCFOReport';
 import { handleFollowUp } from '@/lib/aiMoneyChat/handlers/handleFollowUp';
 import { invalidateSnapshotCache } from '@/lib/aiMoneyChat/aggregation/snapshotBuilder';
@@ -51,9 +55,17 @@ async function dispatch(
       return handleLogTransaction(intent);
     case 'QUERY_BALANCE':
       return handleQueryBalance(uid, intent, ctx);
+    case 'QUERY_INCOME':
+      return handleQueryIncome(uid, intent, ctx);
     case 'QUERY_BILL_STATUS':
+    case 'QUERY_UPCOMING_BILLS':
+    case 'QUERY_BILL_COVERAGE':
       return handleQueryBill(uid, intent, ctx);
+    case 'QUERY_BUDGET_STATUS':
+    case 'QUERY_CATEGORY_SPENDING':
+      return handleQueryBudget(uid, intent, ctx);
     case 'QUERY_TASKS_TODAY':
+    case 'QUERY_EARNING_PIPELINE':
       return handleQueryTasks(uid, intent, ctx);
     case 'QUERY_SPENDING':
       return handleQuerySpending(uid, intent, ctx);
@@ -63,6 +75,10 @@ async function dispatch(
       return handleQuerySafeToSpend(uid, intent, ctx);
     case 'QUERY_GOAL_PROGRESS':
       return handleQueryGoals(uid, intent, ctx);
+    case 'QUERY_HEALTH_SCORE':
+      return handleQueryHealth(uid, intent, ctx);
+    case 'QUERY_STREAK':
+      return handleQueryStreak(uid, intent, ctx);
 
     // Nhóm LLM (Phase 3): CFO report / phân tích / tư vấn cắt giảm.
     case 'CFO_REPORT':

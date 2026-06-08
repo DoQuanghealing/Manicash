@@ -98,11 +98,13 @@ async function main() {
   });
 
   describe('handleQuerySafeToSpend');
-  await it('safeToSpend + cảnh báo lố', async () => {
+  await it('safeToSpend dùng engine v1.1 (isomorphic với UI)', async () => {
     const reply = await handleQuerySafeToSpend(UID, routeIntent('tháng này còn bao nhiêu để xài'), ctxOf(SNAP));
-    // budget 3.5M - chi 4.2M - bill chưa trả 2.75M -> kẹp 0
-    expectIncludes(reply.message, '0');
-    expectIncludes(reply.message, 'vượt hạn mức');
+    // Phase 2: chuyển sang getSafeToSpendBreakdown v1.1:
+    //   income 20M + carryOver 0 - plannedBudget 3.5M - unpaidBills 2.75M
+    //   - goalContrib 0.5M (monthlyContribution fallback) = 13.25M -> 'safe'
+    expectIncludes(reply.message, '13.250.000');
+    expectIncludes(reply.message, 'an toàn');
   });
 
   describe('handleQueryGoals');

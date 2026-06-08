@@ -175,6 +175,7 @@ export interface ClientSnapshotInput {
     id?: string;
     name?: string;
     expectedAmount?: number;
+    actualAmount?: number;
     startDate?: string;
     endDate?: string;
     completedAt?: string;
@@ -221,6 +222,13 @@ export interface ClientSnapshotInput {
     /** Phase 0: mục tiêu tiết kiệm đều/tháng (chuẩn cho safe-to-spend). */
     monthlyContributionTarget?: number;
   }>;
+  /** Phase 2: thông tin gamification user — cho QUERY_STREAK. */
+  user?: {
+    rank?: string;
+    xp?: number;
+    streak?: number;
+    streakShields?: number;
+  };
 }
 
 /** Options cho getFinanceSnapshot — giữ chữ ký ổn định cho Phase 3. */

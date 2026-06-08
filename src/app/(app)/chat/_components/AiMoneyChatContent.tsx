@@ -40,6 +40,7 @@ import { useFinanceStore, type TxnType, type WalletType } from '@/stores/useFina
 import { useGoalsStore } from '@/stores/useGoalsStore';
 import { useDashboardStore } from '@/stores/useDashboardStore';
 import { useTaskStore } from '@/stores/useTaskStore';
+import { useAuthStore } from '@/stores/useAuthStore';
 import './ai-money-chat.css';
 
 interface AiMoneyChatContentProps {
@@ -189,6 +190,7 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
   const applyMemoryToIntent = useAiMoneyMemoryStore((s) => s.applyMemoryToIntent);
   const addMemoryCorrection = useAiMoneyMemoryStore((s) => s.addCorrection);
   const goals = useGoalsStore((s) => s.goals);
+  const userProfile = useAuthStore((s) => s.user);
   const transactions = useFinanceStore((s) => s.transactions);
   const fixedBills = useFinanceStore((s) => s.fixedBills);
   const billFundBalance = useFinanceStore((s) => s.billFundBalance);
@@ -335,6 +337,14 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
       categoryBudgets,
       categoryName: (id) => categoryNameMap.get(id) ?? id,
       carryOver,
+      user: userProfile
+        ? {
+            rank: userProfile.rank,
+            xp: userProfile.xp,
+            streak: userProfile.streak,
+            streakShields: userProfile.streakShields,
+          }
+        : undefined,
     });
   }
 

@@ -84,6 +84,7 @@ export function toMoneySnapshotV1(input: ClientSnapshotInput): MoneySnapshotV1 {
       id: t.id ?? `task-${i}`,
       name: t.name ?? '',
       expectedAmount: num(t.expectedAmount),
+      actualAmount: typeof t.actualAmount === 'number' ? t.actualAmount : undefined,
       startDate: t.startDate ?? '',
       endDate: t.endDate ?? '',
       completedAt: t.completedAt,
@@ -93,6 +94,16 @@ export function toMoneySnapshotV1(input: ClientSnapshotInput): MoneySnapshotV1 {
         isCompleted: s.isCompleted === true,
       })),
     })),
+    // Phase 2: gamification user (cho QUERY_STREAK). Chỉ map khi client gửi.
+    user: input.user
+      ? {
+          rank: input.user.rank,
+          xp: typeof input.user.xp === 'number' ? input.user.xp : undefined,
+          streak: typeof input.user.streak === 'number' ? input.user.streak : undefined,
+          streakShields:
+            typeof input.user.streakShields === 'number' ? input.user.streakShields : undefined,
+        }
+      : undefined,
     carryOver: input.carryOver,
   };
 }

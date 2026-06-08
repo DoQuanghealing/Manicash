@@ -24,6 +24,13 @@ export interface BuildClientSnapshotParams {
   categoryName: (id: string) => string;
   /** Dư tháng trước (carryOver) — cho safe-to-spend. */
   carryOver?: number;
+  /** Phase 2: gamification user (cho QUERY_STREAK). */
+  user?: {
+    rank?: string;
+    xp?: number;
+    streak?: number;
+    streakShields?: number;
+  };
   /** "Bây giờ" theo client (ISO). Mặc định new Date(). Inject để test ổn định. */
   clientNow?: string;
   /** Timezone client. Mặc định lấy từ Intl, fallback Asia/Ho_Chi_Minh. */
@@ -103,6 +110,7 @@ export function buildClientSnapshot(params: BuildClientSnapshotParams): ClientSn
       id: t.id,
       name: t.name,
       expectedAmount: t.expectedAmount,
+      actualAmount: t.actualAmount,
       startDate: t.startDate,
       endDate: t.endDate,
       completedAt: t.completedAt,
@@ -126,5 +134,6 @@ export function buildClientSnapshot(params: BuildClientSnapshotParams): ClientSn
       deadline: g.deadline,
       monthlyContributionTarget: g.monthlyContributionTarget,
     })),
+    user: params.user,
   };
 }
