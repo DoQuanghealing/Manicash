@@ -12,7 +12,11 @@
 
 import { useCallback, useRef, useState } from 'react';
 import type { CFOInsight, CFOPayload } from '@/lib/groqClient';
+import type { MoneySnapshotV1 } from '@/lib/moneyBrain';
 import { apiUrl } from '@/lib/apiBase';
+
+/** Body gửi /api/cfo: snapshot V1 (Phase 3, ưu tiên) hoặc payload legacy. */
+export type CFORequestBody = CFOPayload | MoneySnapshotV1;
 
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1h
 const STORAGE_PREFIX = 'manicash:cfo:';
@@ -35,7 +39,7 @@ export interface UseCFOReportReturn {
   isLoading: boolean;
   error: string | null;
   lastUpdated: number | null;
-  fetchInsight: (payload: CFOPayload, options: FetchOptions) => Promise<void>;
+  fetchInsight: (body: CFORequestBody, options: FetchOptions) => Promise<void>;
 }
 
 function isBrowser(): boolean {
@@ -140,7 +144,7 @@ export function useCFOReport(): UseCFOReportReturn {
    * đang chạy để insight mới không bị overwrite.
    */
   const fetchInsight = useCallback(
-    async (payload: CFOPayload, options: FetchOptions) => {
+    async (payload: CFORequestBody, options: FetchOptions) => {
       const { cacheKey, forceRefresh = false } = options;
       const now = Date.now();
 

@@ -61,7 +61,8 @@ export default function MoneyContent() {
   const { fireConfetti } = useIncomeCelebration();
 
   // === CFO state — lifted lên đây để share giữa CFOInsightCard + HealthScoreGauge ===
-  const { payload, breakdown, cacheKey } = useCFOSnapshot();
+  // Phase 3: gửi MoneySnapshotV1 -> /api/cfo dùng CFO Context Pack (số do engine tính).
+  const { snapshot: cfoSnapshot, breakdown, cacheKey } = useCFOSnapshot();
   const {
     insight: cfoInsight,
     isLoading: cfoLoading,
@@ -72,12 +73,12 @@ export default function MoneyContent() {
 
   // Auto-fetch khi cacheKey đổi (data tháng/ngày thay đổi). Hook tự dedupe + cache.
   useEffect(() => {
-    fetchInsight(payload, { cacheKey });
-  }, [cacheKey, payload, fetchInsight]);
+    fetchInsight(cfoSnapshot, { cacheKey });
+  }, [cacheKey, cfoSnapshot, fetchInsight]);
 
   const handleCfoRefresh = useCallback(() => {
-    fetchInsight(payload, { cacheKey, forceRefresh: true });
-  }, [payload, cacheKey, fetchInsight]);
+    fetchInsight(cfoSnapshot, { cacheKey, forceRefresh: true });
+  }, [cfoSnapshot, cacheKey, fetchInsight]);
 
   const [showForm, setShowForm] = useState(false);
   const [editingTask, setEditingTask] = useState<EarningTask | null>(null);

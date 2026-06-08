@@ -80,16 +80,6 @@ const failResult = (): (() => Promise<LLMResult>) => async () => {
   throw new Error('provider down');
 };
 
-const CFO_MARKDOWN = [
-  '## Tình hình',
-  'Thu 20.000.000đ, chi 4.200.000đ, net +15.800.000đ. Health 70/100.',
-  '## Vấn đề chính',
-  '- Mua sắm lố 300.000đ (z=24).',
-  '- Mục tiêu Mua xe máy không kịp deadline.',
-  '## Hành động đề xuất',
-  '- **Cắt 30% mua sắm**: 540.000đ → tiết kiệm 6.480.000đ/năm.',
-].join('\n');
-
 async function main() {
   __clearSnapshotCacheForTest();
 
@@ -232,20 +222,28 @@ async function main() {
     reason: allowed ? 'ok' : 'exceeded',
     chargedCredits: allowed ? 8 : 0,
   });
+  // Phase 3: LLM trả JSON theo CFOAIResponse schema (không phải markdown).
+  const CFO_AI_JSON = JSON.stringify({
+    summary: 'Tháng này tài chính ổn định.',
+    diagnosis: ['Dòng tiền dương.'],
+    risks: ['Quỹ dự phòng mỏng.'],
+    opportunities: ['Giảm chi ăn uống.'],
+    actionPlan7Days: ['Khóa bill', 'Soát chi lớn', 'Hoàn thành task'],
+  });
   const genOk: CFOHandlerDeps['generate'] = async () => ({
-    content: CFO_MARKDOWN,
+    content: CFO_AI_JSON,
     tokensUsed: 300,
     provider: 'openai',
-    fallbackUsed: false,
   });
 
-  await it('quota OK -> cfo-card + suggestions + tokensUsed', async () => {
+  await it('quota OK -> cfo-card + số liệu chính (context) + tokensUsed', async () => {
     const intent = routeIntent('lên báo cáo CFO tháng');
     const reply = await handleCFOReport(UID, intent, { clientSnapshot: FULL_INPUT }, { charge: async () => quota(true, 'pro'), generate: genOk });
     expectEqual(reply.ui.kind, 'cfo-card');
     expectEqual(reply.meta.source, 'llm');
     expectEqual(reply.meta.tokensUsed, 300);
-    expectIncludes(reply.message, '## Hành động đề xuất');
+    expectIncludes(reply.message, 'Số liệu chính');
+    expectIncludes(reply.message, '/100');
     const payload = reply.ui.payload as { healthScore: number; suggestions: string[] };
     expectTrue(typeof payload.healthScore === 'number', 'healthScore number');
     expectTrue(payload.suggestions.length > 0, 'suggestions extracted');

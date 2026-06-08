@@ -112,3 +112,6 @@ export interface MoneySnapshotV1 {
   /** Dư tháng trước chuyển sang (carryOver) — cho safe-to-spend. */
   carryOver?: number;
 }
+
+// Phase 3: CFO Context Pack types (re-export để consumer import từ "./types").
+export type { FinancialMode, CFOContextPackVersion, CFOContextPackV1 } from './cfoTypes';

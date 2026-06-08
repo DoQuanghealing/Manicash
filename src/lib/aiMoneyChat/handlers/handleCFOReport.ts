@@ -1,60 +1,80 @@
-/* ═══ Handler — CFO_REPORT / ANALYZE_FINANCE / ADVICE_CUT_SPENDING (LLM) ═══
+/* ═══ Handler — CFO_REPORT / ANALYZE_FINANCE / ADVICE_CUT_SPENDING (Phase 3) ═══
  * Flow:
- *   1. Charge credit (cfoNarration) — quota gate.
- *   2. Tổng hợp snapshot ĐẦY ĐỦ (ưu tiên clientSnapshot real-time).
- *   3. Dựng prompt Lord Diamond + compact JSON snapshot.
- *   4. Gọi LLM client (OpenAI primary -> Groq fallback).
- *   5. Trả ChatReply kèm ui.kind = 'cfo-card'.
+ *   1. Charge credit (quota gate).
+ *   2. Build MoneySnapshotV1 (clientSnapshot) -> CFOContextPack (số do engine tính).
+ *   3. runCFOAnalysis: LLM đọc context (JSON schema) hoặc fallback deterministic.
+ *   4. Compose markdown: "Số liệu chính" từ context (KHÔNG từ LLM) + diễn giải LLM.
+ *   5. Lưu session bằng legacy snapshot (để follow-up Phase 4 tái dùng).
  *
- * Dependency Injection (deps) cho phép test mà không gọi Firestore/mạng thật.
+ * NGUYÊN TẮC: mọi con số trong reply lấy từ CFOContextPack. LLM chỉ diễn giải.
  */
 
 import { getFinanceSnapshot } from '../aggregation/snapshotBuilder';
-import type { ChatHandlerContext } from '../aggregation/types';
+import type { ChatHandlerContext, ClientSnapshotInput } from '../aggregation/types';
 import type { AiMoneyQuotaChargeResult } from '../quota';
-import { buildLLMMessages, type ConversationTurn } from '../llm/promptBuilder';
-import { generateLLMResponse, type LLMResponse } from '../llm/llmClient';
+import type { ConversationTurn } from '../llm/promptBuilder';
+import { generateLLMResponse } from '../llm/llmClient';
 import { createSession, appendTurn } from '../llm/conversationStore';
 import type { LLMMessage, LLMOptions } from '../llm/types';
 import type { ChatIntent, ChatReply } from '../intent/types';
+import { toMoneySnapshotV1 } from '@/lib/moneyBrain';
+import { runCFOAnalysis, type CFOGenerateResult } from '../cfo/cfoService';
+import type { CFOContextPackV1 } from '@/lib/moneyBrain';
+import type { CFOAIResponse } from '../cfo/cfoResponseSchema';
+import { formatVND } from '../response/formatMoney';
 
 export interface CFOHandlerDeps {
   charge: (uid: string) => Promise<AiMoneyQuotaChargeResult>;
-  generate: (messages: LLMMessage[], options?: LLMOptions) => Promise<LLMResponse>;
+  generate: (messages: LLMMessage[], options?: LLMOptions) => Promise<CFOGenerateResult>;
   history?: ConversationTurn[];
-  /** Đọc hồ sơ dài hạn (Phase 5). Mặc định Firestore, degrade null. */
+  /** Đọc/lưu hồ sơ dài hạn — giữ cho backward-compat signature (không dùng ở CFO JSON flow). */
   readProfile?: (uid: string) => Promise<string | null>;
-  /** Lưu note hệ thống do LLM phát hiện. */
   saveProfile?: (uid: string, note: string) => Promise<void>;
 }
 
 function defaultDeps(): CFOHandlerDeps {
   return {
-    // Dynamic import: tránh kéo firebase-admin vào graph khi không cần (vd test inject charge).
     charge: async (uid) => {
       const { chargeAiMoneyCfoNarrationCredit } = await import('../quota');
       return chargeAiMoneyCfoNarrationCredit(uid);
     },
     generate: generateLLMResponse,
-    readProfile: async (uid) => {
-      const { readAiProfile } = await import('../memory/longTermProfile');
-      return readAiProfile(uid);
-    },
-    saveProfile: async (uid, note) => {
-      const { saveAiProfile } = await import('../memory/longTermProfile');
-      return saveAiProfile(uid, note);
-    },
   };
 }
 
-/** Bóc các dòng action ("- ...") làm gợi ý cho cfo-card. */
-function extractSuggestions(markdown: string): string[] {
-  return markdown
-    .split('\n')
-    .map((l) => l.trim())
-    .filter((l) => l.startsWith('- '))
-    .map((l) => l.replace(/^-\s+/, ''))
-    .slice(0, 5);
+function numberedList(items: string[]): string {
+  return items.map((s, i) => `${i + 1}. ${s}`).join('\n');
+}
+
+/** Compose markdown chat — số liệu chính LẤY TỪ context pack, không từ LLM. */
+function composeMarkdown(context: CFOContextPackV1, cfo: CFOAIResponse): string {
+  const ex = context.executiveSummary;
+  const lines = [
+    '## Báo cáo CFO tháng này',
+    '',
+    cfo.summary,
+    '',
+    '### Số liệu chính',
+    `- Thu nhập: ${formatVND(ex.totalIncome)}`,
+    `- Chi tiêu: ${formatVND(ex.totalExpense)}`,
+    `- Dòng tiền ròng: ${formatVND(ex.netCashflow)}`,
+    `- Safe-to-spend: ${formatVND(ex.safeToSpend)}`,
+    `- HealthScore: ${ex.healthScore}/100`,
+    '',
+    '### Chẩn đoán',
+    numberedList(cfo.diagnosis),
+  ];
+  if (cfo.risks.length > 0) {
+    lines.push('', '### Rủi ro', numberedList(cfo.risks));
+  }
+  if (cfo.opportunities.length > 0) {
+    lines.push('', '### Cơ hội', numberedList(cfo.opportunities));
+  }
+  lines.push('', '### Kế hoạch 7 ngày', numberedList(cfo.actionPlan7Days));
+  if (cfo.quickWins && cfo.quickWins.length > 0) {
+    lines.push('', '### Quick wins', numberedList(cfo.quickWins));
+  }
+  return lines.join('\n');
 }
 
 export async function handleCFOReport(
@@ -76,71 +96,49 @@ export async function handleCFOReport(
     };
   }
 
-  // 2) Snapshot đầy đủ (clientSnapshot ưu tiên; nếu không có -> Firestore fallback).
-  const snapshot = await getFinanceSnapshot(uid, { clientSnapshot: ctx.clientSnapshot, forceRefresh: true });
-
-  // 2b) Đọc hồ sơ dài hạn (turn đầu) — degrade null nếu chưa có.
-  const longTermProfile = deps.readProfile ? await deps.readProfile(uid).catch(() => null) : null;
-
-  // 3) Prompt.
-  const messages = buildLLMMessages({
-    snapshot,
-    userMessage: intent.rawText,
-    intent: intent.type,
-    history: deps.history,
-    longTermProfile,
+  // 2) Money snapshot (engine) + legacy snapshot (session/follow-up compat).
+  const moneySnapshot = toMoneySnapshotV1((ctx.clientSnapshot ?? {}) as ClientSnapshotInput);
+  const legacySnapshot = await getFinanceSnapshot(uid, {
+    clientSnapshot: ctx.clientSnapshot,
+    forceRefresh: true,
   });
 
-  // 4) Gọi LLM — lỗi thì trả thông báo nhẹ (vẫn kèm health score deterministic).
-  try {
-    const result = await deps.generate(messages, { temperature: 0.3, maxTokens: 700 });
+  // 3) Run CFO analysis (LLM schema-guarded hoặc fallback deterministic).
+  const result = await runCFOAnalysis(moneySnapshot, { generate: deps.generate });
+  const { context, cfo, deterministicFallback } = result;
 
-    // Bóc + lưu note hệ thống (nếu LLM gắn tag), rồi ẩn tag khỏi message hiển thị.
-    const { extractProfileNote, stripProfileNote } = await import('../memory/longTermProfile');
-    const profileNote = extractProfileNote(result.content);
-    const displayMessage = stripProfileNote(result.content);
-    if (profileNote && deps.saveProfile) {
-      await deps.saveProfile(uid, profileNote).catch(() => {});
-    }
+  // 4) Compose markdown — số từ context, diễn giải từ LLM/fallback.
+  const message = composeMarkdown(context, cfo);
 
-    // Lưu vết phiên ngay turn đầu -> nền tảng cho follow-up (Phase 4).
-    if (ctx.sessionId) {
-      createSession(ctx.sessionId, uid, snapshot);
-      appendTurn(ctx.sessionId, {
-        at: new Date().toISOString(),
-        intent: intent.type,
-        userMessage: intent.rawText,
-        assistantMessage: displayMessage,
-        tokensUsed: result.tokensUsed,
-      });
-    }
-
-    return {
-      message: displayMessage,
-      ui: {
-        kind: 'cfo-card',
-        payload: {
-          healthScore: snapshot.health.score,
-          tier: snapshot.health.tier,
-          suggestions: extractSuggestions(displayMessage),
-          provider: result.provider,
-        },
-      },
-      meta: {
-        intent: intent.type,
-        source: 'llm',
-        latencyMs: 0,
-        tokensUsed: result.tokensUsed,
-      },
-    };
-  } catch (error) {
-    console.error('[handleCFOReport] LLM failed:', error);
-    return {
-      message:
-        `Hệ thống phân tích AI tạm thời bận. Điểm sức khỏe tài chính tháng này của ngài là ` +
-        `**${snapshot.health.score}/100** (${snapshot.health.tier}). Ngài thử lại sau ít phút nhé.`,
-      ui: { kind: 'cfo-card', payload: { healthScore: snapshot.health.score, tier: snapshot.health.tier } },
-      meta: { intent: intent.type, source: 'deterministic', latencyMs: 0 },
-    };
+  // 5) Session (legacy snapshot) — nền tảng follow-up Phase 4.
+  if (ctx.sessionId) {
+    createSession(ctx.sessionId, uid, legacySnapshot);
+    appendTurn(ctx.sessionId, {
+      at: new Date().toISOString(),
+      intent: intent.type,
+      userMessage: intent.rawText,
+      assistantMessage: message,
+      tokensUsed: result.tokensUsed ?? 0,
+    });
   }
+
+  return {
+    message,
+    ui: {
+      kind: 'cfo-card',
+      payload: {
+        healthScore: context.executiveSummary.healthScore,
+        financialMode: context.financialMode,
+        suggestions: cfo.actionPlan7Days.slice(0, 5),
+        provider: result.provider,
+        deterministicFallback,
+      },
+    },
+    meta: {
+      intent: intent.type,
+      source: deterministicFallback ? 'deterministic' : 'llm',
+      latencyMs: 0,
+      tokensUsed: result.tokensUsed,
+    },
+  };
 }
