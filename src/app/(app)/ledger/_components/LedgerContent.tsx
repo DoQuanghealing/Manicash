@@ -86,13 +86,13 @@ export default function LedgerContent() {
       {/* Summary cards — show on both tabs */}
       <div className="ledger-summary">
         <div className="ledger-summary-card income">
-          <p className="ledger-summary-label">Thu nhập</p>
+          <p className="ledger-summary-label">Thu nhập (tất cả)</p>
           <p className="ledger-summary-amount" style={{ color: 'var(--c-success)' }}>
             +{formatCurrency(totalIncome)}
           </p>
         </div>
         <div className="ledger-summary-card expense">
-          <p className="ledger-summary-label">Chi tiêu</p>
+          <p className="ledger-summary-label">Chi tiêu (tất cả)</p>
           <p className="ledger-summary-amount" style={{ color: 'var(--c-orange)' }}>
             -{formatCurrency(totalExpense)}
           </p>

@@ -151,6 +151,14 @@ export interface MonthlyFinancialSnapshot {
 /** Shape client gửi lên — mọi field optional, builder sẽ validate + coerce. */
 export interface ClientSnapshotInput {
   monthKey?: string;
+  /** Phase 0: phiên bản contract (forward-compat). */
+  version?: string;
+  /** Phase 0: "bây giờ" theo đồng hồ client (ISO). Engine không dùng giờ server. */
+  clientNow?: string;
+  /** Phase 0: timezone client (mặc định Asia/Ho_Chi_Minh). */
+  timezone?: string;
+  /** Phase 0: dư tháng trước (carryOver) cho safe-to-spend. */
+  carryOver?: number;
   wallets?: {
     main?: number;
     emergency?: number;
@@ -173,12 +181,22 @@ export interface ClientSnapshotInput {
     deletedAt?: string;
     subTasks?: Array<{ isCompleted?: boolean }>;
   }>;
-  /** Giao dịch tháng hiện tại — để tính cashflow + chi theo danh mục. */
+  /** Giao dịch tháng hiện tại — để tính cashflow + chi theo danh mục.
+   * Phase 0: bổ sung date keys để lọc theo ngày/tuần/tháng (today vs this_month). */
   transactions?: Array<{
+    id?: string;
     type?: string; // 'income' | 'expense' | 'transfer'
     amount?: number;
     categoryId?: string;
+    categoryName?: string;
+    wallet?: string;
     toWallet?: string;
+    note?: string;
+    date?: string;
+    dateKey?: string;
+    weekKey?: string;
+    monthKey?: string;
+    time?: string;
   }>;
   /** Tổng chi theo danh mục của các tháng TRƯỚC — để tính z-score anomaly. */
   history?: Array<{
@@ -200,6 +218,8 @@ export interface ClientSnapshotInput {
     deadline?: string;
     /** Số tiền tích lũy đều mỗi tháng (nếu có); thiếu thì builder ước từ savings. */
     monthlyContribution?: number;
+    /** Phase 0: mục tiêu tiết kiệm đều/tháng (chuẩn cho safe-to-spend). */
+    monthlyContributionTarget?: number;
   }>;
 }
 

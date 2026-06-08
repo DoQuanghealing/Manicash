@@ -90,6 +90,9 @@ export interface Goal {
   whyNote?: string;
   /** % milestone cuối cùng đã hiện confetti (25/50/75/100). Tránh retrigger. */
   lastCelebratedMilestone?: 25 | 50 | 75 | 100;
+  /** Phase 0 (Money Brain): khoản tiết kiệm ĐỀU mỗi tháng cho mục tiêu này.
+   * Dùng cho safe-to-spend (trừ contribution/tháng, KHÔNG trừ currentAmount). */
+  monthlyContributionTarget?: number;
 }
 
 /** Mốc nhỏ trong mục tiêu */

@@ -334,6 +334,7 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
       goals,
       categoryBudgets,
       categoryName: (id) => categoryNameMap.get(id) ?? id,
+      carryOver,
     });
   }
 
