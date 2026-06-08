@@ -35,6 +35,7 @@ const config: AiMoneyQuotaConfig = {
   proMonthlyCredits: 1500,
   hardMonthlyCredits: 1200,
   fallbackParseCredits: 1,
+  cfoNarrationCredits: 8,
 };
 
 describe('AI Money Chat quota', () => {

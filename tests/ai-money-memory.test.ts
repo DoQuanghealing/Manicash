@@ -1,3 +1,5 @@
+export {};
+
 type TestFn = () => void;
 
 class MemoryStorageMock {
