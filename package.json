@@ -33,7 +33,16 @@
     "test:analytics": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/analytics-events.test.ts'))\"",
     "test:monetization": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/monetization-entitlement.test.ts'))\"",
     "test:ai-all": "npm run test:ai-chat && npm run test:ai-memory && npm run test:ai-fallback && npm run test:ai-quota && npm run test:ai-reaction && npm run test:ai-checkin && npm run test:ai-reconciliation && npm run test:ai-cfo-report && npm run test:ai-earning && npm run test:analytics && npm run test:monetization",
-    "test:phase2": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/phase2-backdate.test.ts'))\""
+    "test:phase2": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/phase2-backdate.test.ts'))\"",
+    "test:mb-finance": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/moneybrain-finance-metrics.test.ts'))\"",
+    "test:mb-budget": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/moneybrain-budget-metrics.test.ts'))\"",
+    "test:mb-bills": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/moneybrain-bill-metrics.test.ts'))\"",
+    "test:mb-goals": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/moneybrain-goal-metrics.test.ts'))\"",
+    "test:mb-tasks": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/moneybrain-task-metrics.test.ts'))\"",
+    "test:mb-sts": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/moneybrain-safe-to-spend.test.ts'))\"",
+    "test:mb-health": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/moneybrain-health-score.test.ts'))\"",
+    "test:moneybrain": "npm run test:mb-date && npm run test:mb-normalize && npm run test:mb-summary && npm run test:mb-finance && npm run test:mb-budget && npm run test:mb-bills && npm run test:mb-goals && npm run test:mb-tasks && npm run test:mb-sts && npm run test:mb-health",
+    "test:ai-money": "npm run test:ai-intent && npm run test:ai-handlers && npm run test:ai-client-snapshot && npm run test:ai-queries && npm run test:ai-spending-period"
   },
   "dependencies": {
     "@capacitor-firebase/authentication": "^8.3.0",

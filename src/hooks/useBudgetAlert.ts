@@ -1,9 +1,13 @@
-/* ═══ useBudgetAlert — Category budget warnings ═══ */
+/* ═══ useBudgetAlert — Category budget warnings ═══
+ * Phase 1B: spent recomputed from transactions via Money Brain engine.
+ * No longer reads categoryBudgets[].spent accumulator (was stale when txns edited).
+ */
 'use client';
 
 import { useMemo } from 'react';
-import { useBudgetStore } from '@/stores/useBudgetStore';
 import { EXPENSE_CATEGORIES } from '@/data/categories';
+import { useMoneySnapshotV1 } from './useMoneySnapshotV1';
+import { getBudgetCategoryProgress } from '@/lib/moneyBrain/budgetMetrics';
 
 export interface BudgetAlert {
   categoryId: string;
@@ -11,47 +15,51 @@ export interface BudgetAlert {
   icon: string;
   spent: number;
   limit: number;
+  /** Raw %, not capped — can exceed 100 for "danger" display. */
   percent: number;
   level: 'warning' | 'danger';
 }
 
 /**
  * Trả về danh sách category đang vượt hoặc gần vượt ngưỡng budget.
- * - warning: ≥ 80%
- * - danger: ≥ 100%
+ * - warning: ≥ 80 %
+ * - danger: ≥ 100 %
+ *
+ * `spent` được recompute từ giao dịch tháng hiện tại — không đọc `budget.spent`.
  */
 export function useBudgetAlert() {
-  const categoryBudgets = useBudgetStore((s) => s.categoryBudgets);
-  const currentMonth = useBudgetStore((s) => s.currentMonth);
+  const snapshot = useMoneySnapshotV1();
 
   const alerts = useMemo<BudgetAlert[]>(() => {
+    const progresses = getBudgetCategoryProgress(snapshot);
     const results: BudgetAlert[] = [];
 
-    for (const budget of categoryBudgets) {
-      if (budget.month !== currentMonth || budget.monthlyLimit === 0) continue;
+    for (const b of progresses) {
+      if (b.monthlyLimit === 0) continue;
 
-      const percent = Math.round((budget.spent / budget.monthlyLimit) * 100);
-      if (percent < 80) continue;
+      // Use raw percent (no cap) so the banner can show "120%" for danger.
+      const rawPercent = Math.round((b.spent / b.monthlyLimit) * 100);
+      if (rawPercent < 80) continue;
 
-      const cat = EXPENSE_CATEGORIES.find((c) => c.id === budget.categoryId);
+      const cat = EXPENSE_CATEGORIES.find((c) => c.id === b.categoryId);
       results.push({
-        categoryId: budget.categoryId,
-        categoryName: cat?.name || budget.categoryId,
-        icon: cat?.icon || '📦',
-        spent: budget.spent,
-        limit: budget.monthlyLimit,
-        percent,
-        level: percent >= 100 ? 'danger' : 'warning',
+        categoryId:   b.categoryId,
+        categoryName: cat?.name || b.categoryId,
+        icon:         cat?.icon || '📦',
+        spent:        b.spent,
+        limit:        b.monthlyLimit,
+        percent:      rawPercent,
+        level:        rawPercent >= 100 ? 'danger' : 'warning',
       });
     }
 
     return results.sort((a, b) => b.percent - a.percent);
-  }, [categoryBudgets, currentMonth]);
+  }, [snapshot]);
 
   return {
     alerts,
     hasWarning: alerts.some((a) => a.level === 'warning'),
-    hasDanger: alerts.some((a) => a.level === 'danger'),
-    count: alerts.length,
+    hasDanger:  alerts.some((a) => a.level === 'danger'),
+    count:      alerts.length,
   };
 }

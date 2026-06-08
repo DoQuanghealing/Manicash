@@ -14,6 +14,8 @@ const SEED_GOALS: Goal[] = [
     id: 'goal-house', name: 'Mua nhà', icon: '🏠',
     targetAmount: 6_000_000_000, currentAmount: 120_000_000,
     deadline: '2035-12-31', color: '#7C3AED',
+    /** Phase 1: khoản tiết kiệm đều mỗi tháng cho mục tiêu mua nhà */
+    monthlyContributionTarget: 5_000_000,
     milestones: [
       { id: 'ms-h1', name: 'Đặt cọc 500 triệu', amount: 500_000_000, targetDate: '2028-06-01', isCompleted: false },
       { id: 'ms-h2', name: 'Tích lũy 2 tỷ', amount: 2_000_000_000, targetDate: '2031-12-01', isCompleted: false },
@@ -24,6 +26,8 @@ const SEED_GOALS: Goal[] = [
     id: 'goal-emergency', name: 'Quỹ khẩn cấp', icon: '🛡️',
     targetAmount: 50_000_000, currentAmount: 12_500_000,
     deadline: '2026-12-31', color: '#22C55E',
+    /** Phase 1: 2M/tháng để hoàn thành quỹ khẩn cấp trong thời hạn */
+    monthlyContributionTarget: 2_000_000,
     milestones: [
       { id: 'ms-e1', name: '25 triệu', amount: 25_000_000, targetDate: '2026-06-01', isCompleted: false },
     ],
@@ -33,6 +37,8 @@ const SEED_GOALS: Goal[] = [
     id: 'goal-car', name: 'Xe ô tô', icon: '🚗',
     targetAmount: 800_000_000, currentAmount: 35_000_000,
     deadline: '2029-12-31', color: '#3B82F6',
+    /** Phase 1: 3M/tháng tích lũy mua xe */
+    monthlyContributionTarget: 3_000_000,
     milestones: [
       { id: 'ms-c1', name: 'Đặt cọc 100 triệu', amount: 100_000_000, targetDate: '2027-06-01', isCompleted: false },
     ],
@@ -42,6 +48,8 @@ const SEED_GOALS: Goal[] = [
     id: 'goal-invest', name: 'Vốn đầu tư', icon: '📈',
     targetAmount: 200_000_000, currentAmount: 45_000_000,
     deadline: '2027-12-31', color: '#F97316',
+    /** Phase 1: 1.5M/tháng tích lũy vốn đầu tư */
+    monthlyContributionTarget: 1_500_000,
     milestones: [
       { id: 'ms-i1', name: '100 triệu đầu tiên', amount: 100_000_000, targetDate: '2026-12-01', isCompleted: false },
     ],

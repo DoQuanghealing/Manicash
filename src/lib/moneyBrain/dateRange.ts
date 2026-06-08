@@ -78,7 +78,7 @@ export function getCurrentMonthKey(clientNow: string, timezone: string): string 
 }
 
 /** Dịch 1 dateKey (YYYY-MM-DD) đi deltaDays ngày — số học lịch thuần. */
-function shiftDateKey(dateKey: string, deltaDays: number): string {
+export function shiftDateKey(dateKey: string, deltaDays: number): string {
   const [y, m, d] = dateKey.split('-').map(Number);
   const dt = new Date(Date.UTC(y, m - 1, d));
   dt.setUTCDate(dt.getUTCDate() + deltaDays);

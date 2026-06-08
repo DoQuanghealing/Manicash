@@ -12,8 +12,8 @@ export default function SafeToSpendCard() {
   const [showInfo, setShowInfo] = useState(false);
   const {
     safeToSpend, monthlyIncome, carryOver, totalCategoryLimits,
-    totalBills, totalSavings, totalSpent, spentPercent,
-    isHealthy, isLow, isNegative, warningType,
+    totalBills, totalSavings,
+    isLow, isNegative,
   } = useSafeBalance();
 
   const statusColor = isNegative ? '#EF4444' : isLow ? '#F59E0B' : '#10B981';
@@ -67,11 +67,11 @@ export default function SafeToSpendCard() {
           <span className="sts-breakdown-value sts-breakdown-negative">-{formatCurrencyShort(totalCategoryLimits)}</span>
         </div>
         <div className="sts-breakdown-row">
-          <span className="sts-breakdown-label">− Bill cố định</span>
+          <span className="sts-breakdown-label">− Bill chưa đóng</span>
           <span className="sts-breakdown-value sts-breakdown-negative">-{formatCurrencyShort(totalBills)}</span>
         </div>
         <div className="sts-breakdown-row">
-          <span className="sts-breakdown-label">− Tiết kiệm (DP+MT+ĐT)</span>
+          <span className="sts-breakdown-label">− Mục tiêu tiết kiệm/tháng</span>
           <span className="sts-breakdown-value sts-breakdown-negative">-{formatCurrencyShort(totalSavings)}</span>
         </div>
       </div>
@@ -149,8 +149,8 @@ export default function SafeToSpendCard() {
                     [Thu nhập tháng]<br/>
                     <span className="text-green-500 font-bold px-1">+</span> [Dư tháng trước]<br/>
                     <span className="text-red-500 font-bold px-1">−</span> [Ngưỡng chi tiêu]<br/>
-                    <span className="text-red-500 font-bold px-1">−</span> [Bill cố định]<br/>
-                    <span className="text-red-500 font-bold px-1">−</span> [Tiết kiệm tháng]<br/>
+                    <span className="text-red-500 font-bold px-1">−</span> [Bill chưa đóng]<br/>
+                    <span className="text-red-500 font-bold px-1">−</span> [Mục tiêu tiết kiệm/tháng]<br/>
                     <span className="text-indigo-500 font-bold px-1">=</span> Số dư an toàn
                   </div>
                 </div>
