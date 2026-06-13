@@ -46,6 +46,12 @@ import {
   type RemoteSyncOutcome,
 } from './remoteSyncService';
 import type { RemoteMoneySyncAdapter } from './remoteAdapter';
+import { isSystemApplying, resetSuppression } from './suppressionGuard';
+import {
+  applyRemoteMoneyState,
+  type RemoteApplyResult,
+  type ChangedStore,
+} from './remoteApply';
 import type { LocalMoneyStateInput } from './cloudTypes';
 
 // ─── Module singletons ─────────────────────────────────────────────────────────
@@ -172,6 +178,8 @@ function gather(userId: string): {
 /** Re-gom snapshot khi store đổi; enqueue 1 write nếu hash khác. */
 function handleStoreChange(userId: string): void {
   if (!started || currentUserId !== userId) return;
+  // System apply (remote→local) đang chạy → KHÔNG enqueue (tránh vòng lặp).
+  if (isSystemApplying()) return;
   const { snapshot } = gather(userId);
   const hash = hashMoneySyncSnapshot(snapshot);
   const meta = useMoneySyncStore.getState();
@@ -263,10 +271,11 @@ export function stopMoneySyncRuntime(): MoneySyncRuntimeStatus {
   return getMoneySyncRuntimeStatus();
 }
 
-/** Stop + xóa sạch outbox/metadata + reset seq. Dùng cho account boundary. */
+/** Stop + xóa sạch outbox/metadata + reset seq + suppression. Account boundary. */
 export function resetMoneySyncRuntime(): void {
   stopMoneySyncRuntime();
   seq = 0;
+  resetSuppression(); // sign-out giữa lúc apply → không để suppression treo
   useMoneySyncStore.getState().reset();
 }
 
@@ -453,4 +462,50 @@ export async function simulateRemoteSyncForTests(
   }
 
   return outcome;
+}
+
+// ─── Safe remote apply seams (Phase 6B-2D) ────────────────────────────────────
+
+/**
+ * Dry-run apply remote envelope vào local — KHÔNG mutate store/outbox/metadata.
+ * Dùng currentUserId + nowFn của runtime. Trả preview (changedStores/noop).
+ */
+export function dryRunRemoteApplyForTests(
+  envelope: MoneySyncEnvelopeV1,
+  opts?: { now?: string },
+): RemoteApplyResult {
+  const uid = currentUserId ?? useMoneySyncStore.getState().userId;
+  if (!isSyncableUid(uid)) return { kind: 'rejected', reason: 'user_null' };
+  return applyRemoteMoneyState({
+    userId: uid,
+    envelope,
+    mode: 'dry-run',
+    now: opts?.now ?? nowFn(),
+  });
+}
+
+/**
+ * Apply THẬT remote envelope vào local qua suppression guard (KHÔNG enqueue).
+ * Chỉ là test seam — production runtime CHƯA tự gọi. Trả result rõ ràng.
+ */
+export function applyRemoteForTests(
+  envelope: MoneySyncEnvelopeV1,
+  opts?: {
+    now?: string;
+    remoteVersion?: number;
+    expectedBaseHash?: string | null;
+    _failOnStore?: ChangedStore;
+  },
+): RemoteApplyResult {
+  const uid = currentUserId ?? useMoneySyncStore.getState().userId;
+  if (!isSyncableUid(uid)) return { kind: 'rejected', reason: 'user_null' };
+  return applyRemoteMoneyState({
+    userId: uid,
+    envelope,
+    mode: 'apply',
+    now: opts?.now ?? nowFn(),
+    remoteVersion: opts?.remoteVersion,
+    expectedBaseHash: opts?.expectedBaseHash,
+    _failOnStore: opts?._failOnStore,
+  });
 }
