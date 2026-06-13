@@ -26,7 +26,10 @@ import { buildClientSnapshot } from '@/lib/aiMoneyChat/clientSnapshot';
 import { sendChatMessage } from '@/lib/aiMoneyChat/chatClient';
 import type { MoneyActionRequest } from '@/lib/aiMoneyChat/actions/actionTypes';
 import { executeMoneyActionOnClient } from '@/lib/aiMoneyChat/actions/clientActionExecutor';
+import { undoMoneyActionOnClient } from '@/lib/aiMoneyChat/actions/clientActionUndoExecutor';
 import { getActionConfirmTitle, getActionRiskLabel } from '@/lib/aiMoneyChat/actions/actionCopy';
+import { useActionAuditStore } from '@/stores/useActionAuditStore';
+import type { MoneyActionAuditRecord } from '@/lib/aiMoneyChat/actions/actionAuditTypes';
 import {
   buildEarningTaskDates,
   detectEarningIntent,
@@ -222,6 +225,10 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
   // Phase 4A: action protocol — chỉ 1 pending action tại một thời điểm.
   const [pendingAction, setPendingAction] = useState<MoneyActionRequest | null>(null);
   const [isExecutingAction, setIsExecutingAction] = useState(false);
+  // Phase 5: audit history + undo.
+  const [showHistory, setShowHistory] = useState(false);
+  const [undoingId, setUndoingId] = useState<string | null>(null);
+  const auditRecords = useActionAuditStore((s) => s.records);
   const addEarningTask = useTaskStore((s) => s.addTask);
   const threadRef = useRef<HTMLDivElement>(null);
   const prefersReduced = useReducedMotion();
@@ -386,6 +393,7 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
             { id: makeMessageId('system'), role: 'system', text: 'Bạn đang có một thao tác chờ xác nhận. Hãy xử lý thao tác đó trước nhé.' },
           ]);
         } else {
+          useActionAuditStore.getState().addRequested(action);
           setPendingAction(action);
         }
       }
@@ -403,10 +411,23 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
 
   async function handleConfirmAction() {
     if (!pendingAction || isExecutingAction) return;
+    const { requestId } = pendingAction;
+    const audit = useActionAuditStore.getState();
     setIsExecutingAction(true);
+    audit.markConfirmed(requestId);
     const result = await executeMoneyActionOnClient(pendingAction);
     setIsExecutingAction(false);
     trackEvent('chat_parse', { mode: 'action', intent: pendingAction.action, source: result.ok ? 'executed' : 'rejected' });
+    if (result.ok) {
+      audit.markExecuted(requestId, {
+        message: result.message,
+        undoable: result.undoable,
+        undoReason: result.undoReason,
+        undoSnapshot: result.undoSnapshot,
+      });
+    } else {
+      audit.markFailed(requestId, result.message);
+    }
     appendMessages([
       { id: makeMessageId(result.ok ? 'assistant' : 'system'), role: result.ok ? 'assistant' : 'system', text: result.message },
     ]);
@@ -415,8 +436,23 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
 
   function handleCancelAction() {
     if (!pendingAction) return;
+    useActionAuditStore.getState().markCancelled(pendingAction.requestId, 'User cancelled');
     setPendingAction(null);
     appendMessages([{ id: makeMessageId('system'), role: 'system', text: 'Đã hủy thao tác.' }]);
+  }
+
+  async function handleUndo(record: MoneyActionAuditRecord) {
+    if (undoingId) return;
+    const audit = useActionAuditStore.getState();
+    setUndoingId(record.requestId);
+    audit.markUndoRequested(record.requestId);
+    const result = await undoMoneyActionOnClient(record);
+    setUndoingId(null);
+    if (result.ok) audit.markUndone(record.requestId, result.message);
+    else audit.markUndoFailed(record.requestId, result.message);
+    appendMessages([
+      { id: makeMessageId(result.ok ? 'assistant' : 'system'), role: result.ok ? 'assistant' : 'system', text: result.message },
+    ]);
   }
 
   function parseInput(rawText: string) {
@@ -867,6 +903,36 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
               </div>
             </div>
           )}
+
+          {showHistory && (
+            <div className="tg-history" role="region" aria-label="Lịch sử thao tác">
+              <p className="tg-history-title">Lịch sử thao tác (gần nhất)</p>
+              {auditRecords.length === 0 && <p className="tg-history-empty">Chưa có thao tác nào.</p>}
+              {auditRecords.slice(0, 20).map((rec) => (
+                <div key={rec.id} className="tg-history-item">
+                  <div className="tg-history-row">
+                    <span className="tg-history-preview">{rec.preview}</span>
+                    <span className={`tg-history-status tg-history-status-${rec.status}`}>{rec.status}</span>
+                  </div>
+                  {rec.resultMessage && <p className="tg-history-msg">{rec.resultMessage}</p>}
+                  {rec.errorMessage && <p className="tg-history-msg tg-history-err">{rec.errorMessage}</p>}
+                  {rec.status === 'executed' && rec.undoable && (
+                    <button
+                      type="button"
+                      className="tg-history-undo"
+                      disabled={undoingId === rec.requestId}
+                      onClick={() => handleUndo(rec)}
+                    >
+                      {undoingId === rec.requestId ? 'Đang hoàn tác…' : 'Hoàn tác'}
+                    </button>
+                  )}
+                  {rec.status === 'executed' && !rec.undoable && rec.undoReason && (
+                    <p className="tg-history-note">{rec.undoReason}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="tg-quick" aria-label="Hành động nhanh">
@@ -878,6 +944,9 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
           </button>
           <button type="button" className="tg-chip tg-chip-action" disabled={!enabled} onClick={openReconciliationForm}>
             <Scale size={14} /> Đối chiếu số dư
+          </button>
+          <button type="button" className="tg-chip tg-chip-action" onClick={() => setShowHistory((v) => !v)} aria-pressed={showHistory}>
+            <Scale size={14} /> Lịch sử thao tác
           </button>
           {EXAMPLES.map((example) => (
             <button key={example} type="button" className="tg-chip" disabled={!enabled} onClick={() => handleExample(example)}>

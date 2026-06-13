@@ -71,7 +71,9 @@ interface GoalsState {
    * Nếu là amount > 0 → grant SAVINGS_DEPOSIT XP.
    * `source` mặc định 'manual' (giữ backward-compat với caller cũ).
    */
-  addFundsToGoal: (id: string, amount: number, source?: GoalDepositSource, note?: string) => void;
+  addFundsToGoal: (id: string, amount: number, source?: GoalDepositSource, note?: string) => string;
+  /** Phase 5 (undo): xóa 1 deposit + trừ lại currentAmount. Trả false nếu không tìm thấy. */
+  removeGoalDeposit: (goalId: string, depositId: string) => boolean;
 
   // Bank linking
   linkBankAccount: (goalId: string, info: Omit<GoalBankInfo, 'linkedAt'>) => void;
@@ -134,6 +136,26 @@ export const useGoalsStore = create<GoalsState>((set, get) => ({
     if (amount > 0) {
       useAuthStore.getState().awardXP({ type: 'SAVINGS_DEPOSIT', amount });
     }
+    return deposit.id;
+  },
+
+  removeGoalDeposit: (goalId, depositId) => {
+    const goal = get().goals.find((g) => g.id === goalId);
+    const deposit = goal?.deposits?.find((d) => d.id === depositId);
+    if (!goal || !deposit) return false;
+    set((s) => ({
+      goals: s.goals.map((g) =>
+        g.id === goalId
+          ? {
+              ...g,
+              currentAmount: g.currentAmount - deposit.amount,
+              deposits: (g.deposits || []).filter((d) => d.id !== depositId),
+            }
+          : g
+      ),
+    }));
+    // Lưu ý Phase 5: KHÔNG đảo XP SAVINGS_DEPOSIT (chưa có XP-reversal API).
+    return true;
   },
 
   linkBankAccount: (goalId, info) =>

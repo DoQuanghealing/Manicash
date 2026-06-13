@@ -1,6 +1,6 @@
-/* ═══ AI Money Chat — Client Action Executor (Phase 4A) ═══
- * CLIENT-ONLY. Đây là NƠI DUY NHẤT được phép gọi Zustand action sau khi user confirm.
- * Re-validate state hiện tại trước khi execute (tránh stale request).
+/* ═══ AI Money Chat — Client Action Executor (Phase 4A/4B + Phase 5 undo metadata) ═══
+ * CLIENT-ONLY. Nơi DUY NHẤT gọi Zustand action sau khi user confirm.
+ * Re-validate state hiện tại trước khi execute. Trả undo metadata (Phase 5).
  * Expense >= BreathGate threshold KHÔNG được execute trực tiếp.
  */
 'use client';
@@ -12,18 +12,37 @@ import { useTaskStore } from '@/stores/useTaskStore';
 import { useWishlistStore, type CoolingHours } from '@/stores/useWishlistStore';
 import { formatVND } from '../response/formatMoney';
 import { BREATH_GATE_THRESHOLD, type MoneyActionRequest } from './actionTypes';
+import type { MoneyActionUndoSnapshot } from './actionAuditTypes';
+
+export type ExecuteActionResult =
+  | {
+      ok: true;
+      message: string;
+      undoable: boolean;
+      undoReason?: string;
+      undoSnapshot?: MoneyActionUndoSnapshot;
+    }
+  | {
+      ok: false;
+      message: string;
+      undoable?: false;
+      undoReason?: string;
+    };
 
 const VALID_COOLING: CoolingHours[] = [24, 48, 72, 96, 168];
 function toCoolingHours(h?: number): CoolingHours {
   return h && (VALID_COOLING as number[]).includes(h) ? (h as CoolingHours) : 48;
 }
 
-export type ExecuteActionResult = { ok: true; message: string } | { ok: false; message: string };
-
 function isExpired(request: MoneyActionRequest): boolean {
   const exp = Date.parse(request.expiresAt);
   return Number.isFinite(exp) && Date.now() > exp;
 }
+
+/** Caveat: undo rollback data nhưng KHÔNG đảo XP/streak (chưa có XP-reversal API). */
+const XP_CAVEAT_TXN = 'Undo sẽ xóa giao dịch nhưng không đảo streak/XP.';
+const XP_CAVEAT_GOAL = 'Undo sẽ rút khoản nạp nhưng không đảo XP tiết kiệm.';
+const XP_CAVEAT_TASK = 'Undo bỏ trạng thái hoàn thành nhưng không đảo XP và không khôi phục sub-task.';
 
 export async function executeMoneyActionOnClient(
   request: MoneyActionRequest,
@@ -41,55 +60,73 @@ export async function executeMoneyActionOnClient(
       if (!bill) return { ok: false, message: 'Không tìm thấy hóa đơn để cập nhật (dữ liệu đã thay đổi).' };
       if (bill.isPaid) return { ok: false, message: `Hóa đơn ${bill.name} đã được thanh toán trước đó rồi.` };
       finance.payBill(billId);
-      return { ok: true, message: `Đã đánh dấu bill ${billName} là đã thanh toán.` };
+      return {
+        ok: true,
+        message: `Đã đánh dấu bill ${billName} là đã thanh toán.`,
+        undoable: true,
+        undoSnapshot: { action: 'MARK_BILL_PAID', before: { billId, isPaid: false }, after: { billId, isPaid: true } },
+      };
     }
 
     case 'CREATE_EXPENSE': {
       const { amount, categoryId, note, wallet } = request.payload;
       if (!(amount > 0)) return { ok: false, message: 'Số tiền chi không hợp lệ.' };
-      // KHÔNG bypass BreathGate cho khoản chi lớn.
       if (amount >= BREATH_GATE_THRESHOLD) {
         return {
           ok: false,
           message: 'Khoản chi này vượt ngưỡng BreathGate. Vui lòng nhập qua tab Nhập để xác nhận chậm.',
         };
       }
-      finance.addTransaction({
-        type: 'expense',
-        amount,
-        categoryId: categoryId || 'other',
-        note: note ?? '',
-        wallet: wallet ?? 'main',
-      });
-      return { ok: true, message: `Đã ghi khoản chi ${formatVND(amount)}.` };
+      const tx = finance.addTransaction({ type: 'expense', amount, categoryId: categoryId || 'other', note: note ?? '', wallet: wallet ?? 'main' });
+      return {
+        ok: true,
+        message: `Đã ghi khoản chi ${formatVND(amount)}.`,
+        undoable: true,
+        undoReason: XP_CAVEAT_TXN,
+        undoSnapshot: { action: 'CREATE_EXPENSE', after: { transactionId: tx.id } },
+      };
     }
 
     case 'CREATE_INCOME': {
       const { amount, categoryId, note, wallet } = request.payload;
       if (!(amount > 0)) return { ok: false, message: 'Số tiền thu không hợp lệ.' };
-      finance.addTransaction({
-        type: 'income',
-        amount,
-        categoryId: categoryId || 'other',
-        note: note ?? '',
-        wallet: wallet ?? 'main',
-      });
-      return { ok: true, message: `Đã ghi thu nhập ${formatVND(amount)}.` };
+      const tx = finance.addTransaction({ type: 'income', amount, categoryId: categoryId || 'other', note: note ?? '', wallet: wallet ?? 'main' });
+      return {
+        ok: true,
+        message: `Đã ghi thu nhập ${formatVND(amount)}.`,
+        undoable: true,
+        undoReason: XP_CAVEAT_TXN,
+        undoSnapshot: { action: 'CREATE_INCOME', after: { transactionId: tx.id } },
+      };
     }
 
-    // ─── Phase 4B ───────────────────────────────────────────────────────────
     case 'CREATE_FIXED_BILL': {
       const { name, amount, dueDay, icon } = request.payload;
       if (!(amount > 0) || dueDay < 1 || dueDay > 31) return { ok: false, message: 'Dữ liệu hóa đơn không hợp lệ.' };
-      finance.addBill({ name, icon: icon ?? '🧾', amount, dueDay });
-      return { ok: true, message: `Đã tạo bill ${name} ${formatVND(amount)}, hạn ngày ${dueDay} mỗi tháng.` };
+      const bill = finance.addBill({ name, icon: icon ?? '🧾', amount, dueDay });
+      return {
+        ok: true,
+        message: `Đã tạo bill ${name} ${formatVND(amount)}, hạn ngày ${dueDay} mỗi tháng.`,
+        undoable: true,
+        undoSnapshot: { action: 'CREATE_FIXED_BILL', after: { billId: bill.id } },
+      };
     }
 
     case 'SET_CATEGORY_BUDGET': {
       const { categoryId, categoryName, monthlyLimit } = request.payload;
       if (!categoryId || !(monthlyLimit >= 0)) return { ok: false, message: 'Dữ liệu ngân sách không hợp lệ.' };
-      useBudgetStore.getState().setCategoryBudget(categoryId, monthlyLimit);
-      return { ok: true, message: `Đã đặt ngân sách ${categoryName ?? categoryId} là ${formatVND(monthlyLimit)}.` };
+      const budget = useBudgetStore.getState();
+      const month = budget.currentMonth;
+      const existing = budget.categoryBudgets.find((b) => b.categoryId === categoryId && b.month === month);
+      const oldLimit = existing ? existing.monthlyLimit : null;
+      budget.setCategoryBudget(categoryId, monthlyLimit);
+      return {
+        ok: true,
+        message: `Đã đặt ngân sách ${categoryName ?? categoryId} là ${formatVND(monthlyLimit)}.`,
+        undoable: true,
+        undoReason: oldLimit === null ? 'Trước đó chưa có ngân sách; undo sẽ đặt về 0.' : undefined,
+        undoSnapshot: { action: 'SET_CATEGORY_BUDGET', before: { categoryId, monthlyLimit: oldLimit }, after: { categoryId, monthlyLimit } },
+      };
     }
 
     case 'ADD_GOAL_DEPOSIT': {
@@ -97,22 +134,32 @@ export async function executeMoneyActionOnClient(
       if (!(amount > 0)) return { ok: false, message: 'Số tiền nạp không hợp lệ.' };
       const goal = useGoalsStore.getState().goals.find((g) => g.id === goalId);
       if (!goal) return { ok: false, message: 'Không tìm thấy mục tiêu để nạp (dữ liệu đã thay đổi).' };
-      // Store tự cộng SAVINGS_DEPOSIT XP — KHÔNG nhân đôi ở đây.
-      useGoalsStore.getState().addFundsToGoal(goalId, amount, 'manual', note);
-      return { ok: true, message: `Đã nạp ${formatVND(amount)} vào mục tiêu ${goalName}.` };
+      const depositId = useGoalsStore.getState().addFundsToGoal(goalId, amount, 'manual', note);
+      return {
+        ok: true,
+        message: `Đã nạp ${formatVND(amount)} vào mục tiêu ${goalName}.`,
+        undoable: true,
+        undoReason: XP_CAVEAT_GOAL,
+        undoSnapshot: { action: 'ADD_GOAL_DEPOSIT', after: { goalId, depositId, amount } },
+      };
     }
 
     case 'CREATE_EARNING_TASK': {
       const { name, expectedAmount, startDate, endDate, subTasks } = request.payload;
       if (!name || !(expectedAmount > 0) || !endDate) return { ok: false, message: 'Dữ liệu nhiệm vụ không hợp lệ.' };
-      useTaskStore.getState().addTask({
+      const task = useTaskStore.getState().addTask({
         name,
         expectedAmount,
         startDate: startDate ?? new Date().toISOString().slice(0, 10),
         endDate,
         subTasks: subTasks?.map((s) => ({ name: s.name })),
       });
-      return { ok: true, message: `Đã tạo nhiệm vụ “${name}” kỳ vọng ${formatVND(expectedAmount)}.` };
+      return {
+        ok: true,
+        message: `Đã tạo nhiệm vụ “${name}” kỳ vọng ${formatVND(expectedAmount)}.`,
+        undoable: true,
+        undoSnapshot: { action: 'CREATE_EARNING_TASK', after: { taskId: task.id } },
+      };
     }
 
     case 'COMPLETE_EARNING_TASK': {
@@ -121,29 +168,45 @@ export async function executeMoneyActionOnClient(
       if (!task) return { ok: false, message: 'Không tìm thấy nhiệm vụ (dữ liệu đã thay đổi).' };
       if (task.completedAt) return { ok: false, message: `Nhiệm vụ ${task.name} đã hoàn thành trước đó rồi.` };
       if (task.deletedAt) return { ok: false, message: 'Nhiệm vụ này đã bị xóa.' };
-      // Store tự cộng TASK_COMPLETE XP — KHÔNG nhân đôi ở đây.
       useTaskStore.getState().completeTask(taskId, actualAmount ?? expectedAmount ?? 0);
-      return { ok: true, message: `Đã đánh dấu nhiệm vụ ${taskName} là hoàn thành.` };
+      return {
+        ok: true,
+        message: `Đã đánh dấu nhiệm vụ ${taskName} là hoàn thành.`,
+        undoable: true,
+        undoReason: XP_CAVEAT_TASK,
+        undoSnapshot: { action: 'COMPLETE_EARNING_TASK', before: { taskId }, after: { taskId } },
+      };
     }
 
     case 'ADD_WISHLIST_ITEM': {
       const { name, expectedPrice, reason, cooldownHours } = request.payload;
       if (!name || !name.trim()) return { ok: false, message: 'Thiếu tên món muốn mua.' };
-      useWishlistStore.getState().addItem({
+      const item = useWishlistStore.getState().addItem({
         name,
         price: expectedPrice ?? 0,
         reason: reason ?? '',
         coolingHours: toCoolingHours(cooldownHours),
       });
-      return { ok: true, message: `Đã đưa ${name} vào wishlist (khóa mua ${toCoolingHours(cooldownHours)} giờ).` };
+      return {
+        ok: true,
+        message: `Đã đưa ${name} vào wishlist (khóa mua ${toCoolingHours(cooldownHours)} giờ).`,
+        undoable: true,
+        undoSnapshot: { action: 'ADD_WISHLIST_ITEM', after: { itemId: item.id } },
+      };
     }
 
     case 'FLAG_TRANSACTION': {
       const { transactionId } = request.payload;
       const txn = finance.transactions.find((t) => t.id === transactionId);
       if (!txn) return { ok: false, message: 'Không tìm thấy giao dịch để gắn cờ (dữ liệu đã thay đổi).' };
+      const wasFlagged = useBudgetStore.getState().flaggedTransactionIds.includes(transactionId);
       useBudgetStore.getState().toggleTransactionFlag(transactionId);
-      return { ok: true, message: 'Đã gắn cờ giao dịch để chú ý.' };
+      return {
+        ok: true,
+        message: wasFlagged ? 'Đã bỏ cờ giao dịch.' : 'Đã gắn cờ giao dịch để chú ý.',
+        undoable: true,
+        undoSnapshot: { action: 'FLAG_TRANSACTION', before: { transactionId, flagged: wasFlagged }, after: { transactionId, flagged: !wasFlagged } },
+      };
     }
 
     default:

@@ -499,3 +499,47 @@
 .tg-action-confirm { background: #7c3aed; color: #fff; }
 .tg-action-confirm:disabled { opacity: 0.6; cursor: default; }
 .tg-action-cancel { background: transparent; color: var(--c-text-secondary, #c9c6da); border: 1px solid var(--c-border, #2a2740); }
+
+/* ═══ Phase 5 — Action history panel ═══ */
+.tg-history {
+  margin: 8px 0 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--c-border, #2a2740);
+  border-radius: 14px;
+  background: var(--c-bg-tertiary, #1c1930);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.tg-history-title { font-weight: 700; font-size: 12px; color: var(--c-text-primary, #fff); }
+.tg-history-empty { font-size: 12px; color: var(--c-text-tertiary, #8b88a0); }
+.tg-history-item {
+  border-top: 1px solid var(--c-border, #2a2740);
+  padding-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.tg-history-row { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.tg-history-preview { font-size: 12px; color: var(--c-text-secondary, #c9c6da); }
+.tg-history-status { font-size: 10px; font-weight: 700; text-transform: uppercase; opacity: 0.8; }
+.tg-history-status-executed { color: #22c55e; }
+.tg-history-status-cancelled { color: #8b88a0; }
+.tg-history-status-failed,
+.tg-history-status-undo_failed { color: #ef4444; }
+.tg-history-status-undone { color: #f59e0b; }
+.tg-history-msg { font-size: 11px; color: var(--c-text-tertiary, #8b88a0); }
+.tg-history-err { color: #ef4444; }
+.tg-history-note { font-size: 10px; color: #f59e0b; font-style: italic; }
+.tg-history-undo {
+  align-self: flex-start;
+  padding: 5px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid var(--c-border, #2a2740);
+  background: transparent;
+  color: #f59e0b;
+  cursor: pointer;
+}
+.tg-history-undo:disabled { opacity: 0.6; cursor: default; }

@@ -4,7 +4,7 @@
 import { create } from 'zustand';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useBudgetStore } from '@/stores/useBudgetStore';
-import { getMonthKeyFromDate, getCurrentMonthKey, getDateKey, getDateLabel, parseMonthKey } from '@/lib/dateHelpers';
+import { getMonthKeyFromDate, getCurrentMonthKey, getDateKey, getDateLabel } from '@/lib/dateHelpers';
 
 export type TxnType = 'income' | 'expense' | 'transfer';
 export type WalletType = 'main' | 'emergency' | 'bill-fund';
@@ -74,10 +74,14 @@ interface FinanceState {
   getDailySummary: () => Record<string, { income: number; expense: number }>;
 
   // Bill management
-  addBill: (bill: Omit<FixedBill, 'id' | 'isPaid'>) => void;
+  addBill: (bill: Omit<FixedBill, 'id' | 'isPaid'>) => FixedBill;
   updateBill: (billId: string, updates: Partial<Omit<FixedBill, 'id'>>) => void;
   removeBill: (billId: string) => void;
   payBill: (billId: string) => void;
+  /** Phase 5 (undo): set trạng thái đã/chưa đóng tường minh + hoàn billFund. */
+  setBillPaidStatus: (billId: string, isPaid: boolean) => void;
+  /** Phase 5 (undo): xóa 1 giao dịch + đảo ngược balance đã cộng/trừ. Trả false nếu không tìm thấy. */
+  removeTransaction: (transactionId: string) => boolean;
   /** Reset tất cả bill về chưa đóng — gọi khi sang tháng mới (rollover). */
   resetBillsPaid: () => void;
   getTotalBills: () => number;
@@ -331,10 +335,11 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
   addBill: (billData) => {
     const bill: FixedBill = {
       ...billData,
-      id: `bill-${Date.now()}`,
+      id: `bill-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       isPaid: false,
     };
     set((state) => ({ fixedBills: [...state.fixedBills, bill].sort((a, b) => a.dueDay - b.dueDay) }));
+    return bill;
   },
 
   updateBill: (billId, updates) => {
@@ -364,6 +369,49 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
 
       return { fixedBills: updatedBills, billFundBalance: newFund };
     });
+  },
+
+  setBillPaidStatus: (billId, isPaid) => {
+    set((state) => {
+      const bill = state.fixedBills.find((b) => b.id === billId);
+      if (!bill || bill.isPaid === isPaid) return state;
+      // paid -> trừ billFund (như payBill); unpaid (undo) -> hoàn lại billFund.
+      // Lưu ý: nếu lúc trả billFund < amount (bị clamp 0), undo cộng đủ amount có thể
+      // dư nhẹ — chấp nhận ở Phase 5 (đa số quỹ bill đủ trả).
+      const billFundBalance = isPaid
+        ? Math.max(0, state.billFundBalance - bill.amount)
+        : state.billFundBalance + bill.amount;
+      return {
+        fixedBills: state.fixedBills.map((b) => (b.id === billId ? { ...b, isPaid } : b)),
+        billFundBalance,
+      };
+    });
+  },
+
+  removeTransaction: (transactionId) => {
+    const txn = get().transactions.find((t) => t.id === transactionId);
+    if (!txn) return false;
+    set((state) => {
+      let mainBal = state.mainBalance;
+      let emergBal = state.emergencyBalance;
+      let billFund = state.billFundBalance;
+      // Đảo ngược chính xác mutation của addTransaction.
+      if (txn.type === 'income') {
+        if (txn.wallet === 'main') mainBal -= txn.amount;
+        else if (txn.wallet === 'emergency') emergBal -= txn.amount;
+        else if (txn.wallet === 'bill-fund') billFund -= txn.amount;
+      } else if (txn.type === 'expense') {
+        if (txn.wallet === 'main') mainBal += txn.amount;
+        else if (txn.wallet === 'emergency') emergBal += txn.amount;
+      }
+      return {
+        transactions: state.transactions.filter((t) => t.id !== transactionId),
+        mainBalance: mainBal,
+        emergencyBalance: emergBal,
+        billFundBalance: billFund,
+      };
+    });
+    return true;
   },
 
   resetBillsPaid: () =>

@@ -116,6 +116,33 @@ async function main() {
     eq(res.ok, false);
   });
 
+  // ─── Phase 5: undo metadata ───────────────────────────────────────────────
+  await it('CREATE_FIXED_BILL trả undo metadata (undoable + billId)', async () => {
+    const res = await executeMoneyActionOnClient(req('CREATE_FIXED_BILL', { name: 'X', amount: 100_000, dueDay: 5 }));
+    ok(res.ok, 'ok');
+    if (res.ok) {
+      eq(res.undoable, true);
+      eq(res.undoSnapshot?.action, 'CREATE_FIXED_BILL');
+      ok(!!(res.undoSnapshot?.after as { billId?: string })?.billId, 'has billId');
+    }
+  });
+
+  await it('CREATE_EXPENSE undoable + caveat XP', async () => {
+    useFinanceStore.setState({ transactions: [], mainBalance: 1_000_000 });
+    const res = await executeMoneyActionOnClient(req('CREATE_EXPENSE', { amount: 50_000, categoryId: 'food', wallet: 'main' }));
+    ok(res.ok, 'ok');
+    if (res.ok) {
+      eq(res.undoable, true);
+      ok(!!res.undoReason, 'has XP caveat');
+      ok(!!(res.undoSnapshot?.after as { transactionId?: string })?.transactionId, 'has txn id');
+    }
+  });
+
+  await it('CREATE_EXPENSE >= 3M -> không undoable (block)', async () => {
+    const res = await executeMoneyActionOnClient(req('CREATE_EXPENSE', { amount: 5_000_000, categoryId: 'food' }));
+    eq(res.ok, false);
+  });
+
   console.log('\nclient action executor test complete.');
 }
 

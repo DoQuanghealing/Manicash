@@ -95,10 +95,14 @@ interface TaskState {
   tasks: EarningTask[];
   xpPenalties: XPPenalty[];
 
-  addTask: (data: Pick<EarningTask, 'name' | 'expectedAmount' | 'startDate' | 'endDate'> & { subTasks?: Omit<SubTask, 'id' | 'isCompleted'>[] }) => void;
+  addTask: (data: Pick<EarningTask, 'name' | 'expectedAmount' | 'startDate' | 'endDate'> & { subTasks?: Omit<SubTask, 'id' | 'isCompleted'>[] }) => EarningTask;
   updateTask: (id: string, data: Partial<Pick<EarningTask, 'name' | 'expectedAmount' | 'startDate' | 'endDate'>>) => void;
   completeTask: (id: string, actualAmount: number) => void;
   deleteOverdueTask: (id: string, reason: OverdueReason) => void;
+  /** Phase 5 (undo): xóa hẳn 1 task (dùng cho undo task vừa tạo). Trả false nếu không thấy. */
+  removeTask: (id: string) => boolean;
+  /** Phase 5 (undo): bỏ trạng thái hoàn thành (clear completedAt/actualAmount). XP KHÔNG đảo. */
+  undoCompleteTask: (id: string) => boolean;
   toggleSubTask: (taskId: string, subTaskId: string) => void;
 
   getStatus: (task: EarningTask) => TaskStatus;
@@ -112,15 +116,34 @@ export const useTaskStore = create<TaskState>((set, get) => ({
   tasks: SEED_TASKS,
   xpPenalties: [],
 
-  addTask: (data) =>
+  addTask: (data) => {
+    const task: EarningTask = {
+      ...data,
+      id: genId(),
+      createdAt: new Date().toISOString(),
+      subTasks: (data.subTasks || []).map((st) => ({ ...st, id: genId('st'), isCompleted: false })),
+    };
+    set((s) => ({ tasks: [...s.tasks, task] }));
+    return task;
+  },
+
+  removeTask: (id) => {
+    if (!get().tasks.some((t) => t.id === id)) return false;
+    set((s) => ({ tasks: s.tasks.filter((t) => t.id !== id) }));
+    return true;
+  },
+
+  undoCompleteTask: (id) => {
+    const task = get().tasks.find((t) => t.id === id);
+    if (!task || !task.completedAt) return false;
     set((s) => ({
-      tasks: [...s.tasks, {
-        ...data,
-        id: genId(),
-        createdAt: new Date().toISOString(),
-        subTasks: (data.subTasks || []).map((st) => ({ ...st, id: genId('st'), isCompleted: false })),
-      }],
-    })),
+      tasks: s.tasks.map((t) =>
+        t.id === id ? { ...t, completedAt: undefined, actualAmount: undefined } : t
+      ),
+    }));
+    // Lưu ý Phase 5: KHÔNG đảo XP TASK_COMPLETE và không khôi phục trạng thái sub-task.
+    return true;
+  },
 
   updateTask: (id, data) =>
     set((s) => ({
