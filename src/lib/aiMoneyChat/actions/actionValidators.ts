@@ -41,6 +41,72 @@ export function validateActionRequestAgainstSnapshot(
       return { ok: true };
     }
 
+    // ─── Phase 4B ───────────────────────────────────────────────────────────
+    case 'CREATE_FIXED_BILL': {
+      const { name, amount, dueDay } = request.payload;
+      if (!name || !name.trim()) return { ok: false, reason: 'Thiếu tên hóa đơn.' };
+      if (!(amount > 0)) return { ok: false, reason: 'Số tiền hóa đơn phải lớn hơn 0.' };
+      if (!Number.isInteger(dueDay) || dueDay < 1 || dueDay > 31) {
+        return { ok: false, reason: 'Ngày đến hạn phải từ 1 đến 31.' };
+      }
+      return { ok: true };
+    }
+
+    case 'SET_CATEGORY_BUDGET': {
+      const { categoryId, monthlyLimit } = request.payload;
+      if (!categoryId || !categoryId.trim()) return { ok: false, reason: 'Thiếu danh mục cho ngân sách.' };
+      if (!(monthlyLimit >= 0)) return { ok: false, reason: 'Hạn mức ngân sách không hợp lệ.' };
+      return { ok: true };
+    }
+
+    case 'ADD_GOAL_DEPOSIT': {
+      const { goalId, amount } = request.payload;
+      const goal = snapshot.goals.find((g) => g.id === goalId);
+      if (!goal) return { ok: false, reason: 'Không tìm thấy mục tiêu này.' };
+      if (!(amount > 0)) return { ok: false, reason: 'Số tiền nạp phải lớn hơn 0.' };
+      return { ok: true };
+    }
+
+    case 'CREATE_EARNING_TASK': {
+      const { name, expectedAmount, endDate, startDate } = request.payload;
+      if (!name || !name.trim()) return { ok: false, reason: 'Thiếu tên nhiệm vụ.' };
+      if (!(expectedAmount > 0)) return { ok: false, reason: 'Thu nhập kỳ vọng phải lớn hơn 0.' };
+      if (!endDate || Number.isNaN(Date.parse(endDate))) return { ok: false, reason: 'Hạn hoàn thành không hợp lệ.' };
+      if (startDate && Number.isNaN(Date.parse(startDate))) return { ok: false, reason: 'Ngày bắt đầu không hợp lệ.' };
+      return { ok: true };
+    }
+
+    case 'COMPLETE_EARNING_TASK': {
+      const { taskId, actualAmount } = request.payload;
+      const task = snapshot.tasks.find((t) => t.id === taskId);
+      if (!task) return { ok: false, reason: 'Không tìm thấy nhiệm vụ này.' };
+      if (task.completedAt) return { ok: false, reason: `Nhiệm vụ ${task.name} đã hoàn thành rồi.` };
+      if (task.deletedAt) return { ok: false, reason: 'Nhiệm vụ này đã bị xóa.' };
+      if (typeof actualAmount === 'number' && actualAmount < 0) {
+        return { ok: false, reason: 'Số tiền thực nhận không hợp lệ.' };
+      }
+      return { ok: true };
+    }
+
+    case 'ADD_WISHLIST_ITEM': {
+      const { name, expectedPrice, cooldownHours } = request.payload;
+      if (!name || !name.trim()) return { ok: false, reason: 'Thiếu tên món muốn mua.' };
+      if (typeof expectedPrice === 'number' && !(expectedPrice > 0)) {
+        return { ok: false, reason: 'Giá dự kiến không hợp lệ.' };
+      }
+      if (typeof cooldownHours === 'number' && !(cooldownHours > 0)) {
+        return { ok: false, reason: 'Thời gian khóa mua không hợp lệ.' };
+      }
+      return { ok: true };
+    }
+
+    case 'FLAG_TRANSACTION': {
+      const { transactionId } = request.payload;
+      const txn = snapshot.transactions.find((t) => t.id === transactionId);
+      if (!txn) return { ok: false, reason: 'Không tìm thấy giao dịch này.' };
+      return { ok: true };
+    }
+
     default:
       return { ok: false, reason: 'Loại thao tác không được hỗ trợ.' };
   }

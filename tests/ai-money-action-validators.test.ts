@@ -63,6 +63,74 @@ function main() {
     ok(!validateActionRequestAgainstSnapshot(SNAP, req).ok, 'should fail');
   });
 
+  // ─── Phase 4B ─────────────────────────────────────────────────────────────
+  const SNAP4B: MoneySnapshotV1 = {
+    ...SNAP,
+    transactions: [
+      { id: 'tx1', type: 'expense', amount: 600_000, categoryId: 'clothing', date: '2026-06-08T03:00:00Z', dateKey: '2026-06-08', weekKey: '2026-W23', monthKey: '2026-06' },
+    ],
+    goals: [{ id: 'g1', name: 'Quỹ khẩn cấp', targetAmount: 50_000_000, currentAmount: 10_000_000, monthlyContributionTarget: 2_000_000 }],
+    tasks: [
+      { id: 'tk1', name: 'Dạy kèm', expectedAmount: 2_000_000, startDate: '2026-06-01', endDate: '2026-06-20' },
+      { id: 'tk2', name: 'Viết blog', expectedAmount: 800_000, startDate: '2026-06-01', endDate: '2026-06-10', completedAt: '2026-06-05T03:00:00Z' },
+    ],
+  };
+
+  it('CREATE_FIXED_BILL dueDay 0 -> fail', () => {
+    const req = createActionRequest(SNAP4B, { action: 'CREATE_FIXED_BILL', payload: { name: 'Internet', amount: 250_000, dueDay: 0 }, preview: '' });
+    ok(!validateActionRequestAgainstSnapshot(SNAP4B, req).ok, 'dueDay invalid');
+  });
+  it('CREATE_FIXED_BILL hợp lệ -> ok', () => {
+    const req = createActionRequest(SNAP4B, { action: 'CREATE_FIXED_BILL', payload: { name: 'Internet', amount: 250_000, dueDay: 12 }, preview: '' });
+    ok(validateActionRequestAgainstSnapshot(SNAP4B, req).ok, 'should ok');
+  });
+
+  it('SET_CATEGORY_BUDGET monthlyLimit >= 0 ok', () => {
+    const req = createActionRequest(SNAP4B, { action: 'SET_CATEGORY_BUDGET', payload: { categoryId: 'food', monthlyLimit: 3_000_000 }, preview: '' });
+    ok(validateActionRequestAgainstSnapshot(SNAP4B, req).ok, 'should ok');
+  });
+  it('SET_CATEGORY_BUDGET thiếu category -> fail', () => {
+    const req = createActionRequest(SNAP4B, { action: 'SET_CATEGORY_BUDGET', payload: { categoryId: '', monthlyLimit: 1 }, preview: '' });
+    ok(!validateActionRequestAgainstSnapshot(SNAP4B, req).ok, 'should fail');
+  });
+
+  it('ADD_GOAL_DEPOSIT goal tồn tại -> ok', () => {
+    const req = createActionRequest(SNAP4B, { action: 'ADD_GOAL_DEPOSIT', payload: { goalId: 'g1', goalName: 'Quỹ khẩn cấp', amount: 2_000_000 }, preview: '' });
+    ok(validateActionRequestAgainstSnapshot(SNAP4B, req).ok, 'should ok');
+  });
+  it('ADD_GOAL_DEPOSIT goal không tồn tại -> fail', () => {
+    const req = createActionRequest(SNAP4B, { action: 'ADD_GOAL_DEPOSIT', payload: { goalId: 'zzz', goalName: 'X', amount: 2_000_000 }, preview: '' });
+    ok(!validateActionRequestAgainstSnapshot(SNAP4B, req).ok, 'should fail');
+  });
+
+  it('CREATE_EARNING_TASK endDate invalid -> fail', () => {
+    const req = createActionRequest(SNAP4B, { action: 'CREATE_EARNING_TASK', payload: { name: 'X', expectedAmount: 1_000_000, endDate: 'not-a-date' }, preview: '' });
+    ok(!validateActionRequestAgainstSnapshot(SNAP4B, req).ok, 'should fail');
+  });
+
+  it('COMPLETE_EARNING_TASK task chưa xong -> ok', () => {
+    const req = createActionRequest(SNAP4B, { action: 'COMPLETE_EARNING_TASK', payload: { taskId: 'tk1', taskName: 'Dạy kèm', expectedAmount: 2_000_000 }, preview: '' });
+    ok(validateActionRequestAgainstSnapshot(SNAP4B, req).ok, 'should ok');
+  });
+  it('COMPLETE_EARNING_TASK task đã xong -> fail', () => {
+    const req = createActionRequest(SNAP4B, { action: 'COMPLETE_EARNING_TASK', payload: { taskId: 'tk2', taskName: 'Viết blog', expectedAmount: 800_000 }, preview: '' });
+    ok(!validateActionRequestAgainstSnapshot(SNAP4B, req).ok, 'should fail (completed)');
+  });
+
+  it('ADD_WISHLIST_ITEM name non-empty -> ok', () => {
+    const req = createActionRequest(SNAP4B, { action: 'ADD_WISHLIST_ITEM', payload: { name: 'iPhone', expectedPrice: 20_000_000, cooldownHours: 48 }, preview: '' });
+    ok(validateActionRequestAgainstSnapshot(SNAP4B, req).ok, 'should ok');
+  });
+
+  it('FLAG_TRANSACTION txn tồn tại -> ok', () => {
+    const req = createActionRequest(SNAP4B, { action: 'FLAG_TRANSACTION', payload: { transactionId: 'tx1' }, preview: '' });
+    ok(validateActionRequestAgainstSnapshot(SNAP4B, req).ok, 'should ok');
+  });
+  it('FLAG_TRANSACTION txn không tồn tại -> fail', () => {
+    const req = createActionRequest(SNAP4B, { action: 'FLAG_TRANSACTION', payload: { transactionId: 'zzz' }, preview: '' });
+    ok(!validateActionRequestAgainstSnapshot(SNAP4B, req).ok, 'should fail');
+  });
+
   console.log('\naction validators test complete.');
 }
 
