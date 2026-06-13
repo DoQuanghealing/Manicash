@@ -40,6 +40,12 @@ import {
   createInMemoryMoneyAdapter,
   type MoneyCloudAdapter,
 } from './firestoreAdapter';
+import { buildSyncEnvelope, type MoneySyncEnvelopeV1 } from './syncEnvelope';
+import {
+  simulateRemoteSyncOnce,
+  type RemoteSyncOutcome,
+} from './remoteSyncService';
+import type { RemoteMoneySyncAdapter } from './remoteAdapter';
 import type { LocalMoneyStateInput } from './cloudTypes';
 
 // ─── Module singletons ─────────────────────────────────────────────────────────
@@ -348,4 +354,103 @@ export async function flushMoneySyncForTests(): Promise<FlushResult> {
       reason,
     };
   }
+}
+
+// ─── Remote sync simulation glue (Phase 6B-2C) ────────────────────────────────
+
+/**
+ * Đóng gói state hiện tại thành MoneySyncEnvelopeV1 (cho remote sim).
+ * Null nếu chưa có uid hợp lệ hoặc serialize fail (user null). KHÔNG mutate store.
+ */
+export function getCurrentMoneyEnvelope(
+  nowOverride?: string,
+): MoneySyncEnvelopeV1 | null {
+  const uid =
+    currentUserId ??
+    useMoneySyncStore.getState().userId ??
+    useAuthStore.getState().user?.uid;
+  if (!isSyncableUid(uid)) return null;
+
+  const { snapshot, localState } = gather(uid);
+  const now = nowOverride ?? nowFn();
+  let payload;
+  try {
+    payload = serializeMoneyStateToCloud({ ...localState, now });
+  } catch {
+    return null;
+  }
+  const meta = useMoneySyncStore.getState();
+  return buildSyncEnvelope({
+    userId: uid,
+    snapshotHash: hashMoneySyncSnapshot(snapshot),
+    baseVersion: meta.baseVersion,
+    localVersion: meta.queue.length,
+    createdAt: now,
+    payload,
+  });
+}
+
+/**
+ * Chạy 1 vòng simulate remote sync với adapter remote (fake/in-memory).
+ * KHÔNG apply patch remote vào Zustand (tránh vòng lặp enqueue) — chỉ cập nhật
+ * metadata + đánh dấu outbox flushed khi push thành công. Trả outcome cho caller.
+ */
+export async function simulateRemoteSyncForTests(
+  remoteAdapter: RemoteMoneySyncAdapter,
+  opts?: { now?: string; applyMerge?: boolean },
+): Promise<RemoteSyncOutcome> {
+  const uid = currentUserId ?? useMoneySyncStore.getState().userId;
+  if (!isSyncableUid(uid)) return { ok: false, reason: 'uid_missing' };
+
+  const now = opts?.now ?? nowFn();
+  const envelope = getCurrentMoneyEnvelope(now);
+  if (!envelope) return { ok: false, reason: 'uid_missing' };
+
+  const meta = useMoneySyncStore.getState();
+  meta.setStatus('syncing');
+
+  const outcome = await simulateRemoteSyncOnce({
+    userId: uid,
+    adapter: remoteAdapter,
+    localEnvelope: envelope,
+    baseHash: meta.lastSyncedHash,
+    now,
+    deviceId,
+    applyMerge: opts?.applyMerge,
+  });
+
+  const after = useMoneySyncStore.getState();
+  if (!outcome.ok) {
+    after.setError(
+      outcome.reason === 'error'
+        ? outcome.error?.message ?? 'remote error'
+        : outcome.reason,
+    );
+    after.setStatus('error');
+    return outcome;
+  }
+
+  if (outcome.action === 'pushed') {
+    // Local đã lên remote → mark outbox flushed + ghi base version/hash.
+    const ids = new Set(getPendingRetryable(after.queue).map((r) => r.id));
+    after.replaceQueue(
+      after.queue.map((w) => (ids.has(w.id) ? markPendingWriteFlushed(w, now) : w)),
+    );
+    useMoneySyncStore
+      .getState()
+      .setRemoteSynced(outcome.remoteVersion, envelope.snapshotHash, now);
+    useMoneySyncStore.getState().setStatus('ready');
+  } else if (outcome.action === 'pulled') {
+    // KHÔNG apply patch vào store ở phase này — chỉ ghi nhận version remote.
+    useMoneySyncStore.setState({ baseVersion: outcome.remoteVersion });
+    useMoneySyncStore.getState().setStatus('ready');
+  } else if (outcome.action === 'merged') {
+    // Cần resolution — giữ preview, KHÔNG apply. baseVersion theo remote quan sát.
+    useMoneySyncStore.setState({ baseVersion: outcome.remoteVersion });
+    useMoneySyncStore.getState().setStatus('dirty');
+  } else {
+    useMoneySyncStore.getState().setStatus('ready');
+  }
+
+  return outcome;
 }

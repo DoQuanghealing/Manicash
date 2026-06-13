@@ -32,6 +32,12 @@ interface MoneySyncMetaState {
   lastSyncedAt: string | null;
   lastError: string | null;
 
+  // ── remote version metadata (Phase 6B-2C) ──
+  /** Remote head version client thấy gần nhất (0 nếu chưa từng sync). */
+  baseVersion: number;
+  /** Hash đã đồng bộ với remote gần nhất (base cho conflict detection). */
+  lastSyncedHash: string | null;
+
   // ── actions ──
   reset: () => void;
   setStatus: (status: MoneySyncStatus) => void;
@@ -41,6 +47,8 @@ interface MoneySyncMetaState {
   replaceQueue: (queue: PendingMoneySyncWrite[]) => void;
   markSynced: (at: string) => void;
   setError: (message: string | null) => void;
+  /** Ghi nhận trạng thái remote sau push/pull thành công (version + base hash). */
+  setRemoteSynced: (version: number, hash: string, at: string) => void;
 
   // ── derived ──
   getPendingCount: () => number;
@@ -53,6 +61,8 @@ const INITIAL = {
   lastSnapshotHash: null,
   lastSyncedAt: null,
   lastError: null,
+  baseVersion: 0,
+  lastSyncedHash: null,
 };
 
 export const useMoneySyncStore = create<MoneySyncMetaState>((set, get) => ({
@@ -73,6 +83,14 @@ export const useMoneySyncStore = create<MoneySyncMetaState>((set, get) => ({
   markSynced: (at) => set({ lastSyncedAt: at, lastError: null }),
 
   setError: (lastError) => set({ lastError }),
+
+  setRemoteSynced: (version, hash, at) =>
+    set({
+      baseVersion: version,
+      lastSyncedHash: hash,
+      lastSyncedAt: at,
+      lastError: null,
+    }),
 
   getPendingCount: () => getPendingRetryable(get().queue).length,
 }));
