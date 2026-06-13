@@ -76,6 +76,23 @@ export function createMockMoneyAdapter(
   };
 }
 
+/**
+ * In-memory adapter cho RUNTIME (Phase 6B-2B) — production-safe placeholder
+ * cho tới khi Firestore wiring thật bật. Giữ doc gần nhất theo uid trong RAM.
+ * KHÔNG persist, KHÔNG network. Thay bằng createFirestoreMoneyAdapter sau.
+ */
+export function createInMemoryMoneyAdapter(): MoneyCloudAdapter {
+  const store = new Map<string, CloudMoneyDocumentV1>();
+  return {
+    async load(uid: string) {
+      return store.get(uid) ?? null;
+    },
+    async save(uid: string, document: CloudMoneyDocumentV1) {
+      store.set(uid, document);
+    },
+  };
+}
+
 /** Mock adapter that always rejects — để test error handling. */
 export function createFailingMoneyAdapter(
   errorMessage = 'adapter error',

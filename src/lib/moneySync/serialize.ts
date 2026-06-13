@@ -19,7 +19,7 @@ const AUDIT_SERIALIZE_CAP = 200;
 // ─── Serialize ────────────────────────────────────────────────────────────────
 
 /** Chỉ lấy fields an toàn từ UserProfile — KHÔNG include firebaseUser/isLoading. */
-function serializeAuthProgress(user: UserProfile): CloudAuthProgressV1 {
+export function serializeAuthProgress(user: UserProfile): CloudAuthProgressV1 {
   return {
     uid: user.uid,
     displayName: user.displayName,
