@@ -75,7 +75,9 @@
     "test:sync-remote-runtime": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/money-sync-remote-runtime.test.ts'))\"",
     "test:sync-suppression": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/money-sync-suppression.test.ts'))\"",
     "test:sync-apply": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/money-sync-apply.test.ts'))\"",
-    "test:money-sync": "npm run test:sync-serialize && npm run test:sync-merge && npm run test:sync-service && npm run test:sync-queue && npm run test:sync-runtime && npm run test:sync-remote && npm run test:sync-remote-runtime && npm run test:sync-suppression && npm run test:sync-apply"
+    "test:sync-prod-units": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/money-sync-prod-units.test.ts'))\"",
+    "test:sync-controller": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/money-sync-controller.test.ts'))\"",
+    "test:money-sync": "npm run test:sync-serialize && npm run test:sync-merge && npm run test:sync-service && npm run test:sync-queue && npm run test:sync-runtime && npm run test:sync-remote && npm run test:sync-remote-runtime && npm run test:sync-suppression && npm run test:sync-apply && npm run test:sync-prod-units && npm run test:sync-controller"
   },
   "dependencies": {
     "@capacitor-firebase/authentication": "^8.3.0",

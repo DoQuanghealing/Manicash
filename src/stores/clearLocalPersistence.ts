@@ -17,11 +17,16 @@ import { useActionAuditStore } from '@/stores/useActionAuditStore';
 import { useHydrationStore } from '@/stores/useHydrationStore';
 import { getCurrentMonthKey } from '@/lib/dateHelpers';
 import { resetMoneySyncRuntime } from '@/lib/moneySync/clientRuntime';
+import { stopProductionSync } from '@/lib/moneySync/syncController';
+import { clearAllSyncCursors } from '@/lib/moneySync/outboxPersistence';
 
 export function clearLocalMoneyPersistence(): void {
-  // 0) Dừng money sync runtime + xóa outbox/metadata TRƯỚC khi reset store —
-  //    để (a) không enqueue nhiễu khi reset state, (b) outbox user cũ không leak.
+  // 0) Dừng money sync runtime + production sync + xóa outbox/metadata/cursor
+  //    TRƯỚC khi reset store — để (a) không enqueue nhiễu khi reset state,
+  //    (b) outbox/cursor user cũ không leak sang user kế tiếp.
+  stopProductionSync();
   resetMoneySyncRuntime();
+  clearAllSyncCursors();
 
   // 1) Reset in-memory về EMPTY (KHÔNG seed) — bảo vệ phiên hiện tại.
   useFinanceStore.setState({

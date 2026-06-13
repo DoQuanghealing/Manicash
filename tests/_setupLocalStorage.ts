@@ -9,8 +9,9 @@ if (typeof (globalThis as unknown as { localStorage?: unknown }).localStorage ==
     setItem: (k: string, v: string) => { mem.set(k, v); },
     removeItem: (k: string) => { mem.delete(k); },
     clear: () => { mem.clear(); },
-    key: () => null,
-    length: 0,
+    // Spec-compliant enumeration (Map-backed) — cần cho clearAllSyncCursors().
+    key: (i: number) => Array.from(mem.keys())[i] ?? null,
+    get length() { return mem.size; },
   } as Storage;
 }
 
