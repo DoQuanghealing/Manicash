@@ -3,6 +3,7 @@
 
 import { signOut as firebaseSignOut } from '@/lib/firebase/auth';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { clearLocalMoneyPersistence } from '@/stores/clearLocalPersistence';
 import { useRouter } from 'next/navigation';
 import { useCallback } from 'react';
 import { Capacitor } from '@capacitor/core';
@@ -26,8 +27,9 @@ export function useSignOut() {
       // Sign out from Firebase
       await firebaseSignOut();
 
-      // Clear Zustand store
+      // Clear Zustand store + local money persistence (account boundary).
       logout();
+      clearLocalMoneyPersistence();
 
       // Redirect to login
       router.push('/login');

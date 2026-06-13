@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { getFirebaseAuth } from '@/lib/firebase/config';
 import { signOut as firebaseSignOut } from '@/lib/firebase/auth';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { clearLocalMoneyPersistence } from '@/stores/clearLocalPersistence';
 import { downloadUserDataJSON } from '@/lib/exportUserData';
 import { apiUrl } from '@/lib/apiBase';
 import './AccountDeletionDialog.css';
@@ -54,6 +55,7 @@ export default function AccountDeletionDialog({ isOpen, onClose }: Props) {
 
       await firebaseSignOut().catch(() => undefined);
       logout();
+      clearLocalMoneyPersistence();
       window.location.assign('/login?deletion=requested');
     } catch {
       setError('Không thể gửi yêu cầu xóa tài khoản. Vui lòng đăng nhập lại và thử tiếp.');

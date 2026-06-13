@@ -12,6 +12,7 @@ export const STORE_VERSIONS = {
   goals: 1,
   tasks: 1,
   auth: 1,
+  audit: 1,
 } as const;
 
 export const STORE_KEYS = {
@@ -20,6 +21,8 @@ export const STORE_KEYS = {
   goals: 'manicash.goals.v1',
   tasks: 'manicash.tasks.v1',
   auth: 'manicash.auth.v1',
+  // Audit dùng key cũ từ Phase 5 (không versioned) — giữ nguyên để không mất data đã lưu.
+  audit: 'manicash-action-audit',
 } as const;
 
 /**

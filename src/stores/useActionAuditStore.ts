@@ -13,6 +13,7 @@ import type {
   MoneyActionUndoSnapshot,
 } from '@/lib/aiMoneyChat/actions/actionAuditTypes';
 import type { MoneyActionRequest } from '@/lib/aiMoneyChat/actions/actionTypes';
+import { STORE_KEYS, STORE_VERSIONS } from '@/stores/persistConfig';
 
 /** Giới hạn lịch sử local để tránh phình localStorage. */
 const HISTORY_LIMIT = 200;
@@ -146,9 +147,9 @@ export const useActionAuditStore = create<ActionAuditState>()(
       clearHistoryForDev: () => set({ records: [] }),
     }),
     {
-      name: 'manicash-action-audit',
+      name: STORE_KEYS.audit,
       storage: createJSONStorage(() => localStorage),
-      version: 1,
+      version: STORE_VERSIONS.audit,
       partialize: (s) => ({ records: s.records }),
     },
   ),

@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { getFirebaseAuth } from '@/lib/firebase/config';
 import { signOut as firebaseSignOut } from '@/lib/firebase/auth';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { clearLocalMoneyPersistence } from '@/stores/clearLocalPersistence';
 import { apiUrl } from '@/lib/apiBase';
 import './AccountDeletionGate.css';
 
@@ -99,6 +100,7 @@ export default function AccountDeletionGate({ children }: Props) {
     }).catch(() => undefined);
     await firebaseSignOut().catch(() => undefined);
     logout();
+    clearLocalMoneyPersistence();
     window.location.assign('/login');
   }
 
@@ -119,6 +121,7 @@ export default function AccountDeletionGate({ children }: Props) {
       if (!res.ok) throw new Error('DELETE_FAILED');
       await firebaseSignOut().catch(() => undefined);
       logout();
+      clearLocalMoneyPersistence();
       window.location.assign('/login?deletion=completed');
     } catch {
       setError('Không thể xóa vĩnh viễn lúc này. Vui lòng đăng nhập lại và thử tiếp.');
