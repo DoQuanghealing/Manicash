@@ -467,3 +467,35 @@
 @media (max-width: 360px) {
   .tg-fields { grid-template-columns: 1fr; }
 }
+
+/* ═══ Phase 4A — Action confirmation card ═══ */
+.tg-action-card {
+  margin: 8px 0 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--c-border, #2a2740);
+  border-radius: 14px;
+  background: var(--c-bg-tertiary, #1c1930);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.tg-action-title { font-weight: 700; font-size: 13px; color: var(--c-text-primary, #fff); }
+.tg-action-preview { font-size: 13px; color: var(--c-text-secondary, #c9c6da); }
+.tg-action-risk { font-size: 11px; font-weight: 600; }
+.tg-action-risk-low { color: #22c55e; }
+.tg-action-risk-medium { color: #f59e0b; }
+.tg-action-risk-high { color: #ef4444; }
+.tg-action-buttons { display: flex; gap: 8px; margin-top: 4px; }
+.tg-action-confirm,
+.tg-action-cancel {
+  flex: 1;
+  padding: 9px 12px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  border: none;
+}
+.tg-action-confirm { background: #7c3aed; color: #fff; }
+.tg-action-confirm:disabled { opacity: 0.6; cursor: default; }
+.tg-action-cancel { background: transparent; color: var(--c-text-secondary, #c9c6da); border: 1px solid var(--c-border, #2a2740); }

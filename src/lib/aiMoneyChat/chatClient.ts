@@ -5,11 +5,14 @@
 
 import { apiUrl } from '@/lib/apiBase';
 import type { ClientSnapshotInput } from './aggregation/types';
+import type { MoneyActionRequest } from './actions/actionTypes';
 
 export interface ChatApiReply {
   message: string;
   ui: { kind: 'confirm-transaction' | 'cfo-card' | 'follow-up-buttons' | 'none'; payload?: unknown };
   meta: { intent: string; source: string; latencyMs: number; tokensUsed?: number };
+  /** Phase 4A: lệnh hành động chờ user confirm. */
+  actionRequest?: MoneyActionRequest;
 }
 
 export interface ChatApiResult {

@@ -24,6 +24,9 @@ import { parseMoneyText } from '@/lib/aiMoneyChat/parser';
 import { classifyIntent } from '@/lib/aiMoneyChat/intent/intentClassifier';
 import { buildClientSnapshot } from '@/lib/aiMoneyChat/clientSnapshot';
 import { sendChatMessage } from '@/lib/aiMoneyChat/chatClient';
+import type { MoneyActionRequest } from '@/lib/aiMoneyChat/actions/actionTypes';
+import { executeMoneyActionOnClient } from '@/lib/aiMoneyChat/actions/clientActionExecutor';
+import { getActionConfirmTitle, getActionRiskLabel } from '@/lib/aiMoneyChat/actions/actionCopy';
 import {
   buildEarningTaskDates,
   detectEarningIntent,
@@ -216,6 +219,9 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
   const [error, setError] = useState<string | null>(null);
   const [isAiFallbackLoading, setIsAiFallbackLoading] = useState(false);
   const [isChatLoading, setIsChatLoading] = useState(false);
+  // Phase 4A: action protocol — chỉ 1 pending action tại một thời điểm.
+  const [pendingAction, setPendingAction] = useState<MoneyActionRequest | null>(null);
+  const [isExecutingAction, setIsExecutingAction] = useState(false);
   const addEarningTask = useTaskStore((s) => s.addTask);
   const threadRef = useRef<HTMLDivElement>(null);
   const prefersReduced = useReducedMotion();
@@ -372,6 +378,17 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
       appendMessages([
         { id: makeMessageId('assistant'), role: 'assistant', text: result.reply.message, markdown: true },
       ]);
+      // Phase 4A: nếu có actionRequest, hiển thị card confirm (không auto-execute).
+      const action = result.reply.actionRequest;
+      if (action) {
+        if (pendingAction) {
+          appendMessages([
+            { id: makeMessageId('system'), role: 'system', text: 'Bạn đang có một thao tác chờ xác nhận. Hãy xử lý thao tác đó trước nhé.' },
+          ]);
+        } else {
+          setPendingAction(action);
+        }
+      }
       return;
     }
 
@@ -382,6 +399,24 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
           ? 'Dịch vụ tạm thời khoá. Vui lòng thử lại sau.'
           : result.reply?.message ?? 'Trợ lý tạm thời bận. Bạn thử lại sau nhé.';
     appendMessages([{ id: makeMessageId('system'), role: 'system', text: errorText }]);
+  }
+
+  async function handleConfirmAction() {
+    if (!pendingAction || isExecutingAction) return;
+    setIsExecutingAction(true);
+    const result = await executeMoneyActionOnClient(pendingAction);
+    setIsExecutingAction(false);
+    trackEvent('chat_parse', { mode: 'action', intent: pendingAction.action, source: result.ok ? 'executed' : 'rejected' });
+    appendMessages([
+      { id: makeMessageId(result.ok ? 'assistant' : 'system'), role: result.ok ? 'assistant' : 'system', text: result.message },
+    ]);
+    setPendingAction(null);
+  }
+
+  function handleCancelAction() {
+    if (!pendingAction) return;
+    setPendingAction(null);
+    appendMessages([{ id: makeMessageId('system'), role: 'system', text: 'Đã hủy thao tác.' }]);
   }
 
   function parseInput(rawText: string) {
@@ -804,6 +839,34 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
             </div>
           ))}
           {(isAiFallbackLoading || isChatLoading) && <TypingIndicator />}
+
+          {pendingAction && (
+            <div className="tg-action-card" role="group" aria-label="Xác nhận thao tác">
+              <p className="tg-action-title">{getActionConfirmTitle(pendingAction)}</p>
+              <p className="tg-action-preview">{pendingAction.preview}</p>
+              <p className={`tg-action-risk tg-action-risk-${pendingAction.riskLevel}`}>
+                {getActionRiskLabel(pendingAction)}
+              </p>
+              <div className="tg-action-buttons">
+                <button
+                  type="button"
+                  className="tg-action-confirm"
+                  disabled={isExecutingAction}
+                  onClick={handleConfirmAction}
+                >
+                  {isExecutingAction ? 'Đang xử lý…' : 'Xác nhận'}
+                </button>
+                <button
+                  type="button"
+                  className="tg-action-cancel"
+                  disabled={isExecutingAction}
+                  onClick={handleCancelAction}
+                >
+                  Hủy
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="tg-quick" aria-label="Hành động nhanh">

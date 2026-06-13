@@ -32,6 +32,36 @@ import { handleCFOReport } from '@/lib/aiMoneyChat/handlers/handleCFOReport';
 import { handleFollowUp } from '@/lib/aiMoneyChat/handlers/handleFollowUp';
 import { invalidateSnapshotCache } from '@/lib/aiMoneyChat/aggregation/snapshotBuilder';
 import { isLicenseValid, LICENSE_ERROR_MESSAGE } from '@/lib/aiMoneyChat/security/license';
+import { toMoneySnapshotV1 } from '@/lib/moneyBrain';
+import type { ClientSnapshotInput } from '@/lib/aiMoneyChat/aggregation/types';
+import { parseActionCommand } from '@/lib/aiMoneyChat/actions/actionCommandParser';
+import { validateActionRequestAgainstSnapshot } from '@/lib/aiMoneyChat/actions/actionValidators';
+
+/**
+ * Phase 4A: phát hiện lệnh hành động (deterministic, 0 token). Server CHỈ tạo
+ * actionRequest sau khi validate — KHÔNG execute. Trả null nếu không phải lệnh.
+ */
+function tryBuildActionReply(message: string, clientSnapshot: unknown): ChatReply | null {
+  if (!clientSnapshot || typeof clientSnapshot !== 'object') return null;
+  const money = toMoneySnapshotV1(clientSnapshot as ClientSnapshotInput);
+  const actionRequest = parseActionCommand(message, money);
+  if (!actionRequest) return null;
+
+  const validation = validateActionRequestAgainstSnapshot(money, actionRequest);
+  if (!validation.ok) {
+    return {
+      message: `Mình chưa thực hiện được thao tác này: ${validation.reason}`,
+      ui: { kind: 'none' },
+      meta: { intent: 'ACTION_REQUEST', source: 'deterministic', latencyMs: 0 },
+    };
+  }
+  return {
+    message: 'Tôi đã chuẩn bị thao tác này. Ngài xác nhận giúp nhé.',
+    ui: { kind: 'none' },
+    meta: { intent: 'ACTION_REQUEST', source: 'deterministic', latencyMs: 0 },
+    actionRequest,
+  };
+}
 
 const MAX_MESSAGE_LENGTH = 500;
 
@@ -134,6 +164,23 @@ export async function POST(req: NextRequest) {
 
   // 3) Route + dispatch (không bao giờ throw ra ngoài).
   try {
+    // Phase 4A: lệnh hành động thắng query khi câu có verb rõ + payload hợp lệ.
+    const actionReply = tryBuildActionReply(message, b.clientSnapshot);
+    if (actionReply) {
+      actionReply.meta.latencyMs = Date.now() - startedAt;
+      const actionIntent: ChatIntent = {
+        type: 'ACTION_REQUEST',
+        confidence: 'high',
+        score: 1,
+        pipeline: 'deterministic',
+        slots: {},
+        normalizedText: message,
+        rawText: message,
+        reason: 'action command',
+      };
+      return NextResponse.json({ sessionId, intent: actionIntent, reply: actionReply });
+    }
+
     const intent = routeIntent(message);
     const reply = await dispatch(uid, intent, ctx);
     reply.meta.latencyMs = Date.now() - startedAt;

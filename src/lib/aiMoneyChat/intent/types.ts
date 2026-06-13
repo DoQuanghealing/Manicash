@@ -37,6 +37,7 @@ export type ChatIntentType =
   | 'ANALYZE_FINANCE' // "phân tích năng lực tài chính"
   | 'ADVICE_CUT_SPENDING' // "gợi ý cắt giảm chi tiêu"
   // ── Đặc biệt ───────────────────────────────────────────────
+  | 'ACTION_REQUEST' // lệnh hành động -> server trả actionRequest (Phase 4A)
   | 'FOLLOW_UP' // tiếp nối báo cáo trước (detect heuristic, Phase 4)
   | 'UNKNOWN'; // không xác định được
 
@@ -108,4 +109,6 @@ export interface ChatReply {
     /** Chỉ có khi đi qua LLM. */
     tokensUsed?: number;
   };
+  /** Phase 4A: lệnh hành động chờ user confirm (client mới execute). */
+  actionRequest?: import('../actions/actionTypes').MoneyActionRequest;
 }
