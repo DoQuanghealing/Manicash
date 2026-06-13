@@ -2,12 +2,14 @@
 'use client';
 
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import type { CategoryBudget, MonthlySnapshot } from '@/types/budget';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useFinanceStore, type Transaction } from '@/stores/useFinanceStore';
 import { generateButlerReport } from '@/lib/butlerReport';
 
 import { getCurrentMonthKey, getMonthKeyFromDate } from '@/lib/dateHelpers';
+import { STORE_KEYS, STORE_VERSIONS, onRehydrateMark } from '@/stores/persistConfig';
 
 // Demo category budgets
 const SEED_BUDGETS: CategoryBudget[] = [
@@ -81,7 +83,9 @@ interface BudgetState {
 
 const isDemoSeed = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
 
-export const useBudgetStore = create<BudgetState>((set, get) => ({
+export const useBudgetStore = create<BudgetState>()(
+  persist(
+    (set, get) => ({
   carryOver: isDemoSeed ? 800_000 : 0,
   currentMonth: getCurrentMonthKey(),
   categoryBudgets: isDemoSeed ? SEED_BUDGETS : [],
@@ -379,4 +383,35 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
   markRolloverNotified: () => set({ rolloverNotified: true }),
 
   markReportViewed: () => set({ unviewedReportMonth: null }),
-}));
+    }),
+    {
+      name: STORE_KEYS.budget,
+      version: STORE_VERSIONS.budget,
+      storage: createJSONStorage(() => localStorage),
+      partialize: (s) => ({
+        carryOver: s.carryOver,
+        currentMonth: s.currentMonth,
+        categoryBudgets: s.categoryBudgets,
+        rolloverNotified: s.rolloverNotified,
+        flaggedCategories: s.flaggedCategories,
+        flaggedTransactionIds: s.flaggedTransactionIds,
+        monthlySnapshots: s.monthlySnapshots,
+        unviewedReportMonth: s.unviewedReportMonth,
+        xpAtMonthStart: s.xpAtMonthStart,
+      }),
+      migrate: (persisted) => {
+        const p = (persisted ?? {}) as Partial<BudgetState>;
+        return {
+          ...p,
+          categoryBudgets: Array.isArray(p.categoryBudgets) ? p.categoryBudgets : [],
+          flaggedCategories: Array.isArray(p.flaggedCategories) ? p.flaggedCategories : [],
+          flaggedTransactionIds: Array.isArray(p.flaggedTransactionIds) ? p.flaggedTransactionIds : [],
+          monthlySnapshots: Array.isArray(p.monthlySnapshots) ? p.monthlySnapshots : [],
+          carryOver: typeof p.carryOver === 'number' ? p.carryOver : 0,
+          currentMonth: typeof p.currentMonth === 'string' ? p.currentMonth : getCurrentMonthKey(),
+        } as BudgetState;
+      },
+      onRehydrateStorage: onRehydrateMark('budget'),
+    },
+  ),
+);

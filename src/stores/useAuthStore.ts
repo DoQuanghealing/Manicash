@@ -5,12 +5,14 @@
 'use client';
 
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import type { UserProfile, FirebaseUserMinimal, UserRank } from '@/types/user';
 import type { XPAction } from '@/types/gamification';
 import { calculateXP, applyPenalty, getTotalXPForRank } from '@/lib/xpEngine';
 import { useTaskStore } from '@/stores/useTaskStore';
 import { emitXPGranted } from '@/lib/xpEvents';
 import { getDateKey, daysBetween } from '@/lib/dateHelpers';
+import { STORE_KEYS, STORE_VERSIONS, onRehydrateMark } from '@/stores/persistConfig';
 
 const RANK_ORDER: UserRank[] = ['iron', 'bronze', 'silver', 'gold', 'platinum', 'emerald', 'diamond'];
 
@@ -76,7 +78,9 @@ interface AuthStore {
   updateUserProfile: (updates: Partial<UserProfile>) => void;
 }
 
-export const useAuthStore = create<AuthStore>((set, get) => ({
+export const useAuthStore = create<AuthStore>()(
+  persist(
+    (set, get) => ({
   user: null,
   firebaseUser: null,
   isLoading: true,
@@ -298,4 +302,16 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       },
     });
   },
-}));
+    }),
+    {
+      name: STORE_KEYS.auth,
+      version: STORE_VERSIONS.auth,
+      storage: createJSONStorage(() => localStorage),
+      // Chỉ persist app-level profile (XP/rank/streak/premium...). KHÔNG persist
+      // firebaseUser/token, isLoading, isAuthenticated (transient/nhạy cảm).
+      partialize: (s) => ({ user: s.user }),
+      migrate: (persisted) => (persisted ?? {}) as AuthStore,
+      onRehydrateStorage: onRehydrateMark('auth'),
+    },
+  ),
+);

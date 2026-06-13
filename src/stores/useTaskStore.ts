@@ -2,8 +2,10 @@
 'use client';
 
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import type { EarningTask, SubTask, TaskStatus, XPPenalty, OverdueReason } from '@/types/task';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { STORE_KEYS, STORE_VERSIONS, onRehydrateMark } from '@/stores/persistConfig';
 
 function genId(prefix = 'task') {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
@@ -113,7 +115,9 @@ interface TaskState {
   getSubTaskProgress: (taskId: string) => { done: number; total: number };
 }
 
-export const useTaskStore = create<TaskState>((set, get) => ({
+export const useTaskStore = create<TaskState>()(
+  persist(
+    (set, get) => ({
   tasks: SEED_TASKS,
   xpPenalties: [],
 
@@ -258,4 +262,21 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       total: task.subTasks.length,
     };
   },
-}));
+    }),
+    {
+      name: STORE_KEYS.tasks,
+      version: STORE_VERSIONS.tasks,
+      storage: createJSONStorage(() => localStorage),
+      partialize: (s) => ({ tasks: s.tasks, xpPenalties: s.xpPenalties }),
+      migrate: (persisted) => {
+        const p = (persisted ?? {}) as Partial<TaskState>;
+        return {
+          ...p,
+          tasks: Array.isArray(p.tasks) ? p.tasks : [],
+          xpPenalties: Array.isArray(p.xpPenalties) ? p.xpPenalties : [],
+        } as TaskState;
+      },
+      onRehydrateStorage: onRehydrateMark('tasks'),
+    },
+  ),
+);

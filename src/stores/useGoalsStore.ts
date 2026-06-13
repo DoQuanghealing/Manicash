@@ -2,8 +2,10 @@
 'use client';
 
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import type { Goal, Milestone, GoalDeposit, GoalDepositSource, GoalBankInfo } from '@/types/budget';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { STORE_KEYS, STORE_VERSIONS, onRehydrateMark } from '@/stores/persistConfig';
 
 function genId(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
@@ -97,7 +99,9 @@ interface GoalsState {
   getDeposits: (id: string) => GoalDeposit[];
 }
 
-export const useGoalsStore = create<GoalsState>((set, get) => ({
+export const useGoalsStore = create<GoalsState>()(
+  persist(
+    (set, get) => ({
   goals: SEED_GOALS,
 
   addGoal: (data) =>
@@ -241,4 +245,17 @@ export const useGoalsStore = create<GoalsState>((set, get) => ({
     // Reverse để mới nhất lên đầu
     return [...(goal.deposits || [])].reverse();
   },
-}));
+    }),
+    {
+      name: STORE_KEYS.goals,
+      version: STORE_VERSIONS.goals,
+      storage: createJSONStorage(() => localStorage),
+      partialize: (s) => ({ goals: s.goals }),
+      migrate: (persisted) => {
+        const p = (persisted ?? {}) as Partial<GoalsState>;
+        return { ...p, goals: Array.isArray(p.goals) ? p.goals : [] } as GoalsState;
+      },
+      onRehydrateStorage: onRehydrateMark('goals'),
+    },
+  ),
+);

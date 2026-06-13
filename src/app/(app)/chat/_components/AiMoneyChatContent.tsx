@@ -30,6 +30,7 @@ import { undoMoneyActionOnClient } from '@/lib/aiMoneyChat/actions/clientActionU
 import { getActionConfirmTitle, getActionRiskLabel } from '@/lib/aiMoneyChat/actions/actionCopy';
 import { useActionAuditStore } from '@/stores/useActionAuditStore';
 import type { MoneyActionAuditRecord } from '@/lib/aiMoneyChat/actions/actionAuditTypes';
+import { areCoreStoresHydrated } from '@/stores/useHydrationStore';
 import {
   buildEarningTaskDates,
   detectEarningIntent,
@@ -366,6 +367,15 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
     appendMessages([{ id: makeMessageId('user'), role: 'user', text }]);
     setInput('');
     setError(null);
+
+    // Phase 6B-1: không build/gửi snapshot từ seed trước khi persisted data hydrate.
+    if (!areCoreStoresHydrated()) {
+      appendMessages([
+        { id: makeMessageId('system'), role: 'system', text: 'Đang tải dữ liệu của bạn, vui lòng thử lại sau giây lát.' },
+      ]);
+      return;
+    }
+
     setIsChatLoading(true);
 
     const result = await sendChatMessage({

@@ -2,9 +2,11 @@
 'use client';
 
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useBudgetStore } from '@/stores/useBudgetStore';
 import { getMonthKeyFromDate, getCurrentMonthKey, getDateKey, getDateLabel } from '@/lib/dateHelpers';
+import { STORE_KEYS, STORE_VERSIONS, onRehydrateMark } from '@/stores/persistConfig';
 
 export type TxnType = 'income' | 'expense' | 'transfer';
 export type WalletType = 'main' | 'emergency' | 'bill-fund';
@@ -163,7 +165,9 @@ const SEED_BILLS: FixedBill[] = [
 
 const isDemoSeed = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
 
-export const useFinanceStore = create<FinanceState>((set, get) => ({
+export const useFinanceStore = create<FinanceState>()(
+  persist(
+    (set, get) => ({
   transactions: isDemoSeed ? generateSeedData() : [],
   mainBalance: isDemoSeed ? 15000000 : 0,
   emergencyBalance: isDemoSeed ? 5000000 : 0,
@@ -438,4 +442,34 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
     const total = sorted.reduce((s, b) => s + b.amount, 0);
     return { total, accumulated: state.billFundBalance, bills };
   },
-}));
+    }),
+    {
+      name: STORE_KEYS.finance,
+      version: STORE_VERSIONS.finance,
+      storage: createJSONStorage(() => localStorage),
+      // Chỉ persist dữ liệu nghiệp vụ; KHÔNG persist function.
+      partialize: (s) => ({
+        transactions: s.transactions,
+        mainBalance: s.mainBalance,
+        emergencyBalance: s.emergencyBalance,
+        billFundBalance: s.billFundBalance,
+        fixedBills: s.fixedBills,
+        billSnapshots: s.billSnapshots,
+      }),
+      migrate: (persisted) => {
+        // v1 baseline: đảm bảo field tồn tại, không crash với data cũ.
+        const p = (persisted ?? {}) as Partial<FinanceState>;
+        return {
+          ...p,
+          transactions: Array.isArray(p.transactions) ? p.transactions : [],
+          fixedBills: Array.isArray(p.fixedBills) ? p.fixedBills : [],
+          billSnapshots: Array.isArray(p.billSnapshots) ? p.billSnapshots : [],
+          mainBalance: typeof p.mainBalance === 'number' ? p.mainBalance : 0,
+          emergencyBalance: typeof p.emergencyBalance === 'number' ? p.emergencyBalance : 0,
+          billFundBalance: typeof p.billFundBalance === 'number' ? p.billFundBalance : 0,
+        } as FinanceState;
+      },
+      onRehydrateStorage: onRehydrateMark('finance'),
+    },
+  ),
+);
