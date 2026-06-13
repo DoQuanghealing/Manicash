@@ -101,8 +101,9 @@ interface TaskState {
   deleteOverdueTask: (id: string, reason: OverdueReason) => void;
   /** Phase 5 (undo): xóa hẳn 1 task (dùng cho undo task vừa tạo). Trả false nếu không thấy. */
   removeTask: (id: string) => boolean;
-  /** Phase 5 (undo): bỏ trạng thái hoàn thành (clear completedAt/actualAmount). XP KHÔNG đảo. */
-  undoCompleteTask: (id: string) => boolean;
+  /** Phase 5/6A (undo): bỏ trạng thái hoàn thành. Nếu có `before`, khôi phục CHÍNH XÁC
+   * actualAmount + subTasks + xpPenalties (penalty đã bị completeTask tiêu hao). XP do caller restore. */
+  undoCompleteTask: (id: string, before?: { actualAmount?: number; subTasks?: SubTask[]; xpPenalties?: XPPenalty[] }) => boolean;
   toggleSubTask: (taskId: string, subTaskId: string) => void;
 
   getStatus: (task: EarningTask) => TaskStatus;
@@ -133,15 +134,25 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     return true;
   },
 
-  undoCompleteTask: (id) => {
+  undoCompleteTask: (id, before) => {
     const task = get().tasks.find((t) => t.id === id);
     if (!task || !task.completedAt) return false;
     set((s) => ({
       tasks: s.tasks.map((t) =>
-        t.id === id ? { ...t, completedAt: undefined, actualAmount: undefined } : t
+        t.id === id
+          ? {
+              ...t,
+              completedAt: undefined,
+              actualAmount: before?.actualAmount,
+              // Phase 6A: khôi phục chính xác sub-task nếu có snapshot; nếu không, giữ nguyên.
+              subTasks: before?.subTasks ?? t.subTasks,
+            }
+          : t
       ),
+      // Phase 6A: khôi phục penalty đã bị completeTask tiêu hao (nếu có snapshot).
+      xpPenalties: before?.xpPenalties ?? s.xpPenalties,
     }));
-    // Lưu ý Phase 5: KHÔNG đảo XP TASK_COMPLETE và không khôi phục trạng thái sub-task.
+    // XP TASK_COMPLETE do caller (undo executor) restore qua useAuthStore.restoreProgress.
     return true;
   },
 

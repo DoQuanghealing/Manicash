@@ -78,8 +78,9 @@ interface FinanceState {
   updateBill: (billId: string, updates: Partial<Omit<FixedBill, 'id'>>) => void;
   removeBill: (billId: string) => void;
   payBill: (billId: string) => void;
-  /** Phase 5 (undo): set trạng thái đã/chưa đóng tường minh + hoàn billFund. */
-  setBillPaidStatus: (billId: string, isPaid: boolean) => void;
+  /** Phase 5/6A (undo): set trạng thái đã/chưa đóng. Nếu có `billFundOverride`,
+   * set billFundBalance CHÍNH XÁC bằng giá trị đó (undo exact, tránh sai số clamp). */
+  setBillPaidStatus: (billId: string, isPaid: boolean, billFundOverride?: number) => void;
   /** Phase 5 (undo): xóa 1 giao dịch + đảo ngược balance đã cộng/trừ. Trả false nếu không tìm thấy. */
   removeTransaction: (transactionId: string) => boolean;
   /** Reset tất cả bill về chưa đóng — gọi khi sang tháng mới (rollover). */
@@ -371,16 +372,18 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
     });
   },
 
-  setBillPaidStatus: (billId, isPaid) => {
+  setBillPaidStatus: (billId, isPaid, billFundOverride) => {
     set((state) => {
       const bill = state.fixedBills.find((b) => b.id === billId);
       if (!bill || bill.isPaid === isPaid) return state;
-      // paid -> trừ billFund (như payBill); unpaid (undo) -> hoàn lại billFund.
-      // Lưu ý: nếu lúc trả billFund < amount (bị clamp 0), undo cộng đủ amount có thể
-      // dư nhẹ — chấp nhận ở Phase 5 (đa số quỹ bill đủ trả).
-      const billFundBalance = isPaid
-        ? Math.max(0, state.billFundBalance - bill.amount)
-        : state.billFundBalance + bill.amount;
+      // Phase 6A: nếu có override -> set billFund CHÍNH XÁC (undo exact từ billFundBefore).
+      // Nếu không -> hành vi đối xứng như payBill (dùng cho luồng thường).
+      const billFundBalance =
+        typeof billFundOverride === 'number'
+          ? billFundOverride
+          : isPaid
+            ? Math.max(0, state.billFundBalance - bill.amount)
+            : state.billFundBalance + bill.amount;
       return {
         fixedBills: state.fixedBills.map((b) => (b.id === billId ? { ...b, isPaid } : b)),
         billFundBalance,

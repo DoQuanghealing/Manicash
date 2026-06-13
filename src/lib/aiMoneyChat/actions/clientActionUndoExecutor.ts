@@ -9,11 +9,19 @@ import { useBudgetStore } from '@/stores/useBudgetStore';
 import { useGoalsStore } from '@/stores/useGoalsStore';
 import { useTaskStore } from '@/stores/useTaskStore';
 import { useWishlistStore } from '@/stores/useWishlistStore';
+import { useAuthStore, type UserProgressSnapshot } from '@/stores/useAuthStore';
+import type { SubTask, XPPenalty } from '@/types/task';
 import type { MoneyActionAuditRecord } from './actionAuditTypes';
 
 export type UndoActionResult = { ok: true; message: string } | { ok: false; message: string };
 
 const STALE = 'Dữ liệu đã thay đổi, không thể undo an toàn.';
+
+/** Restore XP/streak chính xác từ snapshot (nếu có). */
+function restoreUserProgress(before: Record<string, unknown>): void {
+  const up = before.userProgress as UserProgressSnapshot | null | undefined;
+  if (up) useAuthStore.getState().restoreProgress(up);
+}
 
 export async function undoMoneyActionOnClient(record: MoneyActionAuditRecord): Promise<UndoActionResult> {
   if (record.status !== 'executed') return { ok: false, message: 'Chỉ hoàn tác được thao tác vừa thực hiện.' };
@@ -31,7 +39,9 @@ export async function undoMoneyActionOnClient(record: MoneyActionAuditRecord): P
       const bill = finance.fixedBills.find((b) => b.id === billId);
       if (!bill) return { ok: false, message: STALE };
       if (!bill.isPaid) return { ok: false, message: STALE };
-      finance.setBillPaidStatus(billId, false);
+      // Phase 6A: restore billFund CHÍNH XÁC từ billFundBefore (không cộng lại amount).
+      const billFundBefore = typeof before.billFundBefore === 'number' ? before.billFundBefore : undefined;
+      finance.setBillPaidStatus(billId, false, billFundBefore);
       return { ok: true, message: 'Đã hoàn tác: bill trở lại chưa thanh toán.' };
     }
 
@@ -39,7 +49,9 @@ export async function undoMoneyActionOnClient(record: MoneyActionAuditRecord): P
     case 'CREATE_INCOME': {
       const id = String(after.transactionId ?? '');
       const ok = finance.removeTransaction(id);
-      return ok ? { ok: true, message: 'Đã hoàn tác: xóa giao dịch vừa ghi.' } : { ok: false, message: STALE };
+      if (!ok) return { ok: false, message: STALE };
+      restoreUserProgress(before); // đảo XP/streak chính xác
+      return { ok: true, message: 'Đã hoàn tác: xóa giao dịch vừa ghi.' };
     }
 
     case 'CREATE_FIXED_BILL': {
@@ -52,16 +64,24 @@ export async function undoMoneyActionOnClient(record: MoneyActionAuditRecord): P
     case 'SET_CATEGORY_BUDGET': {
       const categoryId = String(before.categoryId ?? '');
       if (!categoryId) return { ok: false, message: STALE };
-      const oldLimit = typeof before.monthlyLimit === 'number' ? before.monthlyLimit : 0;
-      useBudgetStore.getState().setCategoryBudget(categoryId, oldLimit);
-      return { ok: true, message: 'Đã hoàn tác: khôi phục ngân sách trước đó.' };
+      const month = typeof before.month === 'string' ? before.month : undefined;
+      if (before.existedBefore && typeof before.monthlyLimit === 'number') {
+        // Trước có budget -> trả lại limit cũ.
+        useBudgetStore.getState().setCategoryBudget(categoryId, before.monthlyLimit);
+        return { ok: true, message: 'Đã hoàn tác: khôi phục ngân sách trước đó.' };
+      }
+      // Trước CHƯA có budget -> xóa budget vừa tạo.
+      useBudgetStore.getState().removeCategoryBudget(categoryId, month);
+      return { ok: true, message: 'Đã hoàn tác: xóa ngân sách vừa đặt.' };
     }
 
     case 'ADD_GOAL_DEPOSIT': {
       const goalId = String(after.goalId ?? '');
       const depositId = String(after.depositId ?? '');
       const ok = useGoalsStore.getState().removeGoalDeposit(goalId, depositId);
-      return ok ? { ok: true, message: 'Đã hoàn tác: rút khoản nạp mục tiêu.' } : { ok: false, message: STALE };
+      if (!ok) return { ok: false, message: STALE };
+      restoreUserProgress(before); // đảo XP tiết kiệm chính xác
+      return { ok: true, message: 'Đã hoàn tác: rút khoản nạp mục tiêu.' };
     }
 
     case 'CREATE_EARNING_TASK': {
@@ -72,8 +92,14 @@ export async function undoMoneyActionOnClient(record: MoneyActionAuditRecord): P
 
     case 'COMPLETE_EARNING_TASK': {
       const taskId = String(before.taskId ?? '');
-      const ok = useTaskStore.getState().undoCompleteTask(taskId);
-      return ok ? { ok: true, message: 'Đã hoàn tác: nhiệm vụ trở lại chưa hoàn thành.' } : { ok: false, message: STALE };
+      const ok = useTaskStore.getState().undoCompleteTask(taskId, {
+        actualAmount: typeof before.actualAmount === 'number' ? before.actualAmount : undefined,
+        subTasks: Array.isArray(before.subTasks) ? (before.subTasks as SubTask[]) : undefined,
+        xpPenalties: Array.isArray(before.xpPenalties) ? (before.xpPenalties as XPPenalty[]) : undefined,
+      });
+      if (!ok) return { ok: false, message: STALE };
+      restoreUserProgress(before); // đảo XP TASK_COMPLETE chính xác
+      return { ok: true, message: 'Đã hoàn tác: nhiệm vụ trở lại chưa hoàn thành.' };
     }
 
     case 'ADD_WISHLIST_ITEM': {

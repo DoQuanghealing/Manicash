@@ -14,6 +14,16 @@ import { getDateKey, daysBetween } from '@/lib/dateHelpers';
 
 const RANK_ORDER: UserRank[] = ['iron', 'bronze', 'silver', 'gold', 'platinum', 'emerald', 'diamond'];
 
+/** Phase 6A: ảnh chụp tiến trình gamification để undo khôi phục CHÍNH XÁC (không tính lại). */
+export interface UserProgressSnapshot {
+  xp: number;
+  rank: UserRank;
+  streak: number;
+  streakShields: number;
+  shieldsUsedAt?: string[];
+  lastActiveDate?: string;
+}
+
 /** Rank tương ứng với tổng XP — cao → thấp, lấy match đầu tiên. */
 function rankFromXP(xp: number): UserRank {
   for (let i = RANK_ORDER.length - 1; i >= 0; i--) {
@@ -46,6 +56,12 @@ interface AuthStore {
    * Trả về { streakAdvanced, currentStreak, xpAwarded } — caller dùng để show feedback.
    */
   updateStreak: () => { streakAdvanced: boolean; currentStreak: number; xpAwarded: number };
+
+  /**
+   * Phase 6A (undo): khôi phục CHÍNH XÁC tiến trình gamification từ snapshot
+   * (xp/rank/streak/shields/lastActiveDate). KHÔNG tính lại theo công thức.
+   */
+  restoreProgress: (snapshot: UserProgressSnapshot) => void;
 
   /**
    * Tăng biến đếm resist và số tiền tiết kiệm được khi user từ chối mua sắm.
@@ -178,6 +194,23 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       currentStreak: newStreak,
       xpAwarded: baseAwarded + bonusAwarded,
     };
+  },
+
+  restoreProgress: (snapshot) => {
+    const user = get().user;
+    if (!user) return;
+    set({
+      user: {
+        ...user,
+        xp: snapshot.xp,
+        rank: snapshot.rank,
+        streak: snapshot.streak,
+        streakShields: snapshot.streakShields,
+        shieldsUsedAt: snapshot.shieldsUsedAt ?? user.shieldsUsedAt,
+        lastActiveDate: snapshot.lastActiveDate ?? user.lastActiveDate,
+        updatedAt: new Date().toISOString(),
+      },
+    });
   },
 
   incrementResist: (savedAmount) => {

@@ -10,9 +10,24 @@ import { useBudgetStore } from '@/stores/useBudgetStore';
 import { useGoalsStore } from '@/stores/useGoalsStore';
 import { useTaskStore } from '@/stores/useTaskStore';
 import { useWishlistStore, type CoolingHours } from '@/stores/useWishlistStore';
+import { useAuthStore, type UserProgressSnapshot } from '@/stores/useAuthStore';
 import { formatVND } from '../response/formatMoney';
 import { BREATH_GATE_THRESHOLD, type MoneyActionRequest } from './actionTypes';
 import type { MoneyActionUndoSnapshot } from './actionAuditTypes';
+
+/** Phase 6A: chụp tiến trình gamification trước action có XP/streak để undo restore exact. */
+function captureUserProgress(): UserProgressSnapshot | null {
+  const u = useAuthStore.getState().user;
+  if (!u) return null;
+  return {
+    xp: u.xp,
+    rank: u.rank,
+    streak: u.streak,
+    streakShields: u.streakShields ?? 0,
+    shieldsUsedAt: u.shieldsUsedAt,
+    lastActiveDate: u.lastActiveDate,
+  };
+}
 
 export type ExecuteActionResult =
   | {
@@ -39,11 +54,6 @@ function isExpired(request: MoneyActionRequest): boolean {
   return Number.isFinite(exp) && Date.now() > exp;
 }
 
-/** Caveat: undo rollback data nhưng KHÔNG đảo XP/streak (chưa có XP-reversal API). */
-const XP_CAVEAT_TXN = 'Undo sẽ xóa giao dịch nhưng không đảo streak/XP.';
-const XP_CAVEAT_GOAL = 'Undo sẽ rút khoản nạp nhưng không đảo XP tiết kiệm.';
-const XP_CAVEAT_TASK = 'Undo bỏ trạng thái hoàn thành nhưng không đảo XP và không khôi phục sub-task.';
-
 export async function executeMoneyActionOnClient(
   request: MoneyActionRequest,
 ): Promise<ExecuteActionResult> {
@@ -59,12 +69,14 @@ export async function executeMoneyActionOnClient(
       const bill = finance.fixedBills.find((b) => b.id === billId);
       if (!bill) return { ok: false, message: 'Không tìm thấy hóa đơn để cập nhật (dữ liệu đã thay đổi).' };
       if (bill.isPaid) return { ok: false, message: `Hóa đơn ${bill.name} đã được thanh toán trước đó rồi.` };
+      const billFundBefore = finance.billFundBalance;
       finance.payBill(billId);
       return {
         ok: true,
         message: `Đã đánh dấu bill ${billName} là đã thanh toán.`,
         undoable: true,
-        undoSnapshot: { action: 'MARK_BILL_PAID', before: { billId, isPaid: false }, after: { billId, isPaid: true } },
+        // Phase 6A: lưu billFundBefore để undo restore CHÍNH XÁC (tránh sai số clamp).
+        undoSnapshot: { action: 'MARK_BILL_PAID', before: { billId, isPaid: false, billFundBefore }, after: { billId, isPaid: true } },
       };
     }
 
@@ -77,26 +89,26 @@ export async function executeMoneyActionOnClient(
           message: 'Khoản chi này vượt ngưỡng BreathGate. Vui lòng nhập qua tab Nhập để xác nhận chậm.',
         };
       }
+      const userBefore = captureUserProgress();
       const tx = finance.addTransaction({ type: 'expense', amount, categoryId: categoryId || 'other', note: note ?? '', wallet: wallet ?? 'main' });
       return {
         ok: true,
         message: `Đã ghi khoản chi ${formatVND(amount)}.`,
         undoable: true,
-        undoReason: XP_CAVEAT_TXN,
-        undoSnapshot: { action: 'CREATE_EXPENSE', after: { transactionId: tx.id } },
+        undoSnapshot: { action: 'CREATE_EXPENSE', before: { userProgress: userBefore }, after: { transactionId: tx.id } },
       };
     }
 
     case 'CREATE_INCOME': {
       const { amount, categoryId, note, wallet } = request.payload;
       if (!(amount > 0)) return { ok: false, message: 'Số tiền thu không hợp lệ.' };
+      const userBefore = captureUserProgress();
       const tx = finance.addTransaction({ type: 'income', amount, categoryId: categoryId || 'other', note: note ?? '', wallet: wallet ?? 'main' });
       return {
         ok: true,
         message: `Đã ghi thu nhập ${formatVND(amount)}.`,
         undoable: true,
-        undoReason: XP_CAVEAT_TXN,
-        undoSnapshot: { action: 'CREATE_INCOME', after: { transactionId: tx.id } },
+        undoSnapshot: { action: 'CREATE_INCOME', before: { userProgress: userBefore }, after: { transactionId: tx.id } },
       };
     }
 
@@ -118,14 +130,15 @@ export async function executeMoneyActionOnClient(
       const budget = useBudgetStore.getState();
       const month = budget.currentMonth;
       const existing = budget.categoryBudgets.find((b) => b.categoryId === categoryId && b.month === month);
+      const existedBefore = !!existing;
       const oldLimit = existing ? existing.monthlyLimit : null;
       budget.setCategoryBudget(categoryId, monthlyLimit);
       return {
         ok: true,
         message: `Đã đặt ngân sách ${categoryName ?? categoryId} là ${formatVND(monthlyLimit)}.`,
         undoable: true,
-        undoReason: oldLimit === null ? 'Trước đó chưa có ngân sách; undo sẽ đặt về 0.' : undefined,
-        undoSnapshot: { action: 'SET_CATEGORY_BUDGET', before: { categoryId, monthlyLimit: oldLimit }, after: { categoryId, monthlyLimit } },
+        // Phase 6A: lưu existedBefore + month để undo remove (nếu trước chưa có) hoặc restore limit cũ.
+        undoSnapshot: { action: 'SET_CATEGORY_BUDGET', before: { categoryId, existedBefore, monthlyLimit: oldLimit, month }, after: { categoryId, monthlyLimit } },
       };
     }
 
@@ -134,13 +147,13 @@ export async function executeMoneyActionOnClient(
       if (!(amount > 0)) return { ok: false, message: 'Số tiền nạp không hợp lệ.' };
       const goal = useGoalsStore.getState().goals.find((g) => g.id === goalId);
       if (!goal) return { ok: false, message: 'Không tìm thấy mục tiêu để nạp (dữ liệu đã thay đổi).' };
+      const userBefore = captureUserProgress();
       const depositId = useGoalsStore.getState().addFundsToGoal(goalId, amount, 'manual', note);
       return {
         ok: true,
         message: `Đã nạp ${formatVND(amount)} vào mục tiêu ${goalName}.`,
         undoable: true,
-        undoReason: XP_CAVEAT_GOAL,
-        undoSnapshot: { action: 'ADD_GOAL_DEPOSIT', after: { goalId, depositId, amount } },
+        undoSnapshot: { action: 'ADD_GOAL_DEPOSIT', before: { userProgress: userBefore }, after: { goalId, depositId, amount } },
       };
     }
 
@@ -168,13 +181,23 @@ export async function executeMoneyActionOnClient(
       if (!task) return { ok: false, message: 'Không tìm thấy nhiệm vụ (dữ liệu đã thay đổi).' };
       if (task.completedAt) return { ok: false, message: `Nhiệm vụ ${task.name} đã hoàn thành trước đó rồi.` };
       if (task.deletedAt) return { ok: false, message: 'Nhiệm vụ này đã bị xóa.' };
+      // Phase 6A: chụp chính xác state trước (subTasks, actualAmount, penalties, XP).
+      const taskBefore = {
+        actualAmount: task.actualAmount,
+        subTasks: task.subTasks.map((s) => ({ ...s })),
+      };
+      const penaltiesBefore = useTaskStore.getState().xpPenalties.map((p) => ({ ...p }));
+      const userBefore = captureUserProgress();
       useTaskStore.getState().completeTask(taskId, actualAmount ?? expectedAmount ?? 0);
       return {
         ok: true,
         message: `Đã đánh dấu nhiệm vụ ${taskName} là hoàn thành.`,
         undoable: true,
-        undoReason: XP_CAVEAT_TASK,
-        undoSnapshot: { action: 'COMPLETE_EARNING_TASK', before: { taskId }, after: { taskId } },
+        undoSnapshot: {
+          action: 'COMPLETE_EARNING_TASK',
+          before: { taskId, ...taskBefore, xpPenalties: penaltiesBefore, userProgress: userBefore },
+          after: { taskId },
+        },
       };
     }
 

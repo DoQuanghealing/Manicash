@@ -127,14 +127,14 @@ async function main() {
     }
   });
 
-  await it('CREATE_EXPENSE undoable + caveat XP', async () => {
+  await it('CREATE_EXPENSE undoable + undo snapshot (txn id + userProgress)', async () => {
     useFinanceStore.setState({ transactions: [], mainBalance: 1_000_000 });
     const res = await executeMoneyActionOnClient(req('CREATE_EXPENSE', { amount: 50_000, categoryId: 'food', wallet: 'main' }));
     ok(res.ok, 'ok');
     if (res.ok) {
       eq(res.undoable, true);
-      ok(!!res.undoReason, 'has XP caveat');
       ok(!!(res.undoSnapshot?.after as { transactionId?: string })?.transactionId, 'has txn id');
+      ok('userProgress' in ((res.undoSnapshot?.before ?? {}) as object), 'has userProgress snapshot');
     }
   });
 

@@ -64,6 +64,9 @@ interface BudgetState {
 
   // Actions
   setCategoryBudget: (catId: string, limit: number) => void;
+  /** Phase 6A (undo): xóa budget của 1 category trong tháng (mặc định currentMonth).
+   * Dùng khi undo SET_CATEGORY_BUDGET mà trước đó chưa có budget. Trả false nếu không có. */
+  removeCategoryBudget: (catId: string, month?: string) => boolean;
   addSpending: (catId: string, amount: number) => void;
   toggleCategoryFlag: (catId: string) => void;
   toggleTransactionFlag: (txnId: string) => void;
@@ -213,6 +216,18 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
         ],
       };
     }),
+
+  removeCategoryBudget: (catId, month) => {
+    const targetMonth = month ?? get().currentMonth;
+    const exists = get().categoryBudgets.some((b) => b.categoryId === catId && b.month === targetMonth);
+    if (!exists) return false;
+    set((state) => ({
+      categoryBudgets: state.categoryBudgets.filter(
+        (b) => !(b.categoryId === catId && b.month === targetMonth),
+      ),
+    }));
+    return true;
+  },
 
   addSpending: (catId, amount) =>
     set((state) => ({
