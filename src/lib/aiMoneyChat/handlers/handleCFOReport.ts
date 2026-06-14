@@ -112,8 +112,8 @@ export async function handleCFOReport(
 
   // 5) Session (legacy snapshot) — nền tảng follow-up Phase 4.
   if (ctx.sessionId) {
-    createSession(ctx.sessionId, uid, legacySnapshot);
-    appendTurn(ctx.sessionId, {
+    await createSession(ctx.sessionId, uid, legacySnapshot);
+    await appendTurn(ctx.sessionId, {
       at: new Date().toISOString(),
       intent: intent.type,
       userMessage: intent.rawText,

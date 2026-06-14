@@ -80,34 +80,34 @@ async function main() {
   await it('createSession lưu snapshot + turns rỗng + chưa hết hạn', async () => {
     __clearConversationStoreForTest();
     const snap = await makeSnapshot();
-    const ctx = createSession(SID, UID, snap);
+    const ctx = await createSession(SID, UID, snap);
     expectEqual(ctx.turns.length, 0);
     expectEqual(ctx.snapshot.cashflow.income, 20_000_000);
     expectTrue(new Date(ctx.expiresAt).getTime() > Date.now(), 'not expired');
   });
   await it('getOrCreateSession trả phiên đúng uid', async () => {
-    const got = getOrCreateSession(SID, UID);
+    const got = await getOrCreateSession(SID, UID);
     expectTrue(got !== null, 'session found');
   });
-  await it('uid khác -> null (chống rò rỉ chéo)', () => {
-    expectEqual(getOrCreateSession(SID, 'other-user'), null);
+  await it('uid khác -> null (chống rò rỉ chéo)', async () => {
+    expectEqual(await getOrCreateSession(SID, 'other-user'), null);
   });
-  await it('sessionId lạ -> null', () => {
-    expectEqual(getOrCreateSession('khong-ton-tai', UID), null);
+  await it('sessionId lạ -> null', async () => {
+    expectEqual(await getOrCreateSession('khong-ton-tai', UID), null);
   });
   await it('hết hạn -> purge + null', async () => {
     __clearConversationStoreForTest();
     const snap = await makeSnapshot();
-    createSession(SID, UID, snap);
+    await createSession(SID, UID, snap);
     __expireSessionForTest(SID);
-    expectEqual(getOrCreateSession(SID, UID), null);
+    expectEqual(await getOrCreateSession(SID, UID), null);
     // đã bị xóa khỏi store
-    expectEqual(purgeExpired(), 0);
+    expectEqual(await purgeExpired(), 0);
   });
   await it('appendTurn cap MAX_TURNS + giữ lượt mới nhất', async () => {
     __clearConversationStoreForTest();
     const snap = await makeSnapshot();
-    createSession(SID, UID, snap);
+    await createSession(SID, UID, snap);
     for (let i = 1; i <= MAX_TURNS + 3; i++) {
       const turn: ConversationTurn = {
         at: new Date().toISOString(),
@@ -116,9 +116,9 @@ async function main() {
         assistantMessage: `a${i}`,
         tokensUsed: 10,
       };
-      appendTurn(SID, turn);
+      await appendTurn(SID, turn);
     }
-    const ctx = getOrCreateSession(SID, UID)!;
+    const ctx = (await getOrCreateSession(SID, UID))!;
     expectEqual(ctx.turns.length, MAX_TURNS);
     // lượt cũ nhất (q1) bị loại, lượt mới nhất còn
     expectEqual(ctx.turns[0].userMessage, `q4`);
@@ -164,7 +164,7 @@ async function main() {
       { charge: async () => quotaOk(), generate: gen },
     );
     expectEqual(r1.ui.kind, 'cfo-card');
-    const s1 = getOrCreateSession(SID, UID)!;
+    const s1 = (await getOrCreateSession(SID, UID))!;
     expectEqual(s1.turns.length, 1);
     expectEqual(s1.turns[0].assistantMessage, 'reply-1');
     expectEqual(s1.snapshot.cashflow.income, 20_000_000);
@@ -179,7 +179,7 @@ async function main() {
     expectIncludes(ctx2, '20000000');
     // History phải có assistant turn-1
     expectIncludes(ctx2, 'reply-1');
-    expectEqual(getOrCreateSession(SID, UID)!.turns.length, 2);
+    expectEqual((await getOrCreateSession(SID, UID))!.turns.length, 2);
 
     // Turn 3 — "bằng cách nào khắc phục"
     const i3 = routeIntent('bằng cách nào để khắc phục');
@@ -190,7 +190,7 @@ async function main() {
     // History tích lũy: có cả turn-1 và turn-2
     expectIncludes(ctx3, 'reply-1');
     expectIncludes(ctx3, 'reply-2');
-    expectEqual(getOrCreateSession(SID, UID)!.turns.length, 3);
+    expectEqual((await getOrCreateSession(SID, UID))!.turns.length, 3);
   });
 
   await it('Follow-up khi phiên hết hạn -> mời tạo báo cáo mới', async () => {
@@ -208,7 +208,7 @@ async function main() {
   await it('Follow-up hết quota -> báo hết credit, không gọi LLM', async () => {
     __clearConversationStoreForTest();
     const snap = await makeSnapshot();
-    createSession(SID, UID, snap);
+    await createSession(SID, UID, snap);
     let llmCalled = false;
     const reply = await handleFollowUp(
       UID,

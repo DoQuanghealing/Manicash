@@ -50,7 +50,7 @@ export async function handleFollowUp(
   deps: FollowUpHandlerDeps = defaultDeps(),
 ): Promise<ChatReply> {
   const sessionId = ctx.sessionId;
-  const session = sessionId ? getOrCreateSession(sessionId, uid) : null;
+  const session = sessionId ? await getOrCreateSession(sessionId, uid) : null;
 
   // Không có phiên (hết hạn / chưa có báo cáo nào) -> mời tạo mới.
   if (!session) return EXPIRED_REPLY(intent);
@@ -87,7 +87,7 @@ export async function handleFollowUp(
       await deps.saveProfile(uid, profileNote).catch(() => {});
     }
 
-    appendTurn(sessionId!, {
+    await appendTurn(sessionId!, {
       at: new Date().toISOString(),
       intent: intent.type,
       userMessage: intent.rawText,
