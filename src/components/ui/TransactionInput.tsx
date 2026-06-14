@@ -41,7 +41,12 @@ export default function TransactionInput() {
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [note, setNote] = useState('');
   const [wallet, setWallet] = useState<WalletType>('main');
-  const [transactionDate, setTransactionDate] = useState<string>(() => new Date().toISOString().substring(0, 10));
+  // Ngày mặc định = HÔM NAY theo giờ LOCAL (KHÔNG dùng toISOString = UTC →
+  // gần nửa đêm sẽ lệch 1 ngày so với check local trong store → "ngày tương lai").
+  const [transactionDate, setTransactionDate] = useState<string>(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  });
   const [showBreathGate, setShowBreathGate] = useState(false);
   const [butlerComment, setButlerComment] = useState<string | null>(null);
 
