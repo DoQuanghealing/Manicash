@@ -1,9 +1,9 @@
 'use client';
 
-import Link from 'next/link';
 import { Crown } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useIsPro } from '@/hooks/useIsPro';
+import { usePricingModalStore } from '@/stores/usePricingModalStore';
 import { trackEvent } from '@/lib/analytics/events';
 import './pro-gate.css';
 
@@ -20,15 +20,19 @@ interface ProGateProps {
 /** Renders children for Pro users; shows an upgrade prompt for Free users. */
 export default function ProGate({ feature, label, children, fallback }: ProGateProps) {
   const isPro = useIsPro();
+  const openPricing = usePricingModalStore((s) => s.open);
   if (isPro) return <>{children}</>;
 
   if (fallback) return <>{fallback}</>;
 
   return (
-    <Link
-      href="/upgrade"
+    <button
+      type="button"
       className="pro-gate-card"
-      onClick={() => trackEvent('pro_gate_blocked', { feature })}
+      onClick={() => {
+        trackEvent('pro_gate_blocked', { feature });
+        openPricing(`pro_gate:${feature}`);
+      }}
     >
       <div className="pro-gate-icon" aria-hidden="true">
         <Crown size={16} />
@@ -38,6 +42,6 @@ export default function ProGate({ feature, label, children, fallback }: ProGateP
         <span>Nâng cấp để mở khoá — chỉ 49.000đ/tháng.</span>
       </div>
       <span className="pro-gate-cta">Nâng cấp</span>
-    </Link>
+    </button>
   );
 }

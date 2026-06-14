@@ -2,10 +2,14 @@
   display: flex;
   align-items: center;
   gap: var(--space-md);
+  width: 100%;
   padding: var(--space-md);
   border: 1px solid rgba(249, 199, 79, 0.25);
   border-radius: var(--radius-md);
   background: linear-gradient(135deg, rgba(124, 58, 237, 0.1), rgba(249, 115, 22, 0.06));
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
   transition: transform var(--duration-fast) var(--ease-out-expo);
 }
 

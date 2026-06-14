@@ -1,0 +1,201 @@
+/* ═══ PricingCards — tông cam, khung active xanh lá ═══ */
+.pc-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.pc-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-lg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  background: var(--glass-bg);
+  transition: border-color var(--duration-fast) var(--ease-out-expo),
+    box-shadow var(--duration-fast) var(--ease-out-expo);
+}
+
+/* Khung Pro nổi bật tông cam */
+.pc-pro {
+  border-color: rgba(249, 115, 22, 0.35);
+  background: linear-gradient(165deg, rgba(249, 115, 22, 0.12), rgba(124, 58, 237, 0.08));
+}
+
+/* Khung đang dùng → xanh lá */
+.pc-card--active {
+  border-color: rgba(34, 197, 94, 0.55);
+  background: linear-gradient(165deg, rgba(34, 197, 94, 0.14), rgba(34, 197, 94, 0.04));
+  box-shadow: 0 6px 24px rgba(34, 197, 94, 0.18);
+}
+
+.pc-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pc-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--c-text-primary);
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 800;
+}
+.pc-name svg { color: #F97316; }
+
+.pc-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: 700;
+}
+.pc-badge--active {
+  background: rgba(34, 197, 94, 0.18);
+  color: var(--c-green-light);
+  border: 1px solid rgba(34, 197, 94, 0.4);
+}
+.pc-badge--star {
+  background: rgba(249, 115, 22, 0.16);
+  color: #FB923C;
+  border: 1px solid rgba(249, 115, 22, 0.32);
+}
+
+.pc-price {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-xs);
+}
+.pc-amount {
+  color: var(--c-text-primary);
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 800;
+}
+.pc-per {
+  color: var(--c-text-muted);
+  font-size: var(--text-sm);
+}
+
+/* Bộ chọn kỳ hạn */
+.pc-periods {
+  display: flex;
+  gap: 6px;
+  padding: 4px;
+  border-radius: var(--radius-md);
+  background: rgba(0, 0, 0, 0.18);
+}
+.pc-period {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 6px;
+  border-radius: var(--radius-sm);
+  color: var(--c-text-secondary);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  transition: all var(--duration-fast) var(--ease-out-expo);
+}
+.pc-period--on {
+  background: linear-gradient(135deg, #FB923C, #F97316);
+  color: #1a1206;
+  box-shadow: 0 4px 14px rgba(249, 115, 22, 0.35);
+}
+.pc-period-note {
+  font-size: 0.6rem;
+  font-style: normal;
+  font-weight: 700;
+  opacity: 0.9;
+}
+.pc-period:not(.pc-period--on) .pc-period-note { color: #FB923C; }
+
+.pc-feats {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  list-style: none;
+}
+.pc-feats li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: var(--c-text-secondary);
+  font-size: var(--text-sm);
+  line-height: 1.4;
+}
+.pc-feats li svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: var(--c-green-light);
+}
+
+.pc-note {
+  color: var(--c-text-muted);
+  font-size: var(--text-xs);
+  line-height: 1.45;
+}
+.pc-note--ok { color: var(--c-green-light); font-weight: 600; }
+
+/* CTA */
+.pc-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  min-height: 48px;
+  margin-top: 2px;
+  border-radius: var(--radius-md);
+  color: white;
+  font-size: var(--text-sm);
+  font-weight: 800;
+  transition: transform var(--duration-fast) var(--ease-out-expo);
+}
+.pc-cta:not(:disabled):hover { transform: translateY(-1px); }
+.pc-cta:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.pc-cta--pro {
+  background: linear-gradient(135deg, #FB923C, #F97316);
+  color: #1a1206;
+  box-shadow: 0 8px 22px rgba(249, 115, 22, 0.4);
+}
+.pc-cta--trial {
+  background: var(--gradient-primary);
+  box-shadow: 0 8px 22px rgba(124, 58, 237, 0.32);
+}
+.pc-cta--locked {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--c-text-muted);
+  cursor: not-allowed;
+}
+
+.pc-spin { animation: pc-spin 0.9s linear infinite; }
+@keyframes pc-spin { to { transform: rotate(360deg); } }
+
+.pc-msg {
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  text-align: center;
+}
+.pc-msg--ok {
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  background: rgba(34, 197, 94, 0.08);
+  color: var(--c-green-light);
+}
+.pc-msg--err {
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  background: rgba(239, 68, 68, 0.08);
+  color: var(--c-ruby-light);
+}
+
+/* ─── Light mode ─── */
+[data-theme="light"] .pc-periods { background: rgba(0, 0, 0, 0.05); }
+[data-theme="light"] .pc-period--on { color: #fff; }

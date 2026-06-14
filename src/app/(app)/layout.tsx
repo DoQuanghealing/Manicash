@@ -12,6 +12,7 @@ import StreakShieldToast from '@/components/ui/StreakShieldToast';
 import QuestCompletionPopup from '@/components/ui/QuestCompletionPopup';
 import QuestHintBar from '@/components/ui/QuestHintBar';
 import AccountDeletionGate from '@/components/ui/AccountDeletionGate';
+import PricingModal from '@/components/pricing/PricingModal';
 import { AuthGuard } from '@/components/providers/AuthGuard';
 
 export default function AppLayout({ children }: { children: ReactNode }) {
@@ -57,6 +58,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
         {/* Quest Completion Popup — khi quest từ in-progress → completed */}
           <QuestCompletionPopup />
+
+          {/* Cửa sổ bán hàng 3 gói — mở từ ProGate / nút Nâng cấp (usePricingModalStore) */}
+          <PricingModal />
         </div>
       </div>
     </AccountDeletionGate>
