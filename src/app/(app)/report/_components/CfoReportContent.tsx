@@ -19,6 +19,7 @@ import { useFinanceStore } from '@/stores/useFinanceStore';
 import { useBudgetStore } from '@/stores/useBudgetStore';
 import { useGoalsStore } from '@/stores/useGoalsStore';
 import { useCategoryStore } from '@/stores/useCategoryStore';
+import { useAuthStore } from '@/stores/useAuthStore';
 import { formatCurrency } from '@/utils/formatCurrency';
 import HealthScoreGauge from '@/app/(app)/money/_components/HealthScoreGauge';
 import { buildLocalCfoNarration, type CfoNarrationInput } from '@/lib/aiMoneyChat/cfoNarration';
@@ -26,6 +27,13 @@ import { requestCfoNarration } from '@/lib/aiMoneyChat/cfoNarrationClient';
 import { buildMonthlyReportCsv, downloadCsv } from '@/lib/aiMoneyChat/reportExport';
 import { trackEvent } from '@/lib/analytics/events';
 import { useIsPro } from '@/hooks/useIsPro';
+import {
+  resolveAiTier,
+  evaluateAiQuota,
+  describeAiQuota,
+  getAiQuotaLimits,
+} from '@/lib/aiMoneyChat/aiQuotaPolicy';
+import { getAiUsage, recordAiUse } from '@/lib/aiMoneyChat/aiUsageStore';
 import ProGate from '@/components/ui/ProGate';
 import './cfo-report.css';
 
@@ -214,22 +222,39 @@ export default function CfoReportContent() {
   );
 
   const isPro = useIsPro();
+  const user = useAuthStore((s) => s.user);
+  const aiTier = resolveAiTier(user);
+  const reportUid = user?.uid ?? 'local_user';
+  const proReportPerDay = getAiQuotaLimits('pro', 'report').perDay;
+
   const [narration, setNarration] = useState<string>(() => buildLocalCfoNarration(narrationInput));
   const [narrationSource, setNarrationSource] = useState<'local' | 'ai'>('local');
   const [narrationCached, setNarrationCached] = useState(false);
   const [narrationLoading, setNarrationLoading] = useState(false);
+  const [reportUsage, setReportUsage] = useState(() => getAiUsage(reportUid, 'report'));
+  const reportQuota = evaluateAiQuota({ tier: aiTier, feature: 'report', usage: reportUsage });
+
+  useEffect(() => {
+    setReportUsage(getAiUsage(reportUid, 'report'));
+  }, [reportUid]);
 
   useEffect(() => {
     trackEvent('cfo_report_view', { healthScore, tier });
   }, [healthScore, tier]);
 
   async function handleAskLordDiamond() {
+    if (!reportQuota.allowed) return; // hết lượt → không gọi AI
     setNarrationLoading(true);
     const result = await requestCfoNarration(narrationInput);
     setNarration(result.text);
     setNarrationSource(result.source === 'ai' ? 'ai' : 'local');
     setNarrationCached(result.cached);
     setNarrationLoading(false);
+    // Chỉ trừ lượt khi THỰC SỰ gọi LLM (không phải bản cache/local).
+    if (result.source === 'ai' && !result.cached) {
+      recordAiUse(reportUid, 'report');
+      setReportUsage(getAiUsage(reportUid, 'report'));
+    }
     trackEvent('cfo_narration', { source: result.source, cached: result.cached });
   }
 
@@ -289,26 +314,33 @@ export default function CfoReportContent() {
           </div>
         </div>
         <p className="cfo-narration-text">{narration}</p>
-        {isPro ? (
-          <div className="cfo-narration-actions">
-            <button
-              type="button"
-              className="cfo-narration-btn"
-              onClick={handleAskLordDiamond}
-              disabled={narrationLoading}
+        <div className="cfo-narration-actions">
+          <button
+            type="button"
+            className="cfo-narration-btn"
+            onClick={handleAskLordDiamond}
+            disabled={narrationLoading || !reportQuota.allowed}
+          >
+            {narrationLoading ? <Loader2 size={15} className="cfo-spin" /> : <Sparkles size={15} />}
+            {narrationLoading ? 'Lord Diamond đang viết...' : 'Hỏi Lord Diamond (AI)'}
+          </button>
+          <span className={`cfo-narration-quota ${reportQuota.allowed ? '' : 'is-exhausted'}`}>
+            {narrationSource === 'ai' && narrationCached
+              ? 'Đã lưu — không tốn lượt'
+              : reportQuota.allowed
+                ? `Còn ${reportQuota.remainingToday} lượt AI hôm nay`
+                : describeAiQuota(reportQuota)}
+          </span>
+          {!isPro && (
+            <Link
+              href="/upgrade"
+              className="cfo-narration-upsell"
+              onClick={() => trackEvent('pro_gate_blocked', { feature: 'cfo_narration_quota' })}
             >
-              {narrationLoading ? <Loader2 size={15} className="cfo-spin" /> : <Sparkles size={15} />}
-              {narrationLoading ? 'Lord Diamond đang viết...' : 'Hỏi Lord Diamond (AI Pro)'}
-            </button>
-            {narrationSource === 'ai' && narrationCached && (
-              <span className="cfo-narration-cached">Đã lưu — không tốn credit</span>
-            )}
-          </div>
-        ) : (
-          <ProGate feature="cfo_narration" label="CFO Lord Diamond viết riêng">
-            <></>
-          </ProGate>
-        )}
+              Nâng Pro để có {proReportPerDay} lượt/ngày →
+            </Link>
+          )}
+        </div>
       </section>
 
       {/* Health Score */}

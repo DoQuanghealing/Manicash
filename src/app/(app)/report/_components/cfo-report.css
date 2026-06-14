@@ -37,6 +37,25 @@
   background: rgba(34, 197, 94, 0.08);
 }
 
+/* ── Narration AI quota line + upsell ── */
+.cfo-narration-quota {
+  font-size: var(--text-xs, 12px);
+  font-weight: 600;
+  color: var(--c-text-secondary, rgba(255, 255, 255, 0.6));
+}
+.cfo-narration-quota.is-exhausted {
+  color: #fb923c;
+}
+.cfo-narration-upsell {
+  display: inline-block;
+  margin-top: 2px;
+  font-size: var(--text-xs, 12px);
+  font-weight: 700;
+  color: #c4b5fd;
+  text-decoration: none;
+}
+.cfo-narration-upsell:hover { text-decoration: underline; }
+
 /* ─── Back nav ─── */
 .cfo-nav {
   display: flex;
