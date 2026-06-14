@@ -1,0 +1,132 @@
+/* ═══ MoneyReactionHost — income celebration + expense nag ═══ */
+
+/* ── Income celebration popup ── */
+.mrx-income-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-lg, 24px);
+  background: radial-gradient(circle at 50% 40%, rgba(34, 197, 94, 0.14), rgba(10, 10, 18, 0.62) 70%);
+  backdrop-filter: blur(2px);
+}
+
+.mrx-income-card {
+  width: 100%;
+  max-width: 320px;
+  text-align: center;
+  padding: 28px 24px 24px;
+  border-radius: var(--radius-xl, 24px);
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  background:
+    linear-gradient(160deg, rgba(34, 197, 94, 0.16), rgba(124, 58, 237, 0.12)),
+    var(--glass-bg, rgba(28, 25, 48, 0.9));
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 215, 0, 0.1);
+}
+
+.mrx-income-emoji {
+  font-size: 56px;
+  line-height: 1;
+  animation: mrx-pop 0.6s var(--ease-out-expo, cubic-bezier(0.16, 1, 0.3, 1));
+}
+
+.mrx-income-label {
+  margin-top: 8px;
+  font-size: var(--text-sm, 14px);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--c-green-light, #4ade80);
+}
+
+.mrx-income-amount {
+  margin-top: 2px;
+  font-family: var(--font-outfit, inherit);
+  font-size: 30px;
+  font-weight: 800;
+  color: var(--c-green-light, #4ade80);
+  text-shadow: 0 2px 16px rgba(34, 197, 94, 0.45);
+}
+
+.mrx-income-text {
+  margin-top: 10px;
+  font-size: var(--text-sm, 14px);
+  line-height: 1.5;
+  color: var(--c-text-secondary, rgba(255, 255, 255, 0.75));
+}
+
+/* ── Expense nag toast ── */
+.mrx-nag {
+  position: absolute;
+  top: 64px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: calc(100% - 28px);
+  padding: 11px 16px 11px 13px;
+  border-radius: var(--radius-full, 999px);
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
+  background: var(--glass-bg, rgba(28, 25, 48, 0.92));
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  backdrop-filter: blur(12px);
+}
+
+.mrx-nag-icon {
+  flex: 0 0 auto;
+  font-size: 22px;
+  line-height: 1;
+  transform-origin: 50% 70%;
+  animation: mrx-wobble 0.5s ease-in-out 2;
+}
+
+.mrx-nag-text {
+  font-size: var(--text-xs, 12.5px);
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--c-text-primary, #fff);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Severity tints */
+.mrx-nag--warning {
+  border-color: rgba(239, 68, 68, 0.5);
+  background: linear-gradient(180deg, rgba(239, 68, 68, 0.18), rgba(28, 25, 48, 0.92));
+}
+.mrx-nag--warning .mrx-nag-icon { animation-iteration-count: 4; }
+
+.mrx-nag--watch {
+  border-color: rgba(249, 115, 22, 0.5);
+  background: linear-gradient(180deg, rgba(249, 115, 22, 0.16), rgba(28, 25, 48, 0.92));
+}
+
+.mrx-nag--neutral {
+  border-color: rgba(245, 158, 11, 0.4);
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.12), rgba(28, 25, 48, 0.92));
+}
+
+@keyframes mrx-pop {
+  0% { transform: scale(0.3); }
+  60% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+@keyframes mrx-wobble {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-14deg); }
+  50% { transform: rotate(10deg); }
+  75% { transform: rotate(-6deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mrx-income-emoji,
+  .mrx-nag-icon { animation: none; }
+}

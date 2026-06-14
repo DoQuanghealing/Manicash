@@ -10,6 +10,7 @@ import {
   Plus,
   Scale,
   Send,
+  Sparkles,
   Sun,
   Target,
   Trash2,
@@ -19,7 +20,6 @@ import { createBalanceReconciliationReport } from '@/lib/aiMoneyChat/balanceReco
 import { requestAiMoneyFallback } from '@/lib/aiMoneyChat/clientFallback';
 import { shouldRequestAiFallback } from '@/lib/aiMoneyChat/aiFallback';
 import { createDailyCheckIn, type DailyCheckInSlot } from '@/lib/aiMoneyChat/dailyCheckin';
-import { createMoneyReaction } from '@/lib/aiMoneyChat/moneyReaction';
 import { parseMoneyText } from '@/lib/aiMoneyChat/parser';
 import { classifyIntent } from '@/lib/aiMoneyChat/intent/intentClassifier';
 import { buildClientSnapshot } from '@/lib/aiMoneyChat/clientSnapshot';
@@ -38,6 +38,7 @@ import {
   type ParsedEarningPlan,
 } from '@/lib/aiMoneyChat/earningPlanner';
 import { recordConfirmedMoneyIntent } from '@/lib/aiMoneyChat/recordIntent';
+import { getDateKey } from '@/lib/dateHelpers';
 import { trackEvent } from '@/lib/analytics/events';
 import type { ConfirmedMoneyIntent, ParsedMoneyIntent } from '@/lib/aiMoneyChat/types';
 import { useAiMoneyMemoryStore } from '@/stores/useAiMoneyMemoryStore';
@@ -60,6 +61,16 @@ interface ChatMessage {
   text: string;
   /** True nếu text là markdown (báo cáo CFO từ /api/chat) -> render định dạng. */
   markdown?: boolean;
+  /** Phiếu ghi nhận thu/chi gọn + tổng thu/chi trong ngày (render badge màu). */
+  receipt?: {
+    txnType: 'income' | 'expense';
+    amount: number;
+    categoryName: string;
+    categoryIcon: string;
+    categoryColor: string;
+    todayIncome: number;
+    todayExpense: number;
+  };
 }
 
 interface DraftForm {
@@ -99,6 +110,36 @@ function makeMessageId(prefix: string): string {
 
 function formatVnd(amount: number): string {
   return amount.toLocaleString('vi-VN');
+}
+
+/** Phiếu ghi nhận thu/chi gọn + tổng thu/chi trong ngày — badge màu. */
+function TransactionReceipt({ receipt }: { receipt: NonNullable<ChatMessage['receipt']> }) {
+  const isIncome = receipt.txnType === 'income';
+  return (
+    <div className={`tg-receipt tg-receipt--${receipt.txnType}`}>
+      <div className="tg-receipt-head">
+        <span className="tg-receipt-verb">{isIncome ? 'Đã ghi thu' : 'Đã ghi chi'}</span>
+        <span className="tg-receipt-amount">
+          {isIncome ? '+' : '−'}{formatVnd(receipt.amount)}đ
+        </span>
+      </div>
+      <span
+        className="tg-receipt-cat"
+        style={{
+          background: `${receipt.categoryColor}22`,
+          borderColor: `${receipt.categoryColor}55`,
+          color: receipt.categoryColor,
+        }}
+      >
+        <span aria-hidden>{receipt.categoryIcon}</span> {receipt.categoryName}
+      </span>
+      <div className="tg-receipt-today">
+        <span className="tg-receipt-today-label">Hôm nay</span>
+        <span className="tg-receipt-pill tg-receipt-pill--in">↑ {formatVnd(receipt.todayIncome)}đ</span>
+        <span className="tg-receipt-pill tg-receipt-pill--out">↓ {formatVnd(receipt.todayExpense)}đ</span>
+      </div>
+    </div>
+  );
 }
 
 /** Format a Date as YYYY-MM-DD in LOCAL time (not UTC). Avoids timezone off-by-one. */
@@ -254,6 +295,16 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
     const map = new Map<string, string>();
     for (const c of expenseCategories) map.set(c.id, c.name);
     for (const c of INCOME_CATEGORIES) map.set(c.id, c.name);
+    return map;
+  }, [expenseCategories]);
+
+  // Map categoryId -> { name, icon, color } cho receipt badge.
+  const categoryMetaMap = useMemo(() => {
+    const map = new Map<string, { name: string; icon: string; color: string }>();
+    for (const c of [...expenseCategories, ...INCOME_CATEGORIES]) {
+      const color = (c as CategoryItem & { color?: string }).color ?? '#7C3AED';
+      map.set(c.id, { name: c.name, icon: c.icon, color });
+    }
     return map;
   }, [expenseCategories]);
 
@@ -687,18 +738,9 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
     };
 
     try {
-      const result = recordConfirmedMoneyIntent(confirmed);
-      const reaction = createMoneyReaction({
-        type: confirmed.type,
-        amount: confirmed.amount,
-        categoryId: confirmed.categoryId,
-        note: confirmed.note,
-        goals: goals.map((goal) => ({
-          name: goal.name,
-          targetAmount: goal.targetAmount,
-          currentAmount: goal.currentAmount,
-        })),
-      });
+      // recordConfirmedMoneyIntent emit moneyEvents → MoneyReactionHost lo
+      // popup chúc mừng (thu) / cằn nhằn (chi). Chat chỉ hiện phiếu ghi nhận gọn.
+      recordConfirmedMoneyIntent(confirmed);
       const originalCategoryId = draftIntent.category?.categoryId;
       const corrected = Boolean(
         confirmed.type !== 'transfer' &&
@@ -714,17 +756,26 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
         trackEvent('chat_correction', { from: originalCategoryId ?? 'none', to: confirmed.categoryId });
       }
       trackEvent('chat_confirm', { type: confirmed.type, corrected });
-      const typeLabel = confirmed.type === 'income' ? 'thu nhập' : 'chi tiêu';
+
+      const meta = categoryMetaMap.get(confirmed.categoryId);
+      const todayKey = getDateKey(new Date());
+      const today = useFinanceStore.getState().getDailySummary()[todayKey] ?? { income: 0, expense: 0 };
+      const txnType: 'income' | 'expense' = confirmed.type === 'income' ? 'income' : 'expense';
+
       appendMessages([
         {
           id: makeMessageId('system'),
           role: 'system',
-          text: `Đã lưu ${typeLabel} ${formatVnd(confirmed.amount)} VND vào sổ sách. Mã giao dịch: ${result.transaction.id}.`,
-        },
-        {
-          id: makeMessageId('assistant'),
-          role: 'assistant',
-          text: reaction.actionHint ? `${reaction.text} ${reaction.actionHint}` : reaction.text,
+          text: `Đã ghi ${txnType === 'income' ? 'thu' : 'chi'} ${formatVnd(confirmed.amount)}đ`,
+          receipt: {
+            txnType,
+            amount: confirmed.amount,
+            categoryName: meta?.name ?? categoryNameMap.get(confirmed.categoryId) ?? confirmed.categoryId,
+            categoryIcon: meta?.icon ?? (txnType === 'income' ? '💰' : '🧾'),
+            categoryColor: meta?.color ?? (txnType === 'income' ? '#22C55E' : '#F97316'),
+            todayIncome: today.income,
+            todayExpense: today.expense,
+          },
         },
       ]);
       setDraftIntent(null);
@@ -880,7 +931,13 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
                 </div>
               )}
               <div className="tg-bubble">
-                {message.markdown ? <FormattedText text={message.text} /> : <p>{message.text}</p>}
+                {message.receipt ? (
+                  <TransactionReceipt receipt={message.receipt} />
+                ) : message.markdown ? (
+                  <FormattedText text={message.text} />
+                ) : (
+                  <p>{message.text}</p>
+                )}
               </div>
             </div>
           ))}
@@ -946,21 +1003,21 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
         </div>
 
         <div className="tg-quick" aria-label="Hành động nhanh">
-          <button type="button" className="tg-chip tg-chip-action" disabled={!enabled} onClick={() => handleDailyCheckIn('midday')}>
+          <button type="button" className="tg-chip tg-chip-action tg-chip--amber" disabled={!enabled} onClick={() => handleDailyCheckIn('midday')}>
             <Sun size={14} /> Báo cáo trưa
           </button>
-          <button type="button" className="tg-chip tg-chip-action" disabled={!enabled} onClick={() => handleDailyCheckIn('evening')}>
+          <button type="button" className="tg-chip tg-chip-action tg-chip--indigo" disabled={!enabled} onClick={() => handleDailyCheckIn('evening')}>
             <Moon size={14} /> Tổng kết tối
           </button>
-          <button type="button" className="tg-chip tg-chip-action" disabled={!enabled} onClick={openReconciliationForm}>
+          <button type="button" className="tg-chip tg-chip-action tg-chip--green" disabled={!enabled} onClick={openReconciliationForm}>
             <Scale size={14} /> Đối chiếu số dư
           </button>
-          <button type="button" className="tg-chip tg-chip-action" onClick={() => setShowHistory((v) => !v)} aria-pressed={showHistory}>
+          <button type="button" className="tg-chip tg-chip-action tg-chip--purple" onClick={() => setShowHistory((v) => !v)} aria-pressed={showHistory}>
             <Scale size={14} /> Lịch sử thao tác
           </button>
           {EXAMPLES.map((example) => (
-            <button key={example} type="button" className="tg-chip" disabled={!enabled} onClick={() => handleExample(example)}>
-              {example}
+            <button key={example} type="button" className="tg-chip tg-chip--example" disabled={!enabled} onClick={() => handleExample(example)}>
+              <Sparkles size={13} /> {example}
             </button>
           ))}
         </div>

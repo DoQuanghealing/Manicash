@@ -12,6 +12,7 @@ import { useTaskStore } from '@/stores/useTaskStore';
 import { useWishlistStore, type CoolingHours } from '@/stores/useWishlistStore';
 import { useAuthStore, type UserProgressSnapshot } from '@/stores/useAuthStore';
 import { formatVND } from '../response/formatMoney';
+import { emitMoneyRecorded } from '@/lib/moneyEvents';
 import { BREATH_GATE_THRESHOLD, type MoneyActionRequest } from './actionTypes';
 import type { MoneyActionUndoSnapshot } from './actionAuditTypes';
 
@@ -91,6 +92,7 @@ export async function executeMoneyActionOnClient(
       }
       const userBefore = captureUserProgress();
       const tx = finance.addTransaction({ type: 'expense', amount, categoryId: categoryId || 'other', note: note ?? '', wallet: wallet ?? 'main' });
+      emitMoneyRecorded({ type: 'expense', amount, categoryId: categoryId || 'other', transactionId: tx.id });
       return {
         ok: true,
         message: `Đã ghi khoản chi ${formatVND(amount)}.`,
@@ -104,6 +106,7 @@ export async function executeMoneyActionOnClient(
       if (!(amount > 0)) return { ok: false, message: 'Số tiền thu không hợp lệ.' };
       const userBefore = captureUserProgress();
       const tx = finance.addTransaction({ type: 'income', amount, categoryId: categoryId || 'other', note: note ?? '', wallet: wallet ?? 'main' });
+      emitMoneyRecorded({ type: 'income', amount, categoryId: categoryId || 'other', transactionId: tx.id });
       return {
         ok: true,
         message: `Đã ghi thu nhập ${formatVND(amount)}.`,

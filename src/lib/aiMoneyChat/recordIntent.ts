@@ -1,10 +1,10 @@
 'use client';
 
 import { MAIN_BANK_ACCOUNT_ID } from '@/core/finance/accounts';
-import { calculateXP } from '@/lib/xpEngine';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useFinanceCoreStore } from '@/stores/useFinanceCoreStore';
 import { useFinanceStore, type Transaction } from '@/stores/useFinanceStore';
+import { emitMoneyRecorded } from '@/lib/moneyEvents';
 import type { ConfirmedMoneyIntent } from './types';
 
 export interface RecordConfirmedMoneyIntentResult {
@@ -73,6 +73,14 @@ export function recordConfirmedMoneyIntent(
     ? { type: 'INCOME_LOGGED' as const, earnedAmount: intent.amount }
     : { type: 'EXPENSE_LOGGED' as const };
   useAuthStore.getState().awardXP(xpAction);
+
+  // Reaction popup toàn app (chúc mừng thu / cằn nhằn chi). No-op trong SSR.
+  emitMoneyRecorded({
+    type: intent.type,
+    amount: intent.amount,
+    categoryId: intent.categoryId,
+    transactionId: transaction.id,
+  });
 
   return {
     transaction,

@@ -5,6 +5,7 @@ import AppHeader from '@/components/layout/AppHeader';
 import FloatingButler from '@/components/ui/FloatingButler';
 import ButlerNotifBanner from '@/components/ui/ButlerNotifBanner';
 import XPToastHost from '@/components/ui/XPToast';
+import MoneyReactionHost from '@/components/ui/MoneyReactionHost';
 import RolloverGuard from './RolloverGuard';
 import BanMenhThemeApplier from '@/components/providers/BanMenhThemeApplier';
 import StreakShieldToast from '@/components/ui/StreakShieldToast';
@@ -44,6 +45,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
         {/* XP toast host — subscribe xpEvents, render stack top-right */}
         <XPToastHost />
+
+        {/* Money reaction host — thu: popup + pháo hoa · chi: toast cằn nhằn */}
+        <MoneyReactionHost />
 
         {/* Streak Shield used banner — detect shieldsUsedAt[] tăng */}
         <StreakShieldToast />
