@@ -20,6 +20,7 @@ import {
 import { getAccountBalance } from '@/core/finance/selectors';
 import type { LedgerEntry } from '@/core/finance/types';
 import { computeHealthScore, getHealthTier } from '@/lib/cfoHealthScore';
+import { computeSafeToSpendValue } from '@/lib/moneyBrain/safeToSpend';
 import type {
   ClientSnapshotInput,
   GetSnapshotOptions,
@@ -453,7 +454,22 @@ function buildFromClient(
 
   // Budget
   const monthlyBudgetTotal = round(budgets.reduce((s, b) => s + nonNegative(b.limit), 0));
-  const safeToSpend = round(Math.max(0, monthlyBudgetTotal - cashflow.expense - totalDue));
+  // B-01: safe-to-spend dùng CÔNG THỨC CHUNG (computeSafeToSpendValue) — income + carryOver
+  // − budget − bill chưa trả − góp goal đều/tháng. Trước đây bỏ qua carryOver & goalContributions
+  // (chỉ budget − expense − dueBills) → lệch với getSafeToSpendBreakdown của UI.
+  const carryOver = toFiniteNumber(input.carryOver ?? 0);
+  const plannedGoalContributions = round(
+    (input.goals ?? []).reduce((s, g) => s + nonNegative(g.monthlyContributionTarget), 0),
+  );
+  const safeToSpend = round(
+    computeSafeToSpendValue({
+      monthlyIncome: cashflow.income,
+      carryOver,
+      plannedMonthlyBudget: monthlyBudgetTotal,
+      totalUnpaidBills: totalDue,
+      plannedMonthlyGoalContributions: plannedGoalContributions,
+    }),
+  );
   const daysRemaining = Math.max(0, daysInMonth - dayOfMonth + 1);
   const budget: SnapshotBudget = {
     monthlyBudgetTotal,

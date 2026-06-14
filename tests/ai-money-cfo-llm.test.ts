@@ -96,8 +96,9 @@ async function main() {
     const s = await getFinanceSnapshot(UID, { clientSnapshot: FULL_INPUT });
     expectEqual(s.budget.monthlyBudgetTotal, 3_500_000);
     expectEqual(s.budget.categoriesOverBudget, 2);
-    // 3.5M - 4.2M chi -> âm -> kẹp 0
-    expectEqual(s.budget.safeToSpend, 0);
+    // B-01: safe-to-spend = income(20M) + carryOver(0) − budget(3.5M) − bills(0) − goals(0) = 16.5M
+    // (trước đây tính sai budget − expense − dueBills, bỏ qua income/carryOver/goals).
+    expectEqual(s.budget.safeToSpend, 16_500_000);
   });
   await it('anomaly: z-score > 2 cho mua sắm đột biến', async () => {
     const s = await getFinanceSnapshot(UID, { clientSnapshot: FULL_INPUT });

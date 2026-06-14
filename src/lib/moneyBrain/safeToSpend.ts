@@ -18,6 +18,28 @@ import { getTotalUnpaidBills } from './billMetrics';
 import { getPlannedMonthlyGoalContributions } from './goalMetrics';
 import { getTodayKey } from './dateRange';
 
+/**
+ * CÔNG THỨC safe-to-spend DUY NHẤT (single source). Dùng chung canonical engine
+ * (getSafeToSpendBreakdown) lẫn legacy aggregation (snapshotBuilder) để hết lệch số.
+ *   safeToSpend = income + carryOver − plannedBudget − unpaidBills − goalContributions
+ * KHÔNG clamp về 0 — giá trị âm = trạng thái 'danger'.
+ */
+export function computeSafeToSpendValue(input: {
+  monthlyIncome: number;
+  carryOver: number;
+  plannedMonthlyBudget: number;
+  totalUnpaidBills: number;
+  plannedMonthlyGoalContributions: number;
+}): number {
+  return (
+    input.monthlyIncome +
+    input.carryOver -
+    input.plannedMonthlyBudget -
+    input.totalUnpaidBills -
+    input.plannedMonthlyGoalContributions
+  );
+}
+
 export interface SafeToSpendBreakdown {
   monthlyIncome: number;
   carryOver: number;
@@ -47,8 +69,13 @@ export function getSafeToSpendBreakdown(
   const totalUnpaidBills = getTotalUnpaidBills(snapshot);
   const plannedMonthlyGoalContributions = getPlannedMonthlyGoalContributions(snapshot);
 
-  const safeToSpend =
-    monthlyIncome + carryOver - plannedMonthlyBudget - totalUnpaidBills - plannedMonthlyGoalContributions;
+  const safeToSpend = computeSafeToSpendValue({
+    monthlyIncome,
+    carryOver,
+    plannedMonthlyBudget,
+    totalUnpaidBills,
+    plannedMonthlyGoalContributions,
+  });
 
   const status: 'safe' | 'caution' | 'danger' =
     safeToSpend > 1_000_000 ? 'safe' : safeToSpend > 0 ? 'caution' : 'danger';
