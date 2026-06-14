@@ -92,6 +92,34 @@ export async function startTrial(): Promise<PurchaseResult> {
   }
 }
 
+/** Tạo link PayOS theo kỳ hạn (plan) rồi chuyển hướng tới trang thanh toán. */
+export async function startCheckout(plan: string): Promise<PurchaseResult> {
+  try {
+    const token = await getFirebaseIdToken();
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers.Authorization = `Bearer ${token}`;
+
+    const res = await fetch(apiUrl('/api/payos/create-link'), {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ plan }),
+    });
+    const data = await res.json().catch(() => null);
+
+    if (res.ok && data?.checkoutUrl) {
+      if (typeof window !== 'undefined') window.location.href = data.checkoutUrl;
+      return { ok: true, source: 'redirect', reason: 'Đang chuyển tới trang thanh toán…' };
+    }
+    return {
+      ok: false,
+      source: 'error',
+      reason: typeof data?.error === 'string' ? data.error : `Không tạo được link (${res.status}).`,
+    };
+  } catch (error) {
+    return { ok: false, source: 'error', reason: error instanceof Error ? error.message : 'Không kết nối được dịch vụ.' };
+  }
+}
+
 export async function purchasePro(): Promise<PurchaseResult> {
   try {
     const purchase = await acquirePurchaseToken();

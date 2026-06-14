@@ -7,7 +7,7 @@
 import { useMemo, useState } from 'react';
 import { Check, Crown, Gift, Loader2, Sparkles } from 'lucide-react';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { purchasePro, startTrial } from '@/lib/monetization/billingClient';
+import { purchasePro, startCheckout, startTrial } from '@/lib/monetization/billingClient';
 import { getPlanCard, PRO_SKUS, type ProSkuId } from '@/lib/monetization/entitlement';
 import { trackEvent } from '@/lib/analytics/events';
 import './pricing.css';
@@ -66,7 +66,19 @@ export default function PricingCards({ onSuccess }: PricingCardsProps) {
     setLoading('pro');
     setMessage(null);
     trackEvent('upgrade_start', { source: 'pricing', plan: period });
-    // Phase C sẽ thay purchasePro() bằng PayOS create-link theo skuId (period).
+
+    // PayOS bật → tạo link + chuyển hướng (cấp Pro qua webhook). Chưa bật → placeholder mock.
+    if (process.env.NEXT_PUBLIC_PAYOS_ENABLED === 'true') {
+      const r = await startCheckout(period);
+      if (!r.ok) {
+        setLoading(null);
+        setMessage({ kind: 'err', text: r.reason });
+        trackEvent('upgrade_failed', { reason: r.source });
+      }
+      // ok → trình duyệt đang chuyển sang PayOS; giữ loading.
+      return;
+    }
+
     const result = await purchasePro();
     setLoading(null);
     if (result.ok) {

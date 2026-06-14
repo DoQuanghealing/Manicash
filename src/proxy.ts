@@ -14,12 +14,15 @@ const PROTECTED_PREFIXES = [
   '/settings',
 ];
 
-/* ── Routes that skip rate limiting ── */
+/* ── Routes that skip rate limiting + ban check ── */
 const SKIP_RATE_LIMIT_PREFIXES = [
   '/_next',
   '/favicon',
   '/sounds',
   '/api/admin',
+  // CHỈ webhook PayOS (server-to-server, IP cố định) mới skip ban/rate-limit — xác thực
+  // bằng chữ ký. create-link/status/confirm có auth riêng → GIỮ rate-limit (chống spam).
+  '/api/payos/webhook',
 ];
 
 /* ── Rank-gated academy courses ── */

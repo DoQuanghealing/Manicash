@@ -99,6 +99,18 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // PayOS — Admin SDK only. payment_intents map orderCode→{uid,amount,plan,status};
+    // payments_index = bảng phẳng doanh thu; payos_webhook_events = raw để replay.
+    match /payment_intents/{orderCode} {
+      allow read, write: if false;
+    }
+    match /payments_index/{orderCode} {
+      allow read, write: if false;
+    }
+    match /payos_webhook_events/{eventId} {
+      allow read, write: if false;
+    }
+
     // Default deny for anything not matched above.
     match /{document=**} {
       allow read, write: if false;
