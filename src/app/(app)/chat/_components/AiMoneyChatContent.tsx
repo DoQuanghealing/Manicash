@@ -31,6 +31,8 @@ import { undoMoneyActionOnClient } from '@/lib/aiMoneyChat/actions/clientActionU
 import { getActionConfirmTitle, getActionRiskLabel } from '@/lib/aiMoneyChat/actions/actionCopy';
 import { useActionAuditStore } from '@/stores/useActionAuditStore';
 import type { MoneyActionAuditRecord } from '@/lib/aiMoneyChat/actions/actionAuditTypes';
+import { useChatHistoryStore } from '@/stores/useChatHistoryStore';
+import type { ChatMessage } from '@/types/chat';
 import { areCoreStoresHydrated } from '@/stores/useHydrationStore';
 import {
   buildEarningTaskDates,
@@ -54,24 +56,6 @@ import './ai-money-chat.css';
 
 interface AiMoneyChatContentProps {
   enabled: boolean;
-}
-
-interface ChatMessage {
-  id: string;
-  role: 'assistant' | 'user' | 'system';
-  text: string;
-  /** True nếu text là markdown (báo cáo CFO từ /api/chat) -> render định dạng. */
-  markdown?: boolean;
-  /** Phiếu ghi nhận thu/chi gọn + tổng thu/chi trong ngày (render badge màu). */
-  receipt?: {
-    txnType: 'income' | 'expense';
-    amount: number;
-    categoryName: string;
-    categoryIcon: string;
-    categoryColor: string;
-    todayIncome: number;
-    todayExpense: number;
-  };
 }
 
 interface DraftForm {
@@ -255,9 +239,10 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
     {
       id: 'welcome',
       role: 'assistant',
-      text: 'Tôi là Lord Diamond. Hãy nhập giao dịch ("mua trà sữa 50k"), hỏi số liệu ("tôi còn bao nhiêu tiền", "tiền điện đóng chưa") hay yêu cầu phân tích ("lên báo cáo CFO tháng này").',
+      text: 'Tôi là Lord Diamond. Hãy nhập giao dịch ("mua trà sữa 50k"), hỏi số liệu ("tôi còn bao nhiêu tiền", "tiền điện đóng chưa") hay yêu cầu phân tích ("lên báo cáo CFO tháng này"). 🕒 Lịch sử chat được lưu 7 ngày.',
     },
   ]);
+  const historyLoadedRef = useRef(false);
   const [draftIntent, setDraftIntent] = useState<ParsedMoneyIntent | null>(null);
   const [draftForm, setDraftForm] = useState<DraftForm | null>(null);
   const [reconciliationForm, setReconciliationForm] = useState<ReconciliationForm | null>(null);
@@ -343,7 +328,24 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
 
   function appendMessages(nextMessages: ChatMessage[]) {
     setMessages((current) => [...current, ...nextMessages]);
+    // Phase I: lưu lịch sử theo ngày (localStorage) để không mất khi tắt/đóng tab.
+    useChatHistoryStore.getState().addMessages(nextMessages);
   }
+
+  // Phase I: nạp lịch sử chat đã lưu (1 lần) + dọn đoạn cũ hơn 7 ngày; báo nếu vừa dọn.
+  useEffect(() => {
+    if (historyLoadedRef.current) return;
+    historyLoadedRef.current = true;
+    const removed = useChatHistoryStore.getState().prune();
+    const history = useChatHistoryStore.getState().messages;
+    setMessages((current) => {
+      const cleanedNote: ChatMessage[] =
+        removed > 0
+          ? [{ id: 'cleaned-note', role: 'system', text: `🧹 Đã dọn ${removed} tin nhắn cũ hơn 7 ngày.` }]
+          : [];
+      return [...current, ...history, ...cleanedNote];
+    });
+  }, []);
 
   function buildAssistantText(intent: ParsedMoneyIntent): string {
     if (!intent.amount) {

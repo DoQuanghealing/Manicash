@@ -14,6 +14,7 @@ import { useGoalsStore } from '@/stores/useGoalsStore';
 import { useTaskStore } from '@/stores/useTaskStore';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useActionAuditStore } from '@/stores/useActionAuditStore';
+import { useChatHistoryStore, CHAT_HISTORY_STORAGE_KEY } from '@/stores/useChatHistoryStore';
 import { useHydrationStore } from '@/stores/useHydrationStore';
 import { getCurrentMonthKey } from '@/lib/dateHelpers';
 import { resetMoneySyncRuntime } from '@/lib/moneySync/clientRuntime';
@@ -52,6 +53,8 @@ export function clearLocalMoneyPersistence(): void {
   useTaskStore.setState({ tasks: [], xpPenalties: [] });
   useAuthStore.setState({ user: null });
   useActionAuditStore.setState({ records: [] });
+  // Phase I: xóa lịch sử chat (chống rò rỉ hội thoại sang user kế tiếp cùng browser).
+  useChatHistoryStore.getState().clearAll();
 
   // 2) Xóa hẳn persisted keys (sau reset để bản ghi cuối của persist là rỗng,
   //    rồi removeItem -> localStorage sạch hẳn; lần mở app sau seed lại theo design).
@@ -59,6 +62,7 @@ export function clearLocalMoneyPersistence(): void {
     for (const key of Object.values(STORE_KEYS)) {
       localStorage.removeItem(key);
     }
+    localStorage.removeItem(CHAT_HISTORY_STORAGE_KEY);
   }
 
   // 3) Stores coi như đã "hydrate" (state rỗng đã ổn định) — marker không treo.
