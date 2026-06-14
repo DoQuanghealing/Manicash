@@ -13,6 +13,7 @@ import {
   Download,
   Printer,
   Loader2,
+  AlertTriangle,
 } from 'lucide-react';
 import { useFinanceStore } from '@/stores/useFinanceStore';
 import { useBudgetStore } from '@/stores/useBudgetStore';
@@ -139,8 +140,53 @@ export default function CfoReportContent() {
     } else {
       actions.push('Đối chiếu số dư ngân hàng để đảm bảo không bị lệch giao dịch.');
     }
-    return actions.slice(0, 3);
+    // Mục sâu hơn (chủ yếu hiện cho Pro)
+    if (categoryTotals[1]) {
+      actions.push(`Đặt hạn mức cho "${categoryTotals[1].name}" (${formatCurrency(categoryTotals[1].amount)}) để kiểm soát tháng tới.`);
+    }
+    actions.push('Tự động trích tiết kiệm ngay khi có thu nhập (pay yourself first), trước khi chi.');
+    return actions.slice(0, 5);
   }, [categoryTotals, savingsRate, activeGoals]);
+
+  // ── Rủi ro & Cơ hội (deterministic) — free xem 1 rủi ro, Pro xem đầy đủ ──
+  const riskItems = useMemo(() => {
+    const r: string[] = [];
+    if (monthlySavings < 0) {
+      r.push(`Chi vượt thu ${formatCurrency(Math.abs(monthlySavings))} tháng này — dòng tiền âm.`);
+    } else if (savingsRate < 20) {
+      r.push(`Tỷ lệ tiết kiệm chỉ ${savingsRate}% (lý tưởng ≥ 20%).`);
+    }
+    const overBudget = categoryBudgets
+      .filter((b) => b.month === currentBudgetMonth)
+      .filter((b) => (categoryTotals.find((c) => c.id === b.categoryId)?.amount ?? 0) > b.monthlyLimit);
+    for (const b of overBudget.slice(0, 2)) {
+      const cat = expenseCategories.find((c) => c.id === b.categoryId);
+      const spent = categoryTotals.find((c) => c.id === b.categoryId)?.amount ?? 0;
+      r.push(`"${cat?.name ?? b.categoryId}" vượt ngân sách (${formatCurrency(spent)} / ${formatCurrency(b.monthlyLimit)}).`);
+    }
+    if (categoryTotals[0] && monthlyExpense > 0) {
+      const share = Math.round((categoryTotals[0].amount / monthlyExpense) * 100);
+      if (share >= 40) r.push(`"${categoryTotals[0].name}" chiếm ${share}% tổng chi — khá tập trung vào một nhóm.`);
+    }
+    if (r.length === 0) r.push('Chưa phát hiện rủi ro lớn — giữ phong độ này.');
+    return r;
+  }, [monthlySavings, savingsRate, categoryBudgets, currentBudgetMonth, categoryTotals, expenseCategories, monthlyExpense]);
+
+  const opportunityItems = useMemo(() => {
+    const o: string[] = [];
+    if (categoryTotals[0]) {
+      o.push(`Cắt 10% "${categoryTotals[0].name}" → để dành thêm ~${formatCurrency(Math.round(categoryTotals[0].amount * 0.1))}/tháng.`);
+    }
+    if (activeGoals[0]) {
+      o.push(`Dồn lực cho "${activeGoals[0].name}" — chỉ còn ${formatCurrency(activeGoals[0].remaining)} là cán đích.`);
+    }
+    o.push(savingsRate >= 20
+      ? `Tiết kiệm ${savingsRate}% rất tốt — cân nhắc đầu tư phần dư để tiền tự sinh lời.`
+      : 'Lập quỹ khẩn cấp 3–6 tháng chi tiêu trước khi nghĩ tới đầu tư.');
+    return o;
+  }, [categoryTotals, activeGoals, savingsRate]);
+
+  const FREE_ACTION_COUNT = 2;
 
   const expenseBarWidth = monthlyIncome > 0
     ? Math.min(100, Math.round((monthlyExpense / monthlyIncome) * 100))
@@ -372,20 +418,52 @@ export default function CfoReportContent() {
         </section>
       )}
 
-      {/* Action Plan */}
+      {/* Rủi ro & Cơ hội — Free: 1 rủi ro · Pro: đầy đủ + cơ hội */}
+      <section className="cfo-section">
+        <h2 className="cfo-section-title">
+          <AlertTriangle size={16} />
+          Rủi ro &amp; Cơ hội
+        </h2>
+        <ul className="cfo-risk-list">
+          {(isPro ? riskItems : riskItems.slice(0, 1)).map((r, i) => (
+            <li key={`r${i}`} className="cfo-risk-item cfo-risk-warn">
+              <span aria-hidden>⚠️</span>
+              <p>{r}</p>
+            </li>
+          ))}
+          {isPro && opportunityItems.map((o, i) => (
+            <li key={`o${i}`} className="cfo-risk-item cfo-risk-opp">
+              <span aria-hidden>💡</span>
+              <p>{o}</p>
+            </li>
+          ))}
+        </ul>
+        {!isPro && (
+          <ProGate feature="cfo_deep_analysis" label="Phân tích đầy đủ rủi ro & cơ hội">
+            <></>
+          </ProGate>
+        )}
+      </section>
+
+      {/* Action Plan — Free: 2 việc · Pro: đầy đủ */}
       <section className="cfo-section cfo-action-plan">
         <h2 className="cfo-section-title">
           <Lightbulb size={16} />
           Kế hoạch tháng tới
         </h2>
         <ul className="cfo-actions">
-          {actionPlan.map((action, i) => (
+          {(isPro ? actionPlan : actionPlan.slice(0, FREE_ACTION_COUNT)).map((action, i) => (
             <li key={i} className="cfo-action-item">
               <span className="cfo-action-num">{i + 1}</span>
               <p>{action}</p>
             </li>
           ))}
         </ul>
+        {!isPro && actionPlan.length > FREE_ACTION_COUNT && (
+          <ProGate feature="cfo_full_plan" label={`Mở ${actionPlan.length - FREE_ACTION_COUNT} việc còn lại trong kế hoạch`}>
+            <></>
+          </ProGate>
+        )}
       </section>
 
       {/* Export (Phase 12) */}
