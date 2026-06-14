@@ -46,6 +46,13 @@ service cloud.firestore {
         allow read, write: if isOwner(uid);
       }
 
+      // Money sync (Phase 6B-2E) — aggregate money state doc, owner-only.
+      // Doc: users/{uid}/money/state = { version, updatedAt, envelope }.
+      // Client SDK reads/writes only its own; Admin SDK bypasses rules.
+      match /money/{docId} {
+        allow read, write: if isOwner(uid);
+      }
+
       // Pending transactions — created by the SMS webhook (Admin SDK).
       // The owner may read them and dismiss (delete) them, but not create/edit.
       match /pending_transactions/{docId} {
