@@ -5,9 +5,12 @@ import {
   evaluateQuota,
   getAiMoneyQuotaConfig,
   getCurrentAiMoneyMonthKey,
+  getCurrentAiMoneyDayKey,
+  readDailyUsage,
   resolveAiMoneyPlan,
   type AiMoneyQuotaSnapshot,
 } from './quotaCore';
+import { getAiQuotaLimits, type AiFeature } from './aiQuotaPolicy';
 
 export interface AiMoneyQuotaChargeResult extends AiMoneyQuotaSnapshot {
   chargedCredits: number;
@@ -25,29 +28,44 @@ async function getUserProfileForQuota(uid: string): Promise<Partial<UserProfile>
  */
 async function chargeAiMoneyCredits(
   uid: string,
+  feature: AiFeature,
   chargeCredits: number,
   callCounterField: string,
 ): Promise<AiMoneyQuotaChargeResult> {
   const db = getAdminDb();
   const config = getAiMoneyQuotaConfig();
   const monthKey = getCurrentAiMoneyMonthKey();
+  const dayKey = getCurrentAiMoneyDayKey();
   const profile = await getUserProfileForQuota(uid);
   const plan = resolveAiMoneyPlan(profile);
+  const perDayLimit = getAiQuotaLimits(plan, feature).perDay;
   const ref = db.doc(`users/${uid}/ai_usage/${monthKey}`);
 
   return db.runTransaction(async (transaction) => {
     const snap = await transaction.get(ref);
     const data = snap.exists ? snap.data() ?? {} : {};
     const usedCredits = typeof data.usedCredits === 'number' ? data.usedCredits : 0;
-    const quota = evaluateQuota({ uid, monthKey, plan, usedCredits, chargeCredits }, config);
 
+    // ── Per-MONTH credits (hard ceiling) ──
+    const quota = evaluateQuota({ uid, monthKey, plan, usedCredits, chargeCredits }, config);
     if (!quota.allowed) {
+      return { ...quota, chargedCredits: 0 };
+    }
+
+    // ── Per-DAY (server-enforced — chống lách bằng clear localStorage) ──
+    const daily = readDailyUsage(data, dayKey); // tự reset 0 khi sang ngày
+    const usedTodayFeature = feature === 'report' ? daily.report : daily.chat;
+    if (usedTodayFeature >= perDayLimit) {
       return {
         ...quota,
+        allowed: false,
+        reason: `Hết lượt ${feature === 'report' ? 'báo cáo AI' : 'chat AI'} hôm nay (${perDayLimit}/ngày). Thử lại ngày mai hoặc nâng Pro để có thêm.`,
         chargedCredits: 0,
       };
     }
 
+    // Ghi: credits tháng + counter feature ngày (set TƯỜNG MINH cả 2 daily counter để
+    // reset đúng khi đổi ngày — KHÔNG dùng increment cho daily).
     transaction.set(
       ref,
       {
@@ -56,6 +74,9 @@ async function chargeAiMoneyCredits(
         plan,
         usedCredits: FieldValue.increment(chargeCredits),
         [callCounterField]: FieldValue.increment(1),
+        dayKey,
+        daily_report: daily.report + (feature === 'report' ? 1 : 0),
+        daily_chat: daily.chat + (feature === 'chat' ? 1 : 0),
         updatedAt: FieldValue.serverTimestamp(),
         createdAt: snap.exists ? data.createdAt ?? FieldValue.serverTimestamp() : FieldValue.serverTimestamp(),
       },
@@ -73,10 +94,10 @@ async function chargeAiMoneyCredits(
 
 export async function chargeAiMoneyFallbackCredit(uid: string): Promise<AiMoneyQuotaChargeResult> {
   const config = getAiMoneyQuotaConfig();
-  return chargeAiMoneyCredits(uid, config.fallbackParseCredits, 'fallbackParseCalls');
+  return chargeAiMoneyCredits(uid, 'chat', config.fallbackParseCredits, 'fallbackParseCalls');
 }
 
 export async function chargeAiMoneyCfoNarrationCredit(uid: string): Promise<AiMoneyQuotaChargeResult> {
   const config = getAiMoneyQuotaConfig();
-  return chargeAiMoneyCredits(uid, config.cfoNarrationCredits, 'cfoNarrationCalls');
+  return chargeAiMoneyCredits(uid, 'report', config.cfoNarrationCredits, 'cfoNarrationCalls');
 }

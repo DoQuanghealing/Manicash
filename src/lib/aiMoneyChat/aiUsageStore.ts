@@ -1,7 +1,8 @@
 /* ═══ AI Usage Store (client, per-uid, per-feature daily+monthly counters) ═══
- * Đếm lượt gọi AI ở client (localStorage) để áp quota free/pro. MVP — đủ cho
- * giai đoạn này; khi bật bán Pro thật nên nâng lên server (Firestore) để chống
- * lách. Reset theo NGÀY/THÁNG LOCAL (công bằng với người dùng).
+ * Đếm lượt gọi AI ở client (localStorage) — chỉ để HIỂN THỊ optimistic ("còn N lượt").
+ * ENFORCE THẬT nằm ở SERVER: chargeAiMoneyCredits (quota.ts) đếm per-day per-feature
+ * trong Firestore `users/{uid}/ai_usage/{monthKey}` (dayKey + daily_report/daily_chat),
+ * deny khi vượt → clear localStorage KHÔNG còn lách được. Reset theo NGÀY/THÁNG LOCAL.
  *
  * SSR-safe: no-op khi không có localStorage.
  */
