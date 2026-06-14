@@ -7,6 +7,10 @@ export type SubscriptionPlan = 'free' | 'premium';
 /** Tier cho feature gating mới (vd SMS Webhook). Hiện chưa enforce — xem utils/proGating.ts. */
 export type UserTier = 'free' | 'pro';
 
+/** Nguồn cấp Pro. Nguồn-sự-thật cho phân loại admin lấy từ grant_events (append-only),
+ * field này chỉ phản ánh lần cấp gần nhất. */
+export type BillingProvider = 'google_play' | 'mock' | 'payos' | 'trial' | 'admin';
+
 export type AccountStatus = 'active' | 'pending_deletion' | 'deleted';
 
 export interface AccountDeletionState {
@@ -42,6 +46,14 @@ export interface UserProfile extends AccountDeletionState {
   /** Pro tier — optional, default 'free' khi đọc. Enforce ở proGating.ts. */
   tier?: UserTier;
   premiumExpiresAt: string | null;
+  /** Nguồn cấp Pro gần nhất (payos/trial/admin/...). Set bởi Admin SDK. */
+  billingProvider?: BillingProvider;
+  /** Các orderId đã áp (idempotency). Set bởi Admin SDK. */
+  billingOrderIds?: string[];
+  /** ISO — thời điểm kích hoạt dùng thử. KHÔNG bao giờ xóa → chặn trial 1 lần/đời. */
+  trialUsedAt?: string;
+  /** SĐT user tự nhập / từ buyerPhone PayOS (consent). */
+  phone?: string;
   createdAt: string;
   updatedAt: string;
   /** Năm sinh user (optional). Dùng cho rule gợi ý theo độ tuổi sau này. */

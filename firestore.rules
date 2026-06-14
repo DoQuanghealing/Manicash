@@ -85,6 +85,20 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Monetization ledgers — Admin SDK only.
+    // trial_ledger/{sha256(email)} + device_ledger/{sha256(deviceId)}: chống lách
+    // dùng thử (sống sót qua xóa account / reinstall). grant_events: append-only
+    // lịch sử cấp Pro (nguồn-sự-thật đếm phân loại/doanh thu, không lấy từ scalar).
+    match /trial_ledger/{emailHash} {
+      allow read, write: if false;
+    }
+    match /device_ledger/{deviceHash} {
+      allow read, write: if false;
+    }
+    match /grant_events/{eventId} {
+      allow read, write: if false;
+    }
+
     // Default deny for anything not matched above.
     match /{document=**} {
       allow read, write: if false;

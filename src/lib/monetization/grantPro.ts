@@ -7,8 +7,9 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import { getAdminDb } from '@/lib/firebaseAdmin';
 import { computeProExpiry, PRO_PERIOD_DAYS } from './entitlement';
+import type { BillingProvider } from '@/types/user';
 
-export type BillingProvider = 'google_play' | 'mock';
+export type { BillingProvider };
 
 export interface VerifyPurchaseInput {
   provider: BillingProvider;

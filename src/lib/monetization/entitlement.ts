@@ -11,10 +11,49 @@ import type { UserProfile } from '@/types/user';
 
 export type Tier = 'free' | 'pro';
 
-/** Pro plan commercial constants (VND). */
+/** Pro plan commercial constants (VND). Gói tháng là mặc định. */
 export const PRO_PRICE_VND = 49_000;
 export const PRO_PERIOD_DAYS = 30;
 export const PRO_PRODUCT_ID = 'manicash_pro_monthly';
+
+/** SKU Pro theo kỳ hạn. amount = VND (số nguyên), periodDays = số ngày cấp. */
+export type ProSkuId = 'monthly' | 'half_year' | 'yearly';
+
+export interface ProSku {
+  amount: number;
+  periodDays: number;
+  productId: string;
+}
+
+export const PRO_SKUS: Record<ProSkuId, ProSku> = {
+  monthly: { amount: 49_000, periodDays: 30, productId: 'manicash_pro_monthly' },
+  half_year: { amount: 280_000, periodDays: 180, productId: 'manicash_pro_6month' },
+  yearly: { amount: 539_000, periodDays: 365, productId: 'manicash_pro_yearly' },
+};
+
+/** Lấy SKU theo id, trả null nếu không hợp lệ (dùng để validate server-side). */
+export function getProSku(id: string): ProSku | null {
+  return (PRO_SKUS as Record<string, ProSku>)[id] ?? null;
+}
+
+/** Giới hạn quyền dùng bản Free (Pro = không giới hạn). Chặn mềm → mở modal nâng cấp. */
+export type LimitedFeature = 'wishlist' | 'bigGoal' | 'earningTask';
+
+export const FREE_LIMITS: Record<LimitedFeature, number> = {
+  wishlist: 3,
+  bigGoal: 1,
+  earningTask: 3,
+};
+
+/** Số lượng tối đa của 1 feature theo tier (Pro → Infinity). */
+export function getEntityLimit(feature: LimitedFeature, tier: Tier): number {
+  return tier === 'pro' ? Number.POSITIVE_INFINITY : FREE_LIMITS[feature];
+}
+
+/** Còn thêm được entity nữa không (currentCount = số đang có). */
+export function canAddEntity(feature: LimitedFeature, currentCount: number, tier: Tier): boolean {
+  return currentCount < getEntityLimit(feature, tier);
+}
 
 export interface ProFeature {
   id: string;
@@ -48,7 +87,7 @@ export function isMonetizationEnabled(): boolean {
   return process.env.NEXT_PUBLIC_MONETIZATION_ENABLED === 'true';
 }
 
-function hasPremiumFlag(profile: Partial<UserProfile>): boolean {
+export function hasPremiumFlag(profile: Partial<UserProfile>): boolean {
   return profile.tier === 'pro' || profile.plan === 'premium' || profile.isPremium === true;
 }
 
@@ -59,8 +98,12 @@ function expiryTimestamp(profile: Partial<UserProfile>): number | null {
 }
 
 /**
- * Resolve the effective tier. With monetization disabled, everyone is Pro.
+ * Resolve the effective tier. With monetization disabled, everyone is Pro (demo).
  * With it enabled, Pro requires a premium flag AND a non-expired subscription.
+ *
+ * Lưu ý: premiumExpiresAt === null được coi là Pro-vĩnh-viễn (chủ ý — demo/seed/
+ * admin permanent). Bất biến "Pro luôn có hạn" được giữ ở ĐƯỜNG CẤP: grantProToUser
+ * và grantTrialAtomic luôn set premiumExpiresAt. Mirror logic ở quotaCore.resolveAiMoneyPlan.
  */
 export function resolveTier(profile: Partial<UserProfile> | null | undefined, now = Date.now()): Tier {
   if (!isMonetizationEnabled()) return 'pro';
@@ -105,4 +148,37 @@ export function computeProExpiry(
   const current = currentExpiresAt ? new Date(currentExpiresAt).getTime() : 0;
   const base = Number.isFinite(current) && current > now ? current : now;
   return new Date(base + periodDays * 24 * 60 * 60 * 1000).toISOString();
+}
+
+/** Khung nào đang active trong cửa sổ 3 gói. */
+export type ActiveCard = 'base' | 'pro' | 'trial';
+
+export interface PlanCard {
+  /** Khung đang active (để tô xanh + "Đã kích hoạt"). */
+  active: ActiveCard;
+  /** Tier hiệu lực. */
+  tier: Tier;
+  /** Đang dùng Pro bằng đường dùng thử? (đổi nhãn "Đang dùng thử"). */
+  isOnTrial: boolean;
+  /** Đã dùng thử (1 lần/đời) → khóa khung Dùng thử. */
+  trialUsed: boolean;
+  /** Số ngày Pro còn lại. */
+  daysRemaining: number;
+  /** Bảng SKU Pro theo kỳ hạn (cho bộ chọn kỳ hạn). */
+  skus: Record<ProSkuId, ProSku>;
+}
+
+/** Trạng thái cửa sổ 3 gói cho UI (Phase B render). */
+export function getPlanCard(profile: Partial<UserProfile> | null | undefined, now = Date.now()): PlanCard {
+  const status = getProStatus(profile, now);
+  const isOnTrial = status.isPro && profile?.billingProvider === 'trial';
+  const active: ActiveCard = !status.isPro ? 'base' : isOnTrial ? 'trial' : 'pro';
+  return {
+    active,
+    tier: status.tier,
+    isOnTrial,
+    trialUsed: Boolean(profile?.trialUsedAt),
+    daysRemaining: status.daysRemaining,
+    skus: PRO_SKUS,
+  };
 }

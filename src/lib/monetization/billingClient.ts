@@ -45,6 +45,53 @@ async function acquirePurchaseToken(): Promise<AcquiredPurchase | null> {
   };
 }
 
+const DEVICE_ID_KEY = 'manicash.deviceId';
+
+/** ID thiết bị bền (localStorage) cho vân tay nhẹ chống lách dùng thử. */
+export function getOrCreateDeviceId(): string {
+  if (typeof localStorage === 'undefined') return '';
+  try {
+    let id = localStorage.getItem(DEVICE_ID_KEY);
+    if (!id) {
+      const rand = typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      id = `dev_${rand}`;
+      localStorage.setItem(DEVICE_ID_KEY, id);
+    }
+    return id;
+  } catch {
+    return '';
+  }
+}
+
+/** Kích hoạt dùng thử Pro 30 ngày (1 lần/đời). 409 nếu đã thử (uid/email/device). */
+export async function startTrial(): Promise<PurchaseResult> {
+  try {
+    const token = await getFirebaseIdToken();
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers.Authorization = `Bearer ${token}`;
+
+    const response = await fetch(apiUrl('/api/billing/trial'), {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ deviceId: getOrCreateDeviceId() }),
+    });
+    const data = await response.json().catch(() => null);
+
+    if (response.ok && data?.source === 'granted') {
+      return { ok: true, source: 'granted', reason: data.reason ?? 'Đã kích hoạt dùng thử.', tier: data.tier, premiumExpiresAt: data.premiumExpiresAt };
+    }
+    return {
+      ok: false,
+      source: data?.source ?? 'error',
+      reason: typeof data?.reason === 'string' ? data.reason : `Kích hoạt thất bại (${response.status}).`,
+    };
+  } catch (error) {
+    return { ok: false, source: 'error', reason: error instanceof Error ? error.message : 'Không kết nối được dịch vụ.' };
+  }
+}
+
 export async function purchasePro(): Promise<PurchaseResult> {
   try {
     const purchase = await acquirePurchaseToken();
