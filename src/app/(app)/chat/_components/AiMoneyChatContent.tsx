@@ -1,6 +1,7 @@
 'use client';
 
 import { FormEvent, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import Link from 'next/link';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
   ChevronLeft,
@@ -1003,6 +1004,9 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
         </div>
 
         <div className="tg-quick" aria-label="Hành động nhanh">
+          <Link href="/input" className="tg-chip tg-chip-action tg-chip--purple" aria-label="Mở form nhập tiền thủ công">
+            <Plus size={14} /> Nhập thủ công
+          </Link>
           <button type="button" className="tg-chip tg-chip-action tg-chip--amber" disabled={!enabled} onClick={() => handleDailyCheckIn('midday')}>
             <Sun size={14} /> Báo cáo trưa
           </button>
