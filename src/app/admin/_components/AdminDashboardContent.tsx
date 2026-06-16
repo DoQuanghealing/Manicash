@@ -42,6 +42,25 @@ export default function AdminDashboardContent() {
   // Auto-refresh
   const [autoRefresh, setAutoRefresh] = useState(false);
 
+  // Test accounts (admin tạo cho bạn bè xem app)
+  const [testUsername, setTestUsername] = useState('');
+  const [testPassword, setTestPassword] = useState('');
+  const [testAccounts, setTestAccounts] = useState<
+    { uid: string; username: string; displayName: string; createdAt: string | null }[]
+  >([]);
+
+  const fetchTestAccounts = useCallback(async () => {
+    try {
+      const res = await fetch(apiUrl(`/api/admin/test-account?key=${encodeURIComponent(adminKey)}`));
+      if (res.ok) {
+        const j = await res.json();
+        setTestAccounts(Array.isArray(j.accounts) ? j.accounts : []);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [adminKey]);
+
   const fetchBans = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -71,6 +90,49 @@ export default function AdminDashboardContent() {
     const interval = setInterval(fetchBans, 3000);
     return () => clearInterval(interval);
   }, [autoRefresh, isAuthed, fetchBans]);
+
+  // Nạp danh sách tài khoản test khi đã đăng nhập admin.
+  useEffect(() => {
+    if (isAuthed) fetchTestAccounts();
+  }, [isAuthed, fetchTestAccounts]);
+
+  async function handleCreateTestAccount() {
+    setError(null);
+    try {
+      const res = await fetch(apiUrl('/api/admin/test-account'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+        body: JSON.stringify({ username: testUsername, password: testPassword }),
+      });
+      const j = await res.json().catch(() => null);
+      if (res.ok && j?.ok) {
+        setTestUsername('');
+        setTestPassword('');
+        await fetchTestAccounts();
+      } else {
+        setError(j?.error || 'Không tạo được tài khoản test');
+      }
+    } catch {
+      setError('Lỗi kết nối');
+    }
+  }
+
+  async function handleDeleteTestAccount(uid: string) {
+    try {
+      const res = await fetch(apiUrl('/api/admin/test-account'), {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+        body: JSON.stringify({ uid }),
+      });
+      if (res.ok) await fetchTestAccounts();
+      else {
+        const j = await res.json().catch(() => null);
+        setError(j?.error || 'Không xóa được tài khoản');
+      }
+    } catch {
+      setError('Lỗi kết nối');
+    }
+  }
 
   async function handleLogin() {
     if (!adminKey.trim()) {
@@ -226,6 +288,69 @@ export default function AdminDashboardContent() {
             </div>
           </div>
         )}
+
+        {/* Test Accounts */}
+        <div className="admin-section">
+          <h2 className="admin-section-title">🧪 Tài khoản test ({testAccounts.length})</h2>
+          <p className="admin-subtitle" style={{ marginBottom: 12 }}>
+            Tạo username + mật khẩu đưa bạn bè đăng nhập xem app (không cần email). Xóa sau khi test xong.
+          </p>
+          <div className="admin-ban-form">
+            <div className="admin-ban-form-row">
+              <input
+                className="admin-input"
+                placeholder="username (a-z, 0-9, _)"
+                value={testUsername}
+                autoCapitalize="none"
+                spellCheck={false}
+                onChange={(e) => setTestUsername(e.target.value)}
+              />
+              <input
+                className="admin-input"
+                placeholder="mật khẩu (≥6 ký tự)"
+                value={testPassword}
+                onChange={(e) => setTestPassword(e.target.value)}
+              />
+              <button className="admin-btn admin-btn-primary" onClick={handleCreateTestAccount}>
+                ➕ Tạo
+              </button>
+            </div>
+          </div>
+
+          {testAccounts.length > 0 && (
+            <div className="admin-table-wrapper" style={{ marginTop: 12 }}>
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Username</th>
+                    <th>Tên hiển thị</th>
+                    <th>Tạo lúc</th>
+                    <th>Hành động</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {testAccounts.map((a) => (
+                    <tr key={a.uid}>
+                      <td className="admin-mono">{a.username}</td>
+                      <td>{a.displayName}</td>
+                      <td className="admin-time">
+                        {a.createdAt ? new Date(a.createdAt).toLocaleString('vi-VN') : '—'}
+                      </td>
+                      <td>
+                        <button
+                          className="admin-btn admin-btn-danger admin-btn-sm"
+                          onClick={() => handleDeleteTestAccount(a.uid)}
+                        >
+                          🗑️ Xóa
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
 
         {/* Manual Ban Form */}
         <div className="admin-section">

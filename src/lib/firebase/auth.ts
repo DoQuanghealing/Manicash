@@ -3,6 +3,7 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   signInWithCredential,
+  signInWithEmailAndPassword,
   signOut as firebaseSignOut,
   onAuthStateChanged as firebaseOnAuthStateChanged,
   type User,
@@ -11,6 +12,7 @@ import {
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { Capacitor } from '@capacitor/core';
 import { getFirebaseAuth, getFirebaseDB } from './config';
+import { usernameToEmail } from '@/lib/auth/usernameEmail';
 import type { UserProfile } from '@/types/user';
 
 const googleProvider = new GoogleAuthProvider();
@@ -43,6 +45,18 @@ export async function signInWithGoogle(): Promise<User> {
 
   await ensureUserDocument(user);
   return user;
+}
+
+/**
+ * Đăng nhập bằng ID (username) + mật khẩu — cho tài khoản TEST do admin tạo.
+ * username → email ẩn → signInWithEmailAndPassword. Không cần kích hoạt email.
+ */
+export async function signInWithUsernamePassword(username: string, password: string): Promise<User> {
+  const auth = getFirebaseAuth();
+  const email = usernameToEmail(username);
+  const cred = await signInWithEmailAndPassword(auth, email, password);
+  await ensureUserDocument(cred.user);
+  return cred.user;
 }
 
 /**

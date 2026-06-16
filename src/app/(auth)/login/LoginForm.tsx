@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Capacitor } from '@capacitor/core';
-import { signInWithGoogle } from '@/lib/firebase/auth';
+import { signInWithGoogle, signInWithUsernamePassword } from '@/lib/firebase/auth';
 import { useAudio } from '@/hooks/useAudio';
 import { apiUrl } from '@/lib/apiBase';
 
@@ -26,6 +26,16 @@ function getLoginErrorMessage(error: unknown): string | null {
     return 'Trình duyệt đang chặn popup đăng nhập Google. Hãy cho phép popup rồi thử lại.';
   }
 
+  if (
+    code === 'auth/invalid-credential' || code === 'auth/wrong-password' ||
+    code === 'auth/user-not-found' || code === 'auth/invalid-email'
+  ) {
+    return 'Sai ID hoặc mật khẩu. Vui lòng kiểm tra lại.';
+  }
+  if (code === 'auth/too-many-requests') {
+    return 'Đăng nhập sai nhiều lần. Thử lại sau ít phút.';
+  }
+
   if (message.includes('permission-denied')) {
     return 'Firebase chưa cho phép tạo/cập nhật hồ sơ người dùng. Kiểm tra Firestore Rules cho collection users.';
   }
@@ -37,38 +47,35 @@ function getLoginErrorMessage(error: unknown): string | null {
 export default function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const router = useRouter();
   const { play } = useAudio();
+
+  /** Set session cookie (web) + sound + chuyển trang sau khi đăng nhập thành công. */
+  async function finishLogin(uid: string) {
+    // Web: set session cookie để proxy guard server-side. Native (mobile):
+    // không có proxy/cookie cùng origin (API ở remote) → guard client-side
+    // bằng Firebase auth state, bỏ qua bước này.
+    if (!Capacitor.isNativePlatform()) {
+      const sessionResponse = await fetch(apiUrl('/api/auth/session'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'login', uid, rank: 'iron' }),
+      });
+      if (!sessionResponse.ok) throw new Error(`SESSION_FAILED_${sessionResponse.status}`);
+    }
+    play('levelUp');
+    await new Promise((r) => setTimeout(r, 600));
+    router.push('/overview');
+  }
 
   async function handleGoogleSignIn() {
     setIsLoading(true);
     setError(null);
-
     try {
       const user = await signInWithGoogle();
-
-      // Web: set session cookie để proxy guard server-side. Native (mobile):
-      // không có proxy/cookie cùng origin (API ở remote) → guard client-side
-      // bằng Firebase auth state, bỏ qua bước này.
-      if (!Capacitor.isNativePlatform()) {
-        const sessionResponse = await fetch(apiUrl('/api/auth/session'), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'login',
-            uid: user.uid,
-            rank: 'iron',
-          }),
-        });
-
-        if (!sessionResponse.ok) {
-          throw new Error(`SESSION_FAILED_${sessionResponse.status}`);
-        }
-      }
-
-      play('levelUp');
-      await new Promise((r) => setTimeout(r, 600));
-      router.push('/overview');
+      await finishLogin(user.uid);
     } catch (err) {
       console.error('[login] Google sign-in failed:', err);
       setError(getLoginErrorMessage(err));
@@ -77,8 +84,57 @@ export default function LoginForm() {
     }
   }
 
+  async function handleIdSignIn(e: React.FormEvent) {
+    e.preventDefault();
+    if (!username.trim() || !password) return;
+    setIsLoading(true);
+    setError(null);
+    try {
+      const user = await signInWithUsernamePassword(username, password);
+      await finishLogin(user.uid);
+    } catch (err) {
+      console.error('[login] ID sign-in failed:', err);
+      setError(getLoginErrorMessage(err));
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   return (
     <>
+      <form className="login-id-form" onSubmit={handleIdSignIn}>
+        <input
+          className="login-input"
+          placeholder="ID (tên đăng nhập)"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          autoComplete="username"
+          autoCapitalize="none"
+          spellCheck={false}
+        />
+        <input
+          className="login-input"
+          type="password"
+          placeholder="Mật khẩu"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          autoComplete="current-password"
+        />
+        <button
+          type="submit"
+          className="login-id-btn"
+          disabled={isLoading || !username.trim() || !password}
+        >
+          {isLoading ? <span className="login-spinner" /> : <span>Đăng nhập</span>}
+        </button>
+      </form>
+
+      <div className="login-divider">
+        <span className="login-divider-line" />
+        <span className="login-divider-text">hoặc</span>
+        <span className="login-divider-line" />
+      </div>
+
       <button
         className="login-google-btn"
         onClick={handleGoogleSignIn}

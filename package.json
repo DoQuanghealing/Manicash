@@ -38,6 +38,7 @@
     "test:payos": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/payos-order.test.ts'))\"",
     "test:chat-history": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/chat-history.test.ts'))\"",
     "test:ai-quota-daily": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/ai-quota-daily.test.ts'))\"",
+    "test:username": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/username-email.test.ts'))\"",
     "test:ai-all": "npm run test:ai-chat && npm run test:ai-memory && npm run test:ai-fallback && npm run test:ai-quota && npm run test:ai-reaction && npm run test:ai-checkin && npm run test:ai-reconciliation && npm run test:ai-cfo-report && npm run test:ai-earning && npm run test:analytics && npm run test:monetization",
     "test:phase2": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/phase2-backdate.test.ts'))\"",
     "test:mb-finance": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/moneybrain-finance-metrics.test.ts'))\"",

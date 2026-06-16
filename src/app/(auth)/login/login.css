@@ -157,6 +157,48 @@
 }
 
 
+/* ═══ ID / password form ═══ */
+.login-id-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.login-input {
+  width: 100%;
+  padding: 13px var(--space-lg);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--c-text-primary);
+  font-size: var(--text-base);
+  transition: border-color 0.2s ease;
+}
+.login-input::placeholder { color: var(--c-text-muted); }
+.login-input:focus {
+  outline: none;
+  border-color: rgba(124, 58, 237, 0.5);
+}
+
+.login-id-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 50px;
+  margin-top: 2px;
+  border-radius: var(--radius-lg);
+  background: var(--gradient-primary);
+  color: #fff;
+  font-size: var(--text-base);
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 8px 28px rgba(124, 58, 237, 0.3);
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+.login-id-btn:not(:disabled):hover { transform: translateY(-1px); }
+.login-id-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
 /* ═══ Divider ═══ */
 .login-divider {
   display: flex;

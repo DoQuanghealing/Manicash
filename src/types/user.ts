@@ -54,6 +54,10 @@ export interface UserProfile extends AccountDeletionState {
   trialUsedAt?: string;
   /** SĐT user tự nhập / từ buyerPhone PayOS (consent). */
   phone?: string;
+  /** Username đăng nhập ID/mật khẩu (tài khoản test admin tạo). */
+  username?: string;
+  /** Tài khoản test do admin tạo (cho bạn bè xem app) — KHÔNG mua, dễ dọn dẹp. */
+  isTestAccount?: boolean;
   createdAt: string;
   updatedAt: string;
   /** Năm sinh user (optional). Dùng cho rule gợi ý theo độ tuổi sau này. */
