@@ -1,68 +1,76 @@
-# CLAUDE.md
+﻿# Manicash — Claude Code Project Context
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## Project Overview
+Personal finance chat app (AI Money Chat) cho người dùng Việt Nam.
+PWA + Android (Capacitor). Deployed trên Vercel + Firebase.
 
-@AGENTS.md
+## Tech Stack
+- Next.js 16.2.1 (App Router), React 19, TypeScript
+- Firebase (Auth, Firestore, Admin SDK)
+- Zustand v5 (state management, với persist)
+- Dexie (IndexedDB local cache)
+- Capacitor v8 (Android build)
+- Tailwind CSS v4, Framer Motion, Lucide React
+- PayOS (payment gateway VN)
+- Groq API (AI chat backend - xem groqClient.ts)
+- Howler.js (sound effects)
+
+## Project Structure
+src/
+  app/          — Next.js App Router pages
+    (app)/      — authenticated routes
+    (auth)/     — login/register
+    (public)/   — public pages
+    api/        — API routes
+  components/   — UI components
+  stores/       — Zustand stores (useFinanceCoreStore, useChatHistoryStore, ...)
+  lib/          — business logic
+    aiMoneyChat/    — AI chat engine
+    moneyBrain/     — financial analytics
+    moneySync/      — Firestore sync
+    monetization/   — PayOS, Pro features
+  hooks/        — custom React hooks
+  data/         — static data (categories, badges, quests)
+  types/        — TypeScript types
+  utils/        — utility functions
+
+## Key Files
+- src/stores/useFinanceCoreStore.ts — main finance state
+- src/lib/aiMoneyChat/ — AI chat logic
+- src/lib/moneyBrain/ — CFO analytics engine
+- src/lib/moneySync/ — Firestore sync
+- src/lib/firebaseAdmin.ts — server-side Firebase
+- src/lib/groqClient.ts — Groq AI client
+- src/proxy.ts — middleware proxy
 
 ## Commands
+dev:      npm run dev
+build:    npm run build
+lint:     npm run lint
+test:     npm run test (phase1 foundation)
+test all: npm run test:ai-all
+android:  npm run build:mobile
 
-```bash
-npm run dev      # Start development server
-npm run build    # Production build
-npm run lint     # ESLint check
-```
+## Coding Rules
+- TypeScript strict — không dùng `any` trừ khi thật sự cần
+- Zustand stores: luôn dùng persist config từ src/stores/persistConfig.ts
+- Firebase calls: server-side dùng firebaseAdmin, client-side dùng src/lib/firebase/
+- AI chat flow: mọi thay đổi phải có test tương ứng trong tests/
+- Không xóa sound files trong public/sounds/ — dùng cho gamification
+- Path alias: @ = src/
 
-No test runner is configured.
+## Windows/PowerShell Notes
+- Shell là PowerShell, KHÔNG phải bash
+- Path dùng backslash: src\stores\
+- Dùng $HOME thay cho ~
 
-## Environment
+## What NOT to do
+- Không thay đổi capacitor.config.ts mà không báo trước
+- Không xóa hoặc rename Zustand stores — breaking change lớn
+- Không commit .env.local
+- Không push lên remote mà không confirm
+- Không thay đổi PayOS webhook URL trong production
 
-Copy `.env.example` to `.env.local` and fill in:
-- Firebase public config keys (for auth + Firestore)
-- `GROQ_API_KEY` — powers the AI CFO feature (Llama 3.3 70B via Groq); app falls back to a demo insight if missing
-
-## Architecture
-
-**ManiCash** is a Vietnamese personal finance app with gamification. Stack: Next.js 16 App Router, React 19, TypeScript, Firebase (auth + Firestore), Zustand, Tailwind CSS v4.
-
-### Route groups
-
-- `(auth)/login` — Google OAuth login
-- `(app)/overview|input|ledger|goals|money` — protected app shell with shared header/bottom-nav layout
-- `admin/` — admin dashboard
-- `api/cfo` — Groq AI financial analysis endpoint
-- `api/auth/session` — Firebase session check
-- `api/admin/bans` — user ban management
-
-### State management (`src/stores/`)
-
-All client state lives in Zustand stores. The most critical ones:
-
-| Store | Owns |
-|-------|------|
-| `useFinanceStore` | Transactions, three-wallet balances (main / emergency / bill-fund), fixed bills |
-| `useBudgetStore` | Monthly category budgets, carryover logic, safe-to-spend calculation |
-| `useGoalsStore` | Long-term goals + milestones |
-| `useTaskStore` | Earning tasks (side gigs) with sub-task checklists |
-| `useAuthStore` | Firebase user + UserProfile (rank, XP, streak) |
-
-Data is seeded deterministically for demo mode (bypasses Firebase auth).
-
-### Gamification (`src/lib/xpEngine.ts`)
-
-Seven ranks from Iron (0 XP) → Diamond (50 000 XP). XP is awarded/penalised for finance actions (logging income/expenses, resisting spending, completing tasks, maintaining streaks). Rank unlocks perks defined in `src/data/rankDefinitions.ts`.
-
-### AI CFO (`src/lib/groqClient.ts` + `src/app/api/cfo/`)
-
-`POST /api/cfo` accepts `{ transactions, totalIncome, totalExpense, savingsRate }` and returns `{ summary, suggestions, healthScore }` (0–100). The `useCFOReport` hook (in `src/hooks/`) calls this endpoint and is consumed by `MoneyContent`.
-
-### Design system (`src/app/globals.css`)
-
-Dark-first glassmorphism theme. Key tokens: purple `#7C3AED`, orange `#F97316`, green `#22C55E`. Four background levels from `#0A0A12` (primary) to `#1C1930` (tertiary). Mobile-first (375 px baseline). Vietnamese language throughout.
-
-### Key type domains (`src/types/`)
-
-- `transaction.ts` — `Transaction`, `Category`, `FixedBill`
-- `user.ts` — `UserProfile`, `UserRank`, `AuthState`
-- `gamification.ts` — `XPAction`, `RankDefinition`, `XPActionType`
-- `task.ts` — `EarningTask`, `SubTask`, `XPPenalty`
-- `budget.ts` — `CategoryBudget`, `MonthlySnapshot`, `Goal`, `Milestone`
+## Deploy
+- Vercel (auto deploy từ main branch)
+- Android: build APK thủ công qua Android Studio
