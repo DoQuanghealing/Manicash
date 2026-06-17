@@ -103,7 +103,7 @@ function TransactionReceipt({ receipt }: { receipt: NonNullable<ChatMessage['rec
   return (
     <div className={`tg-receipt tg-receipt--${receipt.txnType}`}>
       <div className="tg-receipt-head">
-        <span className="tg-receipt-verb">{isIncome ? 'Đã ghi thu' : 'Đã ghi chi'}</span>
+        <span className="tg-receipt-verb">{isIncome ? 'Xác nhận đã thu' : 'Xác nhận đã chi'}</span>
         <span className="tg-receipt-amount">
           {isIncome ? '+' : '−'}{formatVnd(receipt.amount)}đ
         </span>
@@ -118,6 +118,9 @@ function TransactionReceipt({ receipt }: { receipt: NonNullable<ChatMessage['rec
       >
         <span aria-hidden>{receipt.categoryIcon}</span> {receipt.categoryName}
       </span>
+      {receipt.description && (
+        <span className="tg-receipt-desc">Nội dung: {receipt.description}</span>
+      )}
       <div className="tg-receipt-today">
         <span className="tg-receipt-today-label">Hôm nay</span>
         <span className="tg-receipt-pill tg-receipt-pill--in">↑ {formatVnd(receipt.todayIncome)}đ</span>
@@ -352,11 +355,9 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
       return 'Tôi chưa thấy số tiền trong câu này. Hãy thử lại với ví dụ: mua đậu hũ 20k.';
     }
 
-    const typeLabel = intent.type === 'income' ? 'thu nhập' : intent.type === 'transfer' ? 'chuyển quỹ' : 'chi tiêu';
+    const typeLabel = intent.type === 'income' ? 'thu' : intent.type === 'transfer' ? 'chuyển quỹ' : 'chi';
     const categoryLabel = intent.category?.categoryName || intent.category?.categoryId || 'chưa rõ';
-    const sourceLabel = intent.source === 'memory' ? ' Tôi dùng trí nhớ local từ lần sửa trước.' : '';
-    const aiLabel = intent.source === 'ai_fallback' ? ' Tôi đã dùng AI fallback vì local parser không chắc.' : '';
-    return `Tôi đọc được: ${typeLabel}, ${formatVnd(intent.amount.value)} VND, danh mục ${categoryLabel}.${sourceLabel}${aiLabel} Hãy kiểm tra lại trước khi lưu.`;
+    return `${formatVnd(intent.amount.value)}đ — ${typeLabel} · ${categoryLabel}. Kiểm tra rồi xác nhận nhé.`;
   }
 
   function setDraftFromIntent(intent: ParsedMoneyIntent) {
@@ -386,13 +387,7 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
       return;
     }
 
-    appendMessages([
-      {
-        id: makeMessageId('system'),
-        role: 'system',
-        text: `AI fallback không dùng được (${result.source}). Tôi giữ bản nhập local để bạn tự xác nhận.`,
-      },
-    ]);
+    // AI fallback không khả dụng — giữ yên, bản draft local vẫn hiện để user xác nhận.
   }
 
   function currentClientSnapshot() {
@@ -778,6 +773,7 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
             categoryColor: meta?.color ?? (txnType === 'income' ? '#22C55E' : '#F97316'),
             todayIncome: today.income,
             todayExpense: today.expense,
+            description: confirmed.note || undefined,
           },
         },
       ]);
@@ -1135,6 +1131,41 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
                       ))}
                     </div>
                   )}
+
+                  {/* Bill suggestion — hiện khi danh mục là bills/housing và user có bill cố định chưa đóng */}
+                  {draftForm.type === 'expense' && (() => {
+                    const isBillCat = ['bills', 'housing', 'education'].includes(draftForm.categoryId);
+                    if (!isBillCat) return null;
+                    const draftAmt = parseAmountInput(draftForm.amount);
+                    const noteNorm = draftForm.note.toLowerCase();
+                    const matchedBills = fixedBills.filter((b) => {
+                      if (b.isPaid) return false;
+                      const billNorm = b.name.toLowerCase();
+                      const nameMatch = noteNorm && billNorm.split(/\s+/).some((w) => noteNorm.includes(w) && w.length > 2);
+                      const amtMatch = draftAmt > 0 && Math.abs(b.amount - draftAmt) / b.amount < 0.25;
+                      return nameMatch || amtMatch;
+                    }).slice(0, 3);
+                    // fallback: hiện tất cả unpaid bills nếu không match cụ thể nào
+                    const bills = matchedBills.length > 0
+                      ? matchedBills
+                      : fixedBills.filter((b) => !b.isPaid).slice(0, 3);
+                    if (bills.length === 0) return null;
+                    return (
+                      <div className="tg-bill-hint">
+                        <span className="tg-bill-hint-label">Đây là bill nào?</span>
+                        {bills.map((bill) => (
+                          <button
+                            key={bill.id}
+                            type="button"
+                            className="tg-bill-hint-btn"
+                            onClick={() => updateDraft({ note: bill.name, amount: String(bill.amount) })}
+                          >
+                            {bill.icon} {bill.name} · {formatVnd(bill.amount)}đ
+                          </button>
+                        ))}
+                      </div>
+                    );
+                  })()}
 
                   {error && <p className="tg-error">{error}</p>}
                 </>

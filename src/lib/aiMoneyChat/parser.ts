@@ -16,28 +16,32 @@ import type {
 } from './types';
 import type { TxnType } from '@/stores/useFinanceStore';
 
-const INCOME_HINTS = [
-  'ban duoc',
-  'chot don',
-  'duoc tra',
-  'duoc chuyen',
-  'duoc nhan',
-  'khach tra',
-  'luong',
-  'nhan',
-  'thu',
-  'thuong',
+/** Hint mạnh (≥2 từ) → thắng ngay cả khi có EXPENSE hint đi kèm */
+const STRONG_INCOME_HINTS = [
+  'nhan tien', 'nhan duoc', 'nhan luong', 'nhan thuong',
+  'duoc tra', 'duoc chuyen', 'duoc nhan', 'duoc tang', 'duoc bieu', 'duoc thuong', 'duoc trao',
+  'ban duoc', 'chot don', 'khach tra', 'thu tien',
+  'tien ve', 'tien vao', 'rap vao',
+  'chong cho', 'vo cho', 'bo cho', 'me cho', 'cha cho', 'ba cho',
+  'anh cho', 'em cho', 'ban cho', 'cho minh', 'cho toi',
+  'hoa hong', 'thu nhap', 'hoan tien', 'hoan tra', 'cashback', 'refund',
 ];
 
+/** Hint yếu (1 từ) — chỉ dùng khi không có EXPENSE hint */
+const WEAK_INCOME_HINTS = ['nhan', 'thu', 'luong', 'thuong'];
+
+const INCOME_HINTS = [...STRONG_INCOME_HINTS, ...WEAK_INCOME_HINTS];
+
 const EXPENSE_HINTS = [
-  'chi',
+  // Cụm cụ thể — tránh khớp "chị" (chi = older sister)
+  'chi tieu', 'chi phi', 'chi cho',
+  // Bill/đóng tiền
+  'dong tien', 'dong bill', 'dong phi', 'dong hoc phi',
+  'tra tien', 'thanh toan',
+  // Mua sắm / tiêu
+  'mua', 'nap', 'het', 'ton', 'tieu',
+  // Từ "dong" trần — vẫn giữ vì "đóng tiền điện" rất phổ biến
   'dong',
-  'het',
-  'mua',
-  'nap',
-  'thanh toan',
-  'tra tien',
-  'ton',
 ];
 
 const TRANSFER_HINTS = [
@@ -116,13 +120,21 @@ function parseAmount(input: string): AmountParseResult | undefined {
 
 function detectType(text: string): { type?: TxnType; reasons: string[] } {
   const reasons: string[] = [];
-  const hasIncome = hasAny(text, INCOME_HINTS);
+  const hasStrongIncome = hasAny(text, STRONG_INCOME_HINTS);
+  const hasIncome = hasStrongIncome || hasAny(text, WEAK_INCOME_HINTS);
   const hasExpense = hasAny(text, EXPENSE_HINTS);
   const hasTransfer = hasAny(text, TRANSFER_HINTS);
 
   if (hasTransfer && !hasExpense && !hasIncome) {
     reasons.push('Matched transfer/saving keywords.');
     return { type: 'transfer', reasons };
+  }
+
+  // Strong income hint (cụm ≥2 từ) thắng ngay cả khi có expense hint đi kèm
+  // VD: "nhan tien chi trang" — "chi trang" khớp expense nhưng "nhan tien" là signal mạnh
+  if (hasStrongIncome) {
+    reasons.push('Strong income keyword matched — overrides ambiguity.');
+    return { type: 'income', reasons };
   }
 
   if (hasIncome && !hasExpense) {
@@ -136,8 +148,8 @@ function detectType(text: string): { type?: TxnType; reasons: string[] } {
   }
 
   if (hasIncome && hasExpense) {
-    reasons.push('Both income and expense keywords were present.');
-    return { reasons };
+    reasons.push('Both income and expense keywords — defaulting to expense.');
+    return { type: 'expense', reasons };
   }
 
   return { reasons };

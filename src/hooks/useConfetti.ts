@@ -90,28 +90,30 @@ export function useConfetti() {
       },
 
       mission: () => {
-        // Burst từ giữa
+        // Burst nhẹ từ giữa
         fc({
-          particleCount: 80,
-          spread: 90,
-          origin: { x: 0.5, y: 0.55 },
+          particleCount: 35,
+          spread: 55,
+          origin: { x: 0.5, y: 0.6 },
           colors: ['#7C3AED', '#F97316', '#22C55E', '#A78BFA'],
-          ticks: 150,
-          gravity: 1.4,
-          startVelocity: 28,
+          ticks: 120,
+          gravity: 1.5,
+          startVelocity: 22,
+          scalar: 0.85,
         });
       },
 
       streak: () => {
         // Stars vàng
         fc({
-          particleCount: 50,
-          spread: 70,
-          origin: { x: 0.5, y: 0.5 },
+          particleCount: 30,
+          spread: 55,
+          origin: { x: 0.5, y: 0.55 },
           colors: ['#F59E0B', '#F97316', '#FCD34D'],
           shapes: ['star'],
-          ticks: 100,
-          startVelocity: 22,
+          ticks: 90,
+          startVelocity: 18,
+          scalar: 0.85,
         });
       },
     };

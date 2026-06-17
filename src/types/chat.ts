@@ -8,6 +8,7 @@ export interface ChatReceipt {
   categoryColor: string;
   todayIncome: number;
   todayExpense: number;
+  description?: string;
 }
 
 export interface ChatMessage {
