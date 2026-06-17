@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Fragment, FormEvent, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
@@ -25,6 +25,12 @@ import { parseMoneyText } from '@/lib/aiMoneyChat/parser';
 import { classifyIntent } from '@/lib/aiMoneyChat/intent/intentClassifier';
 import { buildClientSnapshot } from '@/lib/aiMoneyChat/clientSnapshot';
 import { sendChatMessage } from '@/lib/aiMoneyChat/chatClient';
+import { dispatchPrism } from '@/lib/aiMoneyChat/prism/prismDispatch';
+import {
+  suggestForIntent,
+  filterSlashCommands,
+  resolveSlashCommand,
+} from '@/lib/aiMoneyChat/prism/prismSuggestions';
 import type { MoneyActionRequest } from '@/lib/aiMoneyChat/actions/actionTypes';
 import { executeMoneyActionOnClient } from '@/lib/aiMoneyChat/actions/clientActionExecutor';
 import { undoMoneyActionOnClient } from '@/lib/aiMoneyChat/actions/clientActionUndoExecutor';
@@ -425,12 +431,36 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
       return;
     }
 
+    const snapshot = currentClientSnapshot();
+
+    // PRISM (Lõi Kim Cương) — thử trả lời OFFLINE ngay tại client trước.
+    // Câu tra cứu (số dư, bill, safe-to-spend, mục tiêu, sức khỏe...) -> trả lời
+    // tức thì, 0đ, không cần mạng. Chỉ câu khó (CFO/tư vấn/follow-up) mới lên server.
+    try {
+      const prism = await dispatchPrism(text, { uid: userProfile?.uid, clientSnapshot: snapshot });
+      if (prism) {
+        appendMessages([
+          {
+            id: makeMessageId('assistant'),
+            role: 'assistant',
+            text: prism.message,
+            markdown: true,
+            suggestions: suggestForIntent(prism.meta.intent),
+          },
+        ]);
+        trackEvent('chat_parse', { mode: 'prism', intent: prism.meta.intent, source: 'prism-offline' });
+        return;
+      }
+    } catch {
+      /* PRISM lỗi bất ngờ -> rơi xuống server như cũ */
+    }
+
     setIsChatLoading(true);
 
     const result = await sendChatMessage({
       message: text,
       sessionId: sessionIdRef.current,
-      clientSnapshot: currentClientSnapshot(),
+      clientSnapshot: snapshot,
     });
 
     setIsChatLoading(false);
@@ -442,7 +472,13 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
 
     if (result.ok && result.reply) {
       appendMessages([
-        { id: makeMessageId('assistant'), role: 'assistant', text: result.reply.message, markdown: true },
+        {
+          id: makeMessageId('assistant'),
+          role: 'assistant',
+          text: result.reply.message,
+          markdown: true,
+          suggestions: suggestForIntent(result.intentType),
+        },
       ]);
       // Phase 4A: nếu có actionRequest, hiển thị card confirm (không auto-execute).
       const action = result.reply.actionRequest;
@@ -515,8 +551,14 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
   }
 
   function parseInput(rawText: string) {
-    const text = rawText.trim();
+    let text = rawText.trim();
     if (!text) return;
+
+    // P2 — lệnh "/": ánh xạ sang câu hỏi tự nhiên rồi xử lý như bình thường.
+    if (text.startsWith('/')) {
+      const resolved = resolveSlashCommand(text);
+      if (resolved) text = resolved;
+    }
 
     // Earning-plan intent takes priority over transaction parsing.
     if (detectEarningIntent(text)) {
@@ -922,24 +964,45 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
         )}
 
         <div className="tg-thread" ref={threadRef}>
-          {messages.map((message) => (
-            <div key={message.id} className={`tg-msg tg-msg-${message.role}`}>
-              {message.role !== 'user' && (
-                <div className="tg-msg-avatar" aria-hidden="true">
-                  {message.role === 'assistant' ? 'LD' : <Check size={13} />}
+          {messages.map((message, index) => {
+            const isLast = index === messages.length - 1;
+            const showSuggestions = isLast && message.suggestions && message.suggestions.length > 0;
+            return (
+              <Fragment key={message.id}>
+                <div className={`tg-msg tg-msg-${message.role}`}>
+                  {message.role !== 'user' && (
+                    <div className="tg-msg-avatar" aria-hidden="true">
+                      {message.role === 'assistant' ? 'LD' : <Check size={13} />}
+                    </div>
+                  )}
+                  <div className="tg-bubble">
+                    {message.receipt ? (
+                      <TransactionReceipt receipt={message.receipt} />
+                    ) : message.markdown ? (
+                      <FormattedText text={message.text} />
+                    ) : (
+                      <p>{message.text}</p>
+                    )}
+                  </div>
                 </div>
-              )}
-              <div className="tg-bubble">
-                {message.receipt ? (
-                  <TransactionReceipt receipt={message.receipt} />
-                ) : message.markdown ? (
-                  <FormattedText text={message.text} />
-                ) : (
-                  <p>{message.text}</p>
+                {showSuggestions && (
+                  <div className="tg-suggest" role="group" aria-label="Gợi ý tiếp theo">
+                    {message.suggestions!.map((s) => (
+                      <button
+                        key={s.query}
+                        type="button"
+                        className="tg-suggest-chip"
+                        disabled={!enabled}
+                        onClick={() => parseInput(s.query)}
+                      >
+                        {s.icon && <span aria-hidden>{s.icon}</span>} {s.label}
+                      </button>
+                    ))}
+                  </div>
                 )}
-              </div>
-            </div>
-          ))}
+              </Fragment>
+            );
+          })}
           {(isAiFallbackLoading || isChatLoading) && <TypingIndicator />}
 
           {pendingAction && (
@@ -1024,10 +1087,32 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
           ))}
         </div>
 
+        {enabled && input.startsWith('/') && filterSlashCommands(input).length > 0 && (
+          <div className="tg-slash" role="listbox" aria-label="Lệnh nhanh">
+            {filterSlashCommands(input).map((c) => (
+              <button
+                key={c.cmd}
+                type="button"
+                className="tg-slash-item"
+                role="option"
+                aria-selected="false"
+                onClick={() => {
+                  setInput('');
+                  parseInput(c.query);
+                }}
+              >
+                <span className="tg-slash-icon" aria-hidden>{c.icon}</span>
+                <span className="tg-slash-cmd">{c.cmd}</span>
+                <span className="tg-slash-label">{c.label}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
         <form className="tg-composer" onSubmit={handleSubmit}>
           <input
             type="text"
-            placeholder="Nhập giao dịch, vd: mua đậu hũ 20k"
+            placeholder="Nhập giao dịch hoặc gõ / để xem lệnh nhanh"
             value={input}
             onChange={(event) => setInput(event.target.value)}
             disabled={!enabled}

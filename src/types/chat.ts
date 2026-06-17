@@ -11,6 +11,16 @@ export interface ChatReceipt {
   description?: string;
 }
 
+/** P2 — nút gợi ý inline dưới câu trả lời (bấm để hỏi tiếp). */
+export interface ChatSuggestion {
+  /** Nhãn hiển thị trên chip. */
+  label: string;
+  /** Câu sẽ gửi khi bấm (đi qua PRISM offline-first). */
+  query: string;
+  /** Emoji đầu chip. */
+  icon?: string;
+}
+
 export interface ChatMessage {
   id: string;
   role: 'assistant' | 'user' | 'system';
@@ -21,4 +31,6 @@ export interface ChatMessage {
   receipt?: ChatReceipt;
   /** ISO timestamp (Phase I) — để lưu lịch sử theo ngày + tự xóa sau 7 ngày. */
   createdAt?: string;
+  /** P2 — gợi ý hành động tiếp theo (chỉ render ở tin nhắn mới nhất). */
+  suggestions?: ChatSuggestion[];
 }
