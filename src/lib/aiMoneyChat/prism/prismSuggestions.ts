@@ -78,7 +78,11 @@ export const SLASH_COMMANDS: SlashCommand[] = [
   { cmd: '/muctieu', label: 'Tiến độ mục tiêu', query: 'mục tiêu của tôi tới đâu rồi', icon: '🎯' },
   { cmd: '/suckhoe', label: 'Sức khỏe tài chính', query: 'điểm sức khỏe tài chính của tôi', icon: '❤️' },
   { cmd: '/baocao', label: 'Báo cáo CFO tháng', query: 'lên báo cáo CFO tháng này', icon: '📈' },
+  { cmd: '/nangluc', label: 'Đo năng lực (La Bàn)', query: '/nangluc', icon: '⚡' },
 ];
+
+/** Các lệnh "/" được xử lý ĐẶC BIỆT ở client (không gửi như câu hỏi PRISM). */
+export const SPECIAL_SLASH_COMMANDS = new Set(['/nangluc', '/danhgianangluc']);
 
 /** Lọc lệnh theo chuỗi sau dấu "/" (prefix cmd hoặc khớp nhãn). */
 export function filterSlashCommands(rawInput: string): SlashCommand[] {

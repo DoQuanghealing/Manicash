@@ -1,5 +1,7 @@
 /* ═══ Chat types (dùng chung component + store lịch sử) ═══ */
 
+import type { CapacityResult } from '@/lib/aiMoneyChat/prism/capacity/capacityEngine';
+
 export interface ChatReceipt {
   txnType: 'income' | 'expense';
   amount: number;
@@ -33,4 +35,6 @@ export interface ChatMessage {
   createdAt?: string;
   /** P2 — gợi ý hành động tiếp theo (chỉ render ở tin nhắn mới nhất). */
   suggestions?: ChatSuggestion[];
+  /** P5 — kết quả đo năng lực (render thẻ radar). */
+  capacity?: CapacityResult;
 }

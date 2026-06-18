@@ -30,7 +30,15 @@ import {
   suggestForIntent,
   filterSlashCommands,
   resolveSlashCommand,
+  SPECIAL_SLASH_COMMANDS,
 } from '@/lib/aiMoneyChat/prism/prismSuggestions';
+import { computeCapacity, classifyCapacity } from '@/lib/aiMoneyChat/prism/capacity/capacityEngine';
+import { buildCapacityComponents, type CapacityRawSignals } from '@/lib/aiMoneyChat/prism/capacity/buildCapacity';
+import CapacityCard from './CapacityCard';
+import { useTransactionHabitStore } from '@/stores/useTransactionHabitStore';
+import { topHabits, type TransactionHabit } from '@/lib/aiMoneyChat/prism/transactionMemory';
+import { toMoneySnapshotV1, getBudgetCategoryProgress } from '@/lib/moneyBrain';
+import { detectGuardianAlerts, type GuardianAlert } from '@/lib/aiMoneyChat/prism/guardian';
 import type { MoneyActionRequest } from '@/lib/aiMoneyChat/actions/actionTypes';
 import { executeMoneyActionOnClient } from '@/lib/aiMoneyChat/actions/clientActionExecutor';
 import { undoMoneyActionOnClient } from '@/lib/aiMoneyChat/actions/clientActionUndoExecutor';
@@ -303,6 +311,49 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
     return map;
   }, [expenseCategories]);
 
+  // P3 — top giao dịch lặp lại (trí nhớ) -> chip ghi nhanh.
+  const habits = useTransactionHabitStore((s) => s.habits);
+  const habitChips = useMemo(() => topHabits(habits, { limit: 4, minCount: 2 }), [habits]);
+
+  // P4 — Người Gác: cảnh báo chủ động (offline) khi mở chat.
+  const [guardianDismissed, setGuardianDismissed] = useState(false);
+  const [idleDays, setIdleDays] = useState(0);
+  const guardianAlerts = useMemo<GuardianAlert[]>(() => {
+    if (!enabled) return [];
+    try {
+      return detectGuardianAlerts(toMoneySnapshotV1(currentClientSnapshot()), { idleDays });
+    } catch {
+      return [];
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    enabled,
+    idleDays,
+    transactions,
+    fixedBills,
+    categoryBudgets,
+    goals,
+    mainBalance,
+    emergencyBalance,
+    billFundBalance,
+    carryOver,
+  ]);
+
+  // P4 — đo số ngày user không mở chat (idle) để Người Gác nhắc tái tương tác.
+  useEffect(() => {
+    const KEY = 'manicash.prism.lastOpen';
+    try {
+      const prev = localStorage.getItem(KEY);
+      if (prev) {
+        const days = Math.floor((Date.now() - new Date(prev).getTime()) / 86_400_000);
+        if (Number.isFinite(days) && days > 0) setIdleDays(days);
+      }
+      localStorage.setItem(KEY, new Date().toISOString());
+    } catch {
+      /* localStorage không khả dụng -> bỏ qua idle */
+    }
+  }, []);
+
   const monthlySpendingLimit = useMemo(() => {
     return categoryBudgets
       .filter((budget) => budget.month === currentBudgetMonth)
@@ -554,8 +605,15 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
     let text = rawText.trim();
     if (!text) return;
 
-    // P2 — lệnh "/": ánh xạ sang câu hỏi tự nhiên rồi xử lý như bình thường.
+    // P2/P5 — lệnh "/": lệnh đặc biệt (đo năng lực) xử lý riêng tại client;
+    // còn lại ánh xạ sang câu hỏi tự nhiên rồi xử lý như bình thường.
     if (text.startsWith('/')) {
+      const token = text.split(/\s+/)[0].toLowerCase();
+      if (SPECIAL_SLASH_COMMANDS.has(token)) {
+        handleShowCapacity();
+        setInput('');
+        return;
+      }
       const resolved = resolveSlashCommand(text);
       if (resolved) text = resolved;
     }
@@ -628,6 +686,106 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
   function handleExample(example: string) {
     if (!enabled) return;
     parseInput(example);
+  }
+
+  /** P3 — ghi nhanh từ thói quen: mở nháp đã điền sẵn (không cần gõ lại). */
+  function handleHabitQuickAdd(h: TransactionHabit) {
+    if (!enabled) return;
+    const label = h.label || h.keyword;
+    const text = `${label} ${formatVnd(h.typicalAmount)}`;
+    const parsed = parseMoneyText(text);
+    const intent: ParsedMoneyIntent = {
+      ...parsed,
+      type: h.type,
+      confidence: 'high',
+      needsConfirmation: false,
+      category: {
+        categoryId: h.categoryId,
+        categoryName: categoryMetaMap.get(h.categoryId)?.name ?? h.categoryId,
+        confidence: 'high',
+      },
+    };
+    appendMessages([
+      { id: makeMessageId('user'), role: 'user', text },
+      { id: makeMessageId('assistant'), role: 'assistant', text: buildAssistantText(intent) },
+    ]);
+    setDraftFromIntent(intent);
+    setInput('');
+    setError(null);
+  }
+
+  /** P5 — đo La Bàn Năng Lực (offline) từ dữ liệu local hiện có. */
+  function handleShowCapacity() {
+    if (!enabled) return;
+    const now = new Date();
+    const monthPrefix = toLocalISODate(now).slice(0, 7);
+    const cutoff = toLocalISODate(new Date(now.getTime() - 30 * 86_400_000));
+
+    const loggedDays = new Set<string>();
+    let monthlyExpense = 0;
+    for (const t of transactions) {
+      const dk = t.dateKey;
+      if (dk && dk >= cutoff) loggedDays.add(dk);
+      if (t.type === 'expense' && dk && dk.startsWith(monthPrefix)) monthlyExpense += t.amount;
+    }
+
+    let budgetTotal = 0;
+    let budgetWithin = 0;
+    try {
+      const snap = toMoneySnapshotV1(currentClientSnapshot());
+      const prog = getBudgetCategoryProgress(snap).filter((b) => b.monthlyLimit > 0);
+      budgetTotal = prog.length;
+      budgetWithin = prog.filter((b) => !b.isOverBudget).length;
+    } catch {
+      /* không có ngân sách -> adapter dùng default */
+    }
+
+    const chatUserMessages = messages.filter((m) => m.role === 'user').length;
+    const earningTasksCompleted = earningTasks.filter((t) => !!t.completedAt).length;
+    const featuresUsed = [
+      categoryBudgets.length > 0,
+      goals.length > 0,
+      earningTasks.length > 0,
+      fixedBills.length > 0,
+      chatUserMessages > 0,
+    ].filter(Boolean).length;
+
+    const raw: CapacityRawSignals = {
+      daysLoggedLast30: loggedDays.size,
+      budgetTotal,
+      budgetWithin,
+      goalsTotal: goals.length,
+      goalsFunded: goals.filter((g) => (g.currentAmount ?? 0) > 0).length,
+      streakDays: userProfile?.streak ?? 0,
+      chatUserMessages,
+      featuresUsed,
+      featuresTotal: 5,
+      onboardingDone: -1,
+      onboardingTotal: 7,
+      skillsDeclared: -1,
+      earningTasksTotal: earningTasks.length,
+      earningTasksCompleted,
+      freeTimeHoursPerWeek: -1,
+      emergencyFundMonths: monthlyExpense > 0 ? emergencyBalance / monthlyExpense : -1,
+      cfoReportViews: 0,
+    };
+
+    const { components, pending } = buildCapacityComponents(raw);
+    const scores = computeCapacity(components);
+    const classification = classifyCapacity(scores);
+
+    appendMessages([
+      { id: makeMessageId('user'), role: 'user', text: 'Đo năng lực của tôi ⚡' },
+      {
+        id: makeMessageId('assistant'),
+        role: 'assistant',
+        text: 'Đây là **Bản đồ năng lực sơ bộ** của ngài (đo offline từ dữ liệu hiện có):',
+        markdown: true,
+        capacity: { scores, classification, pending },
+      },
+    ]);
+    setInput('');
+    setError(null);
   }
 
   function handleDailyCheckIn(slot: DailyCheckInSlot) {
@@ -781,6 +939,17 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
       // recordConfirmedMoneyIntent emit moneyEvents → MoneyReactionHost lo
       // popup chúc mừng (thu) / cằn nhằn (chi). Chat chỉ hiện phiếu ghi nhận gọn.
       recordConfirmedMoneyIntent(confirmed);
+
+      // P3 — học giao dịch lặp lại để gợi ý ghi nhanh lần sau (offline).
+      if (confirmed.type !== 'transfer') {
+        useTransactionHabitStore.getState().record({
+          text: draftForm.note.trim() || draftIntent.rawText,
+          type: confirmed.type,
+          categoryId: confirmed.categoryId,
+          amount: confirmed.amount,
+        });
+      }
+
       const originalCategoryId = draftIntent.category?.categoryId;
       const corrected = Boolean(
         confirmed.type !== 'transfer' &&
@@ -963,6 +1132,39 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
           </div>
         )}
 
+        {!guardianDismissed && guardianAlerts.length > 0 && (
+          <div className="tg-guardian" role="status" aria-label="Cảnh báo từ Lord Diamond">
+            <div className="tg-guardian-head">
+              <span className="tg-guardian-avatar" aria-hidden>🛡️</span>
+              <span className="tg-guardian-title">Lord Diamond để ý thấy</span>
+              <button
+                type="button"
+                className="tg-guardian-close"
+                onClick={() => setGuardianDismissed(true)}
+                aria-label="Đóng cảnh báo"
+              >
+                ×
+              </button>
+            </div>
+            {guardianAlerts.map((a) => (
+              <button
+                key={a.id}
+                type="button"
+                className={`tg-guardian-item tg-guardian-${a.severity}`}
+                disabled={!a.query}
+                onClick={() => a.query && parseInput(a.query)}
+              >
+                <span className="tg-guardian-icon" aria-hidden>{a.icon}</span>
+                <span className="tg-guardian-body">
+                  <span className="tg-guardian-item-title">{a.title}</span>
+                  <span className="tg-guardian-item-msg">{a.message}</span>
+                </span>
+                {a.query && <span className="tg-guardian-cta" aria-hidden>›</span>}
+              </button>
+            ))}
+          </div>
+        )}
+
         <div className="tg-thread" ref={threadRef}>
           {messages.map((message, index) => {
             const isLast = index === messages.length - 1;
@@ -975,8 +1177,13 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
                       {message.role === 'assistant' ? 'LD' : <Check size={13} />}
                     </div>
                   )}
-                  <div className="tg-bubble">
-                    {message.receipt ? (
+                  <div className={`tg-bubble${message.capacity ? ' tg-bubble--wide' : ''}`}>
+                    {message.capacity ? (
+                      <>
+                        {message.markdown ? <FormattedText text={message.text} /> : <p>{message.text}</p>}
+                        <CapacityCard result={message.capacity} />
+                      </>
+                    ) : message.receipt ? (
                       <TransactionReceipt receipt={message.receipt} />
                     ) : message.markdown ? (
                       <FormattedText text={message.text} />
@@ -1080,6 +1287,19 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
           <button type="button" className="tg-chip tg-chip-action tg-chip--purple" onClick={() => setShowHistory((v) => !v)} aria-pressed={showHistory}>
             <Scale size={14} /> Lịch sử thao tác
           </button>
+          {habitChips.map((h) => (
+            <button
+              key={`${h.type}:${h.keyword}`}
+              type="button"
+              className="tg-chip tg-chip--habit"
+              disabled={!enabled}
+              onClick={() => handleHabitQuickAdd(h)}
+              title={`Ghi nhanh: ${h.label} ${formatVnd(h.typicalAmount)}đ`}
+            >
+              <span aria-hidden>{categoryMetaMap.get(h.categoryId)?.icon ?? (h.type === 'income' ? '💰' : '🧾')}</span>
+              {h.label} · {formatVnd(h.typicalAmount)}đ
+            </button>
+          ))}
           {EXAMPLES.map((example) => (
             <button key={example} type="button" className="tg-chip tg-chip--example" disabled={!enabled} onClick={() => handleExample(example)}>
               <Sparkles size={13} /> {example}

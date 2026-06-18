@@ -1,0 +1,114 @@
+/* ═══ PRISM — Thẻ La Bàn Năng Lực (P5) ═══ */
+.cap-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 250px;
+  max-width: 320px;
+}
+
+.cap-card-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: center;
+}
+.cap-card-kicker {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c-text-muted);
+}
+.cap-card-group {
+  font-family: var(--font-display, inherit);
+  font-size: 1.25rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #c4b5fd, #fdba74);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.cap-card-tagline {
+  font-size: 12px;
+  color: var(--c-text-secondary);
+  line-height: 1.4;
+}
+
+/* Radar */
+.cap-radar { width: 100%; height: auto; display: block; }
+.cap-grid { fill: none; stroke: rgba(255, 255, 255, 0.1); stroke-width: 1; }
+.cap-axis { stroke: rgba(255, 255, 255, 0.12); stroke-width: 1; }
+.cap-area { stroke: #a855f7; stroke-width: 2; }
+.cap-dot { fill: #fff; stroke: #a855f7; stroke-width: 1.5; }
+.cap-label { fill: var(--c-text-secondary, rgba(255, 255, 255, 0.7)); font-size: 11px; font-weight: 600; }
+
+/* Score bars */
+.cap-scores { display: flex; flex-direction: column; gap: 7px; }
+.cap-score-row { display: flex; align-items: center; gap: 8px; }
+.cap-score-key {
+  flex: 0 0 30px;
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--c-purple-light);
+}
+.cap-score-name {
+  flex: 0 0 64px;
+  font-size: 12px;
+  color: var(--c-text-secondary);
+}
+.cap-score-bar {
+  flex: 1;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+.cap-score-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #a855f7, #f97316);
+  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.cap-score-val {
+  flex: 0 0 26px;
+  text-align: right;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--c-text-primary);
+}
+
+/* Suggestions */
+.cap-suggest { display: flex; flex-direction: column; gap: 5px; }
+.cap-suggest-title,
+.cap-pending-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--c-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.cap-suggest-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+.cap-suggest-tag {
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  background: rgba(168, 85, 247, 0.1);
+  color: #d8b4fe;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* Pending */
+.cap-pending {
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  background: rgba(245, 158, 11, 0.07);
+  border: 1px solid rgba(245, 158, 11, 0.18);
+}
+.cap-pending ul { margin: 4px 0 0; padding-left: 16px; }
+.cap-pending li {
+  font-size: 11px;
+  color: var(--c-text-secondary);
+  line-height: 1.5;
+}
