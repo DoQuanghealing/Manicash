@@ -63,7 +63,8 @@ export function buildCapacityComponents(raw: CapacityRawSignals): CapacityBuildR
   if (raw.goalsTotal > 0) {
     goalCommitment = pct(raw.goalsFunded, raw.goalsTotal);
   } else {
-    goalCommitment = 0;
+    // Chưa đặt mục tiêu = "chưa đo", KHÔNG phải thất bại -> default trung tính.
+    goalCommitment = 40;
     pending.push('Tạo & nạp mục tiêu lớn');
   }
   const streakMaintenance = cap(raw.streakDays, 30);
@@ -90,7 +91,8 @@ export function buildCapacityComponents(raw: CapacityRawSignals): CapacityBuildR
   if (raw.earningTasksTotal > 0) {
     earningTaskCompletion = pct(raw.earningTasksCompleted, raw.earningTasksTotal);
   } else {
-    earningTaskCompletion = 0;
+    // Chưa có earning task = "chưa đo" -> default trung tính (đồng nhất với các field khác).
+    earningTaskCompletion = 40;
     pending.push('Tạo nhiệm vụ kiếm tiền (Earning Task)');
   }
   let freeTimeAvailability: number;

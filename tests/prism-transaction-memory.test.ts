@@ -34,6 +34,15 @@ it('bỏ số tiền, fold dấu cho keyword', () => {
   eq(habitKeyword('Cà phê 30k'), habitKeyword('ca phe'));
   eq(habitLabel('Cà phê 30k'), 'Cà phê');
 });
+it('dấu câu lạc KHÔNG làm tách keyword/label', () => {
+  // 'cà phê 30k.' và 'cà phê 35k' phải ra cùng keyword (dedup ổn định)
+  eq(habitKeyword('Cà phê 30k.'), habitKeyword('Cà phê 35k'));
+  eq(habitLabel('Cà phê 30k.'), 'Cà phê'); // không còn ' .'
+});
+it('slang VN "5k5"/"5tr2" được bóc khỏi keyword/label', () => {
+  eq(habitKeyword('ăn 5k5'), habitKeyword('ăn 6k5')); // cùng "an"
+  eq(habitLabel('trả nợ 5tr2'), 'trả nợ');
+});
 
 describe('typicalAmount (mode, hòa -> mới nhất)');
 it('mode thắng', () => {
@@ -59,6 +68,13 @@ it('typicalAmount cập nhật theo mode khi ghi nhiều lần', () => {
   h = rec(h, 'cà phê', 'coffee', 30000, T1);
   h = rec(h, 'cà phê', 'coffee', 45000, T2);
   eq(h[0].typicalAmount, 30000, 'mode 30k');
+});
+it('dấu câu lạc -> vẫn dedup chung 1 habit (count=2)', () => {
+  let h: TransactionHabit[] = [];
+  h = rec(h, 'cà phê 30k.', 'coffee', 30000, T0);
+  h = rec(h, 'cà phê 35k', 'coffee', 35000, T1);
+  eq(h.length, 1, 'gộp 1 habit');
+  eq(h[0].count, 2, 'count tích lũy');
 });
 
 describe('recordHabit — bỏ qua input xấu');

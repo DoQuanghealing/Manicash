@@ -92,55 +92,73 @@ export function computeCapacity(c: CapacityComponents): CapacityScores {
   };
 }
 
+type AxisKey = 'FDS' | 'TAS' | 'IPS' | 'MMS';
+
 interface GroupRule {
   groupId: Exclude<CapacityGroupId, 'general'>;
   label: string;
   tagline: string;
   suggestions: string[];
-  primary: number;
+  primaryKey: AxisKey;
   primaryMin: number;
-  secondary: number;
+  secondaryKey: AxisKey;
   secondaryMin: number;
 }
 
 /** Ngưỡng & mô tả nhóm theo docs/CAPACITY_LOGIC_SPEC.md (ma trận phân loại). */
-function groupRules(s: CapacityScores): GroupRule[] {
-  return [
-    {
-      groupId: 'automation',
-      label: 'Kỹ sư Vận hành',
-      tagline: 'Tối ưu hóa & tự động hóa — biến quy trình thành cỗ máy.',
-      suggestions: ['AI Automation', 'Setup CRM', 'Workflow tự động'],
-      primary: s.TAS, primaryMin: 80, secondary: s.FDS, secondaryMin: 70,
-    },
-    {
-      groupId: 'expert',
-      label: 'Chuyên gia Số',
-      tagline: 'Đóng gói chuyên môn thành sản phẩm số bán tự động.',
-      suggestions: ['E-learning', 'Bán Ebook/Template', 'Landing Page Auto'],
-      primary: s.FDS, primaryMin: 70, secondary: s.TAS, secondaryMin: 60,
-    },
-    {
-      groupId: 'coach',
-      label: 'Nhà Khai vấn',
-      tagline: 'Thấu cảm & dẫn dắt — giúp người khác đi qua hành trình tiền bạc.',
-      suggestions: ['Coach tài chính', 'Khai vấn/Chữa lành', 'Mentor 1-1'],
-      primary: s.MMS, primaryMin: 70, secondary: s.FDS, secondaryMin: 60,
-    },
-    {
-      groupId: 'creator',
-      label: 'Sáng tạo Nội dung',
-      tagline: 'Lan tỏa & sáng tạo — dùng AI để nhân bản sức ảnh hưởng.',
-      suggestions: ['YouTube AI', 'KOC/TikTok', 'Video giấu mặt'],
-      primary: s.TAS, primaryMin: 70, secondary: s.IPS, secondaryMin: 50,
-    },
-  ];
+const GROUP_RULES: GroupRule[] = [
+  {
+    groupId: 'automation',
+    label: 'Kỹ sư Vận hành',
+    tagline: 'Tối ưu hóa & tự động hóa — biến quy trình thành cỗ máy.',
+    suggestions: ['AI Automation', 'Setup CRM', 'Workflow tự động'],
+    primaryKey: 'TAS', primaryMin: 80, secondaryKey: 'FDS', secondaryMin: 70,
+  },
+  {
+    groupId: 'expert',
+    label: 'Chuyên gia Số',
+    tagline: 'Đóng gói chuyên môn thành sản phẩm số bán tự động.',
+    suggestions: ['E-learning', 'Bán Ebook/Template', 'Landing Page Auto'],
+    primaryKey: 'FDS', primaryMin: 70, secondaryKey: 'TAS', secondaryMin: 60,
+  },
+  {
+    groupId: 'coach',
+    label: 'Nhà Khai vấn',
+    tagline: 'Thấu cảm & dẫn dắt — giúp người khác đi qua hành trình tiền bạc.',
+    suggestions: ['Coach tài chính', 'Khai vấn/Chữa lành', 'Mentor 1-1'],
+    primaryKey: 'MMS', primaryMin: 70, secondaryKey: 'FDS', secondaryMin: 60,
+  },
+  {
+    groupId: 'creator',
+    label: 'Sáng tạo Nội dung',
+    tagline: 'Lan tỏa & sáng tạo — dùng AI để nhân bản sức ảnh hưởng.',
+    suggestions: ['YouTube AI', 'KOC/TikTok', 'Video giấu mặt'],
+    primaryKey: 'TAS', primaryMin: 70, secondaryKey: 'IPS', secondaryMin: 50,
+  },
+];
+
+/** Tập trục của 1 nhóm (đã sort) — để nhận biết 2 nhóm có cùng "cặp trục" hay không. */
+function axisSig(g: GroupRule): string {
+  return [g.primaryKey, g.secondaryKey].sort().join('+');
 }
 
-/** Phân loại nhóm nghề theo phân phối điểm (nhận diện Hybrid). */
+/** Nhãn lai có chủ đích cho các cặp nhóm quan trọng (spec: Coach×Tech = lead xịn nhất). */
+const HYBRID_NAMES: Record<string, string> = {
+  'coach+creator': 'Nhà Khai vấn Công nghệ',
+  'automation+coach': 'Nhà Khai vấn Công nghệ',
+  'creator+expert': 'Chuyên gia Sáng tạo',
+  'automation+creator': 'Kiến trúc sư Nội dung',
+};
+
+/** Phân loại nhóm nghề theo phân phối điểm (nhận diện Hybrid trên 2 trục KHÁC nhau). */
 export function classifyCapacity(s: CapacityScores): CapacityClassification {
-  const matched = groupRules(s)
-    .filter((g) => g.primary > g.primaryMin && g.secondary > g.secondaryMin)
+  const scored = GROUP_RULES.map((g) => ({
+    rule: g,
+    primary: s[g.primaryKey],
+    secondary: s[g.secondaryKey],
+  }));
+  const matched = scored
+    .filter((m) => m.primary > m.rule.primaryMin && m.secondary > m.rule.secondaryMin)
     .sort((a, b) => b.primary + b.secondary - (a.primary + a.secondary));
 
   if (matched.length === 0) {
@@ -154,17 +172,26 @@ export function classifyCapacity(s: CapacityScores): CapacityClassification {
   }
 
   const top = matched[0];
-  const second = matched[1];
+  const topSig = axisSig(top.rule);
+  // Hybrid CHỈ khi nhóm thứ 2 dùng CẶP TRỤC KHÁC (tài năng thật sự khác), không
+  // phải cùng cặp TAS+FDS đảo primary/secondary (automation vs expert).
+  const second = matched.find((m) => axisSig(m.rule) !== topSig);
   const isHybrid =
     !!second &&
     Math.abs(top.primary + top.secondary - (second.primary + second.secondary)) <= 15;
 
+  let hybridLabel: string | undefined;
+  if (isHybrid && second) {
+    const key = [top.rule.groupId, second.rule.groupId].sort().join('+');
+    hybridLabel = HYBRID_NAMES[key] ?? `${top.rule.label} × ${second.rule.label}`;
+  }
+
   return {
-    groupId: top.groupId,
-    label: top.label,
-    tagline: top.tagline,
-    suggestions: top.suggestions,
+    groupId: top.rule.groupId,
+    label: top.rule.label,
+    tagline: top.rule.tagline,
+    suggestions: top.rule.suggestions,
     isHybrid,
-    hybridLabel: isHybrid ? `${top.label} × ${second!.label}` : undefined,
+    hybridLabel,
   };
 }

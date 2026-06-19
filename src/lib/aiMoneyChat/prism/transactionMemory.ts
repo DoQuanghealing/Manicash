@@ -40,23 +40,36 @@ const MAX_AMOUNTS = 12;
 
 function stripAmountTokens(text: string): string {
   return text
-    .replace(/\b\d+(?:[.,]\d+)?\s*(?:k|nghin|ngan|tr|trieu|m)\b/gi, ' ')
+    // suffix kèm slang VN: "5tr2" (=5.2tr), "5k5" (=5500), "30k5" -> cho phép 0-2 số đuôi.
+    .replace(/\b\d+(?:[.,]\d+)?\s*(?:k|nghin|ngan|tr|trieu|m)\d{0,2}\b/gi, ' ')
     .replace(/\b\d{1,3}(?:[.,]\d{3}){1,3}\b/g, ' ')
     .replace(/\b\d{4,12}\b/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 }
 
-/** Nhãn hiển thị: bỏ số tiền, gọn khoảng trắng, cắt ngắn. */
+/** Bỏ dấu câu lạc (dính lại sau khi cắt số tiền) + gọn khoảng trắng. */
+function tidyPunctuation(text: string): string {
+  return text
+    .replace(/\s+([.,!?;:])/g, '$1') // dán dấu vào từ trước
+    .replace(/[.,!?;:]+/g, ' ') // bỏ dấu câu còn sót
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/** Nhãn hiển thị: bỏ số tiền + dấu câu lạc, gọn khoảng trắng, cắt ngắn (giữ dấu tiếng Việt). */
 export function habitLabel(text: string): string {
-  const cleaned = stripAmountTokens(text).trim();
+  const cleaned = tidyPunctuation(stripAmountTokens(text));
   if (cleaned.length <= 28) return cleaned;
   return `${cleaned.slice(0, 28).trim()}…`;
 }
 
-/** Khóa keyword chuẩn hóa (ascii fold) để dedup. */
+/** Khóa keyword chuẩn hóa (ascii fold, KHÔNG còn dấu câu) để dedup ổn định. */
 export function habitKeyword(text: string): string {
-  return normalizeMoneyTextForMemory(stripAmountTokens(text));
+  return normalizeMoneyTextForMemory(stripAmountTokens(text))
+    .replace(/[^a-z0-9\s]/g, ' ') // bỏ '.'/',' lạc mà normalizeText giữ lại
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 /** Số tiền hay dùng nhất (mode); hòa -> số mới nhất (duyệt từ cuối). */

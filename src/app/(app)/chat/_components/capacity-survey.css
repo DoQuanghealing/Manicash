@@ -1,0 +1,51 @@
+/* ═══ PRISM — Thẻ khảo sát năng lực (P6a) ═══ */
+.surv-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 250px;
+  max-width: 320px;
+}
+.surv-block { display: flex; flex-direction: column; gap: 7px; }
+.surv-label {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--c-text-secondary);
+}
+.surv-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.surv-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--c-text-secondary);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--duration-fast);
+}
+.surv-chip:not(:disabled):hover { background: var(--glass-bg-hover); }
+.surv-chip--on {
+  border-color: rgba(168, 85, 247, 0.55);
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.25), rgba(249, 115, 22, 0.15));
+  color: #fff;
+}
+.surv-chip:disabled { opacity: 0.7; cursor: default; }
+
+.surv-save {
+  min-height: 44px;
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: var(--gradient-primary, linear-gradient(135deg, #7c3aed, #f97316));
+  color: #fff;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform var(--duration-fast), opacity var(--duration-fast);
+}
+.surv-save:not(:disabled):hover { transform: translateY(-1px); }
+.surv-save:disabled { opacity: 0.55; cursor: not-allowed; }

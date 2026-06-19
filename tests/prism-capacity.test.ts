@@ -47,9 +47,10 @@ it('clamp 0..100', () => {
 });
 
 describe('classifyCapacity — ma trận + Hybrid');
-it('TAS cao + FDS cao -> Kỹ sư Vận hành', () => {
+it('TAS cao + FDS cao -> Kỹ sư Vận hành, KHÔNG hybrid (cùng cặp trục automation/expert)', () => {
   const cls = classifyCapacity({ FDS: 75, TAS: 85, IPS: 40, MMS: 40 });
   eq(cls.groupId, 'automation');
+  eq(cls.isHybrid, false, 'cùng cặp TAS+FDS không phải lai thật');
 });
 it('MMS cao + FDS cao -> Nhà Khai vấn', () => {
   const cls = classifyCapacity({ FDS: 75, TAS: 40, IPS: 40, MMS: 80 });
@@ -60,11 +61,11 @@ it('điểm thấp -> nhóm general', () => {
   eq(cls.groupId, 'general');
   eq(cls.isHybrid, false);
 });
-it('2 nhóm sát nhau -> Hybrid', () => {
-  // TAS=85,FDS=75 (automation: 160) & MMS=80,FDS=75 (coach: 155) -> chênh 5 <=15
+it('2 nhóm KHÁC cặp trục sát nhau -> Hybrid (nhãn curated)', () => {
+  // automation(TAS+FDS)=160 & coach(MMS+FDS)=155 -> khác cặp trục, chênh 5 -> hybrid
   const cls = classifyCapacity({ FDS: 75, TAS: 85, IPS: 40, MMS: 80 });
   eq(cls.isHybrid, true);
-  ok(!!cls.hybridLabel && cls.hybridLabel.includes('×'), 'có nhãn lai');
+  eq(cls.hybridLabel, 'Nhà Khai vấn Công nghệ', 'nhãn lai có chủ đích');
 });
 
 describe('buildCapacityComponents — chuẩn hóa + pending');
@@ -81,6 +82,11 @@ it('thiếu khảo sát kỹ năng + free time -> có pending', () => {
 it('emergencyFundMonths=3 -> 50 (6 tháng=100)', () => {
   const { components } = buildCapacityComponents(baseRaw({ emergencyFundMonths: 3 }));
   eq(components.emergencyFundRatio, 50);
+});
+it('không goals/earning -> default trung tính 40 (KHÔNG phải 0)', () => {
+  const { components } = buildCapacityComponents(baseRaw({}));
+  eq(components.goalCommitment, 40, 'goalCommitment trung tính');
+  eq(components.earningTaskCompletion, 40, 'earningTaskCompletion trung tính');
 });
 
 function baseRaw(over: Partial<CapacityRawSignals>): CapacityRawSignals {

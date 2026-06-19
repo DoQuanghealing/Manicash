@@ -37,4 +37,6 @@ export interface ChatMessage {
   suggestions?: ChatSuggestion[];
   /** P5 — kết quả đo năng lực (render thẻ radar). */
   capacity?: CapacityResult;
+  /** P6a — render thẻ khảo sát năng lực. */
+  survey?: boolean;
 }

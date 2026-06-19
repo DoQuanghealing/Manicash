@@ -14,6 +14,7 @@ import {
   getBudgetCategoryProgress,
   getUpcomingBills,
   getCashRunway,
+  getTodayKey,
 } from '@/lib/moneyBrain';
 
 export type GuardianSeverity = 'danger' | 'warn' | 'info';
@@ -56,9 +57,11 @@ export function detectGuardianAlerts(
   const limit = opts.limit ?? 3;
   const alerts: GuardianAlert[] = [];
 
-  // 1) Số dư an toàn để chi.
+  // 1) Số dư an toàn để chi. CHỈ cảnh báo khi đã có cơ sở thu nhập — tránh báo
+  //    "nguy hiểm" giả trên tài khoản mới/trống (income=0 -> safeToSpend=0 -> danger).
   const sts = getSafeToSpendBreakdown(snapshot);
-  if (sts.status === 'danger') {
+  const hasIncomeBasis = sts.monthlyIncome > 0 || sts.carryOver > 0;
+  if (hasIncomeBasis && sts.status === 'danger') {
     alerts.push({
       id: 'safe-to-spend',
       severity: 'danger',
@@ -67,7 +70,7 @@ export function detectGuardianAlerts(
       message: `Số dư an toàn tháng này chỉ còn ${vnd(sts.safeToSpend)}đ. Nên phanh chi tự do lại.`,
       query: 'tháng này còn bao nhiêu để xài',
     });
-  } else if (sts.status === 'caution') {
+  } else if (hasIncomeBasis && sts.status === 'caution') {
     alerts.push({
       id: 'safe-to-spend',
       severity: 'warn',
@@ -78,11 +81,13 @@ export function detectGuardianAlerts(
     });
   }
 
-  // 2) Ngân sách vượt / sắp vượt.
-  const progress = getBudgetCategoryProgress(snapshot)
-    .filter((b) => b.monthlyLimit > 0)
-    .sort((a, b) => b.progress - a.progress);
-  const over = progress.filter((b) => b.isOverBudget).slice(0, 2);
+  // 2) Ngân sách vượt / sắp vượt. Xếp hạng "vượt" theo TỈ LỆ chi/hạn mức (KHÔNG
+  //    dùng progress vì đã clamp 100 -> không phân biệt được vượt nhẹ vs vượt nặng).
+  const progress = getBudgetCategoryProgress(snapshot).filter((b) => b.monthlyLimit > 0);
+  const over = progress
+    .filter((b) => b.isOverBudget)
+    .sort((a, b) => b.spent / b.monthlyLimit - a.spent / a.monthlyLimit)
+    .slice(0, 2);
   for (const b of over) {
     alerts.push({
       id: `budget:${b.categoryId}`,
@@ -94,7 +99,9 @@ export function detectGuardianAlerts(
     });
   }
   if (over.length === 0) {
-    const near = progress.find((b) => !b.isOverBudget && b.progress >= nearPct);
+    const near = progress
+      .filter((b) => !b.isOverBudget && b.progress >= nearPct)
+      .sort((a, b) => b.progress - a.progress)[0];
     if (near) {
       alerts.push({
         id: `budget:${near.categoryId}`,
@@ -107,17 +114,28 @@ export function detectGuardianAlerts(
     }
   }
 
-  // 3) Hóa đơn sắp tới hạn.
+  // 3) Hóa đơn sắp tới hạn. Tự tính SỐ NGÀY THỰC tới hạn (getUpcomingBills xếp
+  //    theo dueDay nên sai thứ tự khi vắt qua đầu tháng) + chọn bill gần hạn nhất.
   const upcoming = getUpcomingBills(snapshot, billDays);
   if (upcoming.length > 0) {
-    const soonest = upcoming[0];
+    const todayKey = getTodayKey(snapshot.clientNow, snapshot.timezone);
+    const [ty, tm, td] = todayKey.split('-').map(Number);
+    const daysInMonth = new Date(Date.UTC(ty, tm, 0)).getUTCDate();
+    const daysToDue = (dueDay?: number): number => {
+      const dd = dueDay ?? td;
+      return dd >= td ? dd - td : daysInMonth - td + dd;
+    };
+    const sorted = [...upcoming].sort((a, b) => daysToDue(a.dueDay) - daysToDue(b.dueDay));
+    const soonest = sorted[0];
+    const d = daysToDue(soonest.dueDay);
+    const when = d <= 0 ? 'hôm nay' : d === 1 ? 'ngày mai' : `trong ${d} ngày`;
     const more = upcoming.length > 1 ? ` (+${upcoming.length - 1} bill khác)` : '';
     alerts.push({
       id: 'bills',
       severity: 'warn',
       icon: '📋',
       title: 'Hóa đơn sắp tới hạn',
-      message: `${soonest.name} ${vnd(soonest.amount)}đ trong ${billDays} ngày tới${more}.`,
+      message: `${soonest.name} ${vnd(soonest.amount)}đ tới hạn ${when}${more}.`,
       query: 'bill nào sắp tới hạn',
     });
   }

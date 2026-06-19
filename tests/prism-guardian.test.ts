@@ -77,6 +77,27 @@ it('limit cắt số cảnh báo', () => {
   ok(alerts.length <= 2, 'tôn trọng limit');
 });
 
+// Tài khoản TRỐNG: chưa nhập gì (income=0 -> safeToSpend=0). KHÔNG được báo nguy giả.
+const EMPTY: ClientSnapshotInput = {
+  version: 'money_snapshot_v1',
+  clientNow: CLIENT_NOW,
+  timezone: VN,
+  monthKey: MK,
+  carryOver: 0,
+  wallets: { main: 0, emergency: 0, billFund: 0 },
+  transactions: [],
+};
+
+describe('detectGuardianAlerts — tài khoản trống KHÔNG báo nguy giả');
+it('income=0 -> KHÔNG có cảnh báo safe-to-spend', () => {
+  const alerts = detectGuardianAlerts(toMoneySnapshotV1(EMPTY), { limit: 5 });
+  ok(!alerts.some((a) => a.id === 'safe-to-spend'), 'không báo vùng nguy hiểm khi chưa có thu nhập');
+});
+it('income=0 + idle 5 -> chỉ idle', () => {
+  const alerts = detectGuardianAlerts(toMoneySnapshotV1(EMPTY), { idleDays: 5, limit: 5 });
+  eq(alerts.filter((a) => a.id !== 'idle').length, 0, 'không cảnh báo tiền trên tài khoản trống');
+});
+
 describe('detectGuardianAlerts — lành mạnh + idle');
 it('lành mạnh -> không cảnh báo tiền', () => {
   const alerts = detectGuardianAlerts(toMoneySnapshotV1(HEALTHY));

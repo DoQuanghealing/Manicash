@@ -34,7 +34,10 @@ import {
 } from '@/lib/aiMoneyChat/prism/prismSuggestions';
 import { computeCapacity, classifyCapacity } from '@/lib/aiMoneyChat/prism/capacity/capacityEngine';
 import { buildCapacityComponents, type CapacityRawSignals } from '@/lib/aiMoneyChat/prism/capacity/buildCapacity';
+import { surveyToSignals } from '@/lib/aiMoneyChat/prism/capacity/capacitySurvey';
+import { useCapacitySurveyStore } from '@/stores/useCapacitySurveyStore';
 import CapacityCard from './CapacityCard';
+import CapacitySurveyCard from './CapacitySurveyCard';
 import { useTransactionHabitStore } from '@/stores/useTransactionHabitStore';
 import { topHabits, type TransactionHabit } from '@/lib/aiMoneyChat/prism/transactionMemory';
 import { toMoneySnapshotV1, getBudgetCategoryProgress } from '@/lib/moneyBrain';
@@ -315,6 +318,9 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
   const habits = useTransactionHabitStore((s) => s.habits);
   const habitChips = useMemo(() => topHabits(habits, { limit: 4, minCount: 2 }), [habits]);
 
+  // P6a — câu trả lời khảo sát năng lực (cho thẻ khảo sát + đo lại).
+  const surveyAnswers = useCapacitySurveyStore((s) => s.answers);
+
   // P4 — Người Gác: cảnh báo chủ động (offline) khi mở chat.
   const [guardianDismissed, setGuardianDismissed] = useState(false);
   const [idleDays, setIdleDays] = useState(0);
@@ -333,6 +339,8 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
     fixedBills,
     categoryBudgets,
     goals,
+    earningTasks,
+    userProfile,
     mainBalance,
     emergencyBalance,
     billFundBalance,
@@ -610,7 +618,8 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
     if (text.startsWith('/')) {
       const token = text.split(/\s+/)[0].toLowerCase();
       if (SPECIAL_SLASH_COMMANDS.has(token)) {
-        handleShowCapacity();
+        if (token === '/khaosat') handleStartSurvey();
+        else handleShowCapacity();
         setInput('');
         return;
       }
@@ -718,8 +727,10 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
   function handleShowCapacity() {
     if (!enabled) return;
     const now = new Date();
-    const monthPrefix = toLocalISODate(now).slice(0, 7);
-    const cutoff = toLocalISODate(new Date(now.getTime() - 30 * 86_400_000));
+    // Dùng getDateKey (UTC) để KHỚP với t.dateKey của transaction (cũng UTC) — tránh
+    // lệch ngày/tháng ở ranh giới khi so chuỗi với key local.
+    const monthPrefix = getDateKey(now).slice(0, 7);
+    const cutoff = getDateKey(new Date(now.getTime() - 30 * 86_400_000));
 
     const loggedDays = new Set<string>();
     let monthlyExpense = 0;
@@ -750,6 +761,9 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
       chatUserMessages > 0,
     ].filter(Boolean).length;
 
+    // P6a — bổ sung tín hiệu từ khảo sát (nếu đã khai) để bỏ "đo sơ bộ".
+    const survey = surveyToSignals(useCapacitySurveyStore.getState().answers);
+
     const raw: CapacityRawSignals = {
       daysLoggedLast30: loggedDays.size,
       budgetTotal,
@@ -762,10 +776,10 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
       featuresTotal: 5,
       onboardingDone: -1,
       onboardingTotal: 7,
-      skillsDeclared: -1,
+      skillsDeclared: survey.skillsDeclared,
       earningTasksTotal: earningTasks.length,
       earningTasksCompleted,
-      freeTimeHoursPerWeek: -1,
+      freeTimeHoursPerWeek: survey.freeTimeHoursPerWeek,
       emergencyFundMonths: monthlyExpense > 0 ? emergencyBalance / monthlyExpense : -1,
       cfoReportViews: 0,
     };
@@ -779,13 +793,38 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
       {
         id: makeMessageId('assistant'),
         role: 'assistant',
-        text: 'Đây là **Bản đồ năng lực sơ bộ** của ngài (đo offline từ dữ liệu hiện có):',
+        text: 'Đây là **Bản đồ năng lực** của ngài (đo offline từ dữ liệu hiện có):',
         markdown: true,
         capacity: { scores, classification, pending },
       },
     ]);
     setInput('');
     setError(null);
+  }
+
+  /** P6a — mở thẻ khảo sát năng lực (kỹ năng + thời gian rảnh). */
+  function handleStartSurvey() {
+    if (!enabled) return;
+    appendMessages([
+      { id: makeMessageId('user'), role: 'user', text: 'Khảo sát năng lực 📝' },
+      {
+        id: makeMessageId('assistant'),
+        role: 'assistant',
+        text: 'Khai vài nét về thế mạnh để tôi đo năng lực chính xác hơn nhé:',
+        survey: true,
+      },
+    ]);
+    setInput('');
+    setError(null);
+  }
+
+  /** P6a — lưu khảo sát rồi đo lại năng lực ngay. */
+  function handleSaveSurvey(input: { skills: string[]; freeTimeHoursPerWeek: number }) {
+    useCapacitySurveyStore.getState().save(input);
+    appendMessages([
+      { id: makeMessageId('system'), role: 'system', text: '✓ Đã lưu khảo sát. Đang đo lại năng lực…' },
+    ]);
+    handleShowCapacity();
   }
 
   function handleDailyCheckIn(slot: DailyCheckInSlot) {
@@ -1177,8 +1216,13 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
                       {message.role === 'assistant' ? 'LD' : <Check size={13} />}
                     </div>
                   )}
-                  <div className={`tg-bubble${message.capacity ? ' tg-bubble--wide' : ''}`}>
-                    {message.capacity ? (
+                  <div className={`tg-bubble${message.capacity || message.survey ? ' tg-bubble--wide' : ''}`}>
+                    {message.survey ? (
+                      <>
+                        <p>{message.text}</p>
+                        <CapacitySurveyCard initial={surveyAnswers} onSave={handleSaveSurvey} />
+                      </>
+                    ) : message.capacity ? (
                       <>
                         {message.markdown ? <FormattedText text={message.text} /> : <p>{message.text}</p>}
                         <CapacityCard result={message.capacity} />

@@ -14,16 +14,14 @@ const LEAD_INS = [
   'Sổ sách của ngài đây. 📊',
 ];
 
-let turn = 0;
-
 /**
  * Khoác một lead-in quản gia ngắn trước nội dung số liệu deterministic.
- * Giữ nguyên markdown phía sau; chỉ thêm 1 dòng + ngắt đoạn.
+ * Chọn lead-in DETERMINISTIC theo độ dài message (cùng câu -> cùng lead-in,
+ * không phụ thuộc thứ tự gọi -> không rò state giữa các phiên/hội thoại).
  */
 export function decorateWithVoice(message: string): string {
   const trimmed = message.trim();
   if (!trimmed) return trimmed;
-  const lead = LEAD_INS[turn % LEAD_INS.length];
-  turn += 1;
+  const lead = LEAD_INS[trimmed.length % LEAD_INS.length];
   return `${lead}\n\n${trimmed}`;
 }

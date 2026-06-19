@@ -35,8 +35,10 @@ import { handleQueryStreak } from '../handlers/handleQueryStreak';
 import { decorateWithVoice } from './prismVoice';
 
 /**
- * Intent TRA CỨU read-only — an toàn chạy offline tại client
- * (0 side-effect, 0 LLM). Đồng bộ với switch-case của /api/chat.
+ * Intent TRA CỨU read-only — an toàn chạy offline tại client (0 side-effect, 0 LLM).
+ * Mirror nhánh deterministic của /api/chat. LƯU Ý: LOG_TRANSACTION KHÔNG nằm đây —
+ * nhập giao dịch được xử lý ở client TRƯỚC dispatchPrism (thẻ nháp trong parseInput),
+ * nên không bao giờ cần escalate; câu nhập-liệu mơ hồ (thiếu số) mới rơi lên server.
  */
 const READ_ONLY_INTENTS = new Set<ChatIntentType>([
   'QUERY_BALANCE',
