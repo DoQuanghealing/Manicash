@@ -183,10 +183,21 @@ const SEED_ACCOUNTS: DashboardAccounts = {
   },
 };
 
+const EMPTY_ACCOUNTS: DashboardAccounts = {
+  income: { balance: 0, icon: 'Wallet' },
+  spending: { balance: 0, limit: 0, icon: 'ShoppingBag' },
+  fixed_bills: { balance: 0, pending_count: 0, icon: 'CreditCard' },
+  reserve: { balance: 0, is_locked: true, icon: 'Lock' },
+  goals: { balance: 0, target: 0, icon: 'Target' },
+  investment: { balance: 0, growth: '0%', icon: 'TrendingUp' },
+};
+
+const isDemoSeed = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+
 export const useDashboardStore = create<DashboardState>((set, get) => ({
-  accounts: SEED_ACCOUNTS,
+  accounts: isDemoSeed ? SEED_ACCOUNTS : EMPTY_ACCOUNTS,
   auto_split: false,
-  monthlyContributions: SEED_CONTRIBUTIONS,
+  monthlyContributions: isDemoSeed ? SEED_CONTRIBUTIONS : { reserve: [], goals: [], investment: [] },
 
   getSafeBalance: () => {
     const { income, reserve, goals, investment, fixed_bills } = get().accounts;

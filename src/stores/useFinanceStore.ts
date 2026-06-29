@@ -172,7 +172,7 @@ export const useFinanceStore = create<FinanceState>()(
   mainBalance: isDemoSeed ? 15000000 : 0,
   emergencyBalance: isDemoSeed ? 5000000 : 0,
   billFundBalance: isDemoSeed ? 8500000 : 0,
-  fixedBills: SEED_BILLS,
+  fixedBills: isDemoSeed ? SEED_BILLS : [],
   billSnapshots: [],
 
   addTransaction: (txnData) => {

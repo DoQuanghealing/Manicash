@@ -115,10 +115,12 @@ interface TaskState {
   getSubTaskProgress: (taskId: string) => { done: number; total: number };
 }
 
+const isDemoSeed = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+
 export const useTaskStore = create<TaskState>()(
   persist(
     (set, get) => ({
-  tasks: SEED_TASKS,
+  tasks: isDemoSeed ? SEED_TASKS : [],
   xpPenalties: [],
 
   addTask: (data) => {

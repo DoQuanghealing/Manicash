@@ -99,10 +99,12 @@ interface GoalsState {
   getDeposits: (id: string) => GoalDeposit[];
 }
 
+const isDemoSeed = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+
 export const useGoalsStore = create<GoalsState>()(
   persist(
     (set, get) => ({
-  goals: SEED_GOALS,
+  goals: isDemoSeed ? SEED_GOALS : [],
 
   addGoal: (data) =>
     set((s) => ({

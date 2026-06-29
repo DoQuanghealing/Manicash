@@ -33,14 +33,14 @@ export function wipeAllData(): WipeReport {
   const storesReset: string[] = [];
 
   // ── Finance (legacy 3-wallet) ──
-  useFinanceStore.setState((state) => ({
+  useFinanceStore.setState({
     transactions: [],
     mainBalance: 0,
     emergencyBalance: 0,
     billFundBalance: 0,
-    fixedBills: state.fixedBills.map((b) => ({ ...b, isPaid: false })),
+    fixedBills: [],
     billSnapshots: [],
-  }));
+  });
   storesReset.push('useFinanceStore');
 
   // ── Finance Core (ledger engine) ──

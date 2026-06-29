@@ -22,13 +22,17 @@ interface WipeDataConfirmProps {
   onConfirmed?: () => void;
 }
 
-const TRIGGER_WORD = 'XÓA';
+/** Từ xác nhận hiển thị. Dùng "delete" (ASCII) để bàn phím mobile không
+ *  tự thêm dấu (gõ "XÓA" hay bị bỏ dấu sai chỗ thành "XOÁ" → không khớp). */
+const TRIGGER_WORD = 'delete';
+/** Vẫn chấp nhận biến thể tiếng Việt cũ để không phá thói quen người dùng. */
+const ACCEPTED_WORDS = new Set(['delete', 'xoa', 'xóa', 'xoá']);
 
 export default function WipeDataConfirm({ isOpen, onClose, onConfirmed }: WipeDataConfirmProps) {
   const [typed, setTyped] = useState('');
   const [working, setWorking] = useState(false);
 
-  const canApply = typed.trim().toUpperCase() === TRIGGER_WORD && !working;
+  const canApply = ACCEPTED_WORDS.has(typed.trim().toLowerCase()) && !working;
 
   const handleApply = () => {
     if (!canApply) return;
