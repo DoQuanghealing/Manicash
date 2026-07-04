@@ -12,7 +12,9 @@
   font-family:var(--body);
   color:var(--ink);
   min-height:100%;
-  padding:14px 14px 40px;
+  /* Thoát padding của .shell-content để báo cáo gần full-width, chỉ chừa 6px thấy bo viền */
+  margin-inline:calc(-1 * var(--space-lg));
+  padding:8px 6px 40px;
   background:
     radial-gradient(120% 80% at 50% -10%,#0c1410,#070a08 72%);
   -webkit-font-smoothing:antialiased;
@@ -28,8 +30,8 @@
   position:relative;overflow:hidden;
   background:linear-gradient(180deg,#08170f 0%,#061109 100%);
   border:1px solid rgba(205,174,111,.16);
-  border-radius:28px;
-  padding:24px 20px 26px;
+  border-radius:26px;
+  padding:22px 15px 24px;
   display:flex;flex-direction:column;gap:14px;
   box-shadow:0 26px 64px -42px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.04);
 }
@@ -47,15 +49,13 @@
 .ec-title i{color:var(--gold);font-style:italic;font-weight:500}
 .ec-sub{font-size:13.5px;line-height:1.55;color:var(--muted);margin:0;max-width:52ch;position:relative;z-index:1}
 
-/* Tabs */
-.ec-tabs{display:flex;gap:9px;position:relative;z-index:1}
-.ec-tab{flex:1;display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:14px;cursor:pointer;text-align:left;
+/* Tabs — 3 bằng nhau, đủ 1 hàng, chỉ số + tên */
+.ec-tabs{display:flex;gap:6px;position:relative;z-index:1}
+.ec-tab{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:7px;padding:10px 6px;border-radius:13px;cursor:pointer;
   background:rgba(255,255,255,.035);border:1px solid var(--hair);color:var(--muted);
   transition:all .35s cubic-bezier(.2,.7,.2,1);font-family:inherit}
-.ec-tab-num{width:24px;height:24px;border-radius:8px;border:1px solid currentColor;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;font-family:var(--serif)}
-.ec-tab-label{display:flex;flex-direction:column;line-height:1.1;min-width:0}
-.ec-tab-label b{font-family:var(--serif);font-size:15px;font-weight:600}
-.ec-tab-label i{font-style:normal;font-size:10px;opacity:.72;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ec-tab-num{width:22px;height:22px;border-radius:7px;border:1px solid currentColor;display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;flex-shrink:0;font-family:var(--serif)}
+.ec-tab-title{font-family:var(--serif);font-size:14.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .ec-tab.is-on{background:linear-gradient(150deg,var(--gold),var(--gold-deep));color:#17130a;border-color:var(--gold);
   box-shadow:0 12px 28px -12px rgba(211,180,119,.5),inset 0 1px 0 rgba(255,255,255,.35)}
 .ec-tab:focus-visible{outline:2px solid var(--gold-soft);outline-offset:2px}

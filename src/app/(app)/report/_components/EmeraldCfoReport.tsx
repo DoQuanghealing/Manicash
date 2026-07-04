@@ -141,7 +141,7 @@ export default function EmeraldCfoReport() {
               onClick={() => setTab(t.id)}
             >
               <span className="ec-tab-num">{t.step}</span>
-              <span className="ec-tab-label"><b>{t.title}</b><i>{t.sub}</i></span>
+              <span className="ec-tab-title">{t.title}</span>
             </button>
           ))}
         </div>
