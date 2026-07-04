@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Lock, Target, TrendingUp, X } from 'lucide-react';
 import { useDashboardStore, type DashboardAccounts, type SavingsPeriod } from '@/stores/useDashboardStore';
+import { useGoalsStore } from '@/stores/useGoalsStore';
 import { formatCurrency, formatCurrencyShort } from '@/utils/formatCurrency';
 import './FundsBlock.css';
 
@@ -175,7 +176,11 @@ function FundDetailModal({ type, accounts, onClose }: { type: FundType, accounts
   const getMonthlyFundTotal = useDashboardStore((s) => s.getMonthlyFundTotal);
   const getYearlyFundTotal = useDashboardStore((s) => s.getYearlyFundTotal);
   const getYearlyBreakdown = useDashboardStore((s) => s.getYearlyFundBreakdown);
-  
+  // Quỹ Mục tiêu = pool chia tự động (dashboard, từ chia quỹ) + tiền nạp riêng
+  // từng mục tiêu (useGoalsStore). Cả hai đều là "nạp quỹ" → tổng cộng cả hai.
+  const goalsSaved = useGoalsStore((s) => s.getTotalSaved());
+  const goalsTargetSum = useGoalsStore((s) => s.goals.reduce((sum, g) => sum + g.targetAmount, 0));
+
   let headerTitle = '';
   let icon = null;
   let accentColor = '';
@@ -305,7 +310,7 @@ function FundDetailModal({ type, accounts, onClose }: { type: FundType, accounts
           </p>
           {type === 'goals' && (
             <p className="fb-modal-progress" style={{ marginTop: 4 }}>
-              Tổng quỹ: {formatCurrencyShort(accounts.goals.balance)} / {formatCurrencyShort(accounts.goals.target)}
+              Tổng quỹ: {formatCurrencyShort(accounts.goals.balance + goalsSaved)} / {formatCurrencyShort(accounts.goals.target + goalsTargetSum)}
             </p>
           )}
           {type === 'investment' && (
