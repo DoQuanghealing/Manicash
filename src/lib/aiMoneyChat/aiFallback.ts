@@ -1,4 +1,3 @@
-import { MAIN_BANK_ACCOUNT_ID } from '@/core/finance/accounts';
 import type { TxnType } from '@/stores/useFinanceStore';
 import {
   getCategoryDisplayName,
@@ -72,16 +71,7 @@ function normalizeCategoryId(value: unknown, fallback?: string): string | undefi
 
 function buildAccountMapping(type?: TxnType) {
   if (!type) return undefined;
-  return {
-    legacyWallet: 'main' as const,
-    coreSourceAccountId: type === 'expense' ? MAIN_BANK_ACCOUNT_ID : undefined,
-    coreTargetAccountId: type === 'income' ? MAIN_BANK_ACCOUNT_ID : undefined,
-    coreEventType: type === 'income'
-      ? 'CREATE_INCOME' as const
-      : type === 'expense'
-        ? 'CREATE_EXPENSE' as const
-        : undefined,
-  };
+  return { legacyWallet: 'main' as const };
 }
 
 export function validateAiFallbackCandidate(

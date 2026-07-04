@@ -1,4 +1,3 @@
-import { MAIN_BANK_ACCOUNT_ID } from '@/core/finance/accounts';
 import {
   EXPENSE_KEYWORD_RULES,
   INCOME_KEYWORD_RULES,
@@ -262,16 +261,7 @@ export function parseMoneyText(input: string): ParsedMoneyIntent {
   const confidence = combineConfidence([amountConfidence, typeConfidence, category?.confidence]);
 
   const accountMapping = type
-    ? {
-        legacyWallet: 'main' as const,
-        coreSourceAccountId: type === 'expense' ? MAIN_BANK_ACCOUNT_ID : undefined,
-        coreTargetAccountId: type === 'income' ? MAIN_BANK_ACCOUNT_ID : undefined,
-        coreEventType: type === 'income'
-          ? 'CREATE_INCOME' as const
-          : type === 'expense'
-            ? 'CREATE_EXPENSE' as const
-            : undefined,
-      }
+    ? { legacyWallet: 'main' as const }
     : undefined;
 
   return {

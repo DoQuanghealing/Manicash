@@ -1,5 +1,4 @@
 import type { TxnType, WalletType } from '@/stores/useFinanceStore';
-import type { AccountId, FinanceEventType } from '@/core/finance/types';
 
 export type MoneyIntentKind =
   | 'transaction'
@@ -31,9 +30,6 @@ export interface ParsedMoneyCategory {
 
 export interface ParsedMoneyAccountMapping {
   legacyWallet: WalletType;
-  coreSourceAccountId?: AccountId;
-  coreTargetAccountId?: AccountId;
-  coreEventType?: FinanceEventType;
 }
 
 export interface ParsedMoneyIntent {

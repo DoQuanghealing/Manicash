@@ -4,15 +4,9 @@
 import { create } from 'zustand';
 import { useBudgetStore } from '@/stores/useBudgetStore';
 import { useDashboardStore } from '@/stores/useDashboardStore';
-import { useFinanceCoreStore } from '@/stores/useFinanceCoreStore';
 import { useFinanceStore } from '@/stores/useFinanceStore';
 import { useWalletBankStore, type WalletGroupData } from '@/stores/useWalletBankStore';
-import {
-  buildCoreDashboardBalances,
-  type CoreDashboardBalances,
-} from '@/core/finance/dashboardSelectors';
 import { getMonthKeyFromDate } from '@/lib/dateHelpers';
-import { isThreeAccountModelEnabled } from '@/lib/featureFlags';
 
 export type OverviewAccountId = 'income' | 'expense' | 'saving';
 
@@ -69,7 +63,6 @@ export interface OverviewAccount {
 
 export interface AccountOverviewSnapshot {
   accounts: Record<OverviewAccountId, OverviewAccount>;
-  coreBalances: CoreDashboardBalances;
   sourceMap: Record<OverviewAccountId, string[]>;
 }
 
@@ -83,8 +76,6 @@ interface BuildSnapshotParams {
   budget: BudgetSource;
   dashboard: DashboardSource;
   walletBank: WalletBankSource;
-  coreBalances: CoreDashboardBalances;
-  hasCoreLedgerEntries: boolean;
 }
 
 interface AccountOverviewState {
@@ -109,37 +100,6 @@ const SOURCE_MAP: Record<OverviewAccountId, string[]> = {
     'useWalletBankStore.wallets[saving]',
   ],
 };
-
-let lastFinanceMismatchKey: string | null = null;
-
-function warnFinanceMismatchIfNeeded(params: {
-  legacy: { mainBalance: number; billFundBalance: number; savingsBalance: number };
-  core: { mainBankBalance: number; billFundBalance: number; totalSavingsBalance: number };
-}): void {
-  if (process.env.NODE_ENV !== 'development') return;
-
-  const { legacy, core } = params;
-  const hasMismatch =
-    Math.abs(legacy.mainBalance - core.mainBankBalance) > 1 ||
-    Math.abs(legacy.billFundBalance - core.billFundBalance) > 1 ||
-    Math.abs(legacy.savingsBalance - core.totalSavingsBalance) > 1;
-
-  if (!hasMismatch) {
-    lastFinanceMismatchKey = null;
-    return;
-  }
-
-  const payload = {
-    type: 'FINANCE_MISMATCH',
-    legacy,
-    core,
-  };
-  const nextKey = JSON.stringify(payload);
-  if (nextKey === lastFinanceMismatchKey) return;
-
-  lastFinanceMismatchKey = nextKey;
-  console.warn('[finance-core] dashboard balance mismatch', payload);
-}
 
 function findWallet(walletBank: WalletBankSource, id: OverviewAccountId): WalletGroupData | undefined {
   return walletBank.wallets.find((wallet) => wallet.id === id);
@@ -292,8 +252,6 @@ export function buildAccountOverviewSnapshot({
   budget,
   dashboard,
   walletBank,
-  coreBalances,
-  hasCoreLedgerEntries,
 }: BuildSnapshotParams): AccountOverviewSnapshot {
   const currentMonth = finance.getCurrentMonthKey();
   const monthlyIncome = finance.getIncomeForMonth(currentMonth);
@@ -306,41 +264,12 @@ export function buildAccountOverviewSnapshot({
   const reserveMonthly = dashboard.getMonthlyFundTotal('reserve');
   const goalsMonthly = dashboard.getMonthlyFundTotal('goals');
   const investmentMonthly = dashboard.getMonthlyFundTotal('investment');
-  const legacySavingsBalance =
-    dashboard.accounts.reserve.balance +
-    dashboard.accounts.goals.balance +
-    dashboard.accounts.investment.balance;
-  const reserveBalance = hasCoreLedgerEntries
-    ? coreBalances.emergencyFundBalance
-    : dashboard.accounts.reserve.balance;
-  const goalsBalance = hasCoreLedgerEntries
-    ? coreBalances.goalFundBalance
-    : dashboard.accounts.goals.balance;
-  const investmentBalance = hasCoreLedgerEntries
-    ? coreBalances.investmentFundBalance
-    : dashboard.accounts.investment.balance;
-  const savingsBalance = hasCoreLedgerEntries
-    ? coreBalances.totalSavingsBalance
-    : reserveBalance + goalsBalance + investmentBalance;
-  const mainBalance = hasCoreLedgerEntries
-    ? coreBalances.mainBankBalance
-    : finance.mainBalance;
-  const billFundBalance = hasCoreLedgerEntries
-    ? coreBalances.billFundBalance
-    : finance.billFundBalance;
-
-  warnFinanceMismatchIfNeeded({
-    legacy: {
-      mainBalance: finance.mainBalance,
-      billFundBalance: finance.billFundBalance,
-      savingsBalance: legacySavingsBalance,
-    },
-    core: {
-      mainBankBalance: coreBalances.mainBankBalance,
-      billFundBalance: coreBalances.billFundBalance,
-      totalSavingsBalance: coreBalances.totalSavingsBalance,
-    },
-  });
+  const reserveBalance = dashboard.accounts.reserve.balance;
+  const goalsBalance = dashboard.accounts.goals.balance;
+  const investmentBalance = dashboard.accounts.investment.balance;
+  const savingsBalance = reserveBalance + goalsBalance + investmentBalance;
+  const mainBalance = finance.mainBalance;
+  const billFundBalance = finance.billFundBalance;
 
   const expenseFunding = buildExpenseFundingOverview(
     finance,
@@ -443,25 +372,16 @@ export function buildAccountOverviewSnapshot({
 
   return {
     accounts: { income, expense, saving },
-    coreBalances,
     sourceMap: SOURCE_MAP,
   };
 }
 
 export function getAccountOverviewSnapshot(): AccountOverviewSnapshot {
-  const ledgerEntries = useFinanceCoreStore.getState().ledgerEntries;
-  const coreBalances = buildCoreDashboardBalances(ledgerEntries);
-  // Gate sau flag: mô hình core chưa persist/hydrate nên ledger chỉ chứa delta
-  // của phiên hiện tại. Nếu đọc theo ledger, số dư sẽ lật sai sau giao dịch đầu.
-  const hasCoreLedgerEntries = isThreeAccountModelEnabled() && ledgerEntries.length > 0;
-
   return buildAccountOverviewSnapshot({
     finance: useFinanceStore.getState(),
     budget: useBudgetStore.getState(),
     dashboard: useDashboardStore.getState(),
     walletBank: useWalletBankStore.getState(),
-    coreBalances,
-    hasCoreLedgerEntries,
   });
 }
 
@@ -477,17 +397,11 @@ export function useAccountOverviewSnapshot(): AccountOverviewSnapshot {
   const budget = useBudgetStore();
   const dashboard = useDashboardStore();
   const walletBank = useWalletBankStore();
-  const ledgerEntries = useFinanceCoreStore((s) => s.ledgerEntries);
-  const coreBalances = buildCoreDashboardBalances(ledgerEntries);
-  // Xem chú thích ở getAccountOverviewSnapshot: gate sau flag (mặc định OFF).
-  const hasCoreLedgerEntries = isThreeAccountModelEnabled() && ledgerEntries.length > 0;
 
   return buildAccountOverviewSnapshot({
     finance,
     budget,
     dashboard,
     walletBank,
-    coreBalances,
-    hasCoreLedgerEntries,
   });
 }

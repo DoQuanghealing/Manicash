@@ -15,7 +15,6 @@ import { useAiMoneyMemoryStore } from '@/stores/useAiMoneyMemoryStore';
 import { useBankSyncStore } from '@/stores/useBankSyncStore';
 import { useBudgetStore } from '@/stores/useBudgetStore';
 import { useDashboardStore } from '@/stores/useDashboardStore';
-import { useFinanceCoreStore } from '@/stores/useFinanceCoreStore';
 import { useFinanceStore } from '@/stores/useFinanceStore';
 import { useGoalsStore } from '@/stores/useGoalsStore';
 import { useMissionStore } from '@/stores/useMissionStore';
@@ -42,10 +41,6 @@ export function wipeAllData(): WipeReport {
     billSnapshots: [],
   });
   storesReset.push('useFinanceStore');
-
-  // ── Finance Core (ledger engine) ──
-  useFinanceCoreStore.getState().clear();
-  storesReset.push('useFinanceCoreStore');
 
   // ── Budget (carry-over + categories + snapshots) ──
   useBudgetStore.setState((state) => ({

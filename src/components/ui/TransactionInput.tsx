@@ -11,9 +11,7 @@ import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useAudio } from '@/hooks/useAudio';
 import { useFinanceStore, type TxnType, type WalletType } from '@/stores/useFinanceStore';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { useFinanceCoreStore } from '@/stores/useFinanceCoreStore';
 import { calculateXP } from '@/lib/xpEngine';
-import { MAIN_BANK_ACCOUNT_ID, SPENDING_ACCOUNT_ID } from '@/core/finance/accounts';
 import type { SplitResult } from '@/stores/useDashboardStore';
 import BreathGate from './BreathGate';
 import CelebrationModal from './CelebrationModal';
@@ -22,10 +20,6 @@ import SplitSuccessPopup from './SplitSuccessPopup';
 import './TransactionInput.css';
 
 const BREATHGATE_THRESHOLD = 3_000_000;
-const DEFAULT_ACCOUNT_IDS = {
-  MAIN_BANK: MAIN_BANK_ACCOUNT_ID,
-  SPENDING: SPENDING_ACCOUNT_ID,
-} as const;
 
 export default function TransactionInput() {
   // Pre-select type từ URL query: /input?type=income hoặc ?type=expense
@@ -110,43 +104,6 @@ export default function TransactionInput() {
       note: note || categories.find((c) => c.id === selectedCategory)?.name || '',
       wallet,
     });
-
-    if (type === 'income' || type === 'expense') {
-      const userId = useAuthStore.getState().user?.uid ?? 'local_user'; // TODO: replace local fallback when auth is required for finance core.
-      try {
-        const baseEvent = {
-          id: `legacy-${txn.id}`,
-          amount: numericAmount,
-          occurredAt: txn.date,
-          description: txn.note,
-          metadata: {
-            userId,
-            categoryId: txn.categoryId,
-            legacyTransactionId: txn.id,
-          },
-        };
-
-        if (type === 'income') {
-          useFinanceCoreStore.getState().execute({
-            ...baseEvent,
-            type: 'CREATE_INCOME',
-            targetAccountId: DEFAULT_ACCOUNT_IDS.MAIN_BANK,
-          });
-        } else {
-          useFinanceCoreStore.getState().execute({
-            ...baseEvent,
-            type: 'CREATE_EXPENSE',
-            // TODO: Khi split funds được migrate sang core, expense có thể map sang SPENDING.
-            sourceAccountId: DEFAULT_ACCOUNT_IDS.MAIN_BANK,
-          });
-        }
-      } catch (error) {
-        // TODO: make legacy transaction + finance core write atomic and rollback together.
-        if (process.env.NODE_ENV === 'development') {
-          console.warn('[finance-core] failed to mirror transaction', error);
-        }
-      }
-    }
 
     // 2. Calculate XP — calculateXP cho hiển thị ngay trong CelebrationModal.
     //    Đồng thời awardXP để persist vào userProfile + emit toast.

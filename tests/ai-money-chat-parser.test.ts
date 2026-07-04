@@ -68,7 +68,6 @@ describe('AI Money Chat parser - VND amount parsing', () => {
     expectEqual(intent.type, 'income');
     expectEqual(expectDefined(intent.amount, 'amount').value, 20_000_000);
     expectEqual(intent.category?.categoryId, 'salary');
-    expectEqual(intent.accountMapping?.coreEventType, 'CREATE_INCOME');
   });
 
   it('parses compact million phrase 1tr3', () => {

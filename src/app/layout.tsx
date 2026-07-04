@@ -2,7 +2,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter, Outfit } from 'next/font/google';
 import { AuthProvider } from '@/components/providers/AuthProvider';
-import { FinanceCorePersistenceProvider } from '@/components/providers/FinanceCorePersistenceProvider';
 import { MoneySyncRuntimeProvider } from '@/components/providers/MoneySyncRuntimeProvider';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { ServiceWorkerProvider } from '@/components/providers/ServiceWorkerProvider';
@@ -73,11 +72,9 @@ export default function RootLayout({
       <body suppressHydrationWarning>
         <ServiceWorkerProvider />
         <AuthProvider>
-          <FinanceCorePersistenceProvider>
-            <MoneySyncRuntimeProvider>
-              <ThemeProvider>{children}</ThemeProvider>
-            </MoneySyncRuntimeProvider>
-          </FinanceCorePersistenceProvider>
+          <MoneySyncRuntimeProvider>
+            <ThemeProvider>{children}</ThemeProvider>
+          </MoneySyncRuntimeProvider>
         </AuthProvider>
       </body>
     </html>
