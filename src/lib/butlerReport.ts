@@ -1,10 +1,10 @@
 /* ═══ Butler Monthly Report Generator ═══
  * Template-based — không gọi AI, chạy local + deterministic.
  * Tone: butler persona ("tôi" / "cậu chủ"), reuse style từ groqClient fallback.
- * Tier-based encouragement: getHealthTier từ cfoHealthScore.
+ * Tier-based encouragement: getHealthTier từ moneyBrain/healthScore.
  */
 
-import { getHealthTier, type HealthTier } from './cfoHealthScore';
+import { getHealthTier, type HealthTier } from './moneyBrain/healthScore';
 import type { ButlerReport } from '@/types/budget';
 
 interface ReportInput {

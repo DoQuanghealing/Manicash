@@ -106,3 +106,12 @@ export function getFinancialHealthScore(snapshot: MoneySnapshotV1): HealthScoreB
     incomePipeline,
   };
 }
+
+/** Phân hạng tier từ tổng điểm 0-100 — dùng cho fallback narrative + butler copy. */
+export type HealthTier = 'poor' | 'fair' | 'good';
+
+export function getHealthTier(total: number): HealthTier {
+  if (total >= 70) return 'good';
+  if (total >= 40) return 'fair';
+  return 'poor';
+}

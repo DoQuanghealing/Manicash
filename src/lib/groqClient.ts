@@ -1,10 +1,21 @@
 /* ═══ Groq Client — Llama 70B (Narrative Only) ═══
- * AI chỉ sinh summary + suggestions. HealthScore tính deterministic ở cfoHealthScore.ts.
+ * AI chỉ sinh summary + suggestions. HealthScore tính deterministic ở moneyBrain.
  * Butler persona: xưng "tôi", gọi user "cậu chủ", tiếng Việt, 1-2 emoji/câu.
  */
 
-import type { HealthBreakdown } from './cfoHealthScore';
-import { getHealthTier, type HealthTier } from './cfoHealthScore';
+import { getHealthTier, type HealthTier } from './moneyBrain/healthScore';
+
+/** Shape breakdown health score — dùng cho narrative prompt + fallback. */
+export interface HealthBreakdown {
+  total: number;
+  savingsRateScore: number;
+  budgetAdherenceScore: number;
+  billsOnTimeScore: number;
+  emergencyFundScore: number;
+  safeToSpendScore: number;
+  savingsRate: number;
+  avgMonthlyExpenseEstimate: number;
+}
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 

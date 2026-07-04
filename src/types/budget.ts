@@ -1,6 +1,6 @@
 /* ═══ Budget & Wallet Types — Three-Bucket System ═══ */
 
-import type { HealthTier } from '@/lib/cfoHealthScore';
+import type { HealthTier } from '@/lib/moneyBrain/healthScore';
 
 /** Ba ví chính */
 export type BucketType = 'income' | 'expense' | 'saving';

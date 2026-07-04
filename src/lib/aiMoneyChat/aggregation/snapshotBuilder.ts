@@ -11,9 +11,8 @@
  * Cache in-memory Map, TTL 5 phút, key = `${uid}:${monthKey}`.
  */
 
-import { getHealthTier } from '@/lib/cfoHealthScore';
 import { computeSafeToSpendValue } from '@/lib/moneyBrain/safeToSpend';
-import { getFinancialHealthScore } from '@/lib/moneyBrain/healthScore';
+import { getFinancialHealthScore, getHealthTier } from '@/lib/moneyBrain/healthScore';
 import { toMoneySnapshotV1 } from '@/lib/moneyBrain/snapshot';
 import type { MoneySnapshotV1 } from '@/lib/moneyBrain/types';
 import type {
