@@ -12,6 +12,7 @@ import { useFinanceStore } from '@/stores/useFinanceStore';
 import { useBudgetStore } from '@/stores/useBudgetStore';
 import { useGoalsStore } from '@/stores/useGoalsStore';
 import { useDashboardStore } from '@/stores/useDashboardStore';
+import { useWalletBankStore, DEFAULT_WALLETS } from '@/stores/useWalletBankStore';
 import { useTaskStore } from '@/stores/useTaskStore';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useActionAuditStore } from '@/stores/useActionAuditStore';
@@ -66,6 +67,9 @@ export function clearLocalMoneyPersistence(): void {
     },
     monthlyContributions: { reserve: [], goals: [], investment: [] },
   });
+  // WalletBank giờ đã persist → reset tên/số tài khoản ngân hàng (dữ liệu nhạy cảm)
+  // về mặc định để không lộ sang user kế tiếp cùng browser.
+  useWalletBankStore.setState({ wallets: DEFAULT_WALLETS });
   useTaskStore.setState({ tasks: [], xpPenalties: [] });
   useAuthStore.setState({ user: null });
   useActionAuditStore.setState({ records: [] });

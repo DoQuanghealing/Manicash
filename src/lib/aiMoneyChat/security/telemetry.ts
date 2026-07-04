@@ -3,11 +3,19 @@
  * nguồn chạy lậu ở domain lạ. KHÔNG gửi dữ liệu người dùng — chỉ hash domain.
  */
 
-import { createHash } from 'crypto';
-
-/** Hash sha256 (16 hex) của domain — định danh nguồn chạy mà không lộ URL thô. */
-export function getDomainFingerprint(url: string = process.env.NEXT_PUBLIC_APP_URL ?? 'unknown'): string {
-  return createHash('sha256').update(url).digest('hex').slice(0, 16);
+/** Hash sha256 (16 hex) của domain — định danh nguồn chạy mà không lộ URL thô.
+ *  Dùng Web Crypto (globalThis.crypto.subtle) thay cho node:crypto để chạy được
+ *  cả trong Edge Runtime (instrumentation) — trước đây `import 'crypto'` gây lỗi
+ *  build "Ecmascript file had an error" ở Edge. */
+export async function getDomainFingerprint(
+  url: string = process.env.NEXT_PUBLIC_APP_URL ?? 'unknown',
+): Promise<string> {
+  const bytes = new TextEncoder().encode(url);
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
+    .slice(0, 16);
 }
 
 /**
@@ -15,7 +23,7 @@ export function getDomainFingerprint(url: string = process.env.NEXT_PUBLIC_APP_U
  * fingerprint (fire-and-forget, nuốt lỗi để không ảnh hưởng boot).
  */
 export async function phoneHome(): Promise<void> {
-  const fingerprint = getDomainFingerprint();
+  const fingerprint = await getDomainFingerprint();
   console.info(`[manicash-telemetry] boot origin=${fingerprint}`);
 
   const endpoint = process.env.MANICASH_TELEMETRY_URL;

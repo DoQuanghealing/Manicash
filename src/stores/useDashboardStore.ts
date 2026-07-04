@@ -107,9 +107,6 @@ interface DashboardState {
   monthlyContributions: Record<string, FundContribution[]>;
 
   // Computed
-  getSafeBalance: () => number;
-  getGrossBalance: () => number;
-  getFinancialHealth: () => number; // 0-100 ratio
   isSpendingOverLimit: () => boolean;
   /** Tổng tiết kiệm tháng hiện tại (dự phòng + mục tiêu + đầu tư) */
   getTotalMonthlySavings: () => number;
@@ -128,7 +125,6 @@ interface DashboardState {
 
   // Actions
   setAutoSplit: (value: boolean) => void;
-  updateAccountBalance: (key: keyof DashboardAccounts, amount: number) => void;
   splitIncome: (splits: Partial<Record<keyof DashboardAccounts, number>>) => void;
   addFundContribution: (fund: SavingsFund, amount: number, occurredAt?: Date) => void;
   /** Atomic split — updates FinanceStore + DashboardStore in one call */
@@ -203,30 +199,6 @@ export const useDashboardStore = create<DashboardState>()(
   auto_split: false,
   monthlyContributions: isDemoSeed ? SEED_CONTRIBUTIONS : { reserve: [], goals: [], investment: [] },
 
-  getSafeBalance: () => {
-    const { income, reserve, goals, investment, fixed_bills } = get().accounts;
-    return income.balance - (reserve.balance + goals.balance + investment.balance + fixed_bills.balance);
-  },
-
-  getGrossBalance: () => {
-    const accs = get().accounts;
-    return (
-      accs.income.balance +
-      accs.spending.balance +
-      accs.fixed_bills.balance +
-      accs.reserve.balance +
-      accs.goals.balance +
-      accs.investment.balance
-    );
-  },
-
-  getFinancialHealth: () => {
-    const safe = get().getSafeBalance();
-    const income = get().accounts.income.balance;
-    if (income === 0) return 0;
-    return Math.min(100, Math.max(0, (safe / income) * 100));
-  },
-
   isSpendingOverLimit: () => {
     const { spending } = get().accounts;
     return spending.balance > spending.limit;
@@ -296,17 +268,6 @@ export const useDashboardStore = create<DashboardState>()(
   },
 
   setAutoSplit: (value) => set({ auto_split: value }),
-
-  updateAccountBalance: (key, amount) =>
-    set((state) => ({
-      accounts: {
-        ...state.accounts,
-        [key]: {
-          ...state.accounts[key],
-          balance: state.accounts[key].balance + amount,
-        },
-      },
-    })),
 
   splitIncome: (splits) =>
     set((state) => {

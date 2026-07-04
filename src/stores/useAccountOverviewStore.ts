@@ -11,11 +11,6 @@ import {
   buildCoreDashboardBalances,
   type CoreDashboardBalances,
 } from '@/core/finance/dashboardSelectors';
-import {
-  calculateSafeToSpend,
-  getSafeToSpendStatus,
-  type SafeToSpendStatus,
-} from '@/lib/accountOverviewMath';
 import { getMonthKeyFromDate } from '@/lib/dateHelpers';
 import { isThreeAccountModelEnabled } from '@/lib/featureFlags';
 
@@ -72,21 +67,8 @@ export interface OverviewAccount {
   expenseFunding?: ExpenseFundingOverview;
 }
 
-export interface SafeToSpendSnapshot {
-  amount: number;
-  monthlyIncome: number;
-  carryOver: number;
-  spendingLimit: number;
-  fixedBills: number;
-  monthlySavings: number;
-  monthlyExpense: number;
-  spentPercent: number;
-  status: SafeToSpendStatus;
-}
-
 export interface AccountOverviewSnapshot {
   accounts: Record<OverviewAccountId, OverviewAccount>;
-  safeToSpend: SafeToSpendSnapshot;
   coreBalances: CoreDashboardBalances;
   sourceMap: Record<OverviewAccountId, string[]>;
 }
@@ -108,7 +90,6 @@ interface BuildSnapshotParams {
 interface AccountOverviewState {
   getSnapshot: () => AccountOverviewSnapshot;
   getAccount: (id: OverviewAccountId) => OverviewAccount;
-  getSafeToSpend: () => SafeToSpendSnapshot;
 }
 
 const SOURCE_MAP: Record<OverviewAccountId, string[]> = {
@@ -321,16 +302,6 @@ export function buildAccountOverviewSnapshot({
   const fixedBills = finance.getTotalFixedBillsAmount();
   const fixedBillsFundingTarget = fixedBills;
   const monthlySavings = dashboard.getTotalMonthlySavings();
-  const carryOver = budget.carryOver;
-
-  const safeToSpend = calculateSafeToSpend({
-    monthlyIncome,
-    carryOver,
-    spendingLimit,
-    fixedBills,
-    monthlySavings,
-  });
-  const spentPercent = Math.min(100, Math.round((monthlyExpense / Math.max(spendingLimit, 1)) * 100));
 
   const reserveMonthly = dashboard.getMonthlyFundTotal('reserve');
   const goalsMonthly = dashboard.getMonthlyFundTotal('goals');
@@ -472,17 +443,6 @@ export function buildAccountOverviewSnapshot({
 
   return {
     accounts: { income, expense, saving },
-    safeToSpend: {
-      amount: safeToSpend,
-      monthlyIncome,
-      carryOver,
-      spendingLimit,
-      fixedBills,
-      monthlySavings,
-      monthlyExpense,
-      spentPercent,
-      status: getSafeToSpendStatus(safeToSpend),
-    },
     coreBalances,
     sourceMap: SOURCE_MAP,
   };
@@ -508,7 +468,6 @@ export function getAccountOverviewSnapshot(): AccountOverviewSnapshot {
 export const useAccountOverviewStore = create<AccountOverviewState>(() => ({
   getSnapshot: getAccountOverviewSnapshot,
   getAccount: (id) => getAccountOverviewSnapshot().accounts[id],
-  getSafeToSpend: () => getAccountOverviewSnapshot().safeToSpend,
 }));
 
 // React components should use this hook so they subscribe to every source store.

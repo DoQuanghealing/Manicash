@@ -2,6 +2,8 @@
 'use client';
 
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { STORE_KEYS, STORE_VERSIONS } from '@/stores/persistConfig';
 
 export type WalletGroup = 'income' | 'expense' | 'saving';
 
@@ -33,7 +35,7 @@ interface WalletBankState {
   updateSubWallet: (groupId: WalletGroup, subId: string, updates: Partial<SubWallet>) => void;
 }
 
-const DEFAULT_WALLETS: WalletGroupData[] = [
+export const DEFAULT_WALLETS: WalletGroupData[] = [
   {
     id: 'income',
     label: 'Thu nhập',
@@ -70,7 +72,9 @@ const DEFAULT_WALLETS: WalletGroupData[] = [
   },
 ];
 
-export const useWalletBankStore = create<WalletBankState>((set) => ({
+export const useWalletBankStore = create<WalletBankState>()(
+  persist(
+    (set) => ({
   wallets: DEFAULT_WALLETS,
 
   updateBank: (groupId, bankName, accountNumber) =>
@@ -123,4 +127,19 @@ export const useWalletBankStore = create<WalletBankState>((set) => ({
           : w
       ),
     })),
-}));
+    }),
+    {
+      name: STORE_KEYS.walletBank,
+      version: STORE_VERSIONS.walletBank,
+      storage: createJSONStorage(() => localStorage),
+      partialize: (s) => ({ wallets: s.wallets }),
+      migrate: (persisted) => {
+        const p = (persisted ?? {}) as Partial<WalletBankState>;
+        return {
+          ...p,
+          wallets: Array.isArray(p.wallets) ? p.wallets : DEFAULT_WALLETS,
+        } as WalletBankState;
+      },
+    },
+  ),
+);

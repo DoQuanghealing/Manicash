@@ -14,6 +14,7 @@ export const STORE_VERSIONS = {
   auth: 1,
   audit: 1,
   dashboard: 1,
+  walletBank: 1,
 } as const;
 
 export const STORE_KEYS = {
@@ -27,6 +28,9 @@ export const STORE_KEYS = {
   // Dashboard: quỹ tiết kiệm (reserve/goals/investment) + lịch sử tích lũy.
   // Trước đây KHÔNG persist → tắt app là mất số quỹ dù tiền đã trừ khỏi mainBalance.
   dashboard: 'manicash.dashboard.v1',
+  // WalletBank: tên + số tài khoản ngân hàng 3 nhóm (thu/chi/tiết kiệm).
+  // Trước đây KHÔNG persist → user nhập tên/số TK xong tải lại là mất.
+  walletBank: 'manicash.walletbank.v1',
 } as const;
 
 /**

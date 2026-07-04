@@ -70,10 +70,10 @@ async function main() {
 
   /* ─────────── Telemetry fingerprint ─────────── */
   describe('Telemetry domain fingerprint');
-  await it('hash ổn định + đúng độ dài + khác nhau theo domain', () => {
-    const a1 = getDomainFingerprint('https://manicash.app');
-    const a2 = getDomainFingerprint('https://manicash.app');
-    const b = getDomainFingerprint('https://pirate.example');
+  await it('hash ổn định + đúng độ dài + khác nhau theo domain', async () => {
+    const a1 = await getDomainFingerprint('https://manicash.app');
+    const a2 = await getDomainFingerprint('https://manicash.app');
+    const b = await getDomainFingerprint('https://pirate.example');
     expectEqual(a1, a2);
     expectEqual(a1.length, 16);
     expectTrue(a1 !== b, 'different domains -> different hash');
