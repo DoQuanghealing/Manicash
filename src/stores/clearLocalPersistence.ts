@@ -11,6 +11,7 @@ import { STORE_KEYS } from '@/stores/persistConfig';
 import { useFinanceStore } from '@/stores/useFinanceStore';
 import { useBudgetStore } from '@/stores/useBudgetStore';
 import { useGoalsStore } from '@/stores/useGoalsStore';
+import { useDashboardStore } from '@/stores/useDashboardStore';
 import { useTaskStore } from '@/stores/useTaskStore';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useActionAuditStore } from '@/stores/useActionAuditStore';
@@ -52,6 +53,19 @@ export function clearLocalMoneyPersistence(): void {
     xpAtMonthStart: 0,
   });
   useGoalsStore.setState({ goals: [] });
+  // Dashboard giờ đã persist → phải reset in-memory để user kế tiếp cùng browser
+  // KHÔNG thấy quỹ tiết kiệm của user trước (persisted key được xóa ở bước 2).
+  useDashboardStore.setState({
+    accounts: {
+      income: { balance: 0, icon: 'Wallet' },
+      spending: { balance: 0, limit: 0, icon: 'ShoppingBag' },
+      fixed_bills: { balance: 0, pending_count: 0, icon: 'CreditCard' },
+      reserve: { balance: 0, is_locked: true, icon: 'Lock' },
+      goals: { balance: 0, target: 0, icon: 'Target' },
+      investment: { balance: 0, growth: '0%', icon: 'TrendingUp' },
+    },
+    monthlyContributions: { reserve: [], goals: [], investment: [] },
+  });
   useTaskStore.setState({ tasks: [], xpPenalties: [] });
   useAuthStore.setState({ user: null });
   useActionAuditStore.setState({ records: [] });

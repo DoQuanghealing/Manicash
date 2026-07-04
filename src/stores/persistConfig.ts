@@ -13,6 +13,7 @@ export const STORE_VERSIONS = {
   tasks: 1,
   auth: 1,
   audit: 1,
+  dashboard: 1,
 } as const;
 
 export const STORE_KEYS = {
@@ -23,6 +24,9 @@ export const STORE_KEYS = {
   auth: 'manicash.auth.v1',
   // Audit dùng key cũ từ Phase 5 (không versioned) — giữ nguyên để không mất data đã lưu.
   audit: 'manicash-action-audit',
+  // Dashboard: quỹ tiết kiệm (reserve/goals/investment) + lịch sử tích lũy.
+  // Trước đây KHÔNG persist → tắt app là mất số quỹ dù tiền đã trừ khỏi mainBalance.
+  dashboard: 'manicash.dashboard.v1',
 } as const;
 
 /**

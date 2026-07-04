@@ -2,6 +2,8 @@
 'use client';
 
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { STORE_KEYS, STORE_VERSIONS } from '@/stores/persistConfig';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useFinanceStore } from '@/stores/useFinanceStore';
 import { useFinanceCoreStore } from '@/stores/useFinanceCoreStore';
@@ -194,7 +196,9 @@ const EMPTY_ACCOUNTS: DashboardAccounts = {
 
 const isDemoSeed = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
 
-export const useDashboardStore = create<DashboardState>((set, get) => ({
+export const useDashboardStore = create<DashboardState>()(
+  persist(
+    (set, get) => ({
   accounts: isDemoSeed ? SEED_ACCOUNTS : EMPTY_ACCOUNTS,
   auto_split: false,
   monthlyContributions: isDemoSeed ? SEED_CONTRIBUTIONS : { reserve: [], goals: [], investment: [] },
@@ -517,4 +521,26 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       splitTransactionId,
     };
   },
-}));
+    }),
+    {
+      name: STORE_KEYS.dashboard,
+      version: STORE_VERSIONS.dashboard,
+      storage: createJSONStorage(() => localStorage),
+      // Chỉ persist state dữ liệu (không persist các hàm computed).
+      partialize: (s) => ({
+        accounts: s.accounts,
+        auto_split: s.auto_split,
+        monthlyContributions: s.monthlyContributions,
+      }),
+      migrate: (persisted) => {
+        const p = (persisted ?? {}) as Partial<DashboardState>;
+        return {
+          ...p,
+          accounts: p.accounts ?? (isDemoSeed ? SEED_ACCOUNTS : EMPTY_ACCOUNTS),
+          monthlyContributions:
+            p.monthlyContributions ?? { reserve: [], goals: [], investment: [] },
+        } as DashboardState;
+      },
+    },
+  ),
+);

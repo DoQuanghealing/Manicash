@@ -11,8 +11,11 @@
  * Cache in-memory Map, TTL 5 phút, key = `${uid}:${monthKey}`.
  */
 
-import { computeHealthScore, getHealthTier } from '@/lib/cfoHealthScore';
+import { getHealthTier } from '@/lib/cfoHealthScore';
 import { computeSafeToSpendValue } from '@/lib/moneyBrain/safeToSpend';
+import { getFinancialHealthScore } from '@/lib/moneyBrain/healthScore';
+import { toMoneySnapshotV1 } from '@/lib/moneyBrain/snapshot';
+import type { MoneySnapshotV1 } from '@/lib/moneyBrain/types';
 import type {
   ClientSnapshotInput,
   GetSnapshotOptions,
@@ -347,38 +350,27 @@ function computeGoals(
   return { items, atRisk: items.filter((g) => g.atRisk) };
 }
 
-function buildHealth(params: {
-  income: number;
-  expense: number;
-  safeToSpend: number;
-  emergencyBalance: number;
-  categoriesTotal: number;
-  categoriesOverBudget: number;
-  billsDueByNow: number;
-  billsPaidOfDue: number;
-  dayOfMonth: number;
-}): SnapshotHealth {
-  const breakdown = computeHealthScore({
-    monthlyIncome: params.income,
-    monthlyExpense: params.expense,
-    safeToSpend: params.safeToSpend,
-    emergencyBalance: params.emergencyBalance,
-    categoriesTotal: params.categoriesTotal,
-    categoriesOverBudget: params.categoriesOverBudget,
-    billsDueByNow: params.billsDueByNow,
-    billsPaidOfDue: params.billsPaidOfDue,
-    dayOfMonth: params.dayOfMonth,
-  });
-
+/**
+ * Health score — NGUỒN DUY NHẤT: moneyBrain getFinancialHealthScore.
+ * Trước đây dùng cfoHealthScore.computeHealthScore (5 phần có trọng số) → cho SỐ
+ * KHÁC với handleQueryHealth/CFO report (dùng moneyBrain 6 phần). Nay dùng chung
+ * đúng 1 hàm trên cùng MoneySnapshotV1 → mọi nơi hiện cùng 1 điểm.
+ * (getHealthTier chỉ phân hạng theo ngưỡng, không phải thuật toán tính điểm.)
+ */
+function buildHealth(snapshot: MoneySnapshotV1): SnapshotHealth {
+  const hs = getFinancialHealthScore(snapshot);
+  const pct = (part: number, max: number) => (max > 0 ? Math.round((part / max) * 100) : 0);
   return {
-    score: breakdown.total,
-    tier: getHealthTier(breakdown.total),
+    score: hs.total,
+    tier: getHealthTier(hs.total),
+    // breakdown giữ shape cũ (chỉ dùng debug — consumer chỉ đọc score/tier); map từ
+    // 6 thành phần moneyBrain đã chuẩn hoá về 0-100.
     breakdown: {
-      savingsRate: breakdown.savingsRateScore,
-      budgetAdherence: breakdown.budgetAdherenceScore,
-      billsOnTime: breakdown.billsOnTimeScore,
-      emergencyFund: breakdown.emergencyFundScore,
-      safeToSpend: breakdown.safeToSpendScore,
+      savingsRate: pct(hs.cashflow, 25),
+      budgetAdherence: pct(hs.budgetDiscipline, 15),
+      billsOnTime: pct(hs.billCoverage, 20),
+      emergencyFund: pct(hs.emergencyRunway, 20),
+      safeToSpend: hs.cashflow > 0 ? 100 : 0,
     },
   };
 }
@@ -476,20 +468,9 @@ function buildFromClient(
   // Goals
   const goals = computeGoals(input.goals ?? [], cashflow.savings, now);
 
-  // Health
-  const billsDueByNow = billItems.filter((b) => b.dueDay && b.dueDay <= dayOfMonth).length;
-  const billsPaidOfDue = billItems.filter((b) => b.dueDay && b.dueDay <= dayOfMonth && b.status === 'paid').length;
-  const health = buildHealth({
-    income: cashflow.income,
-    expense: cashflow.expense,
-    safeToSpend,
-    emergencyBalance: emergency,
-    categoriesTotal: budgets.length,
-    categoriesOverBudget: overspent.length,
-    billsDueByNow,
-    billsPaidOfDue,
-    dayOfMonth,
-  });
+  // Health — dùng chung moneyBrain trên cùng MoneySnapshotV1 mà handleQueryHealth
+  // dùng → điểm sức khỏe khớp tuyệt đối giữa chat, CFO report và snapshot.
+  const health = buildHealth(toMoneySnapshotV1(input));
 
   return {
     meta: { uid, monthKey, generatedAt: now.toISOString(), dayOfMonth, daysInMonth, source: 'client', warnings: [] },
@@ -529,17 +510,7 @@ export function zeroSections(emergency = 0): {
     },
     categories: { topBySpend: [], overspent: [], anomalies: [] },
     goals: { items: [], atRisk: [] },
-    health: buildHealth({
-      income: 0,
-      expense: 0,
-      safeToSpend: 0,
-      emergencyBalance: emergency,
-      categoriesTotal: 0,
-      categoriesOverBudget: 0,
-      billsDueByNow: 0,
-      billsPaidOfDue: 0,
-      dayOfMonth: 1,
-    }),
+    health: buildHealth(toMoneySnapshotV1({ wallets: { emergency } } as ClientSnapshotInput)),
   };
 }
 

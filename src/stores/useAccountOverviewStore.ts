@@ -17,6 +17,7 @@ import {
   type SafeToSpendStatus,
 } from '@/lib/accountOverviewMath';
 import { getMonthKeyFromDate } from '@/lib/dateHelpers';
+import { isThreeAccountModelEnabled } from '@/lib/featureFlags';
 
 export type OverviewAccountId = 'income' | 'expense' | 'saving';
 
@@ -490,7 +491,9 @@ export function buildAccountOverviewSnapshot({
 export function getAccountOverviewSnapshot(): AccountOverviewSnapshot {
   const ledgerEntries = useFinanceCoreStore.getState().ledgerEntries;
   const coreBalances = buildCoreDashboardBalances(ledgerEntries);
-  const hasCoreLedgerEntries = ledgerEntries.length > 0;
+  // Gate sau flag: mô hình core chưa persist/hydrate nên ledger chỉ chứa delta
+  // của phiên hiện tại. Nếu đọc theo ledger, số dư sẽ lật sai sau giao dịch đầu.
+  const hasCoreLedgerEntries = isThreeAccountModelEnabled() && ledgerEntries.length > 0;
 
   return buildAccountOverviewSnapshot({
     finance: useFinanceStore.getState(),
@@ -517,7 +520,8 @@ export function useAccountOverviewSnapshot(): AccountOverviewSnapshot {
   const walletBank = useWalletBankStore();
   const ledgerEntries = useFinanceCoreStore((s) => s.ledgerEntries);
   const coreBalances = buildCoreDashboardBalances(ledgerEntries);
-  const hasCoreLedgerEntries = ledgerEntries.length > 0;
+  // Xem chú thích ở getAccountOverviewSnapshot: gate sau flag (mặc định OFF).
+  const hasCoreLedgerEntries = isThreeAccountModelEnabled() && ledgerEntries.length > 0;
 
   return buildAccountOverviewSnapshot({
     finance,

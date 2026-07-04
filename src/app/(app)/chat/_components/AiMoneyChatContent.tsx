@@ -373,17 +373,22 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
   }, [fixedBills]);
 
   const appAccountBalances = useMemo(() => {
+    // Đọc SỐ DƯ THẬT (đã persist) thay vì dashboardAccounts.income/spending/
+    // fixed_bills — mấy field đó không bao giờ được ghi nên luôn = 0 → đối chiếu
+    // luôn báo lệch sai. Map 3-tài-khoản không trùng lặp theo mô hình 3-ví thật:
+    //   thu nhập → ví chính (main) · chi tiêu → quỹ bill · tiết kiệm → khẩn cấp + 3 quỹ.
     const saving =
+      emergencyBalance +
       dashboardAccounts.reserve.balance +
       dashboardAccounts.goals.balance +
       dashboardAccounts.investment.balance;
 
     return {
-      income: dashboardAccounts.income.balance,
-      expense: dashboardAccounts.spending.balance + dashboardAccounts.fixed_bills.balance,
+      income: mainBalance,
+      expense: billFundBalance,
       saving,
     };
-  }, [dashboardAccounts]);
+  }, [mainBalance, billFundBalance, emergencyBalance, dashboardAccounts]);
 
   const canConfirm = Boolean(
     enabled &&
