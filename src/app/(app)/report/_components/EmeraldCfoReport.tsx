@@ -5,11 +5,16 @@
  */
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Gem, Coffee, Clock, RefreshCw, Zap, Lock, Bell } from 'lucide-react';
+import { ArrowLeft, Gem, Coffee, Clock, RefreshCw, Zap, Lock, Bell, Check } from 'lucide-react';
 import { useCFOSnapshot } from '@/hooks/useCFOSnapshot';
 import { buildCFOContextPack } from '@/lib/moneyBrain';
+import { useDashboardStore } from '@/stores/useDashboardStore';
+import type { SplitResult } from '@/stores/useDashboardStore';
+import { useBudgetStore } from '@/stores/useBudgetStore';
+import { useSettingsStore } from '@/stores/useSettingsStore';
+import SplitSuccessPopup from '@/components/ui/SplitSuccessPopup';
 import './emerald-cfo.css';
 
 type TabId = 'progress' | 'warning' | 'plan';
@@ -52,6 +57,49 @@ export default function EmeraldCfoReport() {
   const { snapshot } = useCFOSnapshot();
   const ctx = useMemo(() => buildCFOContextPack(snapshot), [snapshot]);
   const [tab, setTab] = useState<TabId>('progress');
+
+  // ── Store actions ──
+  const splitFunds = useDashboardStore((s) => s.splitFunds);
+  const setCategoryBudget = useBudgetStore((s) => s.setCategoryBudget);
+  const { dailyReminderEnabled, toggleDailyReminder, setDailyReminderEnabled } = useSettingsStore();
+
+  // ── CTA states ──
+  const [splitResult, setSplitResult] = useState<SplitResult | null>(null);
+  const [showSplitPopup, setShowSplitPopup] = useState(false);
+  const [budgetDone, setBudgetDone] = useState(false);
+  const [notifStatus, setNotifStatus] = useState<'idle' | 'denied'>('idle');
+
+  // ── CTA handlers ──
+  const handleLockReserve = useCallback((amount: number) => {
+    if (amount <= 0) return;
+    try {
+      const result = splitFunds({
+        sourceAmount: amount,
+        billPercent: 0,
+        savingsPercent: 100,
+        savingsBreakdown: { reserve: 100, goals: 0, investment: 0 },
+      });
+      setSplitResult(result);
+      setShowSplitPopup(true);
+    } catch {
+      // split error
+    }
+  }, [splitFunds]);
+
+  const handleSetBudget = useCallback((limit: number) => {
+    setCategoryBudget('free-spending', limit);
+    setBudgetDone(true);
+    setTimeout(() => setBudgetDone(false), 4000);
+  }, [setCategoryBudget]);
+
+  const handleToggleReminder = useCallback(async () => {
+    if (dailyReminderEnabled) { setDailyReminderEnabled(false); return; }
+    if (!('Notification' in window)) { setNotifStatus('denied'); return; }
+    let perm = Notification.permission;
+    if (perm === 'default') perm = await Notification.requestPermission();
+    if (perm === 'granted') { toggleDailyReminder(); setNotifStatus('idle'); }
+    else setNotifStatus('denied');
+  }, [dailyReminderEnabled, toggleDailyReminder, setDailyReminderEnabled]);
 
   // ── Số liệu từ context pack (mọi con số do engine tính) ──
   const d = useMemo(() => {
@@ -193,7 +241,13 @@ export default function EmeraldCfoReport() {
                   </div>
                 )}
                 <div className="ec-grow" />
-                <button className="ec-cta mint">Khoá {tr(d.lockSmall)} vào Dự phòng</button>
+                <button
+                  className='ec-cta mint'
+                  onClick={() => handleLockReserve(Math.min(d.pocket, d.lockSmall))}
+                  disabled={d.pocket <= 0}
+                >
+                  Khoá {tr(Math.min(d.pocket, d.lockSmall))} vào Dự phòng
+                </button>
               </>
             )}
 
@@ -213,7 +267,13 @@ export default function EmeraldCfoReport() {
                   <div className="ec-flow"><span className="ec-chip">Cạn &lt;1tr</span><span className="ec-ar">→</span><span className="ec-chip">Lao đi kiếm</span><span className="ec-ar">→</span><span className="ec-chip hot">Dư → lơ</span><span className="ec-ar">↺</span></div>
                 </div>
                 <div className="ec-grow" />
-                <button className="ec-cta gold"><Lock size={13} /> Khoá {tr(d.lockBig)} — vẫn còn {tr(d.pocketAfterBig)} tiêu</button>
+                <button
+                  className='ec-cta gold'
+                  onClick={() => handleLockReserve(Math.min(d.pocket, d.lockBig))}
+                  disabled={d.pocket <= 0}
+                >
+                  <Lock size={13} /> Khoá {tr(Math.min(d.pocket, d.lockBig))} — vẫn còn {tr(Math.max(0, d.pocket - d.lockBig))} tiêu
+                </button>
               </>
             )}
 
@@ -233,8 +293,19 @@ export default function EmeraldCfoReport() {
                   </div>
                 )}
                 <p className="ec-note">Giữ nhịp này, anh chạm <b>quỹ dự phòng 3 tháng ({tr(d.reserveTarget)})</b>{d.monthsToReserve != null ? ` sau ~${d.monthsToReserve} tháng` : ''}.</p>
-                <div className="ec-grow" />
-                <button className="ec-cta mint"><Bell size={13} /> Bật nhắc “Tổng kết tối” 21h</button>
+                <div className='ec-grow' />
+                {notifStatus === 'denied' && (
+                  <p className='ec-note' style={{ color: 'var(--rose)', marginBottom: '8px' }}>
+                    Thông báo bị chặn — vào Cài đặt trình duyệt để bật lại.
+                  </p>
+                )}
+                <button
+                  className={dailyReminderEnabled ? 'ec-cta is-active' : 'ec-cta mint'}
+                  onClick={handleToggleReminder}
+                >
+                  {dailyReminderEnabled ? <Check size={13} /> : <Bell size={13} />}
+                  {dailyReminderEnabled ? ' Đã bật nhắc 21h — nhấn để tắt' : ' Bật nhắc “Tổng kết tối” 21h'}
+                </button>
               </>
             )}
           </div>
@@ -245,7 +316,14 @@ export default function EmeraldCfoReport() {
         )}
       </div>
 
-      <p className="ec-foot">Mọi con số tính từ dữ liệu app (moneyBrain). Nút hành động sẽ nối vào chuyển quỹ / đặt ngưỡng / bật nhắc.</p>
+      <p className="ec-foot">Mọi con số tính từ dữ liệu app (moneyBrain).</p>
+
+      <SplitSuccessPopup
+        isOpen={showSplitPopup}
+        result={splitResult}
+        onClose={() => setShowSplitPopup(false)}
+      />
+
     </div>
   );
 }

@@ -7,6 +7,7 @@ import ButlerNotifBanner from '@/components/ui/ButlerNotifBanner';
 import XPToastHost from '@/components/ui/XPToast';
 import MoneyReactionHost from '@/components/ui/MoneyReactionHost';
 import RolloverGuard from './RolloverGuard';
+import DailyCheckinReminderGuard from './DailyCheckinReminderGuard';
 import BanMenhThemeApplier from '@/components/providers/BanMenhThemeApplier';
 import StreakShieldToast from '@/components/ui/StreakShieldToast';
 import QuestCompletionPopup from '@/components/ui/QuestCompletionPopup';
@@ -26,6 +27,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
         {/* Budget month rollover — runs once per app load */}
         <RolloverGuard />
+
+        {/* Daily 21h reminder — schedules Web Notification khi enabled */}
+        <DailyCheckinReminderGuard />
 
         {/* Apply theme accent theo bản mệnh (activeTheme=banmenh) hoặc theme tĩnh */}
         <BanMenhThemeApplier />

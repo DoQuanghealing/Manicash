@@ -9,10 +9,14 @@ interface SettingsState {
   butlerName: string;
   /** Phong cách text/tone — 'auto' detect từ yearOfBirth, hoặc override 'young'/'pro'/'classic'. */
   appVibe: VibeMode;
+  /** Bật nhắc tự động "Tổng kết tối" 21h mỗi ngày (Web Notification). */
+  dailyReminderEnabled: boolean;
   setTheme: (t: ThemeMode) => void;
   toggleTheme: () => void;
   setButlerName: (name: string) => void;
   setAppVibe: (vibe: VibeMode) => void;
+  toggleDailyReminder: () => void;
+  setDailyReminderEnabled: (enabled: boolean) => void;
 }
 
 const DEFAULT_BUTLER_NAME = 'Lord Diamond';
@@ -42,6 +46,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   theme: readStorage<ThemeMode>('manicash-theme', 'dark'),
   butlerName: readStorage<string>('manicash-butler-name', DEFAULT_BUTLER_NAME),
   appVibe: readStorage<VibeMode>('manicash-app-vibe', DEFAULT_APP_VIBE),
+  dailyReminderEnabled: readStorage<boolean>('manicash-daily-reminder', false),
 
   setTheme: (t) => {
     writeStorage('manicash-theme', t);
@@ -64,5 +69,17 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   setAppVibe: (vibe) => {
     writeStorage('manicash-app-vibe', vibe);
     set({ appVibe: vibe });
+  },
+
+  toggleDailyReminder: () =>
+    set((s) => {
+      const next = !s.dailyReminderEnabled;
+      writeStorage('manicash-daily-reminder', next);
+      return { dailyReminderEnabled: next };
+    }),
+
+  setDailyReminderEnabled: (enabled) => {
+    writeStorage('manicash-daily-reminder', enabled);
+    set({ dailyReminderEnabled: enabled });
   },
 }));
