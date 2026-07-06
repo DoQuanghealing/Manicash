@@ -13,6 +13,7 @@ import StreakShieldToast from '@/components/ui/StreakShieldToast';
 import QuestCompletionPopup from '@/components/ui/QuestCompletionPopup';
 import QuestHintBar from '@/components/ui/QuestHintBar';
 import AccountDeletionGate from '@/components/ui/AccountDeletionGate';
+import ProActivatedCelebration from '@/components/ui/ProActivatedCelebration';
 import PricingModal from '@/components/pricing/PricingModal';
 import { AuthGuard } from '@/components/providers/AuthGuard';
 
@@ -65,6 +66,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
           {/* Cửa sổ bán hàng 3 gói — mở từ ProGate / nút Nâng cấp (usePricingModalStore) */}
           <PricingModal />
+
+          {/* Popup ăn mừng khi vừa mua Pro thành công (flag từ /payment/success) */}
+          <ProActivatedCelebration />
         </div>
       </div>
     </AccountDeletionGate>

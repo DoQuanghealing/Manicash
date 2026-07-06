@@ -16,13 +16,11 @@ import { useQuestStore } from '@/stores/useQuestStore';
 import { collectAllMetrics } from '@/lib/questMetrics';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useFinanceStore } from '@/stores/useFinanceStore';
-import { useConfetti } from '@/hooks/useConfetti';
 import { useQuestAction } from '@/hooks/useQuestAction';
 import CheckInModal from '@/components/ui/CheckInModal';
 import './DailyQuestCard.css';
 
 export default function DailyQuestCard() {
-  const { fireConfetti } = useConfetti();
   const dispatchAction = useQuestAction();
   const [checkinOpen, setCheckinOpen] = useState(false);
 
@@ -51,10 +49,7 @@ export default function DailyQuestCard() {
 
   const handleClaim = (templateId: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
-    const result = claimDaily(templateId);
-    if (result.granted) {
-      fireConfetti('mission');
-    }
+    claimDaily(templateId);
   };
 
   return (

@@ -1,0 +1,71 @@
+.pac-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 260;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(10, 10, 18, 0.6);
+  backdrop-filter: blur(6px);
+}
+
+.pac-card {
+  width: 100%;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+  padding: 28px 22px 22px;
+  border-radius: 20px;
+  border: 1px solid rgba(249, 115, 22, 0.35);
+  background: linear-gradient(165deg, rgba(249, 115, 22, 0.14), rgba(124, 58, 237, 0.10)),
+    rgba(18, 18, 28, 0.96);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+}
+
+.pac-icon-wrap {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FB923C;
+  background: linear-gradient(135deg, rgba(251, 146, 60, 0.22), rgba(124, 58, 237, 0.18));
+  border: 1px solid rgba(251, 146, 60, 0.4);
+  margin-bottom: 4px;
+}
+
+.pac-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+}
+
+.pac-body {
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.68);
+  margin: 0;
+}
+
+.pac-btn {
+  margin-top: 10px;
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(135deg, #FB923C, #F97316);
+  cursor: pointer;
+}
+
+.pac-btn:active {
+  transform: scale(0.98);
+}

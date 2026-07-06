@@ -19,7 +19,6 @@ import { useQuestStore } from '@/stores/useQuestStore';
 import { useConfetti } from '@/hooks/useConfetti';
 import { useAudio } from '@/hooks/useAudio';
 import { ONBOARDING_QUEST_BY_ID } from '@/data/onboardingQuests';
-import { DAILY_QUEST_BY_ID } from '@/data/dailyQuestPool';
 import { pickWeeklyChallenge } from '@/data/weeklyChallenges';
 import { getRewardById, RARITY_META } from '@/data/rewardCatalog';
 import type { QuestType } from '@/stores/useQuestStore';
@@ -47,11 +46,9 @@ export default function QuestCompletionPopup() {
 
   // Subscribe
   const onboardingInstances = useQuestStore((s) => s.onboardingInstances);
-  const dailyInstances = useQuestStore((s) => s.dailyInstances);
   const weeklyInstance = useQuestStore((s) => s.weeklyInstance);
   const seasonalChapterInstances = useQuestStore((s) => s.seasonalChapterInstances);
   const claimOnboarding = useQuestStore((s) => s.claimOnboarding);
-  const claimDaily = useQuestStore((s) => s.claimDaily);
   const claimWeekly = useQuestStore((s) => s.claimWeekly);
   const claimSeasonalChapter = useQuestStore((s) => s.claimSeasonalChapter);
   const getCurrentSeasonal = useQuestStore((s) => s.getCurrentSeasonal);
@@ -80,24 +77,8 @@ export default function QuestCompletionPopup() {
       });
     });
 
-    // Daily
-    Object.values(dailyInstances).forEach((inst) => {
-      if (!inst.completedAt || inst.claimedAt) return;
-      const key = `daily:${inst.templateId}`;
-      if (seenIds.current.has(key)) return;
-      seenIds.current.add(key);
-      const template = DAILY_QUEST_BY_ID[inst.templateId];
-      if (!template) return;
-      newPopups.push({
-        questId: template.id,
-        questType: 'daily',
-        title: template.title,
-        icon: template.icon,
-        xpReward: template.xpReward,
-        rewardItemIds: [],
-        doClaim: () => claimDaily(template.id).granted,
-      });
-    });
+    // Daily: KHÔNG popup toàn màn hình — nhiệm vụ lặp lại mỗi ngày, hiện inline
+    // ở DailyQuestCard ("Nhận +X") là đủ, tránh che app + bắn hiệu ứng mỗi lần mở.
 
     // Weekly
     if (weeklyInstance?.completedAt && !weeklyInstance.claimedAt) {
@@ -143,18 +124,18 @@ export default function QuestCompletionPopup() {
       queueMicrotask(() => setQueue((q) => [...q, ...newPopups]));
     }
   }, [
-    onboardingInstances, dailyInstances, weeklyInstance, seasonalChapterInstances,
-    claimOnboarding, claimDaily, claimWeekly, claimSeasonalChapter, getCurrentSeasonal,
+    onboardingInstances, weeklyInstance, seasonalChapterInstances,
+    claimOnboarding, claimWeekly, claimSeasonalChapter, getCurrentSeasonal,
   ]);
 
   const current = queue[0];
 
-  // Mount sound + confetti khi popup mới hiện
+  // Mount: chỉ âm thanh nhẹ, KHÔNG tự bắn confetti — tránh hiệu ứng che app
+  // ngay khi popup vừa hiện (chỉ ăn mừng khi user chủ động bấm "Nhận thưởng").
   useEffect(() => {
     if (!current) return;
     try { play('levelUp'); } catch {}
-    fireConfetti('mission');
-  }, [current, fireConfetti, play]);
+  }, [current, play]);
 
   const handleDismiss = useCallback(() => {
     setDismissing(true);
@@ -169,7 +150,8 @@ export default function QuestCompletionPopup() {
     setDismissing(true);
     current.doClaim();
     clearActiveContext();
-    fireConfetti('rankUp');
+    // 'mission' (burst nhẹ) thay vì 'rankUp' (2 góc, lặp 3s) — sang trọng, bớt ồn ào.
+    fireConfetti('mission');
     setTimeout(() => {
       setQueue((q) => q.slice(1));
       setDismissing(false);
