@@ -2,10 +2,14 @@
  *
  * Server-side only. Lazy-init từ env vars. Throw clear error nếu thiếu credentials.
  *
- * Required env vars:
+ * Required env vars (CẢ 3, thiếu 1 là toàn bộ route dùng Admin SDK crash 500):
  *   FIREBASE_ADMIN_PROJECT_ID
  *   FIREBASE_ADMIN_CLIENT_EMAIL
  *   FIREBASE_ADMIN_PRIVATE_KEY  (chứa \n literal — split khi đọc)
+ *
+ * 2026-07-06: production từng thiếu FIREBASE_ADMIN_PROJECT_ID — mọi route cần Admin
+ * SDK (payos/create-link, admin/test-account, quota, grantTrial...) fail 500 im lặng
+ * cho tới khi verify lại. Kiểm 3 biến này trên Vercel TRƯỚC khi nghi ngờ code.
  */
 
 import { initializeApp, getApps, cert, type App } from 'firebase-admin/app';
