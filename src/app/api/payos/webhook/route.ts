@@ -11,6 +11,12 @@ import { applyPaidOrderAtomic } from '@/lib/monetization/payosGrant';
  * lỗi tạm thời (Firestore) → 5xx để PayOS RETRY.
  * Nguồn-sự-thật DUY NHẤT để cấp Pro (returnUrl chỉ để hiển thị).
  */
+
+/** PayOS ping URL bằng GET để validate reachability khi confirm-webhook — trả 200 trơn. */
+export async function GET() {
+  return NextResponse.json({ ok: true });
+}
+
 export async function POST(req: NextRequest) {
   let body: unknown;
   try {
