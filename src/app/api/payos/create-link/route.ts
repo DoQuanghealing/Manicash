@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { getVerifiedRequestUid } from '@/lib/requestAuth';
 import { getAdminDb, getAdminAuth } from '@/lib/firebaseAdmin';
-import { getProSku } from '@/lib/monetization/entitlement';
+import { getProSku, type ProSku } from '@/lib/monetization/entitlement';
 import { getPayos, isPayosConfigured } from '@/lib/monetization/payosClient';
 import { makeOrderCode } from '@/lib/monetization/payosOrder';
 
@@ -10,6 +10,13 @@ function clientIp(req: NextRequest): string {
   const xff = req.headers.get('x-forwarded-for') || '';
   return xff.split(',')[0]?.trim() || req.headers.get('x-real-ip') || '';
 }
+
+/**
+ * Gói test nội bộ — KHÔNG xuất hiện trong PricingCards/UI, chỉ tạo được khi có
+ * đúng `x-admin-key` (test end-to-end webhook→grant thật với số tiền nhỏ, không
+ * đụng tới PRO_SKUS/giá thật cho user thường).
+ */
+const ADMIN_TEST_SKU: ProSku = { amount: 10_000, periodDays: 1, productId: 'manicash_admin_test' };
 
 export async function POST(req: NextRequest) {
   if (!isPayosConfigured()) {
@@ -22,17 +29,24 @@ export async function POST(req: NextRequest) {
   } catch {
     body = {};
   }
-  const plan = typeof (body as Record<string, unknown>)?.plan === 'string'
-    ? ((body as Record<string, unknown>).plan as string)
-    : '';
-  const sku = getProSku(plan);
+  const b = (body && typeof body === 'object' ? body : {}) as Record<string, unknown>;
+  const plan = typeof b.plan === 'string' ? b.plan : '';
+
+  const adminKey = process.env.MANICASH_ADMIN_KEY;
+  const isAdminTest = plan === 'admin_test' && !!adminKey && req.headers.get('x-admin-key') === adminKey;
+
+  const sku = isAdminTest ? ADMIN_TEST_SKU : getProSku(plan);
   if (!sku) {
     return NextResponse.json({ error: 'Gói không hợp lệ.' }, { status: 400 });
   }
 
-  const uid = await getVerifiedRequestUid(req);
+  // admin_test: uid do admin chỉ định thẳng (giống quy ước /api/admin/test-account),
+  // không cần Bearer token — mọi request khác vẫn bắt buộc Bearer như cũ.
+  const uid = isAdminTest
+    ? (typeof b.uid === 'string' ? b.uid : '')
+    : await getVerifiedRequestUid(req);
   if (!uid) {
-    return NextResponse.json({ error: 'Cần đăng nhập.' }, { status: 401 });
+    return NextResponse.json({ error: isAdminTest ? 'Thiếu uid.' : 'Cần đăng nhập.' }, { status: isAdminTest ? 400 : 401 });
   }
 
   const db = getAdminDb();
