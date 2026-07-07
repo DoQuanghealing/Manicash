@@ -1,0 +1,9 @@
+.dph-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 2px;
+  color: var(--c-text-secondary);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}

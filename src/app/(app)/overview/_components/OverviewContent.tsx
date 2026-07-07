@@ -6,24 +6,19 @@ import { useSettingsStore } from '@/stores/useSettingsStore';
 import { resolveVibe } from '@/lib/ageGroup';
 import { getCopy } from '@/data/vibedCopy';
 import SafeToSpendCard from './SafeToSpendCard';
-import BudgetWarningBanner from './BudgetWarningBanner';
-import PendingTransactionBanner from './PendingTransactionBanner';
+import AlertsInbox from './AlertsInbox';
 import MissionChecklist from './MissionChecklist';
 import OnboardingQuestPanel from './OnboardingQuestPanel';
 import DailyQuestCard from './DailyQuestCard';
 import WeeklyChallengeCard from './WeeklyChallengeCard';
 import SeasonalEventBanner from './SeasonalEventBanner';
 import UpcomingHolidayHint from './UpcomingHolidayHint';
-import IdleMoneyBanner from './IdleMoneyBanner';
 import WishlistPopup from './WishlistPopup';
 import MonthlyReportModal from './MonthlyReportModal';
 import BankSyncReminder from '@/components/ui/BankSyncReminder';
 import { isSmsWebhookEnabled } from '@/lib/featureFlags';
 
-// Nạp 3 khối vừa tạo (1-2-3)
-import IncomeBlock from './IncomeBlock';
-import ExpenseBillBlock from './ExpenseBillBlock';
-import FundsBlock from './FundsBlock';
+import MoneyGrid from './MoneyGrid';
 
 export default function OverviewContent() {
   // NOTE: checkAndRollover đã được gọi ở RolloverGuard (app layout),
@@ -38,26 +33,16 @@ export default function OverviewContent() {
         {/* ═══ BLOCK 0b: Holiday lunar sắp đến (tự ẩn nếu trùng với event đang active) ═══ */}
         <UpcomingHolidayHint />
 
-        {/* ═══ BLOCK 1: Safe-to-Spend Balance & Warning ═══ */}
+        {/* ═══ BLOCK 1: Safe-to-Spend Balance ═══ */}
         <SafeToSpendCard />
-        <PendingTransactionBanner />
-        <BudgetWarningBanner />
+
+        {/* ═══ BLOCK 1b: Alerts inbox — gộp budget/pending-txn/idle-money thành 1 thanh ═══ */}
+        <AlertsInbox />
         {isSmsWebhookEnabled() && <BankSyncReminder />}
 
-        {/* ═══ BLOCK 1b: Cảnh báo tiền nhàn rỗi → CTA chia vào mục tiêu ═══ */}
-        <IdleMoneyBanner />
+        {/* ═══ BLOCK 2: Lưới "Tiền tháng này" 2×2 (entry-tile → mở route chi tiết) ═══ */}
+        <MoneyGrid />
 
-        {/* ═══ NEW: GIAO DIỆN 1-2-3 ═══ */}
-        {/* Khối 1: Thu nhập (Full-width) */}
-        <IncomeBlock />
-        
-        {/* Khối 2: Chi tiêu & Hóa đơn (Chia 2) */}
-        <ExpenseBillBlock />
-        
-        {/* Khối 3: Các Quỹ (Chia 3) */}
-        <FundsBlock />
-
-        {/* ═══ BLOCK 4: Fixed Bills Summary ═══ */}
         {/* ═══ BLOCK 5: Wishlist Popup (auto khi hết cooling) ═══ */}
         <WishlistPopup />
 

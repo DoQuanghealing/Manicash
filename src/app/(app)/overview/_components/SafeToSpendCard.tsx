@@ -3,13 +3,14 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Info, AlertTriangle, Lightbulb } from 'lucide-react';
+import { Info, AlertTriangle, Lightbulb, ChevronDown } from 'lucide-react';
 import { useSafeBalance } from '@/hooks/useSafeBalance';
 import { formatCurrency, formatCurrencyShort } from '@/utils/formatCurrency';
 import './SafeToSpendCard.css';
 
 export default function SafeToSpendCard() {
   const [showInfo, setShowInfo] = useState(false);
+  const [showBreakdown, setShowBreakdown] = useState(false);
   const {
     safeToSpend, monthlyIncome, carryOver, totalCategoryLimits,
     totalBills, totalSavings,
@@ -50,31 +51,50 @@ export default function SafeToSpendCard() {
       </p>
 
 
-      {/* Formula breakdown — 5 dòng */}
-      <div className="sts-breakdown">
-        <div className="sts-breakdown-row">
-          <span className="sts-breakdown-label">Tổng thu nhập tháng</span>
-          <span className="sts-breakdown-value">{formatCurrencyShort(monthlyIncome)}</span>
-        </div>
-        {carryOver !== 0 && (
-          <div className="sts-breakdown-row">
-            <span className="sts-breakdown-label">+ Dư tháng trước</span>
-            <span className="sts-breakdown-value sts-breakdown-positive">+{formatCurrencyShort(carryOver)}</span>
-          </div>
+      {/* Nút bung breakdown — thay vì luôn hiện 5 dòng, giữ hero gọn theo thiết kế mới */}
+      <button
+        type="button"
+        className="sts-breakdown-toggle"
+        onClick={() => setShowBreakdown((v) => !v)}
+      >
+        <span>Cách tính số này</span>
+        <ChevronDown size={15} className={showBreakdown ? 'sts-chevron--open' : ''} />
+      </button>
+
+      <AnimatePresence initial={false}>
+        {showBreakdown && (
+          <motion.div
+            className="sts-breakdown"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <div className="sts-breakdown-row">
+              <span className="sts-breakdown-label">Tổng thu nhập tháng</span>
+              <span className="sts-breakdown-value">{formatCurrencyShort(monthlyIncome)}</span>
+            </div>
+            {carryOver !== 0 && (
+              <div className="sts-breakdown-row">
+                <span className="sts-breakdown-label">+ Dư tháng trước</span>
+                <span className="sts-breakdown-value sts-breakdown-positive">+{formatCurrencyShort(carryOver)}</span>
+              </div>
+            )}
+            <div className="sts-breakdown-row">
+              <span className="sts-breakdown-label">− Ngưỡng chi tiêu</span>
+              <span className="sts-breakdown-value sts-breakdown-negative">-{formatCurrencyShort(totalCategoryLimits)}</span>
+            </div>
+            <div className="sts-breakdown-row">
+              <span className="sts-breakdown-label">− Bill chưa đóng</span>
+              <span className="sts-breakdown-value sts-breakdown-negative">-{formatCurrencyShort(totalBills)}</span>
+            </div>
+            <div className="sts-breakdown-row">
+              <span className="sts-breakdown-label">− Mục tiêu tiết kiệm/tháng</span>
+              <span className="sts-breakdown-value sts-breakdown-negative">-{formatCurrencyShort(totalSavings)}</span>
+            </div>
+          </motion.div>
         )}
-        <div className="sts-breakdown-row">
-          <span className="sts-breakdown-label">− Ngưỡng chi tiêu</span>
-          <span className="sts-breakdown-value sts-breakdown-negative">-{formatCurrencyShort(totalCategoryLimits)}</span>
-        </div>
-        <div className="sts-breakdown-row">
-          <span className="sts-breakdown-label">− Bill chưa đóng</span>
-          <span className="sts-breakdown-value sts-breakdown-negative">-{formatCurrencyShort(totalBills)}</span>
-        </div>
-        <div className="sts-breakdown-row">
-          <span className="sts-breakdown-label">− Mục tiêu tiết kiệm/tháng</span>
-          <span className="sts-breakdown-value sts-breakdown-negative">-{formatCurrencyShort(totalSavings)}</span>
-        </div>
-      </div>
+      </AnimatePresence>
 
       {/* ═══ Warning Card: Số dư ≤ 0 ═══ */}
       {isNegative && (
@@ -121,59 +141,54 @@ export default function SafeToSpendCard() {
       {/* ═══ Modal giải thích ═══ */}
       <AnimatePresence>
         {showInfo && (
-          <motion.div 
-            className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 backdrop-blur-sm"
+          <motion.div
+            className="sts-info-backdrop"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setShowInfo(false)}
           >
-            <motion.div 
-              className="w-full max-w-md mx-auto p-6 bg-white rounded-2xl shadow-xl"
+            <motion.div
+              className="sts-info-card"
               initial={{ scale: 0.95, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 20 }}
               onClick={(e) => e.stopPropagation()}
             >
-              <h3 className="text-xl font-bold mb-6 text-gray-900">
+              <h3 className="sts-info-title">
                 Cách ManiCash tính Số dư an toàn
               </h3>
-              
-              <div className="space-y-6">
-                <div>
-                  <h4 className="font-bold text-sm text-gray-800 mb-2 flex items-center gap-2">
-                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center">1</span>
-                    Công thức
-                  </h4>
-                  <div className="bg-gray-50 p-3 rounded-lg text-sm text-gray-600 font-medium font-mono leading-relaxed">
-                    [Thu nhập tháng]<br/>
-                    <span className="text-green-500 font-bold px-1">+</span> [Dư tháng trước]<br/>
-                    <span className="text-red-500 font-bold px-1">−</span> [Ngưỡng chi tiêu]<br/>
-                    <span className="text-red-500 font-bold px-1">−</span> [Bill chưa đóng]<br/>
-                    <span className="text-red-500 font-bold px-1">−</span> [Mục tiêu tiết kiệm/tháng]<br/>
-                    <span className="text-indigo-500 font-bold px-1">=</span> Số dư an toàn
-                  </div>
-                </div>
 
-                <div>
-                  <h4 className="font-bold text-sm text-gray-800 mb-2 flex items-center gap-2">
-                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center">2</span>
-                    Ý nghĩa
-                  </h4>
-                  <p className="text-sm text-gray-600 leading-relaxed">
-                    Số này cho biết bạn còn bao nhiêu tiền <strong>thực sự</strong> có thể chi tiêu
-                    sau khi đã trừ hết các khoản cứng (bill, tiết kiệm, ngưỡng hàng ngày).
-                  </p>
-                  <p className="text-xs text-gray-500 mt-2 italic">
-                    * Nếu số dư &lt; 0, bạn đang chi nhiều hơn thu nhập — cần cân đối ngay.
-                  </p>
+              <div className="sts-info-section">
+                <h4 className="sts-info-subtitle">
+                  <span className="sts-info-num">1</span>
+                  Công thức
+                </h4>
+                <div className="sts-info-formula">
+                  [Thu nhập tháng]<br />
+                  <span className="sts-info-op sts-info-op--plus">+</span> [Dư tháng trước]<br />
+                  <span className="sts-info-op sts-info-op--minus">−</span> [Ngưỡng chi tiêu]<br />
+                  <span className="sts-info-op sts-info-op--minus">−</span> [Bill chưa đóng]<br />
+                  <span className="sts-info-op sts-info-op--minus">−</span> [Mục tiêu tiết kiệm/tháng]<br />
+                  <span className="sts-info-op sts-info-op--eq">=</span> Số dư an toàn
                 </div>
               </div>
 
-              <button 
-                onClick={() => setShowInfo(false)}
-                className="mt-8 w-full py-3.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-base transition-colors"
-              >
+              <div className="sts-info-section">
+                <h4 className="sts-info-subtitle">
+                  <span className="sts-info-num">2</span>
+                  Ý nghĩa
+                </h4>
+                <p className="sts-info-text">
+                  Số này cho biết bạn còn bao nhiêu tiền <strong>thực sự</strong> có thể chi tiêu
+                  sau khi đã trừ hết các khoản cứng (bill, tiết kiệm, ngưỡng hàng ngày).
+                </p>
+                <p className="sts-info-note">
+                  * Nếu số dư &lt; 0, bạn đang chi nhiều hơn thu nhập — cần cân đối ngay.
+                </p>
+              </div>
+
+              <button onClick={() => setShowInfo(false)} className="sts-info-btn">
                 Đã hiểu
               </button>
             </motion.div>

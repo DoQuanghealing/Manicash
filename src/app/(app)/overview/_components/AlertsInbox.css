@@ -1,0 +1,69 @@
+.ai-inbox {
+  border-radius: var(--radius-lg);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  overflow: hidden;
+}
+
+.ai-inbox-bar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: 12px 14px;
+  text-align: left;
+  color: var(--c-text-primary);
+}
+
+.ai-inbox-icon-wrap {
+  position: relative;
+  display: flex;
+  color: var(--c-purple-light);
+  flex-shrink: 0;
+}
+
+.ai-inbox-dot {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--c-warning);
+  border: 1.5px solid var(--c-bg-primary);
+}
+
+.ai-inbox-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.ai-inbox-title {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--c-text-primary);
+}
+
+.ai-inbox-sub {
+  font-size: 11.5px;
+  color: var(--c-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ai-inbox-bar svg:last-child {
+  color: var(--c-text-muted);
+  flex-shrink: 0;
+}
+
+.ai-inbox-expand {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: 0 10px 10px;
+  overflow: hidden;
+}

@@ -52,7 +52,8 @@ img, svg { display: block; max-width: 100%; }
   /* Text */
   --c-text-primary: #F4F4F5;
   --c-text-secondary: #A1A1AA;
-  --c-text-muted: #52525B;
+  --c-text-muted: #71717A;
+  --c-text-faint: #52525B;
   --c-text-accent: var(--c-purple-light);
 
   /* Semantic */
@@ -73,10 +74,10 @@ img, svg { display: block; max-width: 100%; }
   --c-ruby-dark: #DC2626;
 
   /* Glassmorphism */
-  --glass-bg: rgba(255, 255, 255, 0.04);
-  --glass-bg-hover: rgba(255, 255, 255, 0.07);
+  --glass-bg: rgba(255, 255, 255, 0.035);
+  --glass-bg-hover: rgba(255, 255, 255, 0.06);
   --glass-bg-active: rgba(255, 255, 255, 0.10);
-  --glass-border: rgba(255, 255, 255, 0.06);
+  --glass-border: rgba(255, 255, 255, 0.07);
   --glass-border-hover: rgba(255, 255, 255, 0.12);
   --glass-blur: 24px;
   --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
@@ -88,6 +89,12 @@ img, svg { display: block; max-width: 100%; }
   --gradient-hero: linear-gradient(135deg, var(--c-purple), var(--c-orange), var(--c-green));
   --gradient-glass-border: linear-gradient(135deg, rgba(124, 58, 237, 0.3), rgba(249, 115, 22, 0.1));
   --gradient-balance: linear-gradient(135deg, #7C3AED, #9333EA, #F97316);
+
+  /* Champagne gold — CHỈ dùng cho trang Báo cáo đầy đủ (/report) */
+  --c-champagne-light: #E8CE8F;
+  --c-champagne: #D4B36A;
+  --c-champagne-dark: #C79A3F;
+  --gradient-champagne: linear-gradient(135deg, var(--c-champagne-light), var(--c-champagne-dark));
 
   /* Spacing — Compact for mobile */
   --space-2xs: 2px;
@@ -111,6 +118,8 @@ img, svg { display: block; max-width: 100%; }
   /* Typography */
   --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
   --font-display: var(--font-outfit), var(--font-sans);
+  /* Playfair chỉ có giá trị bên trong trang /report (font-family khai báo qua next/font ở page.tsx đó) */
+  --font-serif-report: var(--font-playfair), Georgia, serif;
 
   --text-xs: 0.75rem;
   --text-sm: 0.8125rem;

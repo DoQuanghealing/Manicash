@@ -60,31 +60,44 @@
   transform: scale(1.12);
 }
 
+/* ═══ Center (+) Button — Large, intense glow ═══ */
 .nav-item-center {
   position: relative;
+  width: 56px;
+  justify-content: center;
 }
 
-/* ═══ Center (+) Button — Large, intense glow ═══ */
 .nav-item-center .nav-icon-bg {
-  width: 52px;
-  height: 52px;
+  position: relative;
+  width: 54px;
+  height: 54px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #7C3AED, #9333EA, #A855F7);
-  box-shadow:
-    0 4px 20px rgba(124, 58, 237, 0.5),
-    0 0 40px rgba(124, 58, 237, 0.25),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
-  margin-top: -14px;
+  background: linear-gradient(150deg, #8B5CF6, #7C3AED 55%, #F97316);
+  box-shadow: 0 8px 24px rgba(124, 58, 237, 0.5);
+  margin-top: -22px;
   transition: box-shadow var(--duration-fast) ease, transform var(--duration-fast) ease;
   animation: plusGlow 3s ease-in-out infinite;
 }
 
+.nav-item-center .nav-icon-bg::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(124, 58, 237, 0.5), transparent 65%);
+  transform: translate(-50%, -50%);
+  z-index: -1;
+}
+
 @keyframes plusGlow {
-  0%, 100% { box-shadow: 0 4px 20px rgba(124, 58, 237, 0.5), 0 0 40px rgba(124, 58, 237, 0.25); }
-  50% { box-shadow: 0 6px 28px rgba(124, 58, 237, 0.65), 0 0 56px rgba(124, 58, 237, 0.35); }
+  0%, 100% { box-shadow: 0 8px 24px rgba(124, 58, 237, 0.5); }
+  50% { box-shadow: 0 10px 32px rgba(124, 58, 237, 0.65); }
 }
 
 .nav-item-center:hover .nav-icon-bg {
