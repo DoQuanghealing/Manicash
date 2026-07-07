@@ -1,20 +1,13 @@
 /* ═══ Admin Bans API — List / Unban / Manual Ban ═══ */
 import { NextResponse } from 'next/server';
 import { getAllBans, unban, manualBan, getSecurityStats } from '@/lib/security';
-
-/* Simple admin key — in production, use proper auth */
-const ADMIN_KEY = process.env.MANICASH_ADMIN_KEY || 'manicash-admin-2026';
-
-function checkAdmin(request: Request): boolean {
-  const authHeader = request.headers.get('x-admin-key');
-  const url = new URL(request.url);
-  const queryKey = url.searchParams.get('key');
-  return authHeader === ADMIN_KEY || queryKey === ADMIN_KEY;
-}
+import { requireAdmin } from '@/lib/requireAdmin';
+import { logAdminAction } from '@/lib/adminAudit';
 
 /* GET /api/admin/bans — List all bans + stats */
 export async function GET(request: Request) {
-  if (!checkAdmin(request)) {
+  const admin = await requireAdmin(request);
+  if (!admin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -30,7 +23,8 @@ export async function GET(request: Request) {
 
 /* POST /api/admin/bans — Manual ban or unban */
 export async function POST(request: Request) {
-  if (!checkAdmin(request)) {
+  const admin = await requireAdmin(request);
+  if (!admin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -46,6 +40,7 @@ export async function POST(request: Request) {
 
   if (action === 'unban') {
     const success = unban(identifier, type);
+    await logAdminAction(admin, 'ban.unban', { identifier, type, success });
     return NextResponse.json({
       success,
       message: success
@@ -56,6 +51,7 @@ export async function POST(request: Request) {
 
   if (action === 'ban') {
     manualBan(identifier, type, reason || 'Admin ban');
+    await logAdminAction(admin, 'ban.create', { identifier, type, reason: reason || 'Admin ban' });
     return NextResponse.json({
       success: true,
       message: `Đã ban ${type}:${identifier}`,

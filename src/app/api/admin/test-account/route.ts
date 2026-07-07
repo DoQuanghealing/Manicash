@@ -2,24 +2,19 @@
  * Admin tạo sẵn tài khoản test (username + mật khẩu) cho bạn bè đăng nhập xem app —
  * KHÔNG mở đăng ký công khai (chống hacker spam). Admin SDK tạo Firebase user với email
  * ẩn + profile (isTestAccount). Dọn dẹp: xóa user + profile.
- * Gác bằng MANICASH_ADMIN_KEY (M2 sẽ siết bằng custom claims).
+ * Gác bằng Firebase Custom Claims (requireAdmin) — không còn key tĩnh.
  */
 import { NextResponse } from 'next/server';
 import { FieldValue } from 'firebase-admin/firestore';
 import { getAdminAuth, getAdminDb } from '@/lib/firebaseAdmin';
 import { isValidUsername, normalizeUsername, usernameToEmail } from '@/lib/auth/usernameEmail';
-
-const ADMIN_KEY = process.env.MANICASH_ADMIN_KEY || 'manicash-admin-2026';
-
-function checkAdmin(request: Request): boolean {
-  const header = request.headers.get('x-admin-key');
-  const queryKey = new URL(request.url).searchParams.get('key');
-  return header === ADMIN_KEY || queryKey === ADMIN_KEY;
-}
+import { requireAdmin } from '@/lib/requireAdmin';
+import { logAdminAction } from '@/lib/adminAudit';
 
 /* POST — tạo tài khoản test { username, password, displayName? } */
 export async function POST(request: Request) {
-  if (!checkAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const admin = await requireAdmin(request);
+  if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   let body: unknown;
   try {
@@ -64,6 +59,7 @@ export async function POST(request: Request) {
       updatedAt: FieldValue.serverTimestamp(),
     });
 
+    await logAdminAction(admin, 'testAccount.create', { uid: user.uid, username });
     return NextResponse.json({ ok: true, uid: user.uid, username });
   } catch (error) {
     const code = (error as { code?: string })?.code ?? '';
@@ -77,7 +73,7 @@ export async function POST(request: Request) {
 
 /* GET — liệt kê tài khoản test (uid, username, createdAt) */
 export async function GET(request: Request) {
-  if (!checkAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!(await requireAdmin(request))) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   try {
     const snap = await getAdminDb().collection('users').where('isTestAccount', '==', true).get();
     const accounts = snap.docs.map((d) => {
@@ -98,7 +94,8 @@ export async function GET(request: Request) {
 
 /* DELETE — xóa tài khoản test { uid } (dọn dẹp sau test) */
 export async function DELETE(request: Request) {
-  if (!checkAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const admin = await requireAdmin(request);
+  if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   let body: unknown;
   try {
@@ -117,6 +114,7 @@ export async function DELETE(request: Request) {
     }
     await getAdminAuth().deleteUser(uid).catch(() => {});
     await db.doc(`users/${uid}`).delete().catch(() => {});
+    await logAdminAction(admin, 'testAccount.delete', { uid });
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error('[admin/test-account] delete error:', error);

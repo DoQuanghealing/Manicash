@@ -2,7 +2,9 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { onAuthStateChanged, type User } from 'firebase/auth';
 import { apiUrl } from '@/lib/apiBase';
+import { getFirebaseAuth } from '@/lib/firebase/config';
 import './admin.css';
 
 interface BanRecord {
@@ -25,11 +27,25 @@ interface BansResponse {
   timestamp: string;
 }
 
-const DEFAULT_ADMIN_KEY = 'manicash-admin-2026';
+type AuthState = 'checking' | 'anon' | 'forbidden' | 'admin';
+
+/** Lấy ID token của user đang đăng nhập (tự refresh khi gần hết hạn). */
+async function getIdToken(): Promise<string | null> {
+  const user = getFirebaseAuth().currentUser;
+  return user ? user.getIdToken() : null;
+}
+
+/** Header Authorization: Bearer cho mọi request admin — không còn key tĩnh. */
+async function authHeaders(json = false): Promise<Record<string, string> | null> {
+  const token = await getIdToken();
+  if (!token) return null;
+  const h: Record<string, string> = { Authorization: `Bearer ${token}` };
+  if (json) h['Content-Type'] = 'application/json';
+  return h;
+}
 
 export default function AdminDashboardContent() {
-  const [adminKey, setAdminKey] = useState('');
-  const [isAuthed, setIsAuthed] = useState(false);
+  const [authState, setAuthState] = useState<AuthState>('checking');
   const [data, setData] = useState<BansResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -49,9 +65,28 @@ export default function AdminDashboardContent() {
     { uid: string; username: string; displayName: string; createdAt: string | null }[]
   >([]);
 
+  // Xác định quyền admin từ Custom Claims của tài khoản đang đăng nhập.
+  useEffect(() => {
+    const unsub = onAuthStateChanged(getFirebaseAuth(), async (user: User | null) => {
+      if (!user) {
+        setAuthState('anon');
+        return;
+      }
+      try {
+        const result = await user.getIdTokenResult(true); // force refresh để đọc claim mới nhất
+        setAuthState(result.claims.admin === true ? 'admin' : 'forbidden');
+      } catch {
+        setAuthState('forbidden');
+      }
+    });
+    return () => unsub();
+  }, []);
+
   const fetchTestAccounts = useCallback(async () => {
     try {
-      const res = await fetch(apiUrl(`/api/admin/test-account?key=${encodeURIComponent(adminKey)}`));
+      const headers = await authHeaders();
+      if (!headers) return;
+      const res = await fetch(apiUrl('/api/admin/test-account'), { headers });
       if (res.ok) {
         const j = await res.json();
         setTestAccounts(Array.isArray(j.accounts) ? j.accounts : []);
@@ -59,49 +94,58 @@ export default function AdminDashboardContent() {
     } catch {
       /* ignore */
     }
-  }, [adminKey]);
+  }, []);
 
   const fetchBans = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(apiUrl(`/api/admin/bans?key=${encodeURIComponent(adminKey)}`));
+      const headers = await authHeaders();
+      if (!headers) {
+        setError('Phiên đăng nhập hết hạn — đăng nhập lại.');
+        return;
+      }
+      const res = await fetch(apiUrl('/api/admin/bans'), { headers });
       if (!res.ok) {
         if (res.status === 401) {
-          setError('Sai admin key');
-          setIsAuthed(false);
+          setError('Không có quyền admin');
+          setAuthState('forbidden');
           return;
         }
         throw new Error(`HTTP ${res.status}`);
       }
       const json = await res.json();
       setData(json);
-      setIsAuthed(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Lỗi kết nối');
     } finally {
       setLoading(false);
     }
-  }, [adminKey]);
+  }, []);
 
   // Auto-refresh every 3 seconds
   useEffect(() => {
-    if (!autoRefresh || !isAuthed) return;
+    if (!autoRefresh || authState !== 'admin') return;
     const interval = setInterval(fetchBans, 3000);
     return () => clearInterval(interval);
-  }, [autoRefresh, isAuthed, fetchBans]);
+  }, [autoRefresh, authState, fetchBans]);
 
-  // Nạp danh sách tài khoản test khi đã đăng nhập admin.
+  // Nạp dữ liệu khi xác nhận là admin.
   useEffect(() => {
-    if (isAuthed) fetchTestAccounts();
-  }, [isAuthed, fetchTestAccounts]);
+    if (authState === 'admin') {
+      fetchBans();
+      fetchTestAccounts();
+    }
+  }, [authState, fetchBans, fetchTestAccounts]);
 
   async function handleCreateTestAccount() {
     setError(null);
     try {
+      const headers = await authHeaders(true);
+      if (!headers) return;
       const res = await fetch(apiUrl('/api/admin/test-account'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+        headers,
         body: JSON.stringify({ username: testUsername, password: testPassword }),
       });
       const j = await res.json().catch(() => null);
@@ -119,9 +163,11 @@ export default function AdminDashboardContent() {
 
   async function handleDeleteTestAccount(uid: string) {
     try {
+      const headers = await authHeaders(true);
+      if (!headers) return;
       const res = await fetch(apiUrl('/api/admin/test-account'), {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+        headers,
         body: JSON.stringify({ uid }),
       });
       if (res.ok) await fetchTestAccounts();
@@ -134,22 +180,13 @@ export default function AdminDashboardContent() {
     }
   }
 
-  async function handleLogin() {
-    if (!adminKey.trim()) {
-      setError('Vui lòng nhập admin key');
-      return;
-    }
-    await fetchBans();
-  }
-
   async function handleUnban(identifier: string, type: 'ip' | 'uid') {
     try {
+      const headers = await authHeaders(true);
+      if (!headers) return;
       const res = await fetch(apiUrl('/api/admin/bans'), {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-admin-key': adminKey,
-        },
+        headers,
         body: JSON.stringify({ action: 'unban', identifier, type }),
       });
       const json = await res.json();
@@ -158,7 +195,7 @@ export default function AdminDashboardContent() {
       } else {
         setError(json.message || 'Không thể gỡ ban');
       }
-    } catch (err) {
+    } catch {
       setError('Lỗi kết nối');
     }
   }
@@ -170,12 +207,11 @@ export default function AdminDashboardContent() {
     }
 
     try {
+      const headers = await authHeaders(true);
+      if (!headers) return;
       const res = await fetch(apiUrl('/api/admin/bans'), {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-admin-key': adminKey,
-        },
+        headers,
         body: JSON.stringify({
           action: 'ban',
           identifier: banIdentifier.trim(),
@@ -189,43 +225,53 @@ export default function AdminDashboardContent() {
         setBanReason('');
         await fetchBans();
       }
-    } catch (err) {
+    } catch {
       setError('Lỗi kết nối');
     }
   }
 
-  /* ── Login Screen ── */
-  if (!isAuthed) {
+  /* ── Đang kiểm tra quyền ── */
+  if (authState === 'checking') {
     return (
       <div className="admin-page">
         <div className="admin-login-card">
           <div className="admin-login-icon">🛡️</div>
           <h1 className="admin-login-title">Admin Dashboard</h1>
-          <p className="admin-login-subtitle">ManiCash Security Center</p>
+          <p className="admin-login-subtitle">Đang kiểm tra quyền truy cập…</p>
+        </div>
+      </div>
+    );
+  }
 
-          <div className="admin-form-group">
-            <label className="admin-label">Admin Key</label>
-            <input
-              type="password"
-              className="admin-input"
-              placeholder="Nhập admin key..."
-              value={adminKey}
-              onChange={(e) => setAdminKey(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-              id="admin-key-input"
-            />
-          </div>
+  /* ── Chưa đăng nhập ── */
+  if (authState === 'anon') {
+    return (
+      <div className="admin-page">
+        <div className="admin-login-card">
+          <div className="admin-login-icon">🔐</div>
+          <h1 className="admin-login-title">Cần đăng nhập</h1>
+          <p className="admin-login-subtitle">
+            Đăng nhập ManiCash bằng tài khoản admin, rồi mở lại trang này.
+          </p>
+          <a className="admin-btn admin-btn-primary" href="/login">
+            Tới trang đăng nhập
+          </a>
+        </div>
+      </div>
+    );
+  }
 
-          <button
-            className="admin-btn admin-btn-primary"
-            onClick={handleLogin}
-            disabled={loading}
-            id="admin-login-btn"
-          >
-            {loading ? '⏳ Đang xác thực...' : '🔐 Đăng nhập'}
-          </button>
-
-          {error && <div className="admin-error">{error}</div>}
+  /* ── Đăng nhập nhưng không phải admin ── */
+  if (authState === 'forbidden') {
+    return (
+      <div className="admin-page">
+        <div className="admin-login-card">
+          <div className="admin-login-icon">⛔</div>
+          <h1 className="admin-login-title">Không có quyền</h1>
+          <p className="admin-login-subtitle">
+            Tài khoản này không có quyền admin. Nếu vừa được cấp quyền, hãy đăng xuất rồi
+            đăng nhập lại để làm mới token.
+          </p>
         </div>
       </div>
     );

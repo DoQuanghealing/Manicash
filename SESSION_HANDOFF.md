@@ -4,6 +4,27 @@ Tóm tắt để **chuyển sang phiên/cửa sổ mới**. Mọi việc dưới
 
 ---
 
+## 0. PHIÊN 2026-07-07 (chiều/tối) — ĐÃ COMMIT LOCAL, CHƯA PUSH
+
+**Đã làm:**
+1. **M1 đóng hoàn toàn:** gỡ sạch nhánh debug `admin_test` khỏi `create-link/route.ts`; webhook xác nhận end-to-end (giao dịch 10k thật → app tự cấp Pro).
+2. **M2 phần bảo mật XONG:** thay static key `MANICASH_ADMIN_KEY` bằng **Firebase Custom Claims**. File mới `src/lib/requireAdmin.ts` (verify Bearer ID token + `admin===true` + `checkRevoked`) + `src/lib/adminAudit.ts` (ghi `admin_audit`). Áp cho `admin/bans`, `admin/test-account`, `payos/confirm-webhook`. Client `AdminDashboardContent.tsx` gác theo claim. Script cấp quyền `scripts/grant-admin.mjs`. tsc + build sạch.
+3. **Blueprint Admin/CRM/R&D** (hội đồng 5 chuyên gia + phản biện): `docs/ADMIN_CRM_RND_BLUEPRINT.md` + Artifact trực quan. Xem memory `project-admin-crm-rnd-blueprint`.
+
+**PO cần làm (khi push xong + Vercel deploy):** `node scripts/grant-admin.mjs doduongquang8686@gmail.com` (tài khoản admin — KHÔNG phải freshlife1381) → đăng xuất/đăng nhập lại → xóa biến `MANICASH_ADMIN_KEY` trên Vercel.
+
+**2 ràng buộc PO chốt:** (a) **DuongQuang.Academy KHÔNG ĐỤNG** (chỉ deep-link/read-only/clone; cấm gọi tool `manicash_*`); (b) **Firebase GIỮ NGUYÊN**, Supabase chỉ cân nhắc cho tầng R&D/analytics mới.
+
+**MAI TIẾP TỤC — chọn 1:**
+- **Việc ngay #1 khuyến nghị:** M1 Tiền (bảng đơn + grant thủ công + đối soát "đã trả chưa cấp Pro") — quick win, data sẵn Firestore.
+- Hoặc bật pipeline `metric_snapshots` (đồng hồ R&D — không hồi tố được, nên bật sớm).
+- Trước khi làm tầng chữa lành: viết `docs/ETHICS_CHARTER.md` + consent 3 tầng (dữ liệu nhạy cảm, Nghị định 13/2023).
+- **Chưa push** — chờ PO xác nhận push (Vercel auto-deploy từ main khi push).
+
+**Untracked chưa commit (không thuộc phiên này, để nguyên):** `ManiCash_*Report*.md/.docx`, `docs/AI_CHAT_OVERVIEW.md`, `docs/P6_*.md`, `landing/`.
+
+---
+
 ## 1. Đã làm trong phiên này (theo commit, cũ → mới)
 
 | Commit | Nội dung |
@@ -26,8 +47,8 @@ Verify mỗi bước: `tsc --noEmit` sạch · `npm run build` ✓ (đủ route 
 - **Flag production đã BẬT**: `NEXT_PUBLIC_MONETIZATION_ENABLED=true`, `NEXT_PUBLIC_PAYOS_ENABLED=true`, đủ 3 key PayOS trên Vercel. **App đang nhận thanh toán thật** (key MB Bank live, không phải sandbox).
 - **Sự cố đã vá**: production thiếu `FIREBASE_ADMIN_PROJECT_ID` → mọi route dùng Admin SDK crash 500 (create-link, admin, quota, grantTrial). PO đã thêm biến này trên Vercel + redeploy → fix.
 - **Webhook đã đăng ký**: URL `https://www.manicash.org/api/payos/webhook` khai trong PayOS dashboard (mục Kênh thanh toán → Webhook Url). ĐÃ test tạo link 10k thật thành công (order `17833182364391`, uid `paWktjkNZ4eXMzaixH3suNivChD3` = doduongquang8686@gmail.com).
-- **CÒN LẠI cần xác nhận**: PO chưa hoàn tất 1 giao dịch test end-to-end để xác nhận webhook thực sự cấp Pro đúng 1 lần. Nên test 1 lần trước khi yên tâm mở bán rộng.
-- ⚠️ Route `create-link` còn nhánh debug `admin_test` (lộ stack trace qua admin key) — **nên gỡ** sau khi test xong (commit `8933874`/`f5bedf0`).
+- ✅ **ĐÃ XÁC NHẬN end-to-end (2026-07-07)**: giao dịch test 10.000đ thật → PO vào app thấy Pro **đã tự kích hoạt** qua webhook. Luồng thanh toán→webhook→cấp Pro chạy đúng. M1 đóng hoàn toàn (code + vận hành).
+- ✅ Route `create-link` **đã gỡ sạch nhánh debug `admin_test`** (2026-07-07) — không còn SKU test ẩn, không còn đường lộ stack trace qua admin key. Route giờ chỉ nhận `PRO_SKUS` + bắt buộc Bearer như bình thường.
 
 ---
 
@@ -56,8 +77,8 @@ Nguồn: `Redesign Web App UI.zip` (giải nén ở scratchpad), brief gốc mì
 
 ## 4. Việc backlog còn treo (ngoài UI)
 
-- **M1 gần xong** (`docs/M1_M4_PROGRESS_AUDIT.md`): PayOS/trial/tier/3 bug nền (B-01/02/03) đã code xong. Chỉ còn test webhook end-to-end + gỡ nhánh debug `admin_test`.
-- **M2 = 0%** (rủi ro bảo mật): `/api/admin/*` vẫn dùng static key `MANICASH_ADMIN_KEY`, chưa có Custom Claims + `requireAdmin`, chưa có `/api/admin/metrics`, chưa có activity tracking — trong khi tiền thật đã chảy. **Nên ưu tiên khi quay lại backend.**
+- ✅ **M1 ĐÓNG HOÀN TOÀN** (`docs/M1_M4_PROGRESS_AUDIT.md`): PayOS/trial/tier/3 bug nền (B-01/02/03) code xong; nhánh debug `admin_test` đã gỡ (2026-07-07); webhook end-to-end đã xác nhận thật (giao dịch 10k → app cấp Pro). Không còn nợ gì.
+- **M2 phần bảo mật XONG (2026-07-07)**: `/api/admin/*` + `confirm-webhook` giờ gác bằng Firebase Custom Claims (`requireAdmin` verify Bearer ID token + `admin===true` + `checkRevoked`), đã xóa hẳn static key `MANICASH_ADMIN_KEY` + fallback hardcode + nhánh `?key=`; thêm audit log `admin_audit`; client `/admin` gác theo claim. Cấp quyền: `node scripts/grant-admin.mjs doduongquang8686@gmail.com` (1 lần) + đăng nhập lại. **Còn lại M2**: `/api/admin/metrics` (doanh thu) + activity tracking — chưa làm.
 - **M3 = 0%**: chưa có rate-limit `/api/chat`, chưa credit-pack, chưa `/api/feedback`.
 - **M4 ~50%**: engine năng lực (FDS/TAS/IPS/MMS) chạy; chưa CV PDF, chưa trang public slug, chưa Coach handoff.
 - **Mobile store**: Android code xong (chỉ cần PO tự làm máy/account); iOS chưa bắt đầu + cần chốt Apple IAP (PayOS sẽ bị Apple reject). Xem memory `project-mobile-store-readiness`.

@@ -64,12 +64,12 @@ M2 và M3 **hoàn toàn chưa động tới** dù roadmap liệt kê chúng là 
 
 | # | Hạng mục | Trạng thái | Bằng chứng |
 |---|---|---|---|
-| 1 | `/api/admin/*` gác bằng Firebase Custom Claims + `requireAdmin` | ❌ KHÔNG | `admin/bans/route.ts:6-12` vẫn dùng static key `MANICASH_ADMIN_KEY` — đúng lỗ hổng cũ mà plan đòi xóa |
-| 2 | `admin/layout.tsx` server-guard | ❌ KHÔNG | Không tồn tại file này, `/admin` không có gác phía server |
+| 1 | `/api/admin/*` gác bằng Firebase Custom Claims + `requireAdmin` | ✅ CÓ (2026-07-07) | `src/lib/requireAdmin.ts` verify Bearer ID token + `admin===true` + `checkRevoked`. Áp cho `admin/bans`, `admin/test-account`, `payos/confirm-webhook`. Đã XÓA hẳn static key `MANICASH_ADMIN_KEY` + fallback hardcode + nhánh `?key=`. Thêm `adminAudit.ts` ghi `admin_audit`. Script cấp quyền: `scripts/grant-admin.mjs`. |
+| 2 | Gác client `/admin` | ✅ CÓ (2026-07-07) | `AdminDashboardContent.tsx` đọc claim từ tài khoản đăng nhập (`getIdTokenResult`), 4 trạng thái checking/anon/forbidden/admin — không phải admin thì không gọi được API (đã gác server). |
 | 3 | `/api/admin/metrics` (doanh thu NET, tỷ lệ mua, #nâng tay) | ❌ KHÔNG | Route không tồn tại — chỉ có `/api/admin/bans` + `/api/admin/test-account` |
 | 4 | Activity tracking `users/{uid}/activity/{dateKey}` qua Admin SDK | ❌ KHÔNG | Không tìm thấy đoạn ghi nào trong code |
 
-**Kết luận:** M2 chưa được động tới dù kiến trúc nền (Firestore collections, Custom Claims) đã được thiết kế sẵn trong plan. Đây là **rủi ro bảo mật đang tồn tại** — admin panel hiện vẫn dùng static key kiểu cũ trong lúc PayOS đã sống thật (tiền thật đã có thể chảy qua hệ thống).
+**Kết luận (cập nhật 2026-07-07):** **Phần gác bảo mật của M2 XONG** — rủi ro static key đã đóng. Còn lại của M2 là 2 tính năng: `/api/admin/metrics` (đo doanh thu) và activity tracking (input cho M4). Việc PO cần làm: chạy `node scripts/grant-admin.mjs doduongquang8686@gmail.com` 1 lần + đăng nhập lại + xóa biến `MANICASH_ADMIN_KEY` trên Vercel.
 
 ---
 
