@@ -93,8 +93,9 @@
   background: none;
   border: none;
   font-family: var(--font-display);
-  font-size: var(--text-4xl);
+  font-size: 44px;
   font-weight: 800;
+  letter-spacing: -0.02em;
   color: var(--c-text-primary);
   text-align: center;
   width: 200px;

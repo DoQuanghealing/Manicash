@@ -10,7 +10,8 @@ import { useGoalsStore } from '@/stores/useGoalsStore';
 import { useFinanceStore } from '@/stores/useFinanceStore';
 import { useBudgetStore } from '@/stores/useBudgetStore';
 import { useBadgeStore } from '@/stores/useBadgeStore';
-import { getRankProgress } from '@/data/rankDefinitions';
+import { useSettingsStore } from '@/stores/useSettingsStore';
+import { getRankProgress, RANKS } from '@/data/rankDefinitions';
 import BadgeImage from '@/components/ui/BadgeImage';
 import HexagonLevelBadge from '@/components/ui/HexagonLevelBadge';
 import ProfileEditModal from '@/components/ui/ProfileEditModal';
@@ -54,6 +55,8 @@ export default function ProfileContent() {
   const { user, firebaseUser } = useAuthStore();
   const proStatus = useProStatus();
   const { handleSignOut } = useSignOut();
+  const theme = useSettingsStore((s) => s.theme);
+  const toggleTheme = useSettingsStore((s) => s.toggleTheme);
   const [editOpen, setEditOpen] = useState(false);
   const [wipeOpen, setWipeOpen] = useState(false);
   const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
@@ -161,6 +164,24 @@ export default function ProfileContent() {
             </div>
           </div>
 
+          {/* Rank roadmap — dải 7 hexagon (đã qua mờ, hiện tại sáng) */}
+          <div className="profile-rank-roadmap">
+            {RANKS.map((r) => {
+              const isCurrent = r.id === rankData.current.id;
+              const isPast = xp >= r.xpRequired && !isCurrent;
+              return (
+                <span
+                  key={r.id}
+                  className={`profile-roadmap-hex ${isCurrent ? 'is-current' : isPast ? 'is-past' : 'is-future'}`}
+                  style={isCurrent ? { background: `linear-gradient(150deg, ${r.gradientFrom}, ${r.gradientTo})` } : undefined}
+                  title={r.name}
+                >
+                  {r.icon}
+                </span>
+              );
+            })}
+          </div>
+
           {/* Personal info inline dưới XP — chỉ hiện khi có data */}
           {(email || birthDateDisplay || birthTime || menh) && (
             <div className="profile-hero-meta">
@@ -211,6 +232,34 @@ export default function ProfileContent() {
           <Pencil size={14} />
           <span>Sửa hồ sơ</span>
         </button>
+      </section>
+
+      {/* ═══ Cá nhân hoá ═══ */}
+      <section className="profile-personalize">
+        <h2 className="profile-section-title">Cá nhân hoá</h2>
+        <button type="button" className="profile-toggle-row" onClick={() => setEditOpen(true)}>
+          <div className="profile-toggle-info">
+            <strong>Vibe &amp; tuổi</strong>
+            <span>Điều chỉnh lời chào cá nhân hoá</span>
+          </div>
+          <ChevronRight size={16} className="profile-pro-chevron" />
+        </button>
+        <div className="profile-toggle-row">
+          <div className="profile-toggle-info">
+            <strong>Giao diện sáng</strong>
+            <span>Đổi sang nền sáng (mặc định tối)</span>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={theme === 'light'}
+            aria-label="Bật giao diện sáng"
+            className={`profile-switch ${theme === 'light' ? 'is-on' : ''}`}
+            onClick={toggleTheme}
+          >
+            <span className="profile-switch-knob" />
+          </button>
+        </div>
       </section>
 
       {/* ═══ Pro membership entry ═══ */}

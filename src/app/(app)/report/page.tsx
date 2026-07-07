@@ -1,12 +1,13 @@
 import type { Metadata } from 'next';
-import { Lora, Be_Vietnam_Pro } from 'next/font/google';
+import { Playfair_Display, Be_Vietnam_Pro } from 'next/font/google';
 import EmeraldCfoReport from './_components/EmeraldCfoReport';
 
-/* Emerald Editorial: serif Lora cho tiêu đề/số, Be Vietnam Pro cho thân (diacritic VN mạnh). */
-const lora = Lora({
-  subsets: ['latin', 'vietnamese'],
+/* Champagne Editorial: serif Playfair Display (tiêu đề kể chuyện luxury) + Be Vietnam Pro (thân, diacritic VN mạnh). */
+const playfair = Playfair_Display({
+  subsets: ['latin'],
   weight: ['500', '600', '700'],
-  variable: '--font-lora',
+  style: ['normal', 'italic'],
+  variable: '--font-playfair',
   display: 'swap',
 });
 const beVietnam = Be_Vietnam_Pro({
@@ -22,7 +23,7 @@ export const metadata: Metadata = {
 
 export default function ReportPage() {
   return (
-    <div className={`${lora.variable} ${beVietnam.variable}`}>
+    <div className={`${playfair.variable} ${beVietnam.variable}`}>
       <EmeraldCfoReport />
     </div>
   );

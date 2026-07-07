@@ -159,6 +159,82 @@
   gap: 0.5rem;
 }
 
+/* ═══ Rank roadmap (7 hexagon) ═══ */
+.profile-rank-roadmap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  margin-top: 12px;
+}
+
+.profile-roadmap-hex {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.profile-roadmap-hex.is-past { opacity: 0.55; background: rgba(255, 255, 255, 0.14); }
+.profile-roadmap-hex.is-future { opacity: 0.3; }
+.profile-roadmap-hex.is-current {
+  width: 32px;
+  height: 32px;
+  font-size: 15px;
+  box-shadow: 0 0 14px rgba(251, 191, 36, 0.45);
+}
+
+/* ═══ Cá nhân hoá — toggle rows + switch ═══ */
+.profile-personalize {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.profile-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  width: 100%;
+  padding: 14px;
+  border-radius: var(--radius-md);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  text-align: left;
+}
+
+.profile-toggle-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.profile-toggle-info strong { font-size: var(--text-sm); color: var(--c-text-primary); font-weight: 600; }
+.profile-toggle-info span { font-size: var(--text-xs); color: var(--c-text-secondary); }
+
+.profile-switch {
+  flex-shrink: 0;
+  width: 44px;
+  height: 26px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.1);
+  padding: 3px;
+  transition: background var(--duration-fast) ease;
+}
+
+.profile-switch.is-on { background: var(--gradient-primary); }
+
+.profile-switch-knob {
+  display: block;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform var(--duration-fast) var(--ease-out-expo);
+}
+
+.profile-switch.is-on .profile-switch-knob { transform: translateX(18px); }
+
 .badges-category {
   margin-bottom: 1.5rem;
 }
