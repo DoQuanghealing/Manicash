@@ -696,3 +696,53 @@
   background: var(--glass-bg-hover);
   color: var(--c-text-primary);
 }
+
+/* ═══ Cổng quản trị (chỉ admin thấy) ═══ */
+.profile-admin-entry {
+  margin-top: var(--space-lg);
+}
+.profile-admin-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  border: 1px solid color-mix(in srgb, #0e8f88 40%, var(--glass-border));
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, #0e8f88 8%, var(--glass-bg));
+  color: var(--c-text-primary);
+  transition: background var(--duration-fast), border-color var(--duration-fast);
+}
+.profile-admin-btn:hover {
+  background: color-mix(in srgb, #0e8f88 14%, var(--glass-bg));
+  border-color: color-mix(in srgb, #0e8f88 60%, var(--glass-border));
+}
+.profile-admin-btn:focus-visible {
+  outline: 2px solid #0e8f88;
+  outline-offset: 2px;
+}
+.profile-admin-btn__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: color-mix(in srgb, #0e8f88 18%, transparent);
+  color: #0e8f88;
+  flex-shrink: 0;
+}
+.profile-admin-btn__text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+.profile-admin-btn__title {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--c-text-primary);
+}
+.profile-admin-btn__sub {
+  font-size: var(--text-xs);
+  color: var(--c-text-secondary);
+}

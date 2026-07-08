@@ -17,6 +17,11 @@ import { getAuth } from 'firebase-admin/auth';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+// Đồng bộ với src/lib/adminEmails.ts — chỉ cấp quyền cho email trong allowlist.
+// Server (requireAdmin) cũng chặn theo allowlist này nên cấp cho email ngoài list
+// là vô nghĩa; guard ở đây để tránh cấp nhầm.
+const ADMIN_EMAILS = ['doduongquang8686@gmail.com'];
+
 // ── Đọc .env.local (parser tối giản, không cần gói dotenv) ──────────────────
 function loadEnv() {
   const path = resolve(__dirname, '..', '.env.local');
@@ -45,6 +50,12 @@ async function main() {
   const revoke = process.argv.includes('--revoke');
   if (!email || email.startsWith('--')) {
     console.error('Cách dùng: node scripts/grant-admin.mjs <email> [--revoke]');
+    process.exit(1);
+  }
+  if (!revoke && !ADMIN_EMAILS.includes(email.trim().toLowerCase())) {
+    console.error(`✖ ${email} KHÔNG nằm trong allowlist admin (src/lib/adminEmails.ts).`);
+    console.error(`  Cấp quyền cho email ngoài allowlist là vô nghĩa — server vẫn chặn.`);
+    console.error(`  Muốn thêm admin mới: thêm email vào src/lib/adminEmails.ts + ADMIN_EMAILS trong script này trước.`);
     process.exit(1);
   }
 

@@ -22,6 +22,7 @@ import { getEmojiFromAvatar, isEmojiAvatar } from '@/data/avatarIcons';
 import { getBanMenh } from '@/lib/banMenh';
 import { Flame, Pencil, Shield, Target, CheckSquare, Trash2, Mail, Calendar, Clock, Sparkles, LogOut, UserX, Crown, ChevronRight } from 'lucide-react';
 import { useSignOut } from '@/hooks/useSignOut';
+import { isAdminEmail } from '@/lib/adminEmails';
 import './ProfileContent.css';
 
 function formatBirthDate(iso?: string): string {
@@ -373,6 +374,20 @@ export default function ProfileContent() {
           <ChevronRight size={16} />
         </Link>
       </section>
+
+      {/* ═══ Cổng quản trị — CHỈ hiện với email admin (allowlist). Bảo mật thật ở server ═══ */}
+      {isAdminEmail(user?.email) && (
+        <section className="profile-admin-entry">
+          <Link href="/admin" className="profile-admin-btn" aria-label="Vào trang quản trị">
+            <span className="profile-admin-btn__icon"><Shield size={18} /></span>
+            <span className="profile-admin-btn__text">
+              <span className="profile-admin-btn__title">Trang quản trị</span>
+              <span className="profile-admin-btn__sub">Chỉ dành cho quản trị viên</span>
+            </span>
+            <ChevronRight size={18} />
+          </Link>
+        </section>
+      )}
 
       {/* ═══ Danger zone ═══ */}
       <section className="profile-danger">

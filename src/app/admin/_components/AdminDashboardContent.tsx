@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import { apiUrl } from '@/lib/apiBase';
 import { getFirebaseAuth } from '@/lib/firebase/config';
+import { isAdminEmail } from '@/lib/adminEmails';
 import './admin.css';
 
 interface BanRecord {
@@ -74,7 +75,8 @@ export default function AdminDashboardContent() {
       }
       try {
         const result = await user.getIdTokenResult(true); // force refresh để đọc claim mới nhất
-        setAuthState(result.claims.admin === true ? 'admin' : 'forbidden');
+        const ok = result.claims.admin === true && isAdminEmail(user.email);
+        setAuthState(ok ? 'admin' : 'forbidden');
       } catch {
         setAuthState('forbidden');
       }
