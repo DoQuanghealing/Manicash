@@ -57,6 +57,9 @@ if (!apiBase) {
 const PARKED = [
   { live: join(root, 'src', 'app', 'api'), park: join(root, 'src', 'app', '_api.parked') },
   { live: join(root, 'src', 'proxy.ts'), park: join(root, 'src', '_proxy.parked.ts') },
+  // Route group (admin) chỉ dùng trên web (Vercel) — gỡ khỏi static export mobile
+  // để không đóng gói dashboard quản trị vào bundle Android.
+  { live: join(root, 'src', 'app', '(admin)'), park: join(root, 'src', 'app', '_admin.parked') },
 ];
 
 /** Đưa mọi thứ về đúng chỗ (park → live). No-op nếu không có gì parked. */

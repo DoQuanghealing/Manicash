@@ -1,0 +1,215 @@
+/* ═══ AdminShell layout ═══ */
+.adm-root {
+  display: flex;
+  min-height: 100dvh;
+  background: var(--c-bg-primary);
+  color: var(--c-text-primary);
+  font-family: var(--font-sans, system-ui);
+}
+
+/* ── Sidebar ── */
+.adm-sidebar {
+  width: 248px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px 14px;
+  background: var(--c-bg-secondary);
+  border-right: 1px solid var(--glass-border);
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+}
+.adm-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px 14px;
+  border-bottom: 1px solid var(--glass-border);
+  margin-bottom: 6px;
+}
+.adm-brand-mark {
+  font-size: 22px;
+  color: var(--c-text-accent);
+}
+.adm-brand-name {
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+}
+.adm-brand-sub {
+  font-size: 11px;
+  color: var(--c-text-muted);
+}
+.adm-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+.adm-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 11px;
+  border-radius: var(--radius-md, 10px);
+  color: var(--c-text-secondary);
+  text-decoration: none;
+  font-size: 13.5px;
+  font-weight: 500;
+  transition: background 0.15s, color 0.15s;
+}
+.adm-nav-item:hover {
+  background: var(--glass-bg-hover);
+  color: var(--c-text-primary);
+}
+.adm-nav-active {
+  background: var(--glass-bg-active);
+  color: var(--c-text-primary);
+  font-weight: 600;
+}
+.adm-nav-label {
+  flex: 1;
+}
+.adm-nav-soon {
+  opacity: 0.42;
+  cursor: default;
+}
+.adm-nav-soon:hover {
+  background: transparent;
+  color: var(--c-text-secondary);
+}
+.adm-nav-badge {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 2px 6px;
+  border-radius: var(--radius-full, 999px);
+  border: 1px solid var(--glass-border);
+  color: var(--c-text-faint);
+}
+.adm-back {
+  margin-top: 8px;
+  padding: 9px 11px;
+  font-size: 12.5px;
+  color: var(--c-text-muted);
+  text-decoration: none;
+  border-radius: var(--radius-md, 10px);
+}
+.adm-back:hover {
+  color: var(--c-text-primary);
+  background: var(--glass-bg-hover);
+}
+
+/* ── Main ── */
+.adm-main {
+  flex: 1;
+  min-width: 0;
+  padding: 28px 32px 64px;
+}
+
+/* ── Gate screens ── */
+.adm-gate {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  background: var(--c-bg-primary);
+  padding: 24px;
+}
+.adm-gate-card {
+  text-align: center;
+  max-width: 380px;
+  padding: 32px 28px;
+  border-radius: var(--radius-xl, 18px);
+  background: var(--c-bg-secondary);
+  border: 1px solid var(--glass-border);
+}
+.adm-gate-icon {
+  font-size: 42px;
+  margin-bottom: 10px;
+}
+.adm-gate-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--c-text-primary);
+}
+.adm-gate-sub {
+  font-size: 13.5px;
+  color: var(--c-text-muted);
+  line-height: 1.55;
+}
+
+/* ── Shared buttons (dùng chung trong các trang admin) ── */
+.adm-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: var(--radius-md, 10px);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  color: var(--c-text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: filter 0.15s, background 0.15s;
+}
+.adm-btn:hover {
+  background: var(--glass-bg-hover);
+}
+.adm-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.adm-btn-primary {
+  background: var(--gradient-primary, var(--c-text-accent));
+  border-color: transparent;
+  color: #fff;
+}
+.adm-btn-primary:hover {
+  filter: brightness(1.06);
+  background: var(--gradient-primary, var(--c-text-accent));
+}
+.adm-btn-sm {
+  padding: 5px 10px;
+  font-size: 12px;
+}
+
+/* ── Responsive: thu sidebar thành thanh ngang trên mobile ── */
+@media (max-width: 760px) {
+  .adm-root {
+    flex-direction: column;
+  }
+  .adm-sidebar {
+    width: 100%;
+    height: auto;
+    position: static;
+    flex-direction: row;
+    overflow-x: auto;
+    align-items: center;
+    gap: 4px;
+    padding: 10px;
+  }
+  .adm-brand,
+  .adm-back {
+    display: none;
+  }
+  .adm-nav {
+    flex-direction: row;
+  }
+  .adm-nav-item {
+    white-space: nowrap;
+  }
+  .adm-nav-label {
+    display: none;
+  }
+  .adm-nav-soon {
+    display: none;
+  }
+  .adm-main {
+    padding: 18px 16px 48px;
+  }
+}

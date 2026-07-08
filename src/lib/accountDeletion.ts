@@ -137,6 +137,24 @@ async function deleteIfExists(path: string): Promise<void> {
   }
 }
 
+/** Xóa toàn bộ metric_snapshots của user (dữ liệu R&D nhạy cảm — quyền xóa). */
+async function deleteMetricSnapshots(uid: string): Promise<void> {
+  const snap = await getAdminDb().collection('metric_snapshots').where('uid', '==', uid).get();
+  if (snap.empty) return;
+  const db = getAdminDb();
+  let batch = db.batch();
+  let n = 0;
+  for (const doc of snap.docs) {
+    batch.delete(doc.ref);
+    if (++n >= 400) {
+      await batch.commit();
+      batch = db.batch();
+      n = 0;
+    }
+  }
+  if (n > 0) await batch.commit();
+}
+
 export async function permanentlyDeleteAccount(uid: string): Promise<void> {
   const auth = getAdminAuth();
   const nowIso = new Date().toISOString();
@@ -156,6 +174,7 @@ export async function permanentlyDeleteAccount(uid: string): Promise<void> {
   await Promise.all([
     deleteIfExists(`users/${uid}`),
     deleteIfExists(`webhook_tokens/${uid}`),
+    deleteMetricSnapshots(uid),
   ]);
 
   await auth.deleteUser(uid).catch((error: unknown) => {

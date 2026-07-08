@@ -18,6 +18,7 @@ import ProfileEditModal from '@/components/ui/ProfileEditModal';
 import BatTuCard from '@/components/ui/BatTuCard';
 import WipeDataConfirm from '@/components/ui/WipeDataConfirm';
 import AccountDeletionDialog from '@/components/ui/AccountDeletionDialog';
+import AnalyticsConsentToggle from './AnalyticsConsentToggle';
 import { getEmojiFromAvatar, isEmojiAvatar } from '@/data/avatarIcons';
 import { getBanMenh } from '@/lib/banMenh';
 import { Flame, Pencil, Shield, Target, CheckSquare, Trash2, Mail, Calendar, Clock, Sparkles, LogOut, UserX, Crown, ChevronRight } from 'lucide-react';
@@ -261,6 +262,7 @@ export default function ProfileContent() {
             <span className="profile-switch-knob" />
           </button>
         </div>
+        <AnalyticsConsentToggle />
       </section>
 
       {/* ═══ Pro membership entry ═══ */}

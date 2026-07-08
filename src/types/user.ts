@@ -66,6 +66,11 @@ export interface UserProfile extends AccountDeletionState {
   birthDate?: string;
   /** Giờ sinh HH:mm (optional, dùng cho Bát Tự / Tử Vi). */
   birthTime?: string;
+  /** Đồng ý đóng góp dữ liệu ẩn danh cho R&D (metric_snapshots). Mặc định KHÔNG.
+   *  Dữ liệu nhạy cảm (Nghị định 13/2023) — không snapshot khi field này !== true. */
+  analyticsConsent?: boolean;
+  /** ISO — thời điểm user bật/tắt analyticsConsent gần nhất. */
+  analyticsConsentAt?: string;
 }
 
 export interface AuthState {

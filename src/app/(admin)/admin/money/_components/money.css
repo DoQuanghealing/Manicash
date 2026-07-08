@@ -1,0 +1,356 @@
+/* ═══ Admin M1 — Money page ═══ */
+.money-page {
+  max-width: 1120px;
+}
+.money-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.money-title {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--c-text-primary);
+}
+.money-sub {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--c-text-muted);
+}
+.money-muted {
+  color: var(--c-text-muted);
+  font-size: 13px;
+}
+
+.money-notice,
+.money-error {
+  padding: 10px 14px;
+  border-radius: var(--radius-md, 10px);
+  font-size: 13px;
+  margin-bottom: 14px;
+}
+.money-notice {
+  background: color-mix(in srgb, var(--c-success) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c-success) 40%, transparent);
+  color: var(--c-text-primary);
+}
+.money-error {
+  background: color-mix(in srgb, var(--c-danger) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c-danger) 40%, transparent);
+  color: var(--c-text-primary);
+}
+
+.money-section {
+  margin-bottom: 28px;
+}
+.money-section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--c-text-primary);
+  margin-bottom: 12px;
+}
+.money-count {
+  color: var(--c-text-muted);
+  font-weight: 500;
+}
+.money-pill {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: var(--radius-full, 999px);
+}
+.money-pill-ok {
+  background: color-mix(in srgb, var(--c-success) 18%, transparent);
+  color: var(--c-success);
+}
+.money-pill-alert {
+  background: color-mix(in srgb, var(--c-danger) 18%, transparent);
+  color: var(--c-danger);
+}
+
+/* ── Doanh thu ── */
+.money-rev {
+  padding: 16px;
+  border-radius: var(--radius-lg, 14px);
+  background: var(--c-bg-secondary);
+  border: 1px solid var(--glass-border);
+}
+.money-rev-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px;
+  margin-bottom: 14px;
+}
+.money-rev-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.money-rev-num {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--c-text-primary);
+}
+.money-rev-num-sm {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--c-text-secondary);
+}
+.money-rev-lbl {
+  font-size: 11px;
+  color: var(--c-text-muted);
+}
+.money-chart-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 90px;
+}
+.money-bar-col {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+}
+.money-bar {
+  width: 100%;
+  min-height: 2px;
+  border-radius: 2px 2px 0 0;
+  background: var(--gradient-primary, var(--c-text-accent));
+  opacity: 0.85;
+  transition: opacity 0.15s;
+}
+.money-bar-col:hover .money-bar {
+  opacity: 1;
+}
+.money-chart-axis {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-size: 10px;
+  color: var(--c-text-faint);
+}
+
+/* ── Đối soát ── */
+.money-recon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 14px;
+}
+.money-recon-card {
+  padding: 16px;
+  border-radius: var(--radius-lg, 14px);
+  background: var(--c-bg-secondary);
+  border: 1px solid var(--glass-border);
+}
+.money-recon-danger {
+  border-color: color-mix(in srgb, var(--c-danger) 45%, var(--glass-border));
+}
+.money-recon-warn {
+  border-color: color-mix(in srgb, var(--c-warning) 45%, var(--glass-border));
+}
+.money-recon-card-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+.money-recon-num {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--c-text-primary);
+}
+.money-recon-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--c-text-secondary);
+}
+.money-recon-desc {
+  font-size: 12px;
+  color: var(--c-text-muted);
+  margin-bottom: 10px;
+  line-height: 1.45;
+}
+.money-recon-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 0;
+  border-top: 1px solid var(--glass-border);
+}
+.money-recon-row-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.money-recon-email {
+  font-size: 12.5px;
+  color: var(--c-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.money-recon-meta {
+  font-size: 11px;
+  color: var(--c-text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ── Bảng đơn ── */
+.money-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.money-input {
+  padding: 8px 11px;
+  border-radius: var(--radius-md, 10px);
+  border: 1px solid var(--glass-border);
+  background: var(--c-bg-tertiary);
+  color: var(--c-text-primary);
+  font-size: 13px;
+  outline: none;
+}
+.money-input:focus {
+  border-color: var(--glass-border-hover);
+}
+.money-input-wide {
+  flex: 1;
+  min-width: 220px;
+}
+.money-table-wrap {
+  overflow-x: auto;
+  border-radius: var(--radius-lg, 14px);
+  border: 1px solid var(--glass-border);
+}
+.money-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  min-width: 720px;
+}
+.money-table th {
+  text-align: left;
+  padding: 10px 12px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--c-text-faint);
+  background: var(--c-bg-secondary);
+  border-bottom: 1px solid var(--glass-border);
+  white-space: nowrap;
+}
+.money-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--glass-border);
+  color: var(--c-text-primary);
+  vertical-align: middle;
+}
+.money-table tbody tr:last-child td {
+  border-bottom: none;
+}
+.money-email {
+  display: block;
+  font-size: 12.5px;
+}
+.money-uid {
+  display: block;
+  font-size: 10.5px;
+  color: var(--c-text-faint);
+  font-family: ui-monospace, monospace;
+}
+.money-amount {
+  font-weight: 600;
+  white-space: nowrap;
+}
+.money-time {
+  color: var(--c-text-muted);
+  white-space: nowrap;
+  font-size: 12px;
+}
+.money-center {
+  text-align: center;
+}
+.money-mono {
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  color: var(--c-text-secondary);
+}
+.money-empty {
+  padding: 28px;
+  text-align: center;
+  color: var(--c-text-muted);
+  font-size: 13px;
+  border: 1px dashed var(--glass-border);
+  border-radius: var(--radius-lg, 14px);
+}
+
+/* ── Badge trạng thái ── */
+.money-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 9px;
+  border-radius: var(--radius-full, 999px);
+}
+.money-badge-ok {
+  background: color-mix(in srgb, var(--c-success) 16%, transparent);
+  color: var(--c-success);
+}
+.money-badge-warn {
+  background: color-mix(in srgb, var(--c-warning) 16%, transparent);
+  color: var(--c-warning);
+}
+.money-badge-danger {
+  background: color-mix(in srgb, var(--c-danger) 16%, transparent);
+  color: var(--c-danger);
+}
+.money-badge-muted {
+  background: var(--glass-bg);
+  color: var(--c-text-muted);
+}
+
+/* ── Cấp thủ công ── */
+.money-grant-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.money-days {
+  display: flex;
+  gap: 4px;
+}
+.money-day-btn {
+  padding: 8px 12px;
+  border-radius: var(--radius-md, 10px);
+  border: 1px solid var(--glass-border);
+  background: var(--c-bg-tertiary);
+  color: var(--c-text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.money-day-active {
+  background: var(--glass-bg-active);
+  color: var(--c-text-primary);
+  border-color: var(--glass-border-hover);
+}
+
+@media (max-width: 600px) {
+  .money-head {
+    flex-direction: column;
+  }
+}
