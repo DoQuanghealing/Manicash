@@ -1,8 +1,26 @@
-# ManiCash — Handoff phiên (2026-07-08)
+# ManiCash — Handoff phiên (2026-07-08b) — Phú Vương 🐉
 
-> **⚠️ 4 commit LOCAL, CHƯA PUSH** (PO chưa cho deploy — chờ PO báo "push"):
-> `04c9766` S1-S4 admin · `890279f` telemetry+ecosystem · `7548e96` roadmap doc · `95a4b9b` butler onboarding.
-> Verify mọi bước: `tsc` sạch · `npm run build` ✓ · lint sạch phần mới. **Chưa smoke bằng tài khoản thật** (AuthGuard chặn preview local — PO xem trên web sau khi deploy).
+> **✅ ĐÃ PUSH `origin/main` = `d6ce825`** (Vercel auto-deploy). Bao gồm cả 5 commit cũ (admin S0-S4 + telemetry + butler onboarding) + 2 commit mới phiên này. Tree sạch.
+> Verify: `tsc` sạch · `npm run build` ✓ · lint chỉ 1 warning (setState-in-effect, giống `ButlerOnboarding`). **Chưa smoke tài khoản thật** — PO đang lên web check.
+
+## Đã làm phiên này (Phú Vương = tier quản gia thứ 3)
+**Thiết kế + 3 doc:** `docs/BUTLER_PHU_VUONG_SCRIPT.md` (kịch bản+copy KHOÁ) · `docs/ETHICS_CHARTER.md` (3 tầng consent, NĐ 13/2023) · `docs/PHU_VUONG_BUILD_ROADMAP.md` (P1/P2/P3). Artifact HTML mô phỏng mở rộng AI: https://claude.ai/code/artifact/5a029bfc-6600-41dc-911e-f020810c6cf2 (bản repo: `docs/AI_EXPANSION_RESEARCH.html`).
+
+**Code P1 (commit `d6ce825`):** `ButlerTier += 'sovereign'` · `useSovereignInviteStore` · consent route thêm scope `sovereign` (ghi `sovereignConsent`) · `lib/butler/sovereignArchetype.ts` (kỹ năng→nhóm nghề) · `SovereignInvite.tsx`+css (modal 3 bước, tái dùng `CapacitySurveyCard`) · `ButlerSettingsCard` 3 trạng thái · mount `(app)/layout`. **Tự mở:** tier=Thông thái & streak≥14 & chưa sovereign & cooldown 14 ngày. Đã xóa file mồ côi `AnalyticsConsentToggle.tsx`.
+
+**Quyết định PO chốt:** Phú Vương **mở cho cả Free** (FOMO) → sau tách năng lực cao cấp lên **Pro Plus**. Teaser Bước 2 **KHÔNG số thu nhập** (thu nhập cao đọc "15-25tr" là toạch) — chỉ nhóm nghề + điểm mạnh.
+
+## Việc còn treo — Phú Vương
+1. **PO test trên web** (deploy xong): tài khoản streak≥14 + tier Thông thái → lời mời tự hiện. Để demo dễ, có thể tạm hạ `STREAK_GATE` trong `SovereignInvite.tsx`.
+2. **P2 (chờ PO chốt money sync):** bật money sync per-user khi sovereign (gate = env flag AND sovereignConsent) + hàng đợi card đề xuất chủ động (`earningPlanner` sẵn) + hydrate tier từ server (hiện per-device).
+3. **P3:** Oracle 4 phần (GPT-4o-mini, credit) · CV PDF · Coach handoff · tách gói Pro Plus.
+4. Cho nhóm người test xin feedback (PO nói).
+
+---
+
+# ManiCash — Handoff phiên (2026-07-08a) — Admin S0-S4
+
+> **(Đã push — xem block trên.)** Verify: `tsc` sạch · `npm run build` ✓ · lint sạch phần mới.
 
 ## Đã làm phiên 2026-07-08 (theo `docs/ADMIN_BUILD_ROADMAP.md`)
 
