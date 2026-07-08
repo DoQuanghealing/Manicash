@@ -4,8 +4,11 @@ import type { VibeMode } from '@/lib/ageGroup';
 
 export type ThemeMode = 'dark' | 'light';
 
-/** Cấp độ quản gia: 'basic' = dùng cho vui (không ghi dữ liệu) · 'wise' = hỗ trợ sâu + cá nhân hoá (bật analyticsConsent). */
-export type ButlerTier = 'basic' | 'wise';
+/** Cấp độ quản gia:
+ * 'basic' = dùng cho vui (không ghi dữ liệu) ·
+ * 'wise' = hỗ trợ sâu + cá nhân hoá (bật analyticsConsent) ·
+ * 'sovereign' = Phú Vương: đồng hành sâu + chủ động đề xuất (bật sovereignConsent). */
+export type ButlerTier = 'basic' | 'wise' | 'sovereign';
 
 interface SettingsState {
   theme: ThemeMode;

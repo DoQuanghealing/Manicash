@@ -43,6 +43,13 @@
 .butler-tier-basic {
   color: var(--c-text-muted);
 }
+.butler-tier-sovereign {
+  font-weight: 800;
+  background: linear-gradient(135deg, #f0d27a, #c79a3e);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
 .butler-card-btn {
   width: 100%;
   display: inline-flex;

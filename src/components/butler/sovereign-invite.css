@@ -1,0 +1,59 @@
+/* ═══ Sovereign Invite (Phú Vương) — bổ sung trên butler-onboarding.css ═══ */
+.sv-card { max-width: 440px; }
+
+.sv-emblem { font-size: 42px; }
+
+.sv-group {
+  background: linear-gradient(135deg, #f0d27a, #c79a3e);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+/* "Tìm hiểu thêm" — nút xổ */
+.sv-more {
+  align-self: center;
+  background: transparent;
+  border: none;
+  color: #d9b25a;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 4px 8px;
+  letter-spacing: 0.01em;
+}
+.sv-more:hover { filter: brightness(1.12); }
+
+/* 6 ý cam kết */
+.sv-points {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin: 2px 0 0;
+  padding: 14px 16px 14px 30px;
+  border-radius: 14px;
+  background: var(--c-bg-tertiary, #0f0d09);
+  border: 1px solid var(--glass-border, #2a2a2a);
+}
+.sv-points li {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--c-text-secondary, #d0c7b3);
+}
+.sv-points li::marker { color: #d9b25a; font-weight: 700; }
+.sv-points strong { color: var(--c-text-primary, #f2ead6); font-weight: 700; }
+
+/* Nút vàng nhấn mạnh cho "Đồng ý" */
+.sv-btn-gold {
+  background: linear-gradient(135deg, #f0d27a, #d9b25a 55%, #c79a3e);
+  box-shadow: 0 10px 28px rgba(199, 154, 62, 0.34);
+}
+
+:root[data-theme='light'] .sv-points {
+  background: #fbf6ea;
+  border-color: color-mix(in srgb, #c79a3e 24%, #e5ddc9);
+}
+:root[data-theme='light'] .sv-points li { color: #6b5b38; }
+:root[data-theme='light'] .sv-points strong { color: #3a2f18; }

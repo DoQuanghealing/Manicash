@@ -18,6 +18,7 @@ import PricingModal from '@/components/pricing/PricingModal';
 import { AuthGuard } from '@/components/providers/AuthGuard';
 import MetricSnapshotCollector from '@/components/providers/MetricSnapshotCollector';
 import ButlerOnboarding from '@/components/butler/ButlerOnboarding';
+import SovereignInvite from '@/components/butler/SovereignInvite';
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
@@ -77,6 +78,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
           {/* Làm quen quản gia — tự mở lần đầu; mở lại từ Hồ sơ để đổi cấp độ */}
           <ButlerOnboarding />
+
+          {/* Mời nâng cấp Phú Vương — tự mở khi tier Thông thái + streak ≥ 14 */}
+          <SovereignInvite />
         </div>
       </div>
     </AccountDeletionGate>
