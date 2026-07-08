@@ -16,6 +16,7 @@ import AccountDeletionGate from '@/components/ui/AccountDeletionGate';
 import ProActivatedCelebration from '@/components/ui/ProActivatedCelebration';
 import PricingModal from '@/components/pricing/PricingModal';
 import { AuthGuard } from '@/components/providers/AuthGuard';
+import MetricSnapshotCollector from '@/components/providers/MetricSnapshotCollector';
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
@@ -69,6 +70,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
           {/* Popup ăn mừng khi vừa mua Pro thành công (flag từ /payment/success) */}
           <ProActivatedCelebration />
+
+          {/* R&D: gửi bản ghi chỉ số/ngày (server tự bỏ nếu chưa consent) */}
+          <MetricSnapshotCollector />
         </div>
       </div>
     </AccountDeletionGate>
