@@ -1,0 +1,466 @@
+<style>
+  :root {
+    --bg: #F3EFE4; --surface: #FBFAF4; --surface-2: #EFE9DA;
+    --ink: #221E16; --muted: #6C6553; --line: rgba(34,30,22,0.12);
+    --gold: #9C7523; --gold-soft: rgba(156,117,35,0.12); --gold-line: rgba(156,117,35,0.32);
+    --jade: #167B62; --jade-soft: rgba(22,123,98,0.12);
+    --glow: rgba(156,117,35,0.10);
+    --serif: "Palatino Linotype","Iowan Old Style",Georgia,"Times New Roman",serif;
+    --sans: system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --mono: ui-monospace,"Cascadia Code","SF Mono",Consolas,monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0B0E12; --surface: #12171E; --surface-2: #171D26;
+      --ink: #ECE6D6; --muted: #97907F; --line: rgba(232,212,140,0.14);
+      --gold: #DCB662; --gold-soft: rgba(220,182,98,0.10); --gold-line: rgba(220,182,98,0.30);
+      --jade: #46C2A0; --jade-soft: rgba(70,194,160,0.12);
+      --glow: rgba(220,182,98,0.14);
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #F3EFE4; --surface: #FBFAF4; --surface-2: #EFE9DA;
+    --ink: #221E16; --muted: #6C6553; --line: rgba(34,30,22,0.12);
+    --gold: #9C7523; --gold-soft: rgba(156,117,35,0.12); --gold-line: rgba(156,117,35,0.32);
+    --jade: #167B62; --jade-soft: rgba(22,123,98,0.12); --glow: rgba(156,117,35,0.10);
+  }
+  :root[data-theme="dark"] {
+    --bg: #0B0E12; --surface: #12171E; --surface-2: #171D26;
+    --ink: #ECE6D6; --muted: #97907F; --line: rgba(232,212,140,0.14);
+    --gold: #DCB662; --gold-soft: rgba(220,182,98,0.10); --gold-line: rgba(220,182,98,0.30);
+    --jade: #46C2A0; --jade-soft: rgba(70,194,160,0.12); --glow: rgba(220,182,98,0.14);
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  .page {
+    background:
+      radial-gradient(120% 60% at 85% -5%, var(--glow), transparent 60%),
+      var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+  .eyebrow {
+    font-family: var(--mono); font-size: 12px; letter-spacing: .22em;
+    text-transform: uppercase; color: var(--gold); font-weight: 600;
+  }
+  h1,h2,h3 { font-family: var(--serif); font-weight: 600; text-wrap: balance; margin: 0; }
+  a { color: inherit; }
+
+  /* ── theme toggle ── */
+  .toggle {
+    position: fixed; top: 16px; right: 16px; z-index: 50;
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--surface); border: 1px solid var(--line); color: var(--muted);
+    border-radius: 999px; padding: 7px 12px; font: 500 12px var(--mono); cursor: pointer;
+    letter-spacing: .04em;
+  }
+  .toggle:hover { color: var(--ink); border-color: var(--gold-line); }
+  .toggle:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+  /* ── hero ── */
+  .hero { padding: 92px 0 46px; position: relative; }
+  .hero .gem {
+    width: 64px; height: 64px; margin-bottom: 26px;
+    display: grid; place-items: center;
+    border: 1px solid var(--gold-line); border-radius: 16px;
+    background: linear-gradient(150deg, var(--gold-soft), transparent);
+    font-size: 30px; box-shadow: 0 0 40px -12px var(--glow);
+  }
+  .hero h1 { font-size: clamp(34px, 6vw, 62px); line-height: 1.04; letter-spacing: -.01em; }
+  .hero h1 em { font-style: italic; color: var(--gold); }
+  .hero .lede {
+    margin-top: 22px; max-width: 60ch; font-size: clamp(16px, 2.2vw, 19px); color: var(--muted);
+  }
+  .hero .lede strong { color: var(--ink); font-weight: 600; }
+  .meta-row {
+    margin-top: 30px; display: flex; flex-wrap: wrap; gap: 10px 22px;
+    font: 500 13px/1.4 var(--mono); color: var(--muted); letter-spacing: .03em;
+  }
+  .meta-row span { display: inline-flex; align-items: center; gap: 7px; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); }
+  .dot.jade { background: var(--jade); }
+
+  section { padding: 54px 0; border-top: 1px solid var(--line); }
+  .sec-head { margin-bottom: 34px; }
+  .sec-head h2 { font-size: clamp(24px, 4vw, 36px); margin-top: 10px; line-height: 1.1; }
+  .sec-head p { color: var(--muted); max-width: 62ch; margin: 12px 0 0; }
+
+  /* ── flywheel ── */
+  .fly-grid { display: grid; grid-template-columns: minmax(0,1fr) 300px; gap: 40px; align-items: center; }
+  @media (max-width: 760px) { .fly-grid { grid-template-columns: 1fr; } }
+  .fly-svg { width: 100%; height: auto; }
+  .spin { transform-origin: 150px 150px; animation: spin 44s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .fly-node text { font: 600 12px var(--mono); fill: var(--ink); }
+  .fly-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+  .fly-list li { display: grid; grid-template-columns: 26px 1fr; gap: 12px; align-items: start; }
+  .fly-list .n { font: 600 13px var(--mono); color: var(--gold); padding-top: 2px; }
+  .fly-list b { font-weight: 600; }
+  .fly-list p { margin: 2px 0 0; color: var(--muted); font-size: 14px; }
+
+  /* ── simulation ── */
+  .sim {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 20px;
+    padding: 30px; box-shadow: 0 24px 60px -40px rgba(0,0,0,.5);
+  }
+  .sim-top { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; flex-wrap: wrap; }
+  .sim-tier {
+    font-family: var(--serif); font-size: 27px; font-weight: 600; transition: color .3s;
+  }
+  .sim-tier small { display: block; font: 500 12px var(--mono); letter-spacing: .04em; color: var(--muted); }
+  .iq { text-align: right; }
+  .iq .v { font: 700 40px/1 var(--serif); color: var(--gold); font-variant-numeric: tabular-nums; }
+  .iq .l { font: 500 11px var(--mono); letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
+
+  .slider-wrap { margin: 26px 0 8px; }
+  .slider-lab { display: flex; justify-content: space-between; font: 500 12px var(--mono); color: var(--muted); margin-bottom: 10px; letter-spacing: .03em; }
+  input[type=range] {
+    -webkit-appearance: none; appearance: none; width: 100%; height: 6px; border-radius: 999px;
+    background: linear-gradient(90deg, var(--gold) var(--pct,20%), var(--surface-2) var(--pct,20%));
+    outline: none; cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%;
+    background: var(--gold); border: 3px solid var(--surface); box-shadow: 0 0 0 1px var(--gold-line), 0 4px 12px -2px var(--glow); cursor: grab;
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 20px; height: 20px; border-radius: 50%; background: var(--gold);
+    border: 3px solid var(--surface); box-shadow: 0 0 0 1px var(--gold-line); cursor: grab;
+  }
+  input[type=range]:focus-visible { outline: 2px solid var(--gold); outline-offset: 6px; border-radius: 4px; }
+
+  .bubble {
+    margin-top: 24px; background: var(--surface-2); border: 1px solid var(--line);
+    border-left: 3px solid var(--jade); border-radius: 12px; padding: 16px 18px;
+  }
+  .bubble .who { font: 600 11px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--jade); margin-bottom: 6px; }
+  .bubble .say { font-family: var(--serif); font-size: 18px; line-height: 1.5; transition: opacity .25s; }
+  .bubble .cost { margin-top: 12px; font: 500 12px var(--mono); color: var(--muted); display: flex; gap: 16px; flex-wrap: wrap; }
+  .bubble .cost b { color: var(--ink); font-weight: 600; }
+
+  .layers { margin-top: 26px; display: grid; gap: 8px; }
+  .layer {
+    display: grid; grid-template-columns: 20px 1fr auto; gap: 14px; align-items: center;
+    padding: 11px 14px; border: 1px solid var(--line); border-radius: 10px;
+    background: transparent; opacity: .4; transition: opacity .3s, border-color .3s, background .3s;
+  }
+  .layer.on { opacity: 1; border-color: var(--gold-line); background: var(--gold-soft); }
+  .layer .ic { width: 10px; height: 10px; border-radius: 3px; background: var(--muted); transition: background .3s; }
+  .layer.on .ic { background: var(--gold); box-shadow: 0 0 10px -1px var(--glow); }
+  .layer .nm { font-weight: 600; font-size: 14px; }
+  .layer .nm span { display: block; font: 500 12px/1.4 var(--sans); color: var(--muted); font-weight: 400; }
+  .layer .tag { font: 500 11px var(--mono); color: var(--muted); letter-spacing: .03em; white-space: nowrap; }
+  .layer.on .tag { color: var(--gold); }
+
+  /* ── stack / tiers / routing ── */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .grid3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 18px; }
+  @media (max-width: 760px) { .grid2, .grid3 { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 22px;
+  }
+  .card h3 { font-size: 19px; }
+  .card .cap { font: 500 11px var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--muted); margin-bottom: 9px; }
+  .card p { color: var(--muted); font-size: 14px; margin: 8px 0 0; }
+  .card ul { margin: 12px 0 0; padding-left: 18px; color: var(--muted); font-size: 14px; }
+  .card li { margin: 5px 0; }
+  .card li b { color: var(--ink); font-weight: 600; }
+  .tier-badge { font: 600 12px var(--mono); padding: 3px 10px; border-radius: 999px; border: 1px solid var(--gold-line); color: var(--gold); display: inline-block; }
+  .tier-card.now { border-color: var(--gold-line); box-shadow: 0 0 40px -26px var(--glow); }
+  .tier-card .price { font: 500 12px var(--mono); color: var(--jade); margin-top: 10px; }
+  .fomo { color: var(--jade); font-weight: 600; }
+
+  /* routing */
+  .route { display: grid; grid-template-columns: 1fr; gap: 12px; }
+  .route-row {
+    display: grid; grid-template-columns: 140px 1fr; gap: 16px; align-items: baseline;
+    padding: 14px 0; border-bottom: 1px solid var(--line);
+  }
+  .route-row:last-child { border-bottom: none; }
+  .route-row .model { font: 600 14px var(--mono); color: var(--gold); }
+  .route-row .model small { display: block; color: var(--muted); font-weight: 500; font-size: 11px; letter-spacing: .04em; margin-top: 3px; }
+  .route-row .uses { color: var(--muted); font-size: 14px; }
+
+  /* timeline */
+  .tl { display: grid; gap: 0; }
+  .tl-item { display: grid; grid-template-columns: 120px 1fr; gap: 20px; padding: 20px 0; border-top: 1px solid var(--line); }
+  .tl-item:first-child { border-top: none; }
+  @media (max-width: 620px) { .tl-item { grid-template-columns: 1fr; gap: 6px; } }
+  .tl-phase { font: 600 13px var(--mono); color: var(--gold); letter-spacing: .04em; }
+  .tl-phase small { display: block; color: var(--muted); font-weight: 500; margin-top: 3px; }
+  .tl-body h3 { font-size: 18px; }
+  .tl-body p { color: var(--muted); font-size: 14px; margin: 6px 0 0; }
+  .tl-status { font: 500 11px var(--mono); padding: 2px 8px; border-radius: 6px; margin-left: 8px; letter-spacing: .04em; }
+  .st-done { color: var(--jade); background: var(--jade-soft); }
+  .st-part { color: var(--gold); background: var(--gold-soft); }
+  .st-next { color: var(--muted); border: 1px solid var(--line); }
+
+  .guard { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 26px; }
+  .guard ul { columns: 2; column-gap: 32px; margin: 0; padding: 0; list-style: none; }
+  @media (max-width: 620px) { .guard ul { columns: 1; } }
+  .guard li { break-inside: avoid; padding: 7px 0 7px 24px; position: relative; font-size: 14px; color: var(--muted); }
+  .guard li::before { content: "✦"; position: absolute; left: 0; color: var(--gold); }
+  .guard li b { color: var(--ink); font-weight: 600; }
+
+  footer { padding: 40px 0 70px; border-top: 1px solid var(--line); color: var(--muted); font: 500 13px var(--mono); }
+  footer a { color: var(--gold); text-decoration: none; }
+
+  @media (prefers-reduced-motion: reduce) { .spin { animation: none; } * { transition: none !important; } }
+</style>
+
+<div class="page">
+  <button class="toggle" id="tg" aria-label="Đổi giao diện sáng/tối">◐ Sáng / Tối</button>
+
+  <div class="wrap">
+
+    <!-- HERO -->
+    <header class="hero">
+      <div class="gem">🐉</div>
+      <div class="eyebrow">ManiCash · Nghiên cứu nội bộ · Logic mở rộng AI</div>
+      <h1 style="margin-top:16px">Quản gia không lớn lên bằng model.<br>Nó lớn lên bằng <em>niềm tin</em>.</h1>
+      <p class="lede">Trí tuệ của quản gia là một <strong>bánh đà</strong>: mỗi con số người dùng cho phép ghi lại
+        đổi thành một gợi ý đúng hơn — gợi ý đúng đổi thành niềm tin — niềm tin mở ra tầng dữ liệu sâu hơn.
+        Trang này <strong>mô phỏng logic đó</strong> để nghiên cứu trực quan: kéo thanh dữ liệu và xem quản gia thông minh lên.</p>
+      <div class="meta-row">
+        <span><i class="dot"></i> 3 tier: Bình dân → Thông thái → Phú Vương</span>
+        <span><i class="dot jade"></i> 6 tầng năng lực</span>
+        <span><i class="dot"></i> Định tuyến Groq × GPT-4o-mini</span>
+      </div>
+    </header>
+
+    <!-- FLYWHEEL -->
+    <section>
+      <div class="sec-head">
+        <div class="eyebrow">Cơ chế nền</div>
+        <h2>Bánh đà trí tuệ</h2>
+        <p>Không phải "thu thập dữ liệu để bán". Là một vòng lặp giá trị: cho phép nhiều hơn ⇒ phục vụ tốt hơn ⇒
+          tin hơn ⇒ cho phép nhiều hơn. Mỗi vòng quay, quản gia hiểu chủ nhân sâu thêm một lớp.</p>
+      </div>
+      <div class="fly-grid">
+        <svg class="fly-svg" viewBox="0 0 300 300" role="img" aria-label="Bánh đà: dữ liệu, thấu hiểu, đề xuất đúng, niềm tin, cho phép sâu hơn">
+          <circle cx="150" cy="150" r="118" fill="none" stroke="var(--line)" stroke-width="1"/>
+          <g class="spin">
+            <circle cx="150" cy="150" r="118" fill="none" stroke="var(--gold-line)" stroke-width="1.5" stroke-dasharray="4 12" stroke-linecap="round"/>
+          </g>
+          <g class="fly-node" text-anchor="middle">
+            <g transform="translate(150,40)"><circle r="20" fill="var(--gold-soft)" stroke="var(--gold-line)"/><text dy="4">1</text></g>
+            <g transform="translate(255,120)"><circle r="20" fill="var(--gold-soft)" stroke="var(--gold-line)"/><text dy="4">2</text></g>
+            <g transform="translate(214,246)"><circle r="20" fill="var(--gold-soft)" stroke="var(--gold-line)"/><text dy="4">3</text></g>
+            <g transform="translate(86,246)"><circle r="20" fill="var(--jade-soft)" stroke="var(--gold-line)"/><text dy="4">4</text></g>
+            <g transform="translate(45,120)"><circle r="20" fill="var(--jade-soft)" stroke="var(--gold-line)"/><text dy="4">5</text></g>
+          </g>
+          <text x="150" y="146" text-anchor="middle" style="font:600 13px var(--serif);fill:var(--gold)">Bánh đà</text>
+          <text x="150" y="164" text-anchor="middle" style="font:600 13px var(--serif);fill:var(--ink)">trí tuệ</text>
+        </svg>
+        <ul class="fly-list">
+          <li><span class="n">1</span><div><b>Dữ liệu trong app</b><p>Thu, chi, quỹ, streak — chỉ số người dùng tự ghi.</p></div></li>
+          <li><span class="n">2</span><div><b>Thấu hiểu</b><p>Engine phân tích thói quen, điểm mù, chỉ số năng lực.</p></div></li>
+          <li><span class="n">3</span><div><b>Đề xuất đúng</b><p>Gợi ý cá nhân hoá thay vì lời khuyên mẫu chung chung.</p></div></li>
+          <li><span class="n">4</span><div><b>Niềm tin</b><p>Gợi ý trúng → người dùng tin quản gia hơn.</p></div></li>
+          <li><span class="n">5</span><div><b>Cho phép sâu hơn</b><p>Tin hơn → mở tier cao hơn → bánh đà quay tiếp.</p></div></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- SIMULATION -->
+    <section>
+      <div class="sec-head">
+        <div class="eyebrow">Mô phỏng tương tác</div>
+        <h2>Kéo dữ liệu — xem quản gia lớn lên</h2>
+        <p>Thanh dưới đây gộp <b>lượng dữ liệu tích luỹ</b> và <b>độ sâu người dùng cho phép</b>. Càng sang phải,
+          càng nhiều tầng năng lực bật sáng, câu quản gia nói càng "thông minh" — đúng logic phát triển thật của hệ thống.</p>
+      </div>
+
+      <div class="sim">
+        <div class="sim-top">
+          <div class="sim-tier" id="tierName">🪶 Bình dân<small id="tierSub">Ghi sổ cho vui · chưa cá nhân hoá</small></div>
+          <div class="iq"><div class="v"><span id="iqVal">12</span></div><div class="l">Trí tuệ quản gia</div></div>
+        </div>
+
+        <div class="slider-wrap">
+          <div class="slider-lab"><span>Ít dữ liệu · dùng thử</span><span>Đồng hành sâu · Phú Vương</span></div>
+          <input type="range" id="sim" min="0" max="100" value="12" aria-label="Mức dữ liệu và niềm tin tích luỹ">
+        </div>
+
+        <div class="bubble">
+          <div class="who" id="bubWho">Quản gia · cấp Bình dân</div>
+          <div class="say" id="bubSay">"Đã ghi ✍️ Cà phê 50.000₫. Nay chủ nhân uống cà phê nhé!"</div>
+          <div class="cost"><span>Model: <b id="bubModel">Groq Llama-3.3-70B</b></span><span>Chi phí/lượt: <b id="bubCost">~0đ (parse)</b></span></div>
+        </div>
+
+        <div class="layers" id="layers"></div>
+      </div>
+    </section>
+
+    <!-- CAPABILITY STACK -->
+    <section>
+      <div class="sec-head">
+        <div class="eyebrow">Kiến trúc</div>
+        <h2>Sáu tầng năng lực</h2>
+        <p>Mỗi tầng cần một <b>điều kiện dữ liệu/consent</b> mới để mở. Không nhảy cóc — tầng dưới nuôi tầng trên.</p>
+      </div>
+      <div class="grid3">
+        <div class="card"><div class="cap">Tầng 1 · Nền</div><h3>Ghi sổ &amp; hiểu ý</h3><p>Parse ngôn ngữ tự nhiên → giao dịch. Nền của mọi thứ.</p><ul><li>Cần: <b>không</b></li><li>LLM: Groq (rẻ, nhanh)</li></ul></div>
+        <div class="card"><div class="cap">Tầng 2 · Phân tích</div><h3>Bộ não CFO</h3><p>So sánh theo thời gian, cảnh báo sớm, điểm sức khoẻ tài chính.</p><ul><li>Cần: <b>số liệu ≥ vài tuần</b></li><li>LLM: GPT-4o-mini (narration)</li></ul></div>
+        <div class="card"><div class="cap">Tầng 3 · Chân dung</div><h3>La bàn năng lực</h3><p>4 chỉ số FDS/TAS/IPS/MMS → nhóm nghề. Khảo sát 0 token.</p><ul><li>Cần: <b>consent Thông thái + khảo sát</b></li><li>LLM: deterministic 80% + AI 20%</li></ul></div>
+        <div class="card"><div class="cap">Tầng 4 · Tiên tri</div><h3>Báo cáo Oracle</h3><p>Gương Thần · Điểm Chạm · Lộ trình 30 ngày · Lời mời.</p><ul><li>Cần: <b>Phú Vương</b></li><li>LLM: GPT-4o-mini (tốn credit)</li></ul></div>
+        <div class="card"><div class="cap">Tầng 5 · Đồng hành</div><h3>Coaching chủ động</h3><p>Đề xuất nhiệm vụ đúng lúc, gợi công việc tăng thu — dạng card xin phép.</p><ul><li>Cần: <b>Phú Vương + money sync</b></li><li>LLM: định tuyến theo độ khó</li></ul></div>
+        <div class="card"><div class="cap">Tầng 6 · Tương lai</div><h3>Quản gia tự chủ</h3><p>Chủ động lập kế hoạch nhiều bước, nối Coach người thật. Luôn xin phép.</p><ul><li>Cần: <b>Pro Plus (lộ trình)</b></li><li>LLM: agent + tool-use</li></ul></div>
+      </div>
+    </section>
+
+    <!-- TIER MAP -->
+    <section>
+      <div class="sec-head">
+        <div class="eyebrow">Thương mại hoá</div>
+        <h2>Tier ↔ năng lực ↔ FOMO</h2>
+        <p>Phú Vương <b class="fomo">mở cho cả Free</b> ở giai đoạn đầu để tối đa FOMO + tạo thói quen.
+          Năng lực cao cấp sau tách lên <b>Pro Plus</b> — lúc đó người dùng đã nghiện, nâng nhanh.</p>
+      </div>
+      <div class="grid3">
+        <div class="card tier-card"><span class="tier-badge">🪶 Bình dân</span><p>Chat vui, ghi sổ cơ bản, dữ liệu chỉ ở máy. Không cá nhân hoá.</p><div class="price">Miễn phí</div></div>
+        <div class="card tier-card"><span class="tier-badge">👑 Thông thái</span><p>Gợi ý cá nhân hoá thụ động (khi được hỏi). Bật snapshot tổng hợp ẩn danh.</p><div class="price">Miễn phí · consent</div></div>
+        <div class="card tier-card now"><span class="tier-badge">🐉 Phú Vương</span><p>Chủ động đề xuất, Oracle, tư vấn nghề, money sync đa thiết bị. Mọi hành động xin phép.</p><div class="price">Free được nâng → sau lên Pro Plus</div></div>
+      </div>
+    </section>
+
+    <!-- LLM ROUTING -->
+    <section>
+      <div class="sec-head">
+        <div class="eyebrow">Kinh tế token</div>
+        <h2>Định tuyến LLM — thông minh mà không đốt tiền</h2>
+        <p>Việc dễ đi model rẻ, việc suy luận sâu mới gọi model mạnh. Phần chấm điểm năng lực là bấm-chọn — 0 token.</p>
+      </div>
+      <div class="card">
+        <div class="route">
+          <div class="route-row"><div class="model">Groq Llama-3.3-70B<small>nhanh · rẻ</small></div><div class="uses">Nhận diện ý định, parse giao dịch, câu hỏi dễ, lệnh nhanh. Phần lớn lưu lượng.</div></div>
+          <div class="route-row"><div class="model">GPT-4o-mini<small>suy luận · ~26–100đ/lượt</small></div><div class="uses">Tường thuật CFO, tư vấn sâu, follow-up, báo cáo Oracle. Tốn credit → Pro included quota.</div></div>
+          <div class="route-row"><div class="model">Deterministic<small>0 token</small></div><div class="uses">Chấm 4 chỉ số năng lực (80% ở backend theo trọng số), health score, số dư, an toàn chi tiêu.</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ROADMAP -->
+    <section>
+      <div class="sec-head">
+        <div class="eyebrow">Lộ trình phát triển</div>
+        <h2>Bánh đà quay theo từng phase</h2>
+      </div>
+      <div class="tl">
+        <div class="tl-item"><div class="tl-phase">Đã có<small>nền tảng</small></div><div class="tl-body"><h3>Tầng 1–2 <span class="tl-status st-done">chạy</span></h3><p>Ghi sổ isomorphic + bộ não CFO. Tier Bình dân/Thông thái + snapshot S4 (đã duyệt).</p></div></div>
+        <div class="tl-item"><div class="tl-phase">Đang mở<small>M4 ~50%</small></div><div class="tl-body"><h3>Tầng 3 — La bàn năng lực <span class="tl-status st-part">một phần</span></h3><p>Engine FDS/TAS/IPS/MMS đã chạy. Cần: nối khảo sát bấm-chọn → kết quả nhóm nghề (teaser không số thu nhập).</p></div></div>
+        <div class="tl-item"><div class="tl-phase">Kế tiếp<small>Phú Vương</small></div><div class="tl-body"><h3>Tầng 4–5 — Oracle + Coaching <span class="tl-status st-next">thiết kế xong</span></h3><p>Kịch bản + câu chữ đã khoá (<i>BUTLER_PHU_VUONG_SCRIPT.md</i>). Cần: tier <i>sovereign</i>, money sync per-user, hàng đợi card xin phép, Oracle 4 phần.</p></div></div>
+        <div class="tl-item"><div class="tl-phase">Tương lai<small>Pro Plus</small></div><div class="tl-body"><h3>Tầng 6 — Quản gia tự chủ + Coach <span class="tl-status st-next">nghiên cứu</span></h3><p>Agent nhiều bước + tool-use, CV PDF, nối Coach người thật. Tách năng lực cao cấp lên gói Pro Plus.</p></div></div>
+      </div>
+    </section>
+
+    <!-- GUARDRAILS -->
+    <section>
+      <div class="sec-head">
+        <div class="eyebrow">Ranh giới bất biến</div>
+        <h2>Càng thông minh, càng phải có phanh</h2>
+        <p>Mọi tầng trên đều nằm trong hiến chương <i>ETHICS_CHARTER.md</i>. Trí tuệ tăng không nới lỏng ranh giới.</p>
+      </div>
+      <div class="guard">
+        <ul>
+          <li><b>Chỉ dữ liệu trong app</b> — không đời tư, vị trí, danh bạ, micro.</li>
+          <li><b>Hành động phải xin phép</b> — quản gia không tự tiêu/sửa dữ liệu.</li>
+          <li><b>Tắt & xoá bất cứ lúc nào</b> — xoá tài khoản = xoá sạch.</li>
+          <li><b>Ẩn danh ở tầng R&amp;D</b> — tách định danh khỏi phân tích.</li>
+          <li><b>Không bán dữ liệu</b> — không quảng cáo nhắm mục tiêu ngoài.</li>
+          <li><b>Dữ liệu nhạy cảm</b> theo Nghị định 13/2023 — consent tách bạch, rút được.</li>
+        </ul>
+      </div>
+    </section>
+
+    <footer>
+      <div class="wrap" style="padding:0">
+        ManiCash — nghiên cứu logic mở rộng AI · nguồn: <a href="#">BUTLER_PHU_VUONG_SCRIPT.md</a> ·
+        <a href="#">ETHICS_CHARTER.md</a> · <a href="#">UNIFIED_ROADMAP.md §M4</a> · <a href="#">DATA_FOR_GROWTH.md</a>
+      </div>
+    </footer>
+
+  </div>
+</div>
+
+<script>
+(function () {
+  var LAYERS = [
+    { t: 0,  name: "Ghi sổ & hiểu ý",     sub: "Parse giao dịch từ ngôn ngữ tự nhiên",           tag: "Nền" },
+    { t: 18, name: "Bộ não CFO",           sub: "So sánh, cảnh báo sớm, điểm sức khoẻ",           tag: "Phân tích" },
+    { t: 38, name: "La bàn năng lực",      sub: "4 chỉ số → nhóm nghề",                            tag: "Chân dung" },
+    { t: 58, name: "Báo cáo Oracle",       sub: "Lộ trình 30 ngày riêng",                          tag: "Tiên tri" },
+    { t: 74, name: "Coaching chủ động",    sub: "Đề xuất nhiệm vụ + việc tăng thu (xin phép)",     tag: "Đồng hành" },
+    { t: 90, name: "Quản gia tự chủ",      sub: "Kế hoạch nhiều bước + Coach người thật",          tag: "Tương lai" }
+  ];
+  var STATES = [
+    { min: 0,  tier: "🪶 Bình dân",  sub: "Ghi sổ cho vui · chưa cá nhân hoá",
+      who: "Quản gia · cấp Bình dân", model: "Groq Llama-3.3-70B", cost: "~0đ (parse)",
+      say: '"Đã ghi ✍️ Cà phê 50.000₫. Nay chủ nhân uống cà phê nhé!"' },
+    { min: 18, tier: "👑 Thông thái", sub: "Gợi ý cá nhân hoá khi được hỏi",
+      who: "Quản gia · cấp Thông thái", model: "GPT-4o-mini", cost: "~26đ (narration)",
+      say: '"Đã ghi. Tháng này chủ nhân dùng 320k cho cà phê — nhiều hơn tháng trước 90k một chút đấy."' },
+    { min: 38, tier: "👑 Thông thái", sub: "Đọc được chân dung năng lực",
+      who: "Quản gia · cấp Thông thái", model: "Deterministic + AI 20%", cost: "0 token (chấm điểm)",
+      say: '"Tôi thấy ngài nghiêng về nhóm Chuyên gia 💼 — mạnh nhất là kỷ luật và tư duy dài hạn."' },
+    { min: 58, tier: "🐉 Phú Vương", sub: "Vẽ lộ trình riêng cho chủ nhân",
+      who: "Quản gia · cấp Phú Vương", model: "GPT-4o-mini", cost: "~100đ (Oracle, Pro quota)",
+      say: '"Lộ trình 30 ngày của ngài đây: dồn thêm 2tr vào quỹ khẩn cấp là chạm mốc 3 tháng. Tôi đặt sẵn nhiệm vụ chứ?"' },
+    { min: 74, tier: "🐉 Phú Vương", sub: "Chủ động đồng hành đa thiết bị",
+      who: "Quản gia · cấp Phú Vương", model: "Định tuyến theo độ khó", cost: "gồm trong Pro",
+      say: '"Ngài vừa đăng nhập máy mới — dữ liệu đã theo ngài đủ. Tôi thấy khoản ăn ngoài đang vượt: xin phép nhắc mỗi tối?"' },
+    { min: 90, tier: "🐉 Phú Vương", sub: "Tiềm năng vô hạn · quản gia tự chủ (Pro Plus)",
+      who: "Quản gia · cấp Phú Vương", model: "Agent + tool-use", cost: "Pro Plus (lộ trình)",
+      say: '"Tôi tin vào năng lực chạm tay hoá vàng của ngài. Tôi thấy một cơ hội tăng thu ~3tr/tháng từ kỹ năng của ngài — xin phép lập kế hoạch?"' }
+  ];
+
+  var el = function (id) { return document.getElementById(id); };
+  var sim = el("sim"), iq = el("iqVal"), tierName = el("tierName"), tierSub = el("tierSub");
+  var bubSay = el("bubSay"), bubWho = el("bubWho"), bubModel = el("bubModel"), bubCost = el("bubCost");
+  var layersBox = el("layers");
+
+  LAYERS.forEach(function (L) {
+    var d = document.createElement("div");
+    d.className = "layer";
+    d.innerHTML = '<span class="ic"></span><span class="nm">' + L.name + '<span>' + L.sub + '</span></span><span class="tag">' + L.tag + '</span>';
+    layersBox.appendChild(d);
+  });
+  var rows = layersBox.querySelectorAll(".layer");
+
+  function pickState(v) {
+    var s = STATES[0];
+    for (var i = 0; i < STATES.length; i++) if (v >= STATES[i].min) s = STATES[i];
+    return s;
+  }
+  function render(v) {
+    sim.style.setProperty("--pct", v + "%");
+    // intelligence: non-linear, feels like compounding
+    var iqv = Math.round(6 + Math.pow(v / 100, 0.82) * 94);
+    iq.textContent = iqv;
+    var s = pickState(v);
+    tierName.childNodes[0].nodeValue = s.tier;
+    tierSub.textContent = s.sub;
+    if (bubSay.textContent !== s.say) {
+      bubSay.style.opacity = 0;
+      setTimeout(function () { bubSay.textContent = s.say; bubSay.style.opacity = 1; }, 130);
+    }
+    bubWho.textContent = s.who; bubModel.textContent = s.model; bubCost.textContent = s.cost;
+    rows.forEach(function (r, i) { r.classList.toggle("on", v >= LAYERS[i].t); });
+  }
+  sim.addEventListener("input", function () { render(+sim.value); });
+  render(+sim.value);
+
+  // theme toggle
+  var tg = el("tg"), root = document.documentElement;
+  tg.addEventListener("click", function () {
+    var cur = root.getAttribute("data-theme");
+    if (!cur) cur = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    root.setAttribute("data-theme", cur === "dark" ? "light" : "dark");
+  });
+})();
+</script>
