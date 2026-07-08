@@ -4,24 +4,43 @@ Tóm tắt để **chuyển sang phiên/cửa sổ mới**. Mọi việc dưới
 
 ---
 
-## 0. PHIÊN 2026-07-07 (chiều/tối) — ĐÃ COMMIT LOCAL, CHƯA PUSH
+## 0. PHIÊN 2026-07-07 — ĐÃ PUSH LÊN origin/main (Vercel auto-deploy)
 
-**Đã làm:**
-1. **M1 đóng hoàn toàn:** gỡ sạch nhánh debug `admin_test` khỏi `create-link/route.ts`; webhook xác nhận end-to-end (giao dịch 10k thật → app tự cấp Pro).
-2. **M2 phần bảo mật XONG:** thay static key `MANICASH_ADMIN_KEY` bằng **Firebase Custom Claims**. File mới `src/lib/requireAdmin.ts` (verify Bearer ID token + `admin===true` + `checkRevoked`) + `src/lib/adminAudit.ts` (ghi `admin_audit`). Áp cho `admin/bans`, `admin/test-account`, `payos/confirm-webhook`. Client `AdminDashboardContent.tsx` gác theo claim. Script cấp quyền `scripts/grant-admin.mjs`. tsc + build sạch.
-3. **Blueprint Admin/CRM/R&D** (hội đồng 5 chuyên gia + phản biện): `docs/ADMIN_CRM_RND_BLUEPRINT.md` + Artifact trực quan. Xem memory `project-admin-crm-rnd-blueprint`.
+**3 commit của phiên này (đã push):**
+| Commit | Nội dung |
+|---|---|
+| `fe6166c` | M2 gác admin bằng Firebase Custom Claims + `adminAudit` + `grant-admin.mjs`; gỡ debug `admin_test` (M1 đóng); blueprint + audit doc |
+| `a575cb8` | Khóa cứng admin về **đúng 1 email** + nút "Trang quản trị" trong Profile + roadmap doc |
 
-**PO cần làm (khi push xong + Vercel deploy):** `node scripts/grant-admin.mjs doduongquang8686@gmail.com` (tài khoản admin — KHÔNG phải freshlife1381) → đăng xuất/đăng nhập lại → xóa biến `MANICASH_ADMIN_KEY` trên Vercel.
+### Đã làm
+1. **M1 ĐÓNG HOÀN TOÀN:** gỡ nhánh debug `admin_test`; webhook đã xác nhận end-to-end (giao dịch 10k thật → app tự cấp Pro).
+2. **M2 bảo mật admin XONG:** thay static key `MANICASH_ADMIN_KEY` → **Firebase Custom Claims**. `src/lib/requireAdmin.ts` (Bearer ID token + `admin===true` + `checkRevoked`) + `src/lib/adminAudit.ts` (ghi `admin_audit`). Áp cho `admin/bans`, `admin/test-account`, `payos/confirm-webhook`. Client `AdminDashboardContent.tsx` gác theo claim.
+3. **Khóa cứng đúng 1 email admin** = `doduongquang8686@gmail.com` (3 lớp: Custom Claim + allowlist `src/lib/adminEmails.ts` + `email_verified`). Chặn mọi email khác kể cả khi bị set nhầm claim. **Nút "Trang quản trị"** ở Profile chỉ hiện với email admin. `grant-admin.mjs` từ chối cấp cho email ngoài allowlist.
+4. **Blueprint + Roadmap:** `docs/ADMIN_CRM_RND_BLUEPRINT.md` (hội đồng 5 chuyên gia + phản biện) + `docs/ADMIN_BUILD_ROADMAP.md` (8 sprint S0→S7+). Artifact trực quan: https://claude.ai/code/artifact/afd76e88-fb87-45ca-a9ef-a8e73ae50ffd
 
-**2 ràng buộc PO chốt:** (a) **DuongQuang.Academy KHÔNG ĐỤNG** (chỉ deep-link/read-only/clone; cấm gọi tool `manicash_*`); (b) **Firebase GIỮ NGUYÊN**, Supabase chỉ cân nhắc cho tầng R&D/analytics mới.
+### ⚠️ PO LÀM 1 LẦN (sau khi Vercel deploy xong bản này)
+1. `node scripts/grant-admin.mjs doduongquang8686@gmail.com` (chạy local, đọc `.env.local`).
+2. Đăng xuất → đăng nhập lại app bằng chính `doduongquang8686@gmail.com`.
+3. Vào Profile → thấy nút **"Trang quản trị"** → bấm vào `/admin` chạy được.
+4. Xóa biến `MANICASH_ADMIN_KEY` trên Vercel (không còn dùng).
 
-**MAI TIẾP TỤC — chọn 1:**
-- **Việc ngay #1 khuyến nghị:** M1 Tiền (bảng đơn + grant thủ công + đối soát "đã trả chưa cấp Pro") — quick win, data sẵn Firestore.
-- Hoặc bật pipeline `metric_snapshots` (đồng hồ R&D — không hồi tố được, nên bật sớm).
-- Trước khi làm tầng chữa lành: viết `docs/ETHICS_CHARTER.md` + consent 3 tầng (dữ liệu nhạy cảm, Nghị định 13/2023).
-- **Chưa push** — chờ PO xác nhận push (Vercel auto-deploy từ main khi push).
+### 2 RÀNG BUỘC PO ĐÃ CHỐT (bất biến — xem blueprint §12)
+- **(a) DuongQuang.Academy TUYỆT ĐỐI KHÔNG ĐỤNG.** Chỉ deep-link / read-only / clone. **CẤM gọi mọi tool `manicash_*`** (kể cả đọc) khi chưa hỏi PO — xem memory `feedback-never-touch-academy`.
+- **(b) Firebase GIỮ NGUYÊN** cho lõi. Supabase chỉ cân nhắc cho tầng R&D/analytics MỚI, làm sau. Không migrate lõi.
 
-**Untracked chưa commit (không thuộc phiên này, để nguyên):** `ManiCash_*Report*.md/.docx`, `docs/AI_CHAT_OVERVIEW.md`, `docs/P6_*.md`, `landing/`.
+### 🔜 PHIÊN MỚI TIẾP TỤC TỪ ĐÂY (theo `docs/ADMIN_BUILD_ROADMAP.md`)
+**S0 còn lại:** route group `(admin)` + AdminShell (sidebar 9 module) + loại `(admin)` khỏi static export mobile (guard `next.config`, tránh vỡ build Android).
+**S1 — M1 Tiền (khuyến nghị làm tiếp ngay):** bảng đơn (`payment_intents`+`payments_index`+`grant_events`) + grant Pro thủ công + **widget đối soát "đã trả chưa cấp Pro"** (quan trọng nhất — chống mất tiền khách). Data đã sẵn Firestore, không phụ thuộc quyết định nào.
+**S4 song song (ưu tiên cao):** bật `metric_snapshots` — đồng hồ R&D "người tốt lên", không hồi tố được.
+**Trước tầng chữa lành:** viết `docs/ETHICS_CHARTER.md` + consent 3 tầng (dữ liệu nhạy cảm, Nghị định 13/2023).
+
+### Câu PO còn cần chốt (không chặn S0–S1)
+1. Academy có endpoint đọc để read-only pull không? (nếu không → chỉ deep-link) — chặn S5.
+2. Consent 3 tầng: nội dung + vị trí onboarding — chặn S4 (consent) & chữa lành.
+3. Path `/admin` (mặc định) hay subdomain admin — chưa cần quyết bây giờ.
+
+### Untracked KHÔNG thuộc phiên này (để nguyên, chưa commit)
+`ManiCash_*Report*.md/.docx`, `ManiCash_Landing_Brief.md`, `docs/AI_CHAT_OVERVIEW.md`, `docs/P6_*.md`, `landing/`.
 
 ---
 
