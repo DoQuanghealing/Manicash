@@ -21,7 +21,7 @@
 | **S1** | M1 Tiền & Doanh thu (MVP) | ✅ Xong (2026-07-08: bảng đơn + đối soát + grant + biểu đồ doanh thu); refund M1.4 = P1 sau |
 | **S2** | M2 Người dùng / Customer 360 (Firestore-only) | ✅ Xong (2026-07-08: danh bạ Auth⨝Firestore + Customer 360 + actions + deletion list); CRM deep-link CHỜ PO chốt Academy |
 | **S3** | M0 Overview + M8 Audit | ✅ Xong (2026-07-08: KPI+hàng đợi + nhật ký admin_audit) |
-| **S4** | Pipeline `metric_snapshots` (ưu tiên CAO, làm song song được) | 🟡 Plumbing XONG (consent+API+storage+xóa); **CHỜ PO chốt consent copy/onboarding trước khi BẬT thu thập** (dữ liệu nhạy cảm — Nghị định 13) |
+| **S4** | Pipeline `metric_snapshots` (ưu tiên CAO, làm song song được) | ✅ ĐÃ BẬT (2026-07-08, PO duyệt): consent + snapshot API + client auto-collect 1 lần/ngày + xóa theo tài khoản. Capacity/backfill/onboarding-prompt = bổ sung sau |
 | **S5** | Nối định danh 2 hệ (deep-link → sau mới facade) | ⬜ Chưa (phụ thuộc Academy chỉ-đọc) |
 | **S6** | M4 R&D dashboard "người tốt lên" | ⬜ Chưa (cần S4 chạy ≥vài tuần) |
 | **S7+** | Growth flows · M3/M5 cổng · Chữa lành (sau ETHICS) | ⬜ Chưa |
@@ -94,8 +94,10 @@
 | POST `/api/telemetry/snapshot` | ✅ Xong | Verify ID token; **chặn nếu `analyticsConsent!==true`** hoặc `isTestAccount`; upsert `metric_snapshots/{uid}_{yyyymmdd}` theo `dateLocal` (KHÔNG UTC) + `schemaVersion`/`appVersion`. Client gửi metrics (engine chạy client). |
 | Nằm trong deletion | ✅ Xong | `permanentlyDeleteAccount` xóa thêm mọi `metric_snapshots` của uid (batch). |
 | Filter `isTestAccount` | ✅ Xong | Chặn ngay tại endpoint snapshot + overview KPI loại test. |
-| **Client tính + tự gửi snapshot / backfill** | ⬜ CHỜ PO | **Chưa wire auto-collect** (đây là phần cần consent copy). Khi PO chốt: viết builder (Health Score + FDS/TAS/IPS/MMS từ store local) + onboarding 1 câu + gọi snapshot khi app mở. |
-| Onboarding consent copy + vị trí | ⬜ CHỜ PO | Câu hỏi chốt #2 dưới. |
+| **Client tính + tự gửi snapshot** | ✅ Xong (2026-07-08, PO duyệt bật) | `MetricSnapshotCollector` (mount trong `(app)/layout` dưới AuthGuard): 1 lần/ngày (giờ local, guard localStorage) dựng payload (Health Score qua `useMoneySnapshotV1`+`getFinancialHealthScore` · hành vi rank/xp/streak/resist · số dư 3 quỹ) → POST. Server tự bỏ nếu chưa consent/test. |
+| Capacity FDS/TAS/IPS/MMS trong snapshot | ⬜ Sau | Chưa thêm (đa số user chưa làm khảo sát năng lực) — bổ sung khi có survey. |
+| Backfill ngày cũ | ⬜ Sau | Store chỉ giữ trạng thái hiện tại → chỉ snapshot "hôm nay"; tích luỹ dần. |
+| Onboarding consent copy + vị trí | 🟡 Tạm | Hiện dùng toggle trong Profile → "Cá nhân hoá" làm consent. `docs/DATA_FOR_GROWTH.md` = cơ sở câu chữ. Onboarding 1-câu prompt: thêm sau nếu PO muốn hỏi ngay lần đầu. |
 
 ---
 
