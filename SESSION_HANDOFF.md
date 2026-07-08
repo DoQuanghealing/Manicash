@@ -1,3 +1,40 @@
+# ManiCash — Handoff phiên (2026-07-08)
+
+> **⚠️ 4 commit LOCAL, CHƯA PUSH** (PO chưa cho deploy — chờ PO báo "push"):
+> `04c9766` S1-S4 admin · `890279f` telemetry+ecosystem · `7548e96` roadmap doc · `95a4b9b` butler onboarding.
+> Verify mọi bước: `tsc` sạch · `npm run build` ✓ · lint sạch phần mới. **Chưa smoke bằng tài khoản thật** (AuthGuard chặn preview local — PO xem trên web sau khi deploy).
+
+## Đã làm phiên 2026-07-08 (theo `docs/ADMIN_BUILD_ROADMAP.md`)
+
+**S0–S4 admin (đóng):**
+- Route group `src/app/(admin)/` + **AdminShell** sidebar (`useAdminGate`, `src/lib/adminClient.ts`), park khỏi mobile export. `/admin` cũ (ban) → `/admin/security`.
+- `/admin` Tổng quan (KPI doanh thu/Pro/DAU + hàng đợi) · `/admin/money` (biểu đồ doanh thu + **đối soát 3 nhóm lệch** + bảng đơn + grant tay) · `/admin/users` (danh bạ **Firebase Auth ⨝ Firestore** + Customer 360 + grant/revoke/ban/test + deletion list) · `/admin/audit`.
+- Libs: `src/lib/admin/{directory,overview,audit}.ts` + `src/lib/monetization/reconcile.ts`. API: `/api/admin/{payments,grant,users,overview,audit}`.
+
+**S4 metric_snapshots — ĐÃ BẬT (PO duyệt):**
+- `analyticsConsent` + `/api/telemetry/{consent,snapshot}` (chặn nếu chưa consent/test) + `MetricSnapshotCollector` (1 lần/ngày, mount `(app)/layout`) + xóa snapshot khi xóa tài khoản.
+- **Consent được reframe = chọn cấp "Thông thái" của quản gia** (KHÔNG dùng chữ "theo dõi/gửi dữ liệu" — PO yêu cầu). `docs/DATA_FOR_GROWTH.md` = cơ sở câu chữ.
+
+**Làm quen quản gia (M3-ish, commit `95a4b9b`):**
+- `ButlerOnboarding` wizard (nhập vai → danh xưng cô/cậu/tổng tài/custom → tên quản gia + gợi ý → **cấp độ Bình dân|Thông thái** → hướng dẫn). Mount global, tự mở khi `!butlerOnboarded`.
+- Thông thái + xác nhận = bật consent; Bình dân = off. Nút "quản gia cần thông thái hơn" ở Hồ sơ (`ButlerSettingsCard`, `useButlerWizardStore` mode 'tier').
+- `useSettingsStore` thêm `honorific/butlerTier/butlerOnboarded`.
+- Lệnh `/cfo` → mở `/report` + lưu lệnh trong chat (`AiMoneyChatContent` + `prismSuggestions`).
+
+**Hệ sinh thái:** `src/data/ecosystemLinks.ts` + mục "Hệ sinh thái" trong Hồ sơ (deep-link Academy, mở tab mới, KHÔNG đụng Academy). **PO sẽ điền URL video thật.**
+
+## Việc còn treo / PO cần làm
+1. **Push khi PO cho deploy** (4 commit trên). Sau deploy: đăng nhập kiểm tra wizard + `/admin`.
+2. **Xóa file mồ côi** `src/app/(app)/profile/_components/AnalyticsConsentToggle.tsx` (đã thay bằng ButlerSettingsCard) — CHỜ PO OK.
+3. **Điền URL video/khoá Academy** vào `ecosystemLinks.ts`.
+4. PO quyết money sync (dữ liệu hành vi Customer 360) — "bàn kỹ trước khi bật".
+5. CRM deep-link trong admin (xem hồ sơ Academy) — PO bảo "sau".
+
+## Đề xuất tiếp
+Thiết kế thẻ `/báo cáo` nhanh trong chat · thêm capacity (FDS/TAS/IPS/MMS) vào snapshot · S5 nối định danh / S6 R&D dashboard / M1.4 refund.
+
+---
+
 # ManiCash — Handoff phiên (2026-07-06 → 07-07)
 
 Tóm tắt để **chuyển sang phiên/cửa sổ mới**. Mọi việc dưới đây **đã commit + push lên `origin/main`** (Vercel auto-deploy, đã live trên `www.manicash.org`). Tree sạch, `main` == `origin/main`.
