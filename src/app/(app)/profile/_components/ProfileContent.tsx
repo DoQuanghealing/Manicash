@@ -18,7 +18,7 @@ import ProfileEditModal from '@/components/ui/ProfileEditModal';
 import BatTuCard from '@/components/ui/BatTuCard';
 import WipeDataConfirm from '@/components/ui/WipeDataConfirm';
 import AccountDeletionDialog from '@/components/ui/AccountDeletionDialog';
-import AnalyticsConsentToggle from './AnalyticsConsentToggle';
+import ButlerSettingsCard from './ButlerSettingsCard';
 import EcosystemSection from './EcosystemSection';
 import { getEmojiFromAvatar, isEmojiAvatar } from '@/data/avatarIcons';
 import { getBanMenh } from '@/lib/banMenh';
@@ -263,8 +263,10 @@ export default function ProfileContent() {
             <span className="profile-switch-knob" />
           </button>
         </div>
-        <AnalyticsConsentToggle />
       </section>
+
+      {/* ═══ Quản gia (tên + cấp độ, đổi cấp độ = consent) ═══ */}
+      <ButlerSettingsCard />
 
       {/* ═══ Pro membership entry ═══ */}
       <Link href="/upgrade" className={`profile-pro-card ${proStatus.isPro ? 'is-pro' : ''}`}>

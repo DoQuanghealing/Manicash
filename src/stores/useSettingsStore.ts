@@ -4,9 +4,18 @@ import type { VibeMode } from '@/lib/ageGroup';
 
 export type ThemeMode = 'dark' | 'light';
 
+/** Cấp độ quản gia: 'basic' = dùng cho vui (không ghi dữ liệu) · 'wise' = hỗ trợ sâu + cá nhân hoá (bật analyticsConsent). */
+export type ButlerTier = 'basic' | 'wise';
+
 interface SettingsState {
   theme: ThemeMode;
   butlerName: string;
+  /** Cách quản gia gọi chủ nhân: 'cô' | 'cậu' | 'tổng tài' | tự đặt. '' = chưa chọn. */
+  honorific: string;
+  /** Cấp độ quản gia (xem ButlerTier). */
+  butlerTier: ButlerTier;
+  /** Đã hoàn tất màn làm quen quản gia chưa. */
+  butlerOnboarded: boolean;
   /** Phong cách text/tone — 'auto' detect từ yearOfBirth, hoặc override 'young'/'pro'/'classic'. */
   appVibe: VibeMode;
   /** Bật nhắc tự động "Tổng kết tối" 21h mỗi ngày (Web Notification). */
@@ -14,6 +23,9 @@ interface SettingsState {
   setTheme: (t: ThemeMode) => void;
   toggleTheme: () => void;
   setButlerName: (name: string) => void;
+  setHonorific: (h: string) => void;
+  setButlerTier: (t: ButlerTier) => void;
+  setButlerOnboarded: (v: boolean) => void;
   setAppVibe: (vibe: VibeMode) => void;
   toggleDailyReminder: () => void;
   setDailyReminderEnabled: (enabled: boolean) => void;
@@ -45,6 +57,9 @@ function writeStorage(key: string, value: unknown) {
 export const useSettingsStore = create<SettingsState>((set) => ({
   theme: readStorage<ThemeMode>('manicash-theme', 'dark'),
   butlerName: readStorage<string>('manicash-butler-name', DEFAULT_BUTLER_NAME),
+  honorific: readStorage<string>('manicash-honorific', ''),
+  butlerTier: readStorage<ButlerTier>('manicash-butler-tier', 'basic'),
+  butlerOnboarded: readStorage<boolean>('manicash-butler-onboarded', false),
   appVibe: readStorage<VibeMode>('manicash-app-vibe', DEFAULT_APP_VIBE),
   dailyReminderEnabled: readStorage<boolean>('manicash-daily-reminder', false),
 
@@ -64,6 +79,22 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     const trimmed = name.trim() || DEFAULT_BUTLER_NAME;
     writeStorage('manicash-butler-name', trimmed);
     set({ butlerName: trimmed });
+  },
+
+  setHonorific: (h) => {
+    const trimmed = h.trim().slice(0, 20);
+    writeStorage('manicash-honorific', trimmed);
+    set({ honorific: trimmed });
+  },
+
+  setButlerTier: (t) => {
+    writeStorage('manicash-butler-tier', t);
+    set({ butlerTier: t });
+  },
+
+  setButlerOnboarded: (v) => {
+    writeStorage('manicash-butler-onboarded', v);
+    set({ butlerOnboarded: v });
   },
 
   setAppVibe: (vibe) => {

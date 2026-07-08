@@ -78,6 +78,7 @@ export const SLASH_COMMANDS: SlashCommand[] = [
   { cmd: '/muctieu', label: 'Tiến độ mục tiêu', query: 'mục tiêu của tôi tới đâu rồi', icon: '🎯' },
   { cmd: '/suckhoe', label: 'Sức khỏe tài chính', query: 'điểm sức khỏe tài chính của tôi', icon: '❤️' },
   { cmd: '/baocao', label: 'Báo cáo CFO tháng', query: 'lên báo cáo CFO tháng này', icon: '📈' },
+  { cmd: '/cfo', label: 'Mở màn Báo cáo CFO', query: '/cfo', icon: '🏛️' },
   { cmd: '/nangluc', label: 'Đo năng lực (La Bàn)', query: '/nangluc', icon: '⚡' },
   { cmd: '/khaosat', label: 'Khảo sát năng lực', query: '/khaosat', icon: '📝' },
 ];

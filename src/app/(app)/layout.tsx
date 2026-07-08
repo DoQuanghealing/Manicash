@@ -17,6 +17,7 @@ import ProActivatedCelebration from '@/components/ui/ProActivatedCelebration';
 import PricingModal from '@/components/pricing/PricingModal';
 import { AuthGuard } from '@/components/providers/AuthGuard';
 import MetricSnapshotCollector from '@/components/providers/MetricSnapshotCollector';
+import ButlerOnboarding from '@/components/butler/ButlerOnboarding';
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
@@ -73,6 +74,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
           {/* R&D: gửi bản ghi chỉ số/ngày (server tự bỏ nếu chưa consent) */}
           <MetricSnapshotCollector />
+
+          {/* Làm quen quản gia — tự mở lần đầu; mở lại từ Hồ sơ để đổi cấp độ */}
+          <ButlerOnboarding />
         </div>
       </div>
     </AccountDeletionGate>

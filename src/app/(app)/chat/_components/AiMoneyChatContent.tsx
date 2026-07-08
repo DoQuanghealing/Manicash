@@ -2,6 +2,7 @@
 
 import { Fragment, FormEvent, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
   ChevronLeft,
@@ -280,6 +281,7 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
   const addEarningTask = useTaskStore((s) => s.addTask);
   const threadRef = useRef<HTMLDivElement>(null);
   const prefersReduced = useReducedMotion();
+  const router = useRouter();
   // Session ID ổn định cho hội thoại CFO follow-up (Phase 4 conversation state).
   const sessionIdRef = useRef<string>(makeMessageId('sess'));
 
@@ -626,6 +628,16 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
         if (token === '/khaosat') handleStartSurvey();
         else handleShowCapacity();
         setInput('');
+        return;
+      }
+      // /cfo — lưu lệnh trên màn chat rồi chuyển sang giao diện CFO đầy đủ (route riêng).
+      if (token === '/cfo') {
+        appendMessages([
+          { id: makeMessageId('user'), role: 'user', text },
+          { id: makeMessageId('system'), role: 'system', text: 'Đang mở Báo cáo CFO đầy đủ…' },
+        ]);
+        setInput('');
+        router.push('/report');
         return;
       }
       const resolved = resolveSlashCommand(text);

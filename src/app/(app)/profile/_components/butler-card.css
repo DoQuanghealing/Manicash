@@ -1,0 +1,73 @@
+/* ═══ Profile — Butler card ═══ */
+.butler-card {
+  margin-top: 8px;
+}
+.butler-card-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border-radius: var(--radius-lg, 14px);
+  background: var(--glass-bg, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--glass-border);
+  margin-bottom: 10px;
+}
+.butler-card-avatar {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  font-size: 22px;
+  color: #1a1206;
+  background: linear-gradient(135deg, #e2bd63, #c79a3e);
+  flex-shrink: 0;
+}
+.butler-card-info {
+  min-width: 0;
+}
+.butler-card-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--c-text-primary);
+}
+.butler-card-meta {
+  font-size: 12px;
+  color: var(--c-text-muted);
+  margin-top: 2px;
+}
+.butler-tier-wise {
+  color: #d9b25a;
+  font-weight: 600;
+}
+.butler-tier-basic {
+  color: var(--c-text-muted);
+}
+.butler-card-btn {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 11px 14px;
+  border-radius: var(--radius-md, 11px);
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid var(--glass-border);
+}
+.butler-card-btn-gold {
+  background: linear-gradient(135deg, #e2bd63, #c79a3e);
+  color: #1a1206;
+  border-color: transparent;
+}
+.butler-card-btn-gold:hover {
+  filter: brightness(1.05);
+}
+.butler-card-btn-ghost {
+  background: var(--glass-bg);
+  color: var(--c-text-secondary);
+}
+.butler-card-btn-ghost:hover {
+  color: var(--c-text-primary);
+}
