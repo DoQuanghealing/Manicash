@@ -13,6 +13,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getVerifiedRequestUid } from '@/lib/requestAuth';
+import { checkRateLimit, rulesFromEnv, type RateLimitRule } from '@/lib/rateLimit';
 import { routeIntent } from '@/lib/aiMoneyChat/intent/intentRouter';
 import type { ChatIntent, ChatReply } from '@/lib/aiMoneyChat/intent/types';
 import type { ChatHandlerContext } from '@/lib/aiMoneyChat/aggregation/types';
@@ -64,6 +65,13 @@ function tryBuildActionReply(message: string, clientSnapshot: unknown): ChatRepl
 }
 
 const MAX_MESSAGE_LENGTH = 500;
+
+/** Rate limit per-uid: chống loop/burst (mỗi lượt = verify token + đọc Firestore).
+ *  Burst 12/10s (giết loop) + bền 40/phút (người gõ tay thoải mái). Override qua env. */
+const CHAT_RATE_RULES: RateLimitRule[] = rulesFromEnv('CHAT', [
+  { windowMs: 10_000, max: 12 },
+  { windowMs: 60_000, max: 40 },
+]);
 
 function fallbackReply(intent: ChatIntent): ChatReply {
   return {
@@ -138,6 +146,22 @@ export async function POST(req: NextRequest) {
   const uid = await getVerifiedRequestUid(req);
   if (!uid) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  }
+
+  // 1b) Rate limit per-uid (chống spam/loop). 429 + Retry-After nếu vượt.
+  const rl = checkRateLimit(`chat:${uid}`, CHAT_RATE_RULES, startedAt);
+  if (!rl.ok) {
+    return NextResponse.json(
+      {
+        error: 'rate_limited',
+        reply: {
+          message: 'Ngài gửi hơi nhanh 😅 Chờ vài giây rồi thử lại giúp tôi nhé.',
+          ui: { kind: 'none' },
+          meta: { intent: 'UNKNOWN', source: 'deterministic', latencyMs: Date.now() - startedAt },
+        },
+      },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfterSec) } },
+    );
   }
 
   // 2) Parse body.
