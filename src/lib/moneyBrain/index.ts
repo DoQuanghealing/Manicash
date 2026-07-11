@@ -13,6 +13,8 @@ export * from './billMetrics';
 export * from './goalMetrics';
 export * from './taskMetrics';
 export * from './safeToSpend';
+export * from './balanceBreakdown';
+export * from './accountStatus';
 export * from './cashRunway';
 export * from './healthScore';
 export * from './cfoTypes';

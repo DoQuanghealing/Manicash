@@ -1,7 +1,7 @@
 /* ═══ Ledger Content — Dual-Tab: Daily Expenses | Fixed Bills ═══ */
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '@/data/categories';
@@ -26,9 +26,21 @@ const LEDGER_TABS = [
   { key: 'bills', label: 'Bill cố định', icon: '📋' },
 ];
 
+function isLedgerTab(v: string | null): v is LedgerTab {
+  return v === 'daily' || v === 'categories' || v === 'bills';
+}
+
 export default function LedgerContent() {
   usePageVisitTracker('ledger');
   const [activeTab, setActiveTab] = useState<LedgerTab>('daily');
+
+  // Deep-link "?tab=bills" (vd nút Thanh toán từ Tổng quan) → mở đúng tab.
+  // Dùng window.location thay useSearchParams để không cần Suspense (an toàn static export).
+  useEffect(() => {
+    const t = new URLSearchParams(window.location.search).get('tab');
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- đọc deep-link sau mount (an toàn hydration static export)
+    if (isLedgerTab(t)) setActiveTab(t);
+  }, []);
   const [filter, setFilter] = useState<FilterType>('all');
   const [showCalendar, setShowCalendar] = useState(false);
   const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null);

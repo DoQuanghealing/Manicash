@@ -23,6 +23,8 @@ interface SettingsState {
   appVibe: VibeMode;
   /** Bật nhắc tự động "Tổng kết tối" 21h mỗi ngày (Web Notification). */
   dailyReminderEnabled: boolean;
+  /** Che số dư khả dụng trên Tổng quan (mặc định che; nhớ lựa chọn qua nút mắt). */
+  hideBalance: boolean;
   setTheme: (t: ThemeMode) => void;
   toggleTheme: () => void;
   setButlerName: (name: string) => void;
@@ -32,6 +34,7 @@ interface SettingsState {
   setAppVibe: (vibe: VibeMode) => void;
   toggleDailyReminder: () => void;
   setDailyReminderEnabled: (enabled: boolean) => void;
+  toggleHideBalance: () => void;
 }
 
 const DEFAULT_BUTLER_NAME = 'Lord Diamond';
@@ -65,6 +68,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   butlerOnboarded: readStorage<boolean>('manicash-butler-onboarded', false),
   appVibe: readStorage<VibeMode>('manicash-app-vibe', DEFAULT_APP_VIBE),
   dailyReminderEnabled: readStorage<boolean>('manicash-daily-reminder', false),
+  hideBalance: readStorage<boolean>('manicash-hide-balance', true),
 
   setTheme: (t) => {
     writeStorage('manicash-theme', t);
@@ -116,4 +120,11 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     writeStorage('manicash-daily-reminder', enabled);
     set({ dailyReminderEnabled: enabled });
   },
+
+  toggleHideBalance: () =>
+    set((s) => {
+      const next = !s.hideBalance;
+      writeStorage('manicash-hide-balance', next);
+      return { hideBalance: next };
+    }),
 }));

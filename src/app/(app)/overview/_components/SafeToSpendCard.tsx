@@ -1,200 +1,215 @@
-/* ═══ SafeToSpendCard — Primary balance card with budget breakdown ═══ */
+/* ═══ SafeToSpendCard — Số dư khả dụng (navy) + Trạng thái tài khoản ═══
+ * Mặc định GỌN: chỉ số dư khả dụng nổi bật + tình trạng. Bấm "Cách tính số này"
+ * (nhỏ) → xổ ĐẦY ĐỦ: breakdown bấm-từng-dòng + lý do + nút hành động (điều hướng).
+ * Số che mặc định (nút mắt, nhớ qua useSettingsStore.hideBalance).
+ * Logic: computeAccountStatus + getBalanceBreakdownDetail (moneyBrain, đã test).
+ */
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Info, AlertTriangle, Lightbulb, ChevronDown } from 'lucide-react';
+import { Eye, EyeOff, ChevronDown, ChevronRight } from 'lucide-react';
 import { useSafeBalance } from '@/hooks/useSafeBalance';
-import { formatCurrency, formatCurrencyShort } from '@/utils/formatCurrency';
+import { useSettingsStore } from '@/stores/useSettingsStore';
+import type { AccountStatusResult } from '@/lib/moneyBrain/accountStatus';
+import type { BreakdownItem } from '@/lib/moneyBrain/balanceBreakdown';
 import './SafeToSpendCard.css';
 
-export default function SafeToSpendCard() {
-  const [showInfo, setShowInfo] = useState(false);
-  const [showBreakdown, setShowBreakdown] = useState(false);
-  const {
-    safeToSpend, monthlyIncome, carryOver, totalCategoryLimits,
-    totalBills, totalSavings,
-    isLow, isNegative,
-  } = useSafeBalance();
+/** Màu semantic theo tone trạng thái (nền card luôn navy). */
+const TONE: Record<AccountStatusResult['tone'], string> = {
+  excellent: 'sts-tone-green',
+  good: 'sts-tone-blue',
+  average: 'sts-tone-amber',
+  danger: 'sts-tone-red',
+};
 
-  const statusColor = isNegative ? '#EF4444' : isLow ? '#F59E0B' : '#10B981';
-  const statusLabel = isNegative ? 'Nguy hiểm' : isLow ? 'Cẩn thận' : 'An toàn';
-  const statusEmoji = isNegative ? '🔴' : isLow ? '🟡' : '🟢';
+function fmt(n: number): string {
+  return Math.round(Math.abs(n)).toLocaleString('vi-VN');
+}
+
+export default function SafeToSpendCard() {
+  const router = useRouter();
+  const { safeToSpend, accountStatus, detail } = useSafeBalance();
+  const hideBalance = useSettingsStore((s) => s.hideBalance);
+  const toggleHide = useSettingsStore((s) => s.toggleHideBalance);
+
+  const [expanded, setExpanded] = useState(false);
+  const [showInfo, setShowInfo] = useState(false);
+  const [openRow, setOpenRow] = useState<string | null>(null);
+
+  const isNegative = safeToSpend < 0;
+  const isZero = safeToSpend === 0;
+  const toneClass = TONE[accountStatus.tone];
+
+  const num = (
+    <span className="sts-num">
+      {isNegative ? '−' : ''}
+      {fmt(safeToSpend)}
+    </span>
+  );
 
   return (
     <motion.div
-      className="sts-card"
-      id="safe-to-spend-card"
+      className={`sts-card ${toneClass} ${hideBalance ? 'is-masked' : ''}`}
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
     >
-      {/* Status badge */}
-      <div className="sts-status" style={{ color: statusColor }}>
-        <span>{statusEmoji}</span>
-        <span>{statusLabel}</span>
-      </div>
-
-      {/* Main balance */}
-      <div className="flex items-center gap-2 mb-1">
-        <span style={{ fontSize: '14px' }}>✨</span>
-        <p className="sts-label" style={{ marginBottom: 0 }}>CÓ THỂ TIÊU THÊM</p>
-        <button onClick={() => setShowInfo(true)} className="text-gray-400 hover:text-gray-300 transition-colors">
-          <Info size={14} />
-        </button>
-      </div>
-      <p style={{ fontSize: '11px', color: 'var(--c-text-tertiary)', marginBottom: '12px', fontWeight: 500 }}>
-        Sau khi đã trừ chi tiêu + bill + tiết kiệm
-      </p>
-      <p className={`sts-amount ${isNegative ? 'sts-amount--negative' : ''}`}>
-        {isNegative ? '−' : ''}{formatCurrency(Math.abs(safeToSpend))}
-      </p>
-
-
-      {/* Nút bung breakdown — thay vì luôn hiện 5 dòng, giữ hero gọn theo thiết kế mới */}
-      <button
-        type="button"
-        className="sts-breakdown-toggle"
-        onClick={() => setShowBreakdown((v) => !v)}
-      >
-        <span>Cách tính số này</span>
-        <ChevronDown size={15} className={showBreakdown ? 'sts-chevron--open' : ''} />
+      <button className="sts-eye" onClick={toggleHide} aria-label={hideBalance ? 'Hiện số dư' : 'Ẩn số dư'}>
+        {hideBalance ? <EyeOff size={15} /> : <Eye size={15} />}
       </button>
 
+      {/* Label + ? */}
+      <div className="sts-lblrow">
+        <span className="sts-lbl">Số dư khả dụng</span>
+        <button className="sts-qmark" onClick={() => setShowInfo(true)} aria-label="Số dư khả dụng là gì">?</button>
+      </div>
+
+      {/* Số dư nổi bật */}
+      <div className={`sts-amount ${isNegative ? 'sts-amount--neg' : ''}`}>
+        {num}
+        {isZero ? <span className="sts-cur"> đồng</span> : <span className="sts-cur">đ</span>}
+      </div>
+
+      {/* Tình trạng */}
+      <div className="sts-statusline">
+        <span className="sts-status-k">Tình trạng:</span>
+        <span className="sts-chip">{accountStatus.emoji} {accountStatus.label}</span>
+      </div>
+
+      {/* Nút cách tính — nhỏ */}
+      <button className={`sts-calc ${expanded ? 'is-open' : ''}`} onClick={() => setExpanded((v) => !v)}>
+        <span>{expanded ? 'Thu gọn' : 'Cách tính số này'}</span>
+        <ChevronDown size={13} className="sts-chev" />
+      </button>
+
+      {/* ĐẦY ĐỦ */}
       <AnimatePresence initial={false}>
-        {showBreakdown && (
+        {expanded && (
           <motion.div
-            className="sts-breakdown"
+            className="sts-full"
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
           >
-            <div className="sts-breakdown-row">
-              <span className="sts-breakdown-label">Tổng thu nhập tháng</span>
-              <span className="sts-breakdown-value">{formatCurrencyShort(monthlyIncome)}</span>
+            <div className="sts-breakdown">
+              <BreakdownRow id="income" label="Thu nhập tháng" amount={detail.monthlyIncome} sign={0}
+                items={detail.incomes} openRow={openRow} setOpenRow={setOpenRow} />
+              {detail.carryOver !== 0 && (
+                <BreakdownRow id="carry" label="Dư tháng trước" amount={detail.carryOver} sign={1}
+                  items={[{ label: 'Chuyển từ tháng trước', amount: detail.carryOver }]} openRow={openRow} setOpenRow={setOpenRow} />
+              )}
+              <BreakdownRow id="budget" label="Ngưỡng chi tiêu" amount={detail.plannedMonthlyBudget} sign={-1}
+                items={detail.budgets} openRow={openRow} setOpenRow={setOpenRow} />
+              <BreakdownRow id="bills" label="Bill chưa đóng" amount={detail.totalUnpaidBills} sign={-1}
+                items={detail.unpaidBills} openRow={openRow} setOpenRow={setOpenRow}
+                action={detail.unpaidBills.length > 0 ? { label: '💳 Thanh toán ngay → Sổ sách', onClick: () => router.push('/ledger?tab=bills') } : undefined} />
+              <BreakdownRow id="savings" label="Tiết kiệm/tháng" amount={detail.plannedMonthlyGoalContributions} sign={-1}
+                items={detail.goalContributions} openRow={openRow} setOpenRow={setOpenRow} />
             </div>
-            {carryOver !== 0 && (
-              <div className="sts-breakdown-row">
-                <span className="sts-breakdown-label">+ Dư tháng trước</span>
-                <span className="sts-breakdown-value sts-breakdown-positive">+{formatCurrencyShort(carryOver)}</span>
-              </div>
-            )}
-            <div className="sts-breakdown-row">
-              <span className="sts-breakdown-label">− Ngưỡng chi tiêu</span>
-              <span className="sts-breakdown-value sts-breakdown-negative">-{formatCurrencyShort(totalCategoryLimits)}</span>
-            </div>
-            <div className="sts-breakdown-row">
-              <span className="sts-breakdown-label">− Bill chưa đóng</span>
-              <span className="sts-breakdown-value sts-breakdown-negative">-{formatCurrencyShort(totalBills)}</span>
-            </div>
-            <div className="sts-breakdown-row">
-              <span className="sts-breakdown-label">− Mục tiêu tiết kiệm/tháng</span>
-              <span className="sts-breakdown-value sts-breakdown-negative">-{formatCurrencyShort(totalSavings)}</span>
+
+            {/* Lý do + hành động */}
+            <div className="sts-why">
+              <div className="sts-why-h">{accountStatus.emoji} {accountStatus.headline}</div>
+              <ul className="sts-why-list">
+                {accountStatus.reasons.map((r, i) => <li key={i}>{r}</li>)}
+              </ul>
+              {accountStatus.actions.length > 0 && (
+                <div className="sts-acts">
+                  {accountStatus.actions.map((a, i) => (
+                    <button
+                      key={i}
+                      className={`sts-act ${a.kind === 'pay-bills' || a.kind === 'earn-more' ? 'is-primary' : ''}`}
+                      onClick={() => a.target && router.push(a.target)}
+                    >
+                      {a.label}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* ═══ Warning Card: Số dư ≤ 0 ═══ */}
-      {isNegative && (
-        <motion.div
-          className="sts-warning-card sts-warning-card--danger"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-        >
-          <div className="sts-warning-header">
-            <AlertTriangle size={16} color="#EF4444" />
-            <span>Bạn đang xài nhiều hơn thu nhập!</span>
-          </div>
-          <p className="sts-warning-question">
-            Bạn có khoản thu nhập nào đắp vào để cân đối chi tiêu không?
-          </p>
-          <div className="sts-warning-suggestions">
-            <div className="sts-suggestion">💸 Đòi nợ cũ (nếu có ai nợ)</div>
-            <div className="sts-suggestion">💼 Lên kế hoạch kiếm thêm tiền ngay</div>
-            <div className="sts-suggestion">🏠 Xin hỗ trợ từ gia đình</div>
-            <div className="sts-suggestion">🤝 Mượn ai đó (phải có kế hoạch trả)</div>
-          </div>
-        </motion.div>
-      )}
-
-      {/* ═══ Encouragement Card: 0 < số dư ≤ 1 triệu ═══ */}
-      {isLow && (
-        <motion.div
-          className="sts-warning-card sts-warning-card--low"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-        >
-          <div className="sts-warning-header">
-            <Lightbulb size={16} color="#F59E0B" />
-            <span>Số dư đang mỏng</span>
-          </div>
-          <p className="sts-warning-text">
-            💪 Hãy lập kế hoạch kiếm thêm tiền để an tâm hơn! Số dư dưới 1 triệu rất dễ bị thiếu hụt bất ngờ.
-          </p>
-        </motion.div>
-      )}
-
-      {/* ═══ Modal giải thích ═══ */}
+      {/* Modal giải thích */}
       <AnimatePresence>
         {showInfo && (
-          <motion.div
-            className="sts-info-backdrop"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setShowInfo(false)}
-          >
-            <motion.div
-              className="sts-info-card"
-              initial={{ scale: 0.95, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.95, y: 20 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h3 className="sts-info-title">
-                Cách ManiCash tính Số dư an toàn
-              </h3>
-
-              <div className="sts-info-section">
-                <h4 className="sts-info-subtitle">
-                  <span className="sts-info-num">1</span>
-                  Công thức
-                </h4>
-                <div className="sts-info-formula">
-                  [Thu nhập tháng]<br />
-                  <span className="sts-info-op sts-info-op--plus">+</span> [Dư tháng trước]<br />
-                  <span className="sts-info-op sts-info-op--minus">−</span> [Ngưỡng chi tiêu]<br />
-                  <span className="sts-info-op sts-info-op--minus">−</span> [Bill chưa đóng]<br />
-                  <span className="sts-info-op sts-info-op--minus">−</span> [Mục tiêu tiết kiệm/tháng]<br />
-                  <span className="sts-info-op sts-info-op--eq">=</span> Số dư an toàn
-                </div>
+          <motion.div className="sts-modal" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setShowInfo(false)}>
+            <motion.div className="sts-modal-card" initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }} onClick={(e) => e.stopPropagation()}>
+              <h3 className="sts-modal-title">Số dư khả dụng là gì?</h3>
+              <p className="sts-modal-sub">
+                <strong>Số tiền an toàn bạn thật sự có thể tiêu</strong> phần còn lại của tháng — sau khi đã chừa đủ cho các khoản cứng.
+              </p>
+              <div className="sts-formula">
+                [Thu nhập tháng]<br />
+                <span className="sts-op sts-op--p">+</span> [Dư tháng trước]<br />
+                <span className="sts-op sts-op--m">−</span> [Ngưỡng chi tiêu]<br />
+                <span className="sts-op sts-op--m">−</span> [Bill chưa đóng]<br />
+                <span className="sts-op sts-op--m">−</span> [Tiết kiệm/tháng]<br />
+                <span className="sts-op sts-op--e">=</span> <span className="sts-formula-res">Số dư khả dụng</span>
               </div>
-
-              <div className="sts-info-section">
-                <h4 className="sts-info-subtitle">
-                  <span className="sts-info-num">2</span>
-                  Ý nghĩa
-                </h4>
-                <p className="sts-info-text">
-                  Số này cho biết bạn còn bao nhiêu tiền <strong>thực sự</strong> có thể chi tiêu
-                  sau khi đã trừ hết các khoản cứng (bill, tiết kiệm, ngưỡng hàng ngày).
-                </p>
-                <p className="sts-info-note">
-                  * Nếu số dư &lt; 0, bạn đang chi nhiều hơn thu nhập — cần cân đối ngay.
-                </p>
-              </div>
-
-              <button onClick={() => setShowInfo(false)} className="sts-info-btn">
-                Đã hiểu
-              </button>
+              <p className="sts-modal-note">
+                Về <strong>0 đồng</strong> là vừa đủ — chưa đáng lo. Chỉ khi <strong>âm</strong> mới là dấu hiệu tiêu nhiều hơn thu.
+              </p>
+              <button className="sts-modal-btn" onClick={() => setShowInfo(false)}>Đã hiểu</button>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
     </motion.div>
+  );
+}
+
+/* ── Dòng breakdown bấm được → xổ chi tiết ── */
+function BreakdownRow({
+  id, label, amount, sign, items, openRow, setOpenRow, action,
+}: {
+  id: string;
+  label: string;
+  amount: number;
+  sign: -1 | 0 | 1;
+  items: BreakdownItem[];
+  openRow: string | null;
+  setOpenRow: (v: string | null) => void;
+  action?: { label: string; onClick: () => void };
+}) {
+  const open = openRow === id;
+  const pre = sign < 0 ? '−' : sign > 0 ? '+' : '';
+  const valClass = sign < 0 ? 'sts-brow-neg' : sign > 0 ? 'sts-brow-pos' : '';
+
+  return (
+    <div className="sts-brow-wrap">
+      <button className={`sts-brow ${open ? 'is-open' : ''}`} onClick={() => setOpenRow(open ? null : id)}>
+        <span className="sts-brow-l">
+          <ChevronRight size={12} className="sts-brow-cx" />
+          {label}
+        </span>
+        <span className={`sts-brow-v ${valClass}`}>
+          <span className="sts-num">{pre}{fmt(amount)}đ</span>
+        </span>
+      </button>
+      {open && (
+        <div className="sts-bdetail">
+          {items.length === 0 ? (
+            <div className="sts-ditem"><span>Chưa có mục nào</span></div>
+          ) : (
+            items.map((it, i) => (
+              <div className="sts-ditem" key={i}>
+                <span><strong>{it.label}</strong>{it.note ? <span className="sts-dnote"> ({it.note})</span> : null}</span>
+                <span className="sts-num">{fmt(it.amount)}đ</span>
+              </div>
+            ))
+          )}
+          {action && (
+            <button className="sts-paybtn" onClick={action.onClick}>{action.label}</button>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
