@@ -48,6 +48,7 @@
     "test:rate-limit": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/rate-limit.test.ts'))\"",
     "test:mb-account-status": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/moneybrain-account-status.test.ts'))\"",
     "test:mb-breakdown": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/moneybrain-balance-breakdown.test.ts'))\"",
+    "test:coach-suggest": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/coach-suggestion-engine.test.ts'))\"",
     "test:ai-all": "npm run test:ai-chat && npm run test:ai-memory && npm run test:ai-fallback && npm run test:ai-quota && npm run test:ai-reaction && npm run test:ai-checkin && npm run test:ai-reconciliation && npm run test:ai-cfo-report && npm run test:ai-earning && npm run test:analytics && npm run test:monetization",
     "test:phase2": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/phase2-backdate.test.ts'))\"",
     "test:mb-finance": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/moneybrain-finance-metrics.test.ts'))\"",

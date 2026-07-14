@@ -1,0 +1,41 @@
+/* ═══ CoachSuggestionCard — đề xuất chủ động Phú Vương ═══ */
+.coach-card{
+  position:relative; display:flex; gap:12px; align-items:flex-start;
+  padding:14px 40px 14px 14px; border-radius:16px;
+  background:linear-gradient(165deg,#151121,#100c1b);
+  border:1px solid var(--coach-ln,rgba(120,150,220,.18));
+  box-shadow:0 16px 40px -28px rgba(0,0,0,.6);
+}
+.coach-card::before{
+  content:""; position:absolute; left:0; top:14px; bottom:14px; width:3px; border-radius:3px;
+  background:var(--coach-acc,#4f7cff);
+}
+.coach-tone-red{ --coach-acc:#ef4444; --coach-ln:rgba(239,68,68,.3); }
+.coach-tone-amber{ --coach-acc:#f59e0b; --coach-ln:rgba(245,158,11,.3); }
+.coach-tone-navy{ --coach-acc:#4f7cff; --coach-ln:rgba(79,124,255,.3); }
+.coach-tone-green{ --coach-acc:#22c55e; --coach-ln:rgba(34,197,94,.3); }
+
+.coach-avatar{
+  flex-shrink:0; width:38px; height:38px; border-radius:12px; display:grid; place-items:center;
+  font-size:20px; background:color-mix(in srgb,var(--coach-acc) 16%, transparent);
+  border:1px solid var(--coach-ln);
+}
+.coach-body{ min-width:0; flex:1; }
+.coach-name{
+  font:700 10.5px system-ui,sans-serif; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--coach-acc); margin-bottom:3px;
+}
+.coach-title{ font:700 14px system-ui,sans-serif; color:#f3f0fb; margin-bottom:3px; }
+.coach-text{ font-size:12.5px; line-height:1.5; color:#c3bcd6; margin:0; }
+.coach-action{
+  margin-top:10px; padding:8px 14px; border-radius:10px; border:none; cursor:pointer;
+  background:linear-gradient(135deg,var(--coach-acc),color-mix(in srgb,var(--coach-acc) 55%, #000));
+  color:#fff; font:700 12px system-ui,sans-serif;
+}
+.coach-action:hover{ filter:brightness(1.08); }
+.coach-dismiss{
+  position:absolute; top:10px; right:10px; width:26px; height:26px; border-radius:50%;
+  display:grid; place-items:center; cursor:pointer; color:#8a83a3;
+  background:transparent; border:1px solid transparent;
+}
+.coach-dismiss:hover{ color:#f3f0fb; background:rgba(255,255,255,.06); }

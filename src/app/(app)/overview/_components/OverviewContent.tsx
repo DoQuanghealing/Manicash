@@ -6,6 +6,7 @@ import { useSettingsStore } from '@/stores/useSettingsStore';
 import { resolveVibe } from '@/lib/ageGroup';
 import { getCopy } from '@/data/vibedCopy';
 import SafeToSpendCard from './SafeToSpendCard';
+import CoachSuggestionCard from './CoachSuggestionCard';
 import AlertsInbox from './AlertsInbox';
 import MissionChecklist from './MissionChecklist';
 import OnboardingQuestPanel from './OnboardingQuestPanel';
@@ -35,6 +36,9 @@ export default function OverviewContent() {
 
         {/* ═══ BLOCK 1: Safe-to-Spend Balance ═══ */}
         <SafeToSpendCard />
+
+        {/* ═══ BLOCK 1c: Đề xuất chủ động của quản gia (chỉ tier Phú Vương) ═══ */}
+        <CoachSuggestionCard />
 
         {/* ═══ BLOCK 1b: Alerts inbox — gộp budget/pending-txn/idle-money thành 1 thanh ═══ */}
         <AlertsInbox />
