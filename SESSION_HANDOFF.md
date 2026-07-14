@@ -1,3 +1,31 @@
+# ManiCash — Handoff phiên (2026-07-09) — Hardening + Overview redesign + PV-2
+
+> **✅ ĐÃ PUSH `origin/main` = `5e74d75`** (Vercel auto-deploy). Tree sạch. 3 commit phiên này:
+> `44befdd` rate-limit /api/chat · `7900e4a` redesign Tổng quan (Số dư khả dụng) · `5e74d75` PV-2 đề xuất chủ động.
+> Verify mọi bước: `tsc` sạch · `npm run build` ✓ · lint sạch · test mới đều PASS. PO xem trên web.
+
+## Đã làm phiên này
+1. **Rate-limit `/api/chat`** (`44befdd`) — `lib/rateLimit.ts` sliding-window per-uid (12/10s + 40/phút), 429+Retry-After. LLM routes (parse/cfo-narration) đã có credit-quota sẵn. Env chỉnh: `RATE_LIMIT_CHAT_MAX_0/1`. Test 7/7.
+2. **Redesign Tổng quan — "Số dư khả dụng"** (`7900e4a`) — bỏ "−0đ đỏ lòm". Card **navy**, mặc định GỌN (số dư nổi + tình trạng), xổ ra ĐẦY ĐỦ (breakdown bấm-từng-dòng + lý do + action). Che số mặc định (nút mắt, `settings.hideBalance`). **4 trạng thái** `accountStatus.ts` (xuatsac/tot/trungbinh/canhbao) + drill-down `balanceBreakdown.ts` (đều pure, test 10/10). Nút Thanh toán→`/ledger?tab=bills` (LedgerContent giờ đọc `?tab=`). **Chưa có mô hình "nợ" thật** — suy từ số dư âm.
+3. **PV-2 Đề xuất chủ động** (`5e74d75`) — Phú Vương "sống". `coach/suggestionEngine.ts` (7 tín hiệu→gợi ý xếp ưu tiên) + `CoachSuggestionCard` (block Tổng quan, **chỉ sovereign**, 1 gợi ý/lần, action=điều hướng KHÔNG tự đổi tiền, bỏ qua=cooldown 3 ngày) + `useCoachSuggestionStore` (clear account-boundary). Test 6/6.
+4. **Roadmap chi tiết** `docs/PHU_VUONG_BUILD_ROADMAP.md` (PV-1..PV-6) + spec `docs/FINANCIAL_DNA_SPEC.md` + `docs/ETHICS_CHARTER.md` (từ phiên trước, nay commit).
+
+## 🔜 MAI TIẾP TỪ ĐÂY — PV-3 Financial DNA
+Bài test năng lực+thói quen+**tâm lý tiền** → persona (5 money-script) → giải pháp+nâng tư duy. Chi tiết: `FINANCIAL_DNA_SPEC.md`. Lấp `growthOrientation` (đang để 50) = Oracle.
+**CHỜ PO CHỐT 3 điều trước khi code (ghi cuối `PHU_VUONG_BUILD_ROADMAP.md`):**
+1. Duyệt **bộ câu hỏi** (Claude soạn nháp Phần A + 3 câu viết → PO chỉnh).
+2. **Lưu raw phần viết** hay chỉ lưu bản phân tích (an toàn hơn)?
+3. Bản đầy đủ: Free tốn 1 credit/lần hay khoá hẳn sau **Pro Plus**?
+> Việc kế đã hứa PO: Claude soạn **bộ câu hỏi nháp PV-3** để duyệt.
+
+## Việc treo khác
+- **PV-4 money sync per-user** — chờ PO bàn kỹ (dữ liệu nhạy cảm) + câu chữ consent tầng 3.
+- **`/api/feedback`** — chưa có (nên làm trước khi mở test rộng).
+- Hydrate `butlerTier` từ server (hiện per-device) · mô hình "nợ" thật · che số ra cả ô Thu/Chi.
+- Demo Phú Vương: tạm hạ `STREAK_GATE` trong `SovereignInvite.tsx`.
+
+---
+
 # ManiCash — Handoff phiên (2026-07-08b) — Phú Vương 🐉
 
 > **✅ ĐÃ PUSH `origin/main` = `d6ce825`** (Vercel auto-deploy). Bao gồm cả 5 commit cũ (admin S0-S4 + telemetry + butler onboarding) + 2 commit mới phiên này. Tree sạch.
