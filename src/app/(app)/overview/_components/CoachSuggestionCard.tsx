@@ -12,6 +12,7 @@ import { useMoneySnapshotV1 } from '@/hooks/useMoneySnapshotV1';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useCoachSuggestionStore, isInCooldown } from '@/stores/useCoachSuggestionStore';
 import { generateCoachSuggestions } from '@/lib/aiMoneyChat/coach/suggestionEngine';
+import { resolveButlerLevel, hasFeature } from '@/lib/monetization/butlerFeatures';
 import './CoachSuggestionCard.css';
 
 const TONE_CLASS = {
@@ -32,17 +33,21 @@ export default function CoachSuggestionCard() {
 
   const addr = honorific || 'ngài';
 
+  // Gate theo ma trận 3 cấp (Mercedes T1). FOMO: billing chưa cap nên chỉ cần persona;
+  // khi PV-5 bật NEXT_PUBLIC_BUTLER_BILLING_ENFORCED → truyền thêm billingTier từ profile.
+  const canCoach = hasFeature(resolveButlerLevel({ butlerTier: tier }), 'coach.proactive');
+
   // Đề xuất ưu tiên cao nhất chưa bị bỏ qua (trong cooldown).
   const top = useMemo(() => {
-    if (tier !== 'sovereign') return null;
+    if (!canCoach) return null;
     // Mốc "bây giờ" lấy từ snapshot (pure, isomorphic) — cooldown 3 ngày không cần độ chính xác ms.
     const now = new Date(snapshot.clientNow).getTime();
     return (
       generateCoachSuggestions(snapshot, addr).find((s) => !isInCooldown(dismissed[s.id], now)) ?? null
     );
-  }, [tier, snapshot, addr, dismissed]);
+  }, [canCoach, snapshot, addr, dismissed]);
 
-  if (tier !== 'sovereign' || !top) return null;
+  if (!canCoach || !top) return null;
 
   return (
     <AnimatePresence>
