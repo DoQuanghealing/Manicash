@@ -17,11 +17,18 @@ export interface LLMOptions {
   responseFormat?: 'text' | 'json_object';
   /** Override model nếu cần. */
   model?: string;
+  /** Ngữ cảnh ghi sổ ai_usage_log (T2) — uid + loại lượt, để đối soát chi phí per-user. */
+  usageContext?: { uid?: string; feature?: string };
 }
 
 export interface LLMResult {
   content: string;
   tokensUsed: number;
+  /** Tách in/out từ usage (T2 — tính tiền chính xác). Thiếu → tính bảo thủ theo giá output. */
+  tokensIn?: number;
+  tokensOut?: number;
+  /** Model THẬT đã gọi (sau env override) — để tra bảng giá. */
+  model?: string;
 }
 
 /** Interface chung cho mọi provider. */

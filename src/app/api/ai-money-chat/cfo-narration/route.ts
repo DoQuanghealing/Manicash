@@ -11,6 +11,8 @@ import {
   type CfoNarrationInput,
   type CfoNarrationSource,
 } from '@/lib/aiMoneyChat/cfoNarration';
+import { checkSpendBreaker, logAiUsage } from '@/lib/aiMoneyChat/llm/aiUsageLog';
+import { estimateCostVnd } from '@/lib/aiMoneyChat/llm/aiCostCore';
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
@@ -57,7 +59,16 @@ function parsePayload(body: unknown): CfoNarrationInput | null {
   };
 }
 
-async function callGroq(apiKey: string, input: CfoNarrationInput): Promise<string> {
+interface GroqNarrationResult {
+  text: string;
+  model: string;
+  tokensIn: number;
+  tokensOut: number;
+  tokensTotal: number;
+}
+
+async function callGroq(apiKey: string, input: CfoNarrationInput): Promise<GroqNarrationResult> {
+  const model = process.env.AI_MONEY_CHAT_GROQ_MODEL || 'llama-3.3-70b-versatile';
   const response = await fetch(GROQ_API_URL, {
     method: 'POST',
     headers: {
@@ -65,7 +76,7 @@ async function callGroq(apiKey: string, input: CfoNarrationInput): Promise<strin
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: process.env.AI_MONEY_CHAT_GROQ_MODEL || 'llama-3.3-70b-versatile',
+      model,
       messages: [
         { role: 'system', content: CFO_NARRATION_SYSTEM_PROMPT },
         { role: 'user', content: buildCfoNarrationPrompt(input) },
@@ -84,7 +95,13 @@ async function callGroq(apiKey: string, input: CfoNarrationInput): Promise<strin
   if (typeof content !== 'string') {
     throw new Error('Groq response missing content.');
   }
-  return content;
+  return {
+    text: content,
+    model,
+    tokensIn: data.usage?.prompt_tokens ?? 0,
+    tokensOut: data.usage?.completion_tokens ?? 0,
+    tokensTotal: data.usage?.total_tokens ?? 0,
+  };
 }
 
 function jsonResult(source: CfoNarrationSource, reason: string, text: string | null = null, status = 200) {
@@ -133,13 +150,32 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // T2 — cầu dao ngân sách ngày: SAU cache-hit (cache 0đ không chặn), TRƯỚC charge credit.
+    const breaker = await checkSpendBreaker();
+    if (!breaker.allowed) {
+      return jsonResult('disabled', 'Ngân sách AI hôm nay đã chạm trần an toàn. Thử lại sau ít giờ nhé.');
+    }
+
     const quota = await chargeAiMoneyCfoNarrationCredit(uid);
     if (!quota.allowed) {
       return jsonResult('quota-exceeded', quota.reason, null, 402);
     }
 
-    const raw = await callGroq(apiKey, input);
-    const narration = validateNarration(raw);
+    const groq = await callGroq(apiKey, input);
+    // T2 — ghi sổ ai_usage_log (token đã tiêu kể cả khi validate fail phía dưới).
+    await logAiUsage({
+      uid,
+      feature: 'cfo_narration',
+      model: groq.model,
+      provider: 'groq',
+      tokensIn: groq.tokensIn,
+      tokensOut: groq.tokensOut,
+      tokensTotal: groq.tokensTotal,
+      costVnd: estimateCostVnd(groq.model, groq.tokensIn, groq.tokensOut),
+      fallbackUsed: false,
+      latencyMs: 0,
+    });
+    const narration = validateNarration(groq.text);
     if (!narration) {
       return jsonResult('error', 'AI narration failed validation.');
     }

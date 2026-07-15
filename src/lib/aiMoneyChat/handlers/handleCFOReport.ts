@@ -104,7 +104,11 @@ export async function handleCFOReport(
   });
 
   // 3) Run CFO analysis (LLM schema-guarded hoặc fallback deterministic).
-  const result = await runCFOAnalysis(moneySnapshot, { generate: deps.generate });
+  // T2: gắn usageContext để ai_usage_log gán chi phí đúng uid + loại lượt.
+  const result = await runCFOAnalysis(moneySnapshot, {
+    generate: (messages, options) =>
+      deps.generate(messages, { ...options, usageContext: { uid, feature: 'cfo' } }),
+  });
   const { context, cfo, deterministicFallback } = result;
 
   // 4) Compose markdown — số từ context, diễn giải từ LLM/fallback.

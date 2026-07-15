@@ -7,6 +7,8 @@ import {
 } from '@/lib/aiMoneyChat/aiFallback';
 import { chargeAiMoneyFallbackCredit } from '@/lib/aiMoneyChat/quota';
 import { getTaxonomyByDirection } from '@/lib/aiMoneyChat/taxonomy';
+import { checkSpendBreaker, logAiUsage } from '@/lib/aiMoneyChat/llm/aiUsageLog';
+import { estimateCostVnd } from '@/lib/aiMoneyChat/llm/aiCostCore';
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const MAX_RAW_TEXT_LENGTH = 200;
@@ -73,7 +75,16 @@ Rules:
 - No markdown.`;
 }
 
-async function callGroq(apiKey: string, payload: AiFallbackRequestPayload): Promise<AiFallbackCandidate> {
+interface GroqCallResult {
+  candidate: AiFallbackCandidate;
+  model: string;
+  tokensIn: number;
+  tokensOut: number;
+  tokensTotal: number;
+}
+
+async function callGroq(apiKey: string, payload: AiFallbackRequestPayload): Promise<GroqCallResult> {
+  const model = process.env.AI_MONEY_CHAT_GROQ_MODEL || 'llama-3.3-70b-versatile';
   const response = await fetch(GROQ_API_URL, {
     method: 'POST',
     headers: {
@@ -81,7 +92,7 @@ async function callGroq(apiKey: string, payload: AiFallbackRequestPayload): Prom
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: process.env.AI_MONEY_CHAT_GROQ_MODEL || 'llama-3.3-70b-versatile',
+      model,
       messages: [
         {
           role: 'system',
@@ -105,7 +116,13 @@ async function callGroq(apiKey: string, payload: AiFallbackRequestPayload): Prom
     throw new Error('Groq response missing content.');
   }
 
-  return JSON.parse(content) as AiFallbackCandidate;
+  return {
+    candidate: JSON.parse(content) as AiFallbackCandidate,
+    model,
+    tokensIn: data.usage?.prompt_tokens ?? 0,
+    tokensOut: data.usage?.completion_tokens ?? 0,
+    tokensTotal: data.usage?.total_tokens ?? 0,
+  };
 }
 
 function jsonResult(source: FallbackSource, reason: string, intent: unknown = null, status = 200) {
@@ -140,13 +157,32 @@ export async function POST(req: NextRequest) {
       return jsonResult('unauthorized', 'AI fallback requires a verified signed-in user.', null, 401);
     }
 
+    // T2 — cầu dao ngân sách ngày TRƯỚC khi charge credit (user không mất lượt oan).
+    const breaker = await checkSpendBreaker();
+    if (!breaker.allowed) {
+      return jsonResult('disabled', 'Ngân sách AI hôm nay đã chạm trần an toàn. Thử lại sau ít giờ nhé.');
+    }
+
     const quota = await chargeAiMoneyFallbackCredit(uid);
     if (!quota.allowed) {
       return jsonResult('quota-exceeded', quota.reason, null, 402);
     }
 
-    const candidate = await callGroq(apiKey, payload);
-    const validated = validateAiFallbackCandidate(candidate, payload);
+    const groq = await callGroq(apiKey, payload);
+    // T2 — ghi sổ ai_usage_log (token đã tiêu kể cả khi validate fail phía dưới).
+    await logAiUsage({
+      uid,
+      feature: 'fallback_parse',
+      model: groq.model,
+      provider: 'groq',
+      tokensIn: groq.tokensIn,
+      tokensOut: groq.tokensOut,
+      tokensTotal: groq.tokensTotal,
+      costVnd: estimateCostVnd(groq.model, groq.tokensIn, groq.tokensOut),
+      fallbackUsed: false,
+      latencyMs: 0,
+    });
+    const validated = validateAiFallbackCandidate(groq.candidate, payload);
     return NextResponse.json({
       source: validated.intent ? 'ai' : 'error',
       reason: validated.reason,

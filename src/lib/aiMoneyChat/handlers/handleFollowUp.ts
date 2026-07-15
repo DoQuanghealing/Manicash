@@ -77,7 +77,12 @@ export async function handleFollowUp(
   });
 
   try {
-    const result = await deps.generate(messages, { temperature: 0.3, maxTokens: 500 });
+    const result = await deps.generate(messages, {
+      temperature: 0.3,
+      maxTokens: 500,
+      // T2: ghi sổ ai_usage_log đúng uid + loại lượt.
+      usageContext: { uid, feature: 'deep' },
+    });
 
     // Bóc + lưu note hệ thống (cuối chu kỳ follow-up), ẩn tag khỏi message.
     const { extractProfileNote, stripProfileNote } = await import('../memory/longTermProfile');
