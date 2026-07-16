@@ -230,6 +230,87 @@ async function main() {
     expectEqual(llmCalled, false);
   });
 
+  /* ─────────── #2 POST-PAYMENT — chỉ trừ credit khi LLM giao kết quả dùng được ─────────── */
+  describe('Post-payment (#2) — LLM lỗi thì KHÔNG trừ credit, thành công mới trừ');
+
+  await it('FOLLOW_UP thành công -> peek 1 lần + charge 1 lần (đúng thứ tự)', async () => {
+    __clearConversationStoreForTest();
+    await createSession(SID, UID, await makeSnapshot());
+    let peekCalls = 0;
+    let chargeCalls = 0;
+    let llmRanBeforeCharge = false;
+    let llmRan = false;
+    await handleFollowUp(UID, routeIntent('tại sao lại lố'), { sessionId: SID }, {
+      peek: async () => { peekCalls += 1; return quotaOk(); },
+      charge: async () => { chargeCalls += 1; return quotaOk(); },
+      generate: async () => { llmRan = true; llmRanBeforeCharge = chargeCalls === 0; return { content: 'x', tokensUsed: 10, provider: 'openai', fallbackUsed: false }; },
+    });
+    expectEqual(peekCalls, 1);
+    expectEqual(chargeCalls, 1);
+    expectTrue(llmRan, 'LLM chạy');
+    expectTrue(llmRanBeforeCharge, 'LLM chạy TRƯỚC charge (post-payment)');
+  });
+
+  await it('FOLLOW_UP: LLM throw -> peek gọi, charge KHÔNG gọi (user không mất lượt)', async () => {
+    __clearConversationStoreForTest();
+    await createSession(SID, UID, await makeSnapshot());
+    let peekCalls = 0;
+    let chargeCalls = 0;
+    const reply = await handleFollowUp(UID, routeIntent('tại sao lại lố'), { sessionId: SID }, {
+      peek: async () => { peekCalls += 1; return quotaOk(); },
+      charge: async () => { chargeCalls += 1; return quotaOk(); },
+      generate: async () => { throw new Error('Groq down'); },
+    });
+    expectEqual(peekCalls, 1);
+    expectEqual(chargeCalls, 0);
+    expectIncludes(reply.message, 'tạm thời bận');
+  });
+
+  await it('FOLLOW_UP: peek denied -> LLM không chạy + charge KHÔNG gọi', async () => {
+    __clearConversationStoreForTest();
+    await createSession(SID, UID, await makeSnapshot());
+    let llmRan = false;
+    let chargeCalls = 0;
+    const reply = await handleFollowUp(UID, routeIntent('tại sao lại lố'), { sessionId: SID }, {
+      peek: async () => quotaDenied(),
+      charge: async () => { chargeCalls += 1; return quotaOk(); },
+      generate: async () => { llmRan = true; return { content: 'x', tokensUsed: 0, provider: 'openai', fallbackUsed: false }; },
+    });
+    expectEqual(llmRan, false);
+    expectEqual(chargeCalls, 0);
+    expectIncludes(reply.message, 'hết hạn mức');
+  });
+
+  const CFO_AI_JSON = JSON.stringify({
+    summary: 'Tháng này tài chính ổn định.',
+    diagnosis: ['Dòng tiền dương.'],
+    risks: ['Quỹ dự phòng mỏng.'],
+    opportunities: ['Giảm chi ăn uống.'],
+    actionPlan7Days: ['Khóa bill', 'Soát chi lớn', 'Hoàn thành task'],
+  });
+
+  await it('CFO: LLM JSON hợp lệ (không fallback) -> charge gọi 1 lần', async () => {
+    let chargeCalls = 0;
+    const reply = await handleCFOReport(UID, routeIntent('lên báo cáo CFO tháng'), { clientSnapshot: FULL_INPUT }, {
+      peek: async () => quotaOk(),
+      charge: async () => { chargeCalls += 1; return quotaOk(); },
+      generate: async () => ({ content: CFO_AI_JSON, tokensUsed: 300, provider: 'openai' }),
+    });
+    expectEqual(reply.meta.source, 'llm');
+    expectEqual(chargeCalls, 1);
+  });
+
+  await it('CFO: LLM lỗi -> fallback deterministic -> charge KHÔNG gọi (báo cáo miễn phí)', async () => {
+    let chargeCalls = 0;
+    const reply = await handleCFOReport(UID, routeIntent('lên báo cáo CFO tháng'), { clientSnapshot: FULL_INPUT }, {
+      peek: async () => quotaOk(),
+      charge: async () => { chargeCalls += 1; return quotaOk(); },
+      generate: async () => { throw new Error('LLM down'); },
+    });
+    expectEqual(reply.meta.source, 'deterministic');
+    expectEqual(chargeCalls, 0);
+  });
+
   console.log('\nPhase 4 conversation state test suite complete.');
 }
 

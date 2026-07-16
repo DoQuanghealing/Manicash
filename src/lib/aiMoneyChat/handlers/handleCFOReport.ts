@@ -24,6 +24,8 @@ import type { CFOAIResponse } from '../cfo/cfoResponseSchema';
 import { formatVND } from '../response/formatMoney';
 
 export interface CFOHandlerDeps {
+  /** #2 POST-PAYMENT: kiểm tra hạn mức read-only TRƯỚC khi gọi LLM. Mặc định = charge (shim test). */
+  peek?: (uid: string) => Promise<AiMoneyQuotaChargeResult>;
   charge: (uid: string) => Promise<AiMoneyQuotaChargeResult>;
   generate: (messages: LLMMessage[], options?: LLMOptions) => Promise<CFOGenerateResult>;
   history?: ConversationTurn[];
@@ -34,6 +36,10 @@ export interface CFOHandlerDeps {
 
 function defaultDeps(): CFOHandlerDeps {
   return {
+    peek: async (uid) => {
+      const { peekAiMoneyCfoNarrationCredit } = await import('../quota');
+      return peekAiMoneyCfoNarrationCredit(uid);
+    },
     charge: async (uid) => {
       const { chargeAiMoneyCfoNarrationCredit } = await import('../quota');
       return chargeAiMoneyCfoNarrationCredit(uid);
@@ -83,8 +89,9 @@ export async function handleCFOReport(
   ctx: ChatHandlerContext = {},
   deps: CFOHandlerDeps = defaultDeps(),
 ): Promise<ChatReply> {
-  // 1) Quota.
-  const quota = await deps.charge(uid);
+  // 1) #2 POST-PAYMENT — peek hạn mức (read-only) TRƯỚC khi phân tích. CHƯA trừ credit.
+  const peek = deps.peek ?? deps.charge;
+  const quota = await peek(uid);
   if (!quota.allowed) {
     const isFree = quota.plan === 'free';
     return {
@@ -113,6 +120,12 @@ export async function handleCFOReport(
 
   // 4) Compose markdown — số từ context, diễn giải từ LLM/fallback.
   const message = composeMarkdown(context, cfo);
+
+  // #2 POST-PAYMENT — CHỈ trừ credit khi LLM THẬT SỰ chạy. Fallback deterministic
+  // (LLM lỗi/không có key) tốn 0đ API -> user vẫn nhận báo cáo MIỄN PHÍ, không trừ.
+  if (!deterministicFallback) {
+    await deps.charge(uid);
+  }
 
   // 5) Session (legacy snapshot) — nền tảng follow-up Phase 4.
   if (ctx.sessionId) {

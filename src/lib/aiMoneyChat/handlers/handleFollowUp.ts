@@ -16,6 +16,8 @@ import type { LLMMessage, LLMOptions } from '../llm/types';
 import type { ChatIntent, ChatReply } from '../intent/types';
 
 export interface FollowUpHandlerDeps {
+  /** #2 POST-PAYMENT: kiểm tra hạn mức read-only TRƯỚC khi gọi LLM. Mặc định = charge (shim test). */
+  peek?: (uid: string) => Promise<AiMoneyQuotaChargeResult>;
   charge: (uid: string) => Promise<AiMoneyQuotaChargeResult>;
   generate: (messages: LLMMessage[], options?: LLMOptions) => Promise<LLMResponse>;
   /** Lưu note hệ thống do LLM phát hiện (cuối chu kỳ — Phase 5). */
@@ -25,6 +27,10 @@ export interface FollowUpHandlerDeps {
 function defaultDeps(): FollowUpHandlerDeps {
   return {
     // Dynamic import: không kéo firebase-admin vào graph khi test inject deps.
+    peek: async (uid) => {
+      const { peekAiMoneyCfoNarrationCredit } = await import('../quota');
+      return peekAiMoneyCfoNarrationCredit(uid);
+    },
     charge: async (uid) => {
       const { chargeAiMoneyCfoNarrationCredit } = await import('../quota');
       return chargeAiMoneyCfoNarrationCredit(uid);
@@ -55,8 +61,9 @@ export async function handleFollowUp(
   // Không có phiên (hết hạn / chưa có báo cáo nào) -> mời tạo mới.
   if (!session) return EXPIRED_REPLY(intent);
 
-  // Quota.
-  const quota = await deps.charge(uid);
+  // #2 POST-PAYMENT — peek hạn mức (read-only) TRƯỚC khi gọi LLM. CHƯA trừ credit.
+  const peek = deps.peek ?? deps.charge;
+  const quota = await peek(uid);
   if (!quota.allowed) {
     const isFree = quota.plan === 'free';
     return {
@@ -99,6 +106,9 @@ export async function handleFollowUp(
       assistantMessage: displayMessage,
       tokensUsed: result.tokensUsed,
     });
+
+    // #2 POST-PAYMENT — LLM đã trả kết quả dùng được + đã lưu turn -> trừ credit BÂY GIỜ.
+    await deps.charge(uid);
 
     return {
       message: displayMessage,

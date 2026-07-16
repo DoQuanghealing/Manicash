@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getVerifiedRequestUid } from '@/lib/requestAuth';
-import { chargeAiMoneyCfoNarrationCredit } from '@/lib/aiMoneyChat/quota';
+import {
+  peekAiMoneyCfoNarrationCredit,
+  chargeAiMoneyCfoNarrationCredit,
+} from '@/lib/aiMoneyChat/quota';
 import { getCurrentAiMoneyMonthKey } from '@/lib/aiMoneyChat/quotaCore';
 import { readNarrationCache, writeNarrationCache } from '@/lib/aiMoneyChat/cfoNarrationCache';
 import {
@@ -156,13 +159,15 @@ export async function POST(req: NextRequest) {
       return jsonResult('disabled', 'Ngân sách AI hôm nay đã chạm trần an toàn. Thử lại sau ít giờ nhé.');
     }
 
-    const quota = await chargeAiMoneyCfoNarrationCredit(uid);
-    if (!quota.allowed) {
-      return jsonResult('quota-exceeded', quota.reason, null, 402);
+    // #2 POST-PAYMENT — kiểm tra hạn mức (read-only) TRƯỚC, CHƯA trừ credit.
+    const peek = await peekAiMoneyCfoNarrationCredit(uid);
+    if (!peek.allowed) {
+      return jsonResult('quota-exceeded', peek.reason, null, 402);
     }
 
+    // Groq lỗi -> throw -> catch -> 'error', CHƯA trừ credit.
     const groq = await callGroq(apiKey, input);
-    // T2 — ghi sổ ai_usage_log (token đã tiêu kể cả khi validate fail phía dưới).
+    // T2 — ghi sổ ai_usage_log (token đã tiêu kể cả khi validate fail / không charge).
     await logAiUsage({
       uid,
       feature: 'cfo_narration',
@@ -177,10 +182,14 @@ export async function POST(req: NextRequest) {
     });
     const narration = validateNarration(groq.text);
     if (!narration) {
+      // Groq trả rác (validate fail) -> user không nhận được gì -> KHÔNG trừ credit.
       return jsonResult('error', 'AI narration failed validation.');
     }
 
     await writeNarrationCache(uid, monthKey, fingerprint, narration);
+
+    // #2 — có narration dùng được, đã lưu cache -> trừ credit BÂY GIỜ.
+    const quota = await chargeAiMoneyCfoNarrationCredit(uid);
 
     return NextResponse.json({
       source: 'ai',

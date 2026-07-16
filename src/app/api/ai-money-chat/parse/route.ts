@@ -5,7 +5,11 @@ import {
   type AiFallbackRequestPayload,
   validateAiFallbackCandidate,
 } from '@/lib/aiMoneyChat/aiFallback';
-import { chargeAiMoneyFallbackCredit } from '@/lib/aiMoneyChat/quota';
+import {
+  peekAiMoneyFallbackCredit,
+  chargeAiMoneyFallbackCredit,
+  type AiMoneyQuotaChargeResult,
+} from '@/lib/aiMoneyChat/quota';
 import { getTaxonomyByDirection } from '@/lib/aiMoneyChat/taxonomy';
 import { checkSpendBreaker, logAiUsage } from '@/lib/aiMoneyChat/llm/aiUsageLog';
 import { estimateCostVnd } from '@/lib/aiMoneyChat/llm/aiCostCore';
@@ -163,13 +167,16 @@ export async function POST(req: NextRequest) {
       return jsonResult('disabled', 'Ngân sách AI hôm nay đã chạm trần an toàn. Thử lại sau ít giờ nhé.');
     }
 
-    const quota = await chargeAiMoneyFallbackCredit(uid);
-    if (!quota.allowed) {
-      return jsonResult('quota-exceeded', quota.reason, null, 402);
+    // #2 POST-PAYMENT — kiểm tra hạn mức (read-only) TRƯỚC, CHƯA trừ credit.
+    // User hết hạn mức bị chặn ngay, không tiêu token Groq oan.
+    const peek = await peekAiMoneyFallbackCredit(uid);
+    if (!peek.allowed) {
+      return jsonResult('quota-exceeded', peek.reason, null, 402);
     }
 
+    // Groq lỗi -> throw -> catch phía dưới -> 'error', CHƯA trừ credit (user không mất lượt oan).
     const groq = await callGroq(apiKey, payload);
-    // T2 — ghi sổ ai_usage_log (token đã tiêu kể cả khi validate fail phía dưới).
+    // T2 — ghi sổ ai_usage_log (token đã tiêu kể cả khi validate fail / không charge).
     await logAiUsage({
       uid,
       feature: 'fallback_parse',
@@ -183,6 +190,14 @@ export async function POST(req: NextRequest) {
       latencyMs: 0,
     });
     const validated = validateAiFallbackCandidate(groq.candidate, payload);
+
+    // #2 — CHỈ trừ credit khi có intent DÙNG ĐƯỢC giao cho user. Groq trả rác
+    // (validate fail) -> không trừ. Race hiếm khi charge deny -> vẫn giao kết quả free.
+    let quota: AiMoneyQuotaChargeResult = peek;
+    if (validated.intent) {
+      quota = await chargeAiMoneyFallbackCredit(uid);
+    }
+
     return NextResponse.json({
       source: validated.intent ? 'ai' : 'error',
       reason: validated.reason,
