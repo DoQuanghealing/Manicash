@@ -86,6 +86,63 @@ export function getMonthlyCreditLimit(plan: AiMoneyQuotaPlan, config = getAiMone
   return Math.min(planLimit, config.hardMonthlyCredits);
 }
 
+/** Kết quả quyết định 1 lượt charge (tháng + ngày). */
+export interface AiChargeDecision extends AiMoneyQuotaSnapshot {
+  chargedCredits: number;
+}
+
+/**
+ * PURE — toàn bộ logic quyết định của chargeAiMoneyCredits (quota.ts) tách ra đây:
+ * per-MONTH credits (evaluateQuota) → per-DAY feature limit. Server (transaction)
+ * và CI cost-simulation (tests/ai-cost-simulation.test.ts) dùng CHUNG hàm này —
+ * một nguồn sự thật, mô phỏng không thể lệch khỏi hành vi thật.
+ */
+export function decideAiMoneyCharge(
+  input: {
+    uid: string;
+    monthKey: string;
+    plan: AiMoneyQuotaPlan;
+    feature: 'report' | 'chat';
+    chargeCredits: number;
+    usedCredits: number;
+    /** Số lượt feature này ĐÃ dùng hôm nay (đã reset theo dayKey). */
+    usedTodayFeature: number;
+    /** Trần/ngày của feature (getAiQuotaLimits(plan, feature).perDay). */
+    perDayLimit: number;
+  },
+  config = getAiMoneyQuotaConfig(),
+): AiChargeDecision {
+  const quota = evaluateQuota(
+    {
+      uid: input.uid,
+      monthKey: input.monthKey,
+      plan: input.plan,
+      usedCredits: input.usedCredits,
+      chargeCredits: input.chargeCredits,
+    },
+    config,
+  );
+  if (!quota.allowed) {
+    return { ...quota, chargedCredits: 0 };
+  }
+
+  if (input.usedTodayFeature >= input.perDayLimit) {
+    return {
+      ...quota,
+      allowed: false,
+      reason: `Hết lượt ${input.feature === 'report' ? 'báo cáo AI' : 'chat AI'} hôm nay (${input.perDayLimit}/ngày). Thử lại ngày mai hoặc nâng Pro để có thêm.`,
+      chargedCredits: 0,
+    };
+  }
+
+  return {
+    ...quota,
+    usedCredits: input.usedCredits + input.chargeCredits,
+    remainingCredits: Math.max(0, quota.monthlyLimit - input.usedCredits - input.chargeCredits),
+    chargedCredits: input.chargeCredits,
+  };
+}
+
 export function evaluateQuota(
   input: {
     uid: string;

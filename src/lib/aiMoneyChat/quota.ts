@@ -2,7 +2,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { getAdminDb } from '@/lib/firebaseAdmin';
 import type { UserProfile } from '@/types/user';
 import {
-  evaluateQuota,
+  decideAiMoneyCharge,
   getAiMoneyQuotaConfig,
   getCurrentAiMoneyMonthKey,
   getCurrentAiMoneyDayKey,
@@ -45,23 +45,16 @@ async function chargeAiMoneyCredits(
     const snap = await transaction.get(ref);
     const data = snap.exists ? snap.data() ?? {} : {};
     const usedCredits = typeof data.usedCredits === 'number' ? data.usedCredits : 0;
-
-    // ── Per-MONTH credits (hard ceiling) ──
-    const quota = evaluateQuota({ uid, monthKey, plan, usedCredits, chargeCredits }, config);
-    if (!quota.allowed) {
-      return { ...quota, chargedCredits: 0 };
-    }
-
-    // ── Per-DAY (server-enforced — chống lách bằng clear localStorage) ──
     const daily = readDailyUsage(data, dayKey); // tự reset 0 khi sang ngày
     const usedTodayFeature = feature === 'report' ? daily.report : daily.chat;
-    if (usedTodayFeature >= perDayLimit) {
-      return {
-        ...quota,
-        allowed: false,
-        reason: `Hết lượt ${feature === 'report' ? 'báo cáo AI' : 'chat AI'} hôm nay (${perDayLimit}/ngày). Thử lại ngày mai hoặc nâng Pro để có thêm.`,
-        chargedCredits: 0,
-      };
+
+    // ── Quyết định (tháng + ngày) — logic PURE dùng chung với CI cost-simulation ──
+    const decision = decideAiMoneyCharge(
+      { uid, monthKey, plan, feature, chargeCredits, usedCredits, usedTodayFeature, perDayLimit },
+      config,
+    );
+    if (!decision.allowed) {
+      return decision;
     }
 
     // Ghi: credits tháng + counter feature ngày (set TƯỜNG MINH cả 2 daily counter để
@@ -83,12 +76,7 @@ async function chargeAiMoneyCredits(
       { merge: true },
     );
 
-    return {
-      ...quota,
-      usedCredits: usedCredits + chargeCredits,
-      remainingCredits: Math.max(0, quota.monthlyLimit - usedCredits - chargeCredits),
-      chargedCredits: chargeCredits,
-    };
+    return decision;
   });
 }
 
