@@ -7,10 +7,10 @@ import {
   stripProfileNote,
 } from '@/lib/aiMoneyChat/memory/longTermProfile';
 import { getFinanceSnapshot, __clearSnapshotCacheForTest } from '@/lib/aiMoneyChat/aggregation/snapshotBuilder';
-import { handleCFOReport } from '@/lib/aiMoneyChat/handlers/handleCFOReport';
+import { handleFollowUp } from '@/lib/aiMoneyChat/handlers/handleFollowUp';
+import { createSession, __clearConversationStoreForTest } from '@/lib/aiMoneyChat/llm/conversationStore';
 import { routeIntent } from '@/lib/aiMoneyChat/intent/intentRouter';
 import type { AiMoneyQuotaChargeResult } from '@/lib/aiMoneyChat/quota';
-import type { LLMMessage } from '@/lib/aiMoneyChat/llm/types';
 
 type AsyncTestFn = () => void | Promise<void>;
 function describe(name: string): void {
@@ -111,56 +111,62 @@ async function main() {
     expectIncludes(stripped, 'Nội dung báo cáo');
   });
 
-  /* ─────────── Profile injection + save trong handleCFOReport ─────────── */
-  describe('handleCFOReport — profile read/inject + save/strip');
+  /* ─────────── Long-term profile: lưu note + ẩn tag (handleFollowUp) ───────────
+   * LƯU Ý: CFO JSON flow (handleCFOReport) KHÔNG còn đọc/inject profile dài hạn.
+   * Việc GHI note hệ thống chỉ sống ở handleFollowUp (extractProfileNote). Test này
+   * bám theo hành vi THẬT hiện tại — không test tính năng "nạp profile cũ vào prompt"
+   * đã bị bỏ. */
+  describe('handleFollowUp — profile note: lưu note mới + ẩn tag; LLM sạch thì không lưu');
   const quotaOk = (): AiMoneyQuotaChargeResult => ({
     uid: UID, monthKey: '2026-06', plan: 'pro', monthlyLimit: 1500, hardLimit: 1500,
     usedCredits: 8, remainingCredits: 1492, allowed: true, reason: 'ok', chargedCredits: 8,
   });
   const CONTENT_WITH_TAG =
-    '## Tình hình\nThu 20.000.000đ.\n## Hành động đề xuất\n- **Cắt Shopee**: 500.000đ → tiết kiệm.\n\n[profile: hay chi tieu Shopee cuoi thang]';
+    'Mục mua sắm lố vì mua nhiều cuối tháng. Ngài nên đặt hạn mức.\n\n[profile: hay chi tieu Shopee cuoi thang]';
+  const SID = 'sec-followup';
 
-  await it('đọc profile cũ -> nạp vào prompt; lưu note mới; ẩn tag khỏi message', async () => {
-    let captured: LLMMessage[] = [];
+  async function makeProfileSession(): Promise<void> {
+    __clearConversationStoreForTest();
+    __clearSnapshotCacheForTest();
+    const snap = await getFinanceSnapshot(UID, {
+      clientSnapshot: { wallets: { main: 2_000_000 }, transactions: [{ type: 'income', amount: 20_000_000 }] },
+    });
+    await createSession(SID, UID, snap);
+  }
+
+  await it('LLM trả [profile: ...] -> lưu note + ẩn tag khỏi message hiển thị', async () => {
+    await makeProfileSession();
     let savedNote: string | null = null;
-    const reply = await handleCFOReport(
+    const reply = await handleFollowUp(
       UID,
-      routeIntent('lên báo cáo CFO tháng'),
-      { clientSnapshot: { wallets: { main: 2_000_000 }, transactions: [{ type: 'income', amount: 20_000_000 }] } },
+      routeIntent('tại sao mục mua sắm lại lố'),
+      { sessionId: SID },
       {
+        peek: async () => quotaOk(),
         charge: async () => quotaOk(),
-        generate: async (messages) => {
-          captured = messages;
-          return { content: CONTENT_WITH_TAG, tokensUsed: 200, provider: 'openai', fallbackUsed: false };
-        },
-        readProfile: async () => 'thoi quen cu: luong cao nhung chi nhieu',
-        saveProfile: async (_uid, note) => {
-          savedNote = note;
-        },
+        generate: async () => ({ content: CONTENT_WITH_TAG, tokensUsed: 200, provider: 'openai', fallbackUsed: false }),
+        saveProfile: async (_uid, note) => { savedNote = note; },
       },
     );
-    // profile cũ nạp vào prompt
-    expectIncludes(captured.map((m) => m.content).join('\n'), 'thoi quen cu');
-    // note mới được lưu
+    // note mới được bóc từ tag + lưu
     expectEqual(savedNote, 'hay chi tieu Shopee cuoi thang');
-    // tag bị ẩn khỏi message hiển thị
+    // tag KHÔNG rò ra message hiển thị
     expectNotIncludes(reply.message, '[profile:');
-    expectIncludes(reply.message, '## Hành động đề xuất');
+    expectIncludes(reply.message, 'Ngài nên đặt hạn mức');
   });
 
-  await it('không có tag -> KHÔNG gọi saveProfile', async () => {
+  await it('LLM không có tag -> KHÔNG gọi saveProfile', async () => {
+    await makeProfileSession();
     let saveCalled = false;
-    await handleCFOReport(
+    await handleFollowUp(
       UID,
-      routeIntent('phân tích năng lực tài chính'),
-      { clientSnapshot: { wallets: { main: 1 } } },
+      routeIntent('tại sao lại lố'),
+      { sessionId: SID },
       {
+        peek: async () => quotaOk(),
         charge: async () => quotaOk(),
-        generate: async () => ({ content: '## Tình hình\nổn.', tokensUsed: 50, provider: 'openai', fallbackUsed: false }),
-        readProfile: async () => null,
-        saveProfile: async () => {
-          saveCalled = true;
-        },
+        generate: async () => ({ content: 'Phân tích ổn, không có gì bất thường.', tokensUsed: 50, provider: 'openai', fallbackUsed: false }),
+        saveProfile: async () => { saveCalled = true; },
       },
     );
     expectEqual(saveCalled, false);
