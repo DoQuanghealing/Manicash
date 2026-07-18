@@ -1,0 +1,36 @@
+/* ═══ TaskEvalPanel — Quản gia thẩm định (T5) ═══ */
+.te-panel{ margin-top:10px; padding-top:10px; border-top:1px dashed rgba(150,120,220,.22); }
+
+.te-score-head{ display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
+.te-score-title{ font:700 12px system-ui,sans-serif; color:#e8e3f5; }
+.te-score-val{ font:700 12px system-ui,sans-serif; }
+.te-score-bar{
+  margin-top:6px; height:7px; border-radius:6px; overflow:hidden;
+  background:rgba(255,255,255,.08);
+}
+.te-score-fill{ height:100%; border-radius:6px; transition:width .4s ease; }
+.te-score-sub{ display:block; margin-top:5px; font:500 11px system-ui,sans-serif; color:#9a93b3; }
+
+.te-btn{
+  margin-top:10px; width:100%; padding:9px 14px; border-radius:10px; border:none; cursor:pointer;
+  background:linear-gradient(135deg,#c084fc,#7c3aed); color:#fff; font:700 12.5px system-ui,sans-serif;
+}
+.te-btn:hover{ filter:brightness(1.07); }
+.te-btn:disabled{ opacity:.6; cursor:default; filter:none; }
+
+.te-result{ margin-top:10px; overflow:hidden; }
+.te-coach{
+  margin:0 0 8px; padding:8px 10px; border-radius:9px; font:600 12.5px system-ui,sans-serif;
+  color:#f0ecfb; background:color-mix(in srgb,#c084fc 12%, transparent); border:1px solid rgba(192,132,252,.25);
+}
+.te-block{ margin-top:8px; }
+.te-block-title{
+  font:700 10.5px system-ui,sans-serif; letter-spacing:.06em; text-transform:uppercase; color:#22C55E;
+}
+.te-block--risk .te-block-title{ color:#F59E0B; }
+.te-block ul{ margin:4px 0 0; padding-left:18px; }
+.te-block li{ font-size:12px; line-height:1.5; color:#c8c1da; }
+.te-price{
+  margin-top:8px; font:600 12px system-ui,sans-serif; color:#e8e3f5;
+}
+.te-note{ display:block; margin-top:8px; font:500 11px system-ui,sans-serif; color:#8a83a3; font-style:italic; }
