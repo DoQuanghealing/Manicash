@@ -33,7 +33,9 @@ function expectEqual<T>(actual: T, expected: T): void {
 const config: AiMoneyQuotaConfig = {
   freeMonthlyCredits: 0,
   proMonthlyCredits: 1500,
+  proPlusMonthlyCredits: 4000,
   hardMonthlyCredits: 1200,
+  hardMonthlyCreditsProPlus: 4000,
   fallbackParseCredits: 1,
   cfoNarrationCredits: 8,
 };

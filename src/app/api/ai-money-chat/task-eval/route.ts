@@ -10,7 +10,7 @@ import {
   peekAiMoneyCfoNarrationCredit,
   chargeAiMoneyCfoNarrationCredit,
 } from '@/lib/aiMoneyChat/quota';
-import { checkSpendBreaker, logAiUsage } from '@/lib/aiMoneyChat/llm/aiUsageLog';
+import { checkSpendBreaker, checkUserCostCeiling, logAiUsage } from '@/lib/aiMoneyChat/llm/aiUsageLog';
 import { estimateCostVnd } from '@/lib/aiMoneyChat/llm/aiCostCore';
 import {
   buildTaskEvalSystemPrompt,
@@ -108,6 +108,12 @@ export async function POST(req: NextRequest) {
     // #2 POST-PAYMENT — peek quota (kho report) TRƯỚC, CHƯA trừ credit.
     const peek = await peekAiMoneyCfoNarrationCredit(uid);
     if (!peek.allowed) return jsonResult('quota-exceeded', peek.reason, 402);
+
+    // T6 — TRẦN FIX CỨNG chi phí/user/tháng: vượt → degrade mềm (client tự dựng bản cơ bản 0đ).
+    const ceiling = await checkUserCostCeiling(uid, peek.plan);
+    if (!ceiling.allowed) {
+      return jsonResult('disabled', 'Quản gia đã tận tâm phục vụ ngài cả tháng — nay xin nghỉ dưỡng não bộ ít hôm. Mời ngài dùng bản cơ bản, đầu tháng sau tôi lại hầu ngài.');
+    }
 
     // runTaskEval KHÔNG throw: Groq lỗi → fallback deterministic (0đ, không trừ).
     let usage: { model: string; tokensIn: number; tokensOut: number } | null = null;

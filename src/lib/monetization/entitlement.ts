@@ -9,12 +9,16 @@
 
 import type { UserProfile } from '@/types/user';
 
-export type Tier = 'free' | 'pro';
+export type Tier = 'free' | 'pro' | 'pro_plus';
 
 /** Pro plan commercial constants (VND). Gói tháng là mặc định. */
 export const PRO_PRICE_VND = 49_000;
 export const PRO_PERIOD_DAYS = 30;
 export const PRO_PRODUCT_ID = 'manicash_pro_monthly';
+
+/** Pro Plus (Phú Vương · PV-5) — mở cấp quản gia 3. Xem docs/PRO_PLUS_ECONOMICS.md. */
+export const PRO_PLUS_PRICE_VND = 99_000;
+export const PRO_PLUS_PRODUCT_ID = 'manicash_pro_plus_monthly';
 
 /** SKU Pro theo kỳ hạn. amount = VND (số nguyên), periodDays = số ngày cấp. */
 export type ProSkuId = 'monthly' | 'half_year' | 'yearly';
@@ -45,9 +49,9 @@ export const FREE_LIMITS: Record<LimitedFeature, number> = {
   earningTask: 3,
 };
 
-/** Số lượng tối đa của 1 feature theo tier (Pro → Infinity). */
+/** Số lượng tối đa của 1 feature theo tier (Pro/Pro Plus → Infinity). */
 export function getEntityLimit(feature: LimitedFeature, tier: Tier): number {
-  return tier === 'pro' ? Number.POSITIVE_INFINITY : FREE_LIMITS[feature];
+  return tier === 'free' ? FREE_LIMITS[feature] : Number.POSITIVE_INFINITY;
 }
 
 /** Còn thêm được entity nữa không (currentCount = số đang có). */
@@ -88,7 +92,16 @@ export function isMonetizationEnabled(): boolean {
 }
 
 export function hasPremiumFlag(profile: Partial<UserProfile>): boolean {
-  return profile.tier === 'pro' || profile.plan === 'premium' || profile.isPremium === true;
+  return (
+    profile.tier === 'pro' || profile.tier === 'pro_plus' ||
+    profile.plan === 'premium' || profile.plan === 'premium_plus' ||
+    profile.isPremium === true
+  );
+}
+
+/** Có phải Pro Plus (Phú Vương) không — dựa trên flag profile. */
+export function hasProPlusFlag(profile: Partial<UserProfile>): boolean {
+  return profile.tier === 'pro_plus' || profile.plan === 'premium_plus';
 }
 
 function expiryTimestamp(profile: Partial<UserProfile>): number | null {
@@ -113,11 +126,19 @@ export function resolveTier(profile: Partial<UserProfile> | null | undefined, no
 
   const expiry = expiryTimestamp(profile);
   const stillValid = expiry === null || expiry > now;
-  return stillValid ? 'pro' : 'free';
+  if (!stillValid) return 'free';
+  // Pro Plus là superset của Pro — xét trước.
+  return hasProPlusFlag(profile) ? 'pro_plus' : 'pro';
 }
 
+/** Pro HOẶC Pro Plus đang hiệu lực (mọi quyền Pro). */
 export function isProActive(profile: Partial<UserProfile> | null | undefined, now = Date.now()): boolean {
-  return resolveTier(profile, now) === 'pro';
+  return resolveTier(profile, now) !== 'free';
+}
+
+/** Riêng Pro Plus (Phú Vương) đang hiệu lực. */
+export function isProPlusActive(profile: Partial<UserProfile> | null | undefined, now = Date.now()): boolean {
+  return resolveTier(profile, now) === 'pro_plus';
 }
 
 export function getProStatus(profile: Partial<UserProfile> | null | undefined, now = Date.now()): ProStatus {
@@ -131,7 +152,7 @@ export function getProStatus(profile: Partial<UserProfile> | null | undefined, n
 
   return {
     tier,
-    isPro: tier === 'pro',
+    isPro: tier !== 'free',
     expiresAt: profile?.premiumExpiresAt ?? null,
     isExpired,
     daysRemaining,

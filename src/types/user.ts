@@ -2,10 +2,11 @@
 
 export type UserRank = 'iron' | 'bronze' | 'silver' | 'gold' | 'platinum' | 'emerald' | 'diamond';
 
-export type SubscriptionPlan = 'free' | 'premium';
+export type SubscriptionPlan = 'free' | 'premium' | 'premium_plus';
 
-/** Tier cho feature gating mới (vd SMS Webhook). Hiện chưa enforce — xem utils/proGating.ts. */
-export type UserTier = 'free' | 'pro';
+/** Tier cho feature gating mới (vd SMS Webhook). Hiện chưa enforce — xem utils/proGating.ts.
+ * 'pro_plus' = Phú Vương (PV-5, 99k/tháng) — mở cấp quản gia 3. */
+export type UserTier = 'free' | 'pro' | 'pro_plus';
 
 /** Nguồn cấp Pro. Nguồn-sự-thật cho phân loại admin lấy từ grant_events (append-only),
  * field này chỉ phản ánh lần cấp gần nhất. */

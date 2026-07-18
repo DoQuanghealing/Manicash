@@ -12,11 +12,12 @@
 import {
   decideAiMoneyCharge,
   getAiMoneyQuotaConfig,
+  getMonthlyCreditLimit,
   type AiMoneyQuotaPlan,
 } from '@/lib/aiMoneyChat/quotaCore';
 import { getAiQuotaLimits, type AiFeature } from '@/lib/aiMoneyChat/aiQuotaPolicy';
-import { estimateCostVnd } from '@/lib/aiMoneyChat/llm/aiCostCore';
-import { PRO_PRICE_VND } from '@/lib/monetization/entitlement';
+import { estimateCostVnd, evaluateUserCostCeiling, getUserMonthlyCostCeilingVnd } from '@/lib/aiMoneyChat/llm/aiCostCore';
+import { PRO_PRICE_VND, PRO_PLUS_PRICE_VND } from '@/lib/monetization/entitlement';
 
 function describe(name: string): void { console.log(`\n${name}`); }
 function it(name: string, fn: () => void): void {
@@ -82,6 +83,11 @@ function simulateMonth(plan: AiMoneyQuotaPlan, persona: Persona): SimResult {
     for (const feature of ['chat', 'report'] as AiFeature[]) {
       const tries = persona.attempts(feature, day);
       for (let i = 0; i < tries; i++) {
+        // T6 — TRẦN FIX CỨNG chi phí/user/tháng: vượt → degrade (lượt tốn tiền bị từ chối).
+        if (!evaluateUserCostCeiling(costVnd, plan).allowed) {
+          denied += 1;
+          continue;
+        }
         const decision = decideAiMoneyCharge(
           {
             uid: `sim-${persona.name}`,
@@ -112,7 +118,7 @@ function simulateMonth(plan: AiMoneyQuotaPlan, persona: Persona): SimResult {
 
 /* ─────────── Chạy + báo cáo ─────────── */
 const results = new Map<string, SimResult>();
-for (const plan of ['free', 'pro'] as AiMoneyQuotaPlan[]) {
+for (const plan of ['free', 'pro', 'pro_plus'] as AiMoneyQuotaPlan[]) {
   for (const p of PERSONAS) {
     results.set(`${plan}:${p.name}`, simulateMonth(plan, p));
   }
@@ -157,10 +163,12 @@ it('BOUNDED: abuser (200 thử/ngày) tốn ĐÚNG BẰNG power — cap chặn b
   ok(abuser.denied > 6_000, `abuser bị chặn ${abuser.denied} lần`);
 });
 
-it('credits tháng không bao giờ vượt hardMonthlyCredits', () => {
+it('credits tháng không bao giờ vượt trần theo plan', () => {
   const config = getAiMoneyQuotaConfig();
   for (const [key, r] of results) {
-    ok(r.usedCredits <= config.hardMonthlyCredits, `${key}: ${r.usedCredits} credits`);
+    const plan = key.split(':')[0] as AiMoneyQuotaPlan;
+    const cap = getMonthlyCreditLimit(plan, config);
+    ok(r.usedCredits <= cap, `${key}: ${r.usedCredits} > ${cap} credits`);
   }
 });
 
@@ -172,4 +180,26 @@ it('pro worst-case ≤ 30% giá gói tháng (margin API ≥ 70%)', () => {
   const pct = (worst / PRO_PRICE_VND) * 100;
   ok(pct <= 30, `worst ${worst}đ = ${pct.toFixed(1)}% của ${PRO_PRICE_VND}đ`);
   console.log(`  → worst-case Pro = ${worst}đ = ${pct.toFixed(1)}% giá gói → margin API ≥ ${(100 - pct).toFixed(0)}%`);
+});
+
+describe('Pro Plus (99k) — trần VND fix cứng là lớp đảm bảo margin');
+
+it('pro_plus abuser bị TRẦN VND chặn: cost ≤ ceiling + 1 lượt', () => {
+  const ceiling = getUserMonthlyCostCeilingVnd('pro_plus');
+  const abuser = results.get('pro_plus:abuser')!;
+  // Trần check TRƯỚC lượt → lượt cuối có thể đẩy quá ceiling đúng 1 call cost (≤29.64đ).
+  ok(abuser.costVnd <= ceiling + 30, `abuser ${abuser.costVnd}đ vượt trần ${ceiling}đ`);
+  ok(abuser.denied > 1_000, `abuser bị chặn ${abuser.denied} lần`);
+});
+
+it('pro_plus worst-case ≤ 30,4% giá 99k (margin API ≥ 69%)', () => {
+  const worst = Math.max(...PERSONAS.map((p) => results.get(`pro_plus:${p.name}`)!.costVnd));
+  const pct = (worst / PRO_PLUS_PRICE_VND) * 100;
+  ok(pct <= 30.4, `worst ${worst}đ = ${pct.toFixed(1)}% của ${PRO_PLUS_PRICE_VND}đ`);
+  console.log(`  → worst-case Pro Plus = ${worst}đ = ${pct.toFixed(1)}% giá gói → margin API ≥ ${(100 - pct).toFixed(0)}%`);
+});
+
+it('pro_plus:nặng thực tế (regular) vẫn dư dả dưới trần', () => {
+  const r = results.get('pro_plus:regular')!;
+  ok(r.costVnd < 8_000, `regular = ${r.costVnd}đ`);
 });
