@@ -15,6 +15,21 @@ export interface SubTask {
   completedAt?: string;
 }
 
+/** Kết quả AI thẩm định nhiệm vụ, cache NGAY TRÊN task (T5).
+ * hash = dấu vân của (tên + tiền + subtasks); đổi task → hash đổi → gọi lại AI. */
+export interface TaskAiEval {
+  hash: string;
+  feasibility: number;
+  missingSubtasks: string[];
+  risks: string[];
+  suggestedPriceRange?: { min: number; max: number };
+  oneLineCoach: string;
+  /** Bản deterministic (LLM lỗi) — không tốn credit. */
+  deterministicFallback: boolean;
+  /** ISO thời điểm thẩm định. */
+  at: string;
+}
+
 /** Nhiệm vụ kiếm tiền */
 export interface EarningTask {
   id: string;
@@ -28,6 +43,8 @@ export interface EarningTask {
   deleteReason?: OverdueReason;
   subTasks: SubTask[];
   createdAt: string;
+  /** Cache AI thẩm định (T5) — chỉ có khi user đã bấm "Quản gia thẩm định". */
+  aiEval?: TaskAiEval;
 }
 
 /** XP penalty từ trễ hạn */

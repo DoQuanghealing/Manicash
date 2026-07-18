@@ -12,6 +12,9 @@ import {
   type TaskEvalContext,
 } from '@/lib/aiMoneyChat/taskEval/taskEvalPrompt';
 import { runTaskEval, buildDeterministicTaskEval } from '@/lib/aiMoneyChat/taskEval/taskEvalService';
+import { computeTaskEvalHash } from '@/lib/aiMoneyChat/taskEval/taskEvalHash';
+import { buildTaskEvalContext } from '@/lib/aiMoneyChat/taskEval/taskEvalContext';
+import type { EarningTask } from '@/types/task';
 
 function it(name: string, fn: () => void | Promise<void>): void {
   Promise.resolve()
@@ -130,6 +133,39 @@ async function main() {
     ok(r.risks.some((x) => x.includes('quá hạn')), 'rủi ro quá hạn');
     ok(r.missingSubtasks.some((x) => x.includes('Chia nhiệm vụ')), 'gợi ý chia nhỏ khi 0 subtask');
     ok(r.oneLineCoach.length > 0, 'coach');
+  });
+
+  console.log('\nTask Eval — cache hash + context builder');
+
+  const etask = (o: Partial<EarningTask> = {}): EarningTask => ({
+    id: o.id ?? 'k1', name: o.name ?? 'Freelance logo', expectedAmount: o.expectedAmount ?? 3_000_000,
+    startDate: o.startDate ?? '2026-07-10', endDate: o.endDate ?? '2026-07-20', createdAt: '2026-07-09',
+    subTasks: o.subTasks ?? [
+      { id: 'a', name: 'Liên hệ khách', isCompleted: true },
+      { id: 'b', name: 'Gửi nháp', isCompleted: false },
+    ],
+    completedAt: o.completedAt, deletedAt: o.deletedAt,
+  });
+
+  it('hash ổn định; đổi tên/tiền/subtask/tick → hash đổi', () => {
+    const base = computeTaskEvalHash(etask());
+    eq(computeTaskEvalHash(etask()), base, 'ổn định');
+    ok(computeTaskEvalHash(etask({ name: 'Khác' })) !== base, 'đổi tên');
+    ok(computeTaskEvalHash(etask({ expectedAmount: 4_000_000 })) !== base, 'đổi tiền');
+    ok(computeTaskEvalHash(etask({ subTasks: [{ id: 'a', name: 'Liên hệ khách', isCompleted: true }] })) !== base, 'đổi subtask');
+    ok(computeTaskEvalHash(etask({ subTasks: [
+      { id: 'a', name: 'Liên hệ khách', isCompleted: true },
+      { id: 'b', name: 'Gửi nháp', isCompleted: true },
+    ] })) !== base, 'tick subtask → hash đổi');
+  });
+
+  it('context builder: tính feasibility + trích tên subtask + kỹ năng', () => {
+    const c = buildTaskEvalContext(etask(), [etask()], ['design', ''], '2026-07-15T12:00:00Z');
+    eq(c.name, 'Freelance logo');
+    eq(c.subtaskTotal, 2);
+    ok(c.feasibility > 0 && c.feasibility <= 100, `feasibility=${c.feasibility}`);
+    ok(c.subtasks.includes('Liên hệ khách'), 'giữ tên subtask');
+    eq(c.skills.length, 1, 'lọc kỹ năng rỗng');
   });
 
   console.log('\nTask Eval test suite complete.');
