@@ -8,7 +8,13 @@ import {
 import { resolveAiMoneyPlan, getMonthlyCreditLimit } from '@/lib/aiMoneyChat/quotaCore';
 import { getAiQuotaLimits } from '@/lib/aiMoneyChat/aiQuotaPolicy';
 import { resolveTier, isProPlusActive, PRO_PLUS_PRICE_VND } from '@/lib/monetization/entitlement';
-import { billingLevelCap, resolveButlerLevel } from '@/lib/monetization/butlerFeatures';
+import {
+  billingLevelCap,
+  resolveButlerLevel,
+  evaluateFeatureTaste,
+  describeTaste,
+  tasteQuotaFor,
+} from '@/lib/monetization/butlerFeatures';
 import type { UserProfile } from '@/types/user';
 
 function it(name: string, fn: () => void): void {
@@ -92,6 +98,55 @@ it('billingLevelCap: khi enforce, pro_plus→3, pro→2, free→1', () => {
     if (prev === undefined) delete process.env.NEXT_PUBLIC_BUTLER_BILLING_ENFORCED;
     else process.env.NEXT_PUBLIC_BUTLER_BILLING_ENFORCED = prev;
   }
+});
+
+console.log('\nQuota nếm thử (taste) — Free 4 lượt sâu · Pro 5 lượt thẩm định');
+
+it('Pro (cấp 2) nếm task.eval 5 lượt/tháng, hết → mời lên Phú Vương', () => {
+  const fresh = evaluateFeatureTaste(2, 'task.eval', 0);
+  ok(fresh.allowed && fresh.isTaste, 'còn suất → cho dùng, đánh dấu nếm');
+  eq(fresh.remainingTaste, 5);
+  ok(describeTaste(fresh).includes('5/5'), 'nói thẳng số lượt');
+
+  const used3 = evaluateFeatureTaste(2, 'task.eval', 3);
+  eq(used3.remainingTaste, 2);
+
+  const done = evaluateFeatureTaste(2, 'task.eval', 5);
+  ok(!done.allowed && done.isTaste, 'hết suất → chặn');
+  ok(describeTaste(done).includes('Nâng lên Phú Vương'), 'CTA nâng cấp');
+});
+
+it('Phú Vương (cấp 3) dùng task.eval thoải mái — KHÔNG tốn suất nếm', () => {
+  const d = evaluateFeatureTaste(3, 'task.eval', 99);
+  ok(d.allowed, 'đủ cấp → luôn được');
+  eq(d.isTaste, false, 'không phải nếm');
+  eq(describeTaste(d), '', 'không hiện thông báo nếm');
+});
+
+it('Free (cấp 1) KHÔNG được nếm task.eval (kém 2 cấp) → mời nâng cấp thẳng', () => {
+  const d = evaluateFeatureTaste(1, 'task.eval', 0);
+  ok(!d.allowed, 'chặn');
+  eq(d.isTaste, false, 'không tính là nếm');
+  ok(describeTaste(d).includes('dành cho Phú Vương'), 'CTA đúng');
+});
+
+it('Free (cấp 1) nếm tư vấn sâu (chat.deep) 4 lượt/tháng', () => {
+  const fresh = evaluateFeatureTaste(1, 'chat.deep', 0);
+  ok(fresh.allowed && fresh.isTaste, 'được nếm');
+  eq(fresh.remainingTaste, 4);
+  eq(evaluateFeatureTaste(1, 'chat.deep', 4).allowed, false, 'hết 4 lượt → chặn');
+  ok(describeTaste(evaluateFeatureTaste(1, 'chat.deep', 4), 'Thông thái').includes('Thông thái'), 'CTA lên cấp 2');
+});
+
+it('Pro (cấp 2) dùng chat.deep thoải mái (đủ cấp)', () => {
+  const d = evaluateFeatureTaste(2, 'chat.deep', 99);
+  ok(d.allowed && !d.isTaste, 'đủ cấp');
+});
+
+it('feature không có suất nếm → chặn thẳng khi thiếu cấp', () => {
+  const d = evaluateFeatureTaste(1, 'dna.oracle', 0);
+  ok(!d.allowed && !d.isTaste, 'không nếm được');
+  eq(tasteQuotaFor('dna.oracle'), 0);
 });
 
 console.log('\nPro Plus test suite complete.');

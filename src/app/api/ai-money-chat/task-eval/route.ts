@@ -9,7 +9,10 @@ import { getVerifiedRequestUid } from '@/lib/requestAuth';
 import {
   peekAiMoneyCfoNarrationCredit,
   chargeAiMoneyCfoNarrationCredit,
+  readTasteUsed,
+  incrementTasteUsed,
 } from '@/lib/aiMoneyChat/quota';
+import { billingLevelCap, evaluateFeatureTaste, describeTaste } from '@/lib/monetization/butlerFeatures';
 import { checkSpendBreaker, checkUserCostCeiling, logAiUsage } from '@/lib/aiMoneyChat/llm/aiUsageLog';
 import { estimateCostVnd } from '@/lib/aiMoneyChat/llm/aiCostCore';
 import {
@@ -22,7 +25,7 @@ import { runTaskEval } from '@/lib/aiMoneyChat/taskEval/taskEvalService';
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const MAX_NAME = 120;
 
-type Src = 'ai' | 'deterministic' | 'disabled' | 'no-key' | 'unauthorized' | 'quota-exceeded' | 'error';
+type Src = 'ai' | 'deterministic' | 'disabled' | 'no-key' | 'unauthorized' | 'quota-exceeded' | 'upgrade-required' | 'error';
 
 function clampInt(v: unknown, lo: number, hi: number, fallback = 0): number {
   const n = typeof v === 'number' && Number.isFinite(v) ? Math.round(v) : fallback;
@@ -115,6 +118,16 @@ export async function POST(req: NextRequest) {
       return jsonResult('disabled', 'Quản gia đã tận tâm phục vụ ngài cả tháng — nay xin nghỉ dưỡng não bộ ít hôm. Mời ngài dùng bản cơ bản, đầu tháng sau tôi lại hầu ngài.');
     }
 
+    // Gate cấp + suất NẾM: Pro (cấp 2) nếm 5 lượt/tháng → hết thì mời lên Phú Vương.
+    const taste = evaluateFeatureTaste(
+      billingLevelCap(peek.plan),
+      'task.eval',
+      await readTasteUsed(uid, 'task.eval'),
+    );
+    if (!taste.allowed) {
+      return jsonResult('upgrade-required', describeTaste(taste), 402);
+    }
+
     // runTaskEval KHÔNG throw: Groq lỗi → fallback deterministic (0đ, không trừ).
     let usage: { model: string; tokensIn: number; tokensOut: number } | null = null;
     const result = await runTaskEval(ctx, {
@@ -136,13 +149,22 @@ export async function POST(req: NextRequest) {
 
     // #2 — CHỈ trừ credit khi LLM thật sự giao kết quả (không phải fallback deterministic).
     let quota = peek;
+    let tasteLeft = taste.remainingTaste;
     if (!result.deterministicFallback) {
       quota = await chargeAiMoneyCfoNarrationCredit(uid);
+      // Suất nếm cũng chỉ trừ khi đã giao kết quả thật.
+      if (taste.isTaste) {
+        await incrementTasteUsed(uid, 'task.eval');
+        tasteLeft = Math.max(0, taste.remainingTaste - 1);
+      }
     }
 
     return NextResponse.json({
       source: result.deterministicFallback ? 'deterministic' : 'ai',
       reason: result.deterministicFallback ? 'Bản đánh giá cơ bản (không tốn credit).' : 'Quản gia đã thẩm định.',
+      taste: taste.isTaste
+        ? { isTaste: true, remaining: tasteLeft, quota: taste.tasteQuota }
+        : { isTaste: false },
       feasibility: result.feasibility,
       eval: result.ai,
       quota: {

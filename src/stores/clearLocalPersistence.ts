@@ -21,6 +21,7 @@ import { useTransactionHabitStore, TRANSACTION_HABIT_STORAGE_KEY } from '@/store
 import { useCapacitySurveyStore, CAPACITY_SURVEY_STORAGE_KEY } from '@/stores/useCapacitySurveyStore';
 import { useCoachSuggestionStore, COACH_SUGGESTION_STORAGE_KEY } from '@/stores/useCoachSuggestionStore';
 import { useCareStore, CARE_STORAGE_KEY } from '@/stores/useCareStore';
+import { useSovereignMigrationStore, SOVEREIGN_MIGRATION_STORAGE_KEY } from '@/stores/useSovereignMigrationStore';
 import { useHydrationStore } from '@/stores/useHydrationStore';
 import { getCurrentMonthKey } from '@/lib/dateHelpers';
 import { resetMoneySyncRuntime } from '@/lib/moneySync/clientRuntime';
@@ -85,6 +86,8 @@ export function clearLocalMoneyPersistence(): void {
   useCoachSuggestionStore.getState().clearAll();
   // T4 Care: xóa lịch sử kịch bản chăm sóc đã xử lý (account boundary).
   useCareStore.getState().clearAll();
+  // PV-5: xóa mốc báo trước migration (user kế tiếp đếm lại từ đầu).
+  useSovereignMigrationStore.getState().clearAll();
 
   // 2) Xóa hẳn persisted keys (sau reset để bản ghi cuối của persist là rỗng,
   //    rồi removeItem -> localStorage sạch hẳn; lần mở app sau seed lại theo design).
@@ -97,6 +100,7 @@ export function clearLocalMoneyPersistence(): void {
     localStorage.removeItem(CAPACITY_SURVEY_STORAGE_KEY);
     localStorage.removeItem(COACH_SUGGESTION_STORAGE_KEY);
     localStorage.removeItem(CARE_STORAGE_KEY);
+    localStorage.removeItem(SOVEREIGN_MIGRATION_STORAGE_KEY);
   }
 
   // 3) Stores coi như đã "hydrate" (state rỗng đã ổn định) — marker không treo.

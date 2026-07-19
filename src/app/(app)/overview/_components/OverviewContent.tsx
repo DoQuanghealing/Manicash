@@ -8,6 +8,7 @@ import { getCopy } from '@/data/vibedCopy';
 import SafeToSpendCard from './SafeToSpendCard';
 import CoachSuggestionCard from './CoachSuggestionCard';
 import CareCard from '@/components/butler/CareCard';
+import SovereignMigrationBanner from '@/components/butler/SovereignMigrationBanner';
 import AlertsInbox from './AlertsInbox';
 import MissionChecklist from './MissionChecklist';
 import OnboardingQuestPanel from './OnboardingQuestPanel';
@@ -36,6 +37,9 @@ export default function OverviewContent() {
         <UpcomingHolidayHint />
 
         {/* ═══ BLOCK 1: Safe-to-Spend Balance ═══ */}
+        {/* ═══ PV-5: báo trước migration Free-sovereign (14 ngày + 7 ngày trial) ═══ */}
+        <SovereignMigrationBanner />
+
         <SafeToSpendCard />
 
         {/* ═══ BLOCK 1c: Đề xuất chủ động của quản gia (chỉ tier Phú Vương) ═══ */}

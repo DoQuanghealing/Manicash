@@ -18,6 +18,12 @@
 .te-btn:hover{ filter:brightness(1.07); }
 .te-btn:disabled{ opacity:.6; cursor:default; filter:none; }
 
+.te-notice{
+  margin:8px 0 0; padding:7px 10px; border-radius:9px;
+  font:600 11.5px system-ui,sans-serif; color:#f0d9a8;
+  background:rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.28);
+}
+
 .te-result{ margin-top:10px; overflow:hidden; }
 .te-coach{
   margin:0 0 8px; padding:8px 10px; border-radius:9px; font:600 12.5px system-ui,sans-serif;
