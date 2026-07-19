@@ -15,6 +15,7 @@ import {
   tierForSku,
   tierForProductId,
   entitlementFieldsForTier,
+  getPlanCard,
 } from '@/lib/monetization/entitlement';
 import {
   billingLevelCap,
@@ -162,6 +163,28 @@ it('HỒI QUY: mua SKU 99k → ghi field → resolveTier → MỞ ĐƯỢC cấp
     else process.env.NEXT_PUBLIC_MONETIZATION_ENABLED = prevMon;
     if (prevEnf === undefined) delete process.env.NEXT_PUBLIC_BUTLER_BILLING_ENFORCED;
     else process.env.NEXT_PUBLIC_BUTLER_BILLING_ENFORCED = prevEnf;
+  }
+});
+
+it('trang giá: getPlanCard đánh dấu đúng thẻ đang dùng', () => {
+  const prev = process.env.NEXT_PUBLIC_MONETIZATION_ENABLED;
+  process.env.NEXT_PUBLIC_MONETIZATION_ENABLED = 'true';
+  try {
+    const plus = { ...entitlementFieldsForTier('pro_plus'), premiumExpiresAt: future, billingProvider: 'payos' } as Partial<UserProfile>;
+    eq(getPlanCard(plus).active, 'pro_plus', 'Pro Plus → thẻ Phú Vương');
+
+    const pro = { ...entitlementFieldsForTier('pro'), premiumExpiresAt: future, billingProvider: 'payos' } as Partial<UserProfile>;
+    eq(getPlanCard(pro).active, 'pro', 'Pro → thẻ Pro');
+
+    // Trial vẫn là thẻ trial dù tier là pro.
+    const trial = { ...entitlementFieldsForTier('pro'), premiumExpiresAt: future, billingProvider: 'trial' } as Partial<UserProfile>;
+    eq(getPlanCard(trial).active, 'trial', 'trial → thẻ dùng thử');
+
+    eq(getPlanCard(null).active, 'base', 'chưa trả tiền → Base');
+    eq(getPlanCard(plus).skus.pro_plus_monthly.amount, 99_000, 'SKU hiện trên trang giá');
+  } finally {
+    if (prev === undefined) delete process.env.NEXT_PUBLIC_MONETIZATION_ENABLED;
+    else process.env.NEXT_PUBLIC_MONETIZATION_ENABLED = prev;
   }
 });
 

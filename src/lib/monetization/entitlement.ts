@@ -219,8 +219,8 @@ export function computeProExpiry(
   return new Date(base + periodDays * 24 * 60 * 60 * 1000).toISOString();
 }
 
-/** Khung nào đang active trong cửa sổ 3 gói. */
-export type ActiveCard = 'base' | 'pro' | 'trial';
+/** Khung nào đang active trong cửa sổ gói. */
+export type ActiveCard = 'base' | 'pro' | 'trial' | 'pro_plus';
 
 export interface PlanCard {
   /** Khung đang active (để tô xanh + "Đã kích hoạt"). */
@@ -241,7 +241,14 @@ export interface PlanCard {
 export function getPlanCard(profile: Partial<UserProfile> | null | undefined, now = Date.now()): PlanCard {
   const status = getProStatus(profile, now);
   const isOnTrial = status.isPro && profile?.billingProvider === 'trial';
-  const active: ActiveCard = !status.isPro ? 'base' : isOnTrial ? 'trial' : 'pro';
+  // Pro Plus (Phú Vương) là khung riêng — xét TRƯỚC 'pro' vì nó là superset.
+  const active: ActiveCard = !status.isPro
+    ? 'base'
+    : isOnTrial
+      ? 'trial'
+      : status.tier === 'pro_plus'
+        ? 'pro_plus'
+        : 'pro';
   return {
     active,
     tier: status.tier,
