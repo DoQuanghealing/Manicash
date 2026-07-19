@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ManiCash 💎 · Ghi chi tiêu nhanh như nhắn tin, có quản gia AI lo phần còn lại</title>
+<meta name="description" content="App quản lý tài chính cá nhân kiểu chat + game hoá cho người Việt. Nhập chi tiêu bằng lời nói, AI tự phân loại. Dùng thử Pro 30 ngày miễn phí, không cần thẻ." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FAFAFE; --surface:#FFFFFF; --surface-2:#F6F5FD;
+    --ink:#11111C; --ink-soft:#3A3B49; --muted:#73748A;
+    --line:rgba(17,17,28,.08); --line-2:rgba(17,17,28,.06);
+    --violet:#8B5CF6; --purple:#A855F7; --pink:#EC4899; --fuchsia:#D946EF;
+    --grad:linear-gradient(120deg,#8B5CF6 0%,#D946EF 50%,#EC4899 100%);
+    --grad-soft:linear-gradient(120deg,rgba(139,92,246,.14),rgba(236,72,153,.14));
+    --sh-sm:0 1px 2px rgba(17,17,28,.05);
+    --sh:0 12px 34px rgba(124,58,237,.10),0 3px 8px rgba(17,17,28,.04);
+    --sh-lg:0 28px 70px rgba(124,58,237,.18),0 6px 16px rgba(17,17,28,.06);
+    --neon:0 0 0 6px rgba(217,70,239,.10);
+    --radius:22px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:"Plus Jakarta Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    color:var(--ink);background:var(--bg);line-height:1.6;overflow-x:hidden;position:relative;-webkit-font-smoothing:antialiased;
+  }
+  /* ── background layers: grid + soft color blobs + grain ── */
+  .bg-layer{position:fixed;inset:0;z-index:-3;pointer-events:none}
+  .bg-grid{background-image:
+      linear-gradient(rgba(17,17,28,.035) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(17,17,28,.035) 1px,transparent 1px);
+    background-size:46px 46px;
+    mask-image:radial-gradient(120% 90% at 50% 0%,#000 35%,transparent 78%);
+    -webkit-mask-image:radial-gradient(120% 90% at 50% 0%,#000 35%,transparent 78%);}
+  .bg-blob{position:fixed;border-radius:50%;filter:blur(90px);opacity:.5;z-index:-2;pointer-events:none}
+  .blob-a{width:520px;height:520px;background:radial-gradient(circle,#C4B5FD,transparent 70%);top:-160px;right:-120px;animation:float1 16s ease-in-out infinite}
+  .blob-b{width:460px;height:460px;background:radial-gradient(circle,#FBCFE8,transparent 70%);top:380px;left:-160px;animation:float2 19s ease-in-out infinite}
+  .bg-grain{position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.4;mix-blend-mode:multiply;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.28'/%3E%3C/svg%3E")}
+  @keyframes float1{0%,100%{transform:translate(0,0)}50%{transform:translate(-30px,40px)}}
+  @keyframes float2{0%,100%{transform:translate(0,0)}50%{transform:translate(40px,-30px)}}
+
+  .wrap{max-width:1100px;margin:0 auto;padding:0 22px}
+  .center{text-align:center}
+  h1,h2,h3{line-height:1.16;letter-spacing:-.025em;color:var(--ink)}
+  h1{font-size:clamp(32px,6vw,60px);font-weight:800}
+  h2{font-size:clamp(25px,4.6vw,42px);font-weight:800}
+  h3{font-size:clamp(18px,2.6vw,21px);font-weight:700}
+  p{color:var(--muted);font-size:clamp(15px,1.9vw,18px)}
+  .grad{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+  section{padding:78px 0;position:relative}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;letter-spacing:.04em;
+    color:var(--fuchsia);background:var(--grad-soft);border:1px solid rgba(217,70,239,.22);
+    padding:7px 15px;border-radius:999px;margin-bottom:18px}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:26px;box-shadow:var(--sh-sm);position:relative;transition:transform .35s cubic-bezier(.2,.7,.2,1),box-shadow .35s ease,border-color .35s ease}
+  .card:hover{transform:translateY(-6px);box-shadow:var(--sh);border-color:rgba(168,85,247,.28)}
+  /* gradient hairline on hover */
+  .card::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;
+    background:var(--grad);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor;mask-composite:exclude;opacity:0;transition:opacity .35s ease;pointer-events:none}
+  .card:hover::before{opacity:.55}
+
+  /* ── Buttons ── */
+  .btn{position:relative;display:inline-flex;align-items:center;gap:10px;justify-content:center;font-weight:800;
+    border-radius:15px;padding:16px 30px;font-size:17px;text-decoration:none;cursor:pointer;border:none;
+    transition:transform .2s cubic-bezier(.2,.7,.2,1),box-shadow .25s ease;overflow:hidden;font-family:inherit}
+  .btn-primary{background:var(--grad);color:#fff;background-size:160% 160%;animation:hue 6s ease infinite;box-shadow:0 12px 30px rgba(217,70,239,.32)}
+  .btn-primary:hover{transform:translateY(-3px) scale(1.02);box-shadow:0 18px 44px rgba(217,70,239,.5)}
+  .btn-primary::after{content:"";position:absolute;top:0;left:-160%;width:55%;height:100%;
+    background:linear-gradient(110deg,transparent,rgba(255,255,255,.55),transparent);transform:skewX(-20deg);animation:shine 3.4s ease-in-out infinite}
+  .btn-pulse{animation:hue 6s ease infinite,pulse 2.6s ease-in-out infinite}
+  .btn-ghost{background:var(--surface);color:var(--ink);border:1.5px solid var(--line)}
+  .btn-ghost:hover{transform:translateY(-3px);border-color:rgba(168,85,247,.45);box-shadow:var(--sh-sm)}
+  .btn-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-top:28px}
+  @keyframes shine{0%{left:-160%}55%{left:170%}100%{left:170%}}
+  @keyframes pulse{0%,100%{box-shadow:0 12px 30px rgba(217,70,239,.32)}50%{box-shadow:0 14px 46px rgba(217,70,239,.62)}}
+  @keyframes hue{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+
+  /* ── Hero ── */
+  .hero{padding-top:62px;padding-bottom:34px}
+  .badges{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:28px}
+  .badges span{display:inline-flex;align-items:center;gap:8px;font-size:13.5px;font-weight:600;color:var(--ink-soft);
+    background:var(--surface);border:1px solid var(--line);padding:8px 14px;border-radius:999px;box-shadow:var(--sh-sm)}
+  .dot{width:7px;height:7px;border-radius:50%;background:linear-gradient(120deg,#8B5CF6,#EC4899);box-shadow:0 0 8px rgba(217,70,239,.6)}
+
+  .phone{margin:46px auto 0;max-width:360px;background:var(--surface);border:1px solid var(--line);
+    border-radius:34px;padding:18px;box-shadow:var(--sh-lg);position:relative}
+  .phone::after{content:"";position:absolute;inset:-1px;border-radius:34px;padding:1px;background:var(--grad);
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:.4;pointer-events:none}
+  .chat-bot-head{display:flex;align-items:center;gap:10px;font-weight:800;margin-bottom:14px;font-size:15px}
+  .ava{width:36px;height:36px;border-radius:12px;background:var(--grad);display:grid;place-items:center;font-size:19px;box-shadow:0 6px 16px rgba(217,70,239,.4)}
+  .chat-bubble{border-radius:16px;padding:12px 15px;margin:9px 0;font-size:14.5px;max-width:86%;opacity:0;transform:translateY(8px);animation:bubble .5s forwards}
+  .chat-bubble:nth-child(2){animation-delay:.2s}.chat-bubble:nth-child(3){animation-delay:.7s}
+  .chat-bubble:nth-child(4){animation-delay:1.25s}.chat-bubble:nth-child(5){animation-delay:1.8s}
+  @keyframes bubble{to{opacity:1;transform:none}}
+  .from-user{background:var(--grad);color:#fff;font-weight:600;margin-left:auto;border-bottom-right-radius:5px;box-shadow:0 6px 16px rgba(217,70,239,.28)}
+  .from-bot{background:var(--surface-2);border:1px solid var(--line);color:var(--ink-soft);border-bottom-left-radius:5px}
+  .tx-row{display:flex;justify-content:space-between;gap:8px;margin-top:9px;font-size:13px;color:var(--muted)}
+  .pill{display:inline-block;background:rgba(16,185,129,.12);color:#059669;border:1px solid rgba(16,185,129,.28);padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700}
+  .neg{color:var(--pink);font-weight:800}
+
+  /* ── Grids ── */
+  .grid{display:grid;gap:18px}
+  .g2{grid-template-columns:repeat(2,1fr)}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .feat-ico{width:54px;height:54px;border-radius:16px;display:grid;place-items:center;font-size:25px;
+    background:var(--grad-soft);border:1px solid rgba(168,85,247,.18);margin-bottom:15px;transition:transform .35s ease}
+  .card:hover .feat-ico{transform:scale(1.08) rotate(-4deg)}
+  .feat h3{margin-bottom:7px}
+  .feat p{font-size:15px}
+
+  .step-num{width:42px;height:42px;border-radius:13px;background:var(--grad);color:#fff;font-weight:800;
+    display:grid;place-items:center;font-size:19px;margin-bottom:14px;box-shadow:0 8px 20px rgba(217,70,239,.32)}
+
+  .pain li{list-style:none;display:flex;gap:12px;align-items:flex-start;margin:13px 0;font-size:16px;color:var(--ink-soft)}
+  .pain .x{color:#fff;background:var(--pink);width:22px;height:22px;border-radius:7px;display:grid;place-items:center;font-size:12px;font-weight:800;flex:0 0 auto;margin-top:3px}
+
+  /* ── ranks ── */
+  .ranks{display:flex;gap:9px;flex-wrap:wrap;justify-content:center;margin-top:24px}
+  .rank{padding:9px 16px;border-radius:999px;border:1px solid var(--line);background:var(--surface);font-weight:700;font-size:14px;box-shadow:var(--sh-sm)}
+  .rank.last{background:var(--grad);color:#fff;border:none;box-shadow:0 8px 22px rgba(217,70,239,.4)}
+
+  /* ── Pricing ── */
+  .price-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:34px;align-items:stretch}
+  .plan{display:flex;flex-direction:column}
+  .plan.best{border-color:transparent;box-shadow:var(--sh)}
+  .plan.best::before{opacity:1;padding:1.6px}
+  .plan.best::after{content:"";position:absolute;inset:0;border-radius:inherit;background:var(--grad-soft);opacity:.5;z-index:-1}
+  .tag-best{position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:var(--grad);color:#fff;
+    font-weight:800;font-size:12px;padding:6px 15px;border-radius:999px;white-space:nowrap;box-shadow:0 8px 20px rgba(217,70,239,.4)}
+  .price{font-size:36px;font-weight:800;margin:10px 0 2px;color:var(--ink)}
+  .price small{font-size:15px;color:var(--muted);font-weight:600}
+  .save{color:#059669;font-weight:700;font-size:14px;min-height:21px}
+  .plan ul{list-style:none;margin:18px 0;flex:1}
+  .plan li{padding:7px 0;font-size:15px;color:var(--ink-soft);display:flex;gap:10px;align-items:flex-start}
+  .plan li::before{content:"✓";color:#fff;background:var(--grad);min-width:19px;height:19px;border-radius:6px;display:grid;place-items:center;font-size:12px;font-weight:800;margin-top:3px}
+  .trial-banner{margin-top:28px;text-align:center;font-weight:700;color:var(--ink);
+    background:var(--grad-soft);border:1px solid rgba(217,70,239,.25);border-radius:16px;padding:16px;box-shadow:var(--sh-sm)}
+
+  .trust .card{text-align:center}
+  .trust .feat-ico{margin:0 auto 14px}
+
+  /* ── FAQ ── */
+  details{border:1px solid var(--line);border-radius:16px;margin:12px 0;background:var(--surface);overflow:hidden;box-shadow:var(--sh-sm);transition:box-shadow .3s ease}
+  details[open]{box-shadow:var(--sh)}
+  summary{cursor:pointer;padding:19px 22px;font-weight:700;font-size:16px;list-style:none;display:flex;justify-content:space-between;align-items:center;color:var(--ink)}
+  summary::-webkit-details-marker{display:none}
+  summary::after{content:"+";color:var(--fuchsia);font-size:24px;font-weight:700;transition:transform .3s ease}
+  details[open] summary::after{content:"+";transform:rotate(45deg)}
+  details p{padding:0 22px 20px;font-size:15px}
+
+  /* ── Final CTA + form ── */
+  .final{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:30px;padding:52px 30px;text-align:center;box-shadow:var(--sh-lg);overflow:hidden}
+  .final::before{content:"";position:absolute;inset:0;background:var(--grad-soft);opacity:.7;z-index:0}
+  .final>*{position:relative;z-index:1}
+  form{max-width:460px;margin:26px auto 0;display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+  input{flex:1;min-width:210px;padding:16px 18px;border-radius:14px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font-size:16px;font-family:inherit;transition:border-color .25s,box-shadow .25s}
+  input::placeholder{color:#9698AC}
+  input:focus{outline:none;border-color:var(--fuchsia);box-shadow:var(--neon)}
+  .form-note{font-size:13px;color:var(--muted);margin-top:13px}
+  #thanks{display:none;margin-top:16px;color:#059669;font-weight:700;font-size:17px}
+
+  footer{padding:46px 0;border-top:1px solid var(--line);text-align:center;color:var(--muted);font-size:14px}
+  .disclaimer{font-size:12.5px;color:#9092A4;max-width:780px;margin:20px auto 0}
+
+  .sticky{position:fixed;left:0;right:0;bottom:0;z-index:50;display:none;background:rgba(255,255,255,.86);backdrop-filter:blur(14px);border-top:1px solid var(--line);padding:12px 16px;box-shadow:0 -8px 24px rgba(17,17,28,.08)}
+  .sticky .btn{width:100%;padding:15px}
+
+  /* ── scroll reveal ── */
+  .reveal{opacity:0;transform:translateY(28px);transition:opacity .75s cubic-bezier(.2,.7,.2,1),transform .75s cubic-bezier(.2,.7,.2,1)}
+  .reveal.in{opacity:1;transform:none}
+  .stagger>*{opacity:0;transform:translateY(28px);transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+  .stagger.in>*{opacity:1;transform:none}
+  .stagger.in>*:nth-child(2){transition-delay:.09s}
+  .stagger.in>*:nth-child(3){transition-delay:.18s}
+  .stagger.in>*:nth-child(4){transition-delay:.27s}
+  .stagger.in>*:nth-child(5){transition-delay:.36s}
+  .stagger.in>*:nth-child(6){transition-delay:.45s}
+
+  @media(max-width:820px){.g3{grid-template-columns:1fr 1fr}.price-grid{grid-template-columns:1fr}.plan.best{order:-1}}
+  @media(max-width:560px){.g2,.g3{grid-template-columns:1fr}section{padding:56px 0}.sticky{display:block}body{padding-bottom:78px}}
+  @media(prefers-reduced-motion:reduce){
+    *{animation:none!important;scroll-behavior:auto;transition:none!important}
+    .reveal,.stagger>*,.chat-bubble{opacity:1!important;transform:none!important}
+  }
+</style>
+</head>
+<body>
+<div class="bg-layer bg-grid"></div>
+<div class="bg-blob blob-a"></div>
+<div class="bg-blob blob-b"></div>
+<div class="bg-grain"></div>
+
+<!-- ░ HERO ░ -->
+<section class="hero wrap center">
+  <span class="eyebrow reveal">💎 Quản lý tiền cho người Việt trẻ</span>
+  <h1 class="reveal">Ghi chi tiêu nhanh như <span class="grad">nhắn tin</span>.<br/>Còn lại để quản gia AI lo.</h1>
+  <p class="reveal" style="max-width:630px;margin:18px auto 0">
+    ManiCash biến việc quản lý tiền thành trò chơi. Bạn chỉ cần gõ <b style="color:var(--ink-soft)">"mua trà sữa 50k"</b>,
+    AI tự phân loại và ghi sổ. Hết cảnh cuối tháng không biết tiền đi đâu.
+  </p>
+  <div class="btn-row reveal">
+    <a class="btn btn-primary btn-pulse" href="#tai-app">Tải app · Dùng thử Pro 30 ngày 🚀</a>
+    <a class="btn btn-ghost" href="#dang-ky">Nhận thông báo ra mắt</a>
+  </div>
+  <div class="badges reveal">
+    <span><i class="dot"></i> Không cần thẻ tín dụng</span>
+    <span><i class="dot"></i> 100% tiếng Việt, tiền VND</span>
+    <span><i class="dot"></i> Bản miễn phí dùng mãi mãi</span>
+  </div>
+
+  <div class="phone reveal">
+    <div class="chat-bot-head"><span class="ava">💎</span> Lord Diamond</div>
+    <div class="chat-bubble from-user">mua trà sữa 50k</div>
+    <div class="chat-bubble from-bot">
+      Đã ghi nhé cậu chủ 👌
+      <div class="tx-row"><span>☕ Cà phê / Trà sữa</span><b class="neg">-50.000đ</b></div>
+      <div class="tx-row"><span>Số dư an toàn hôm nay</span><span class="pill">còn 220.000đ</span></div>
+    </div>
+    <div class="chat-bubble from-user">tối nay lương về 12 triệu</div>
+    <div class="chat-bubble from-bot">
+      Tuyệt! +12.000.000đ vào Ví chính. Đã chia tự động sang Quỹ Bill &amp; Tiết kiệm 🎯
+      <div class="tx-row"><span>+15 XP · Streak 7 ngày 🔥</span><span class="pill">Hạng: Vàng</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ░ VẤN ĐỀ ░ -->
+<section class="wrap">
+  <div class="center reveal">
+    <span class="eyebrow">Nghe quen không?</span>
+    <h2>Vấn đề không phải bạn tiêu nhiều.<br/>Mà là <span class="grad">ghi sổ quá mệt nên bỏ cuộc.</span></h2>
+  </div>
+  <div class="grid g2 stagger" style="margin-top:36px">
+    <ul class="pain card">
+      <li><span class="x">✕</span> Cuối tháng nhìn lại, tiền "bốc hơi" mà chẳng nhớ tiêu vào đâu.</li>
+      <li><span class="x">✕</span> Tải app kế toán về, form dài lê thê, mở lên là nản, vài hôm bỏ.</li>
+      <li><span class="x">✕</span> Không biết còn được tiêu bao nhiêu là an toàn sau khi trừ bill.</li>
+    </ul>
+    <ul class="pain card">
+      <li><span class="x">✕</span> Mua xong mới hối hận, mấy khoản bốc đồng cứ lặp lại.</li>
+      <li><span class="x">✕</span> Quên hạn bill, dính phí phạt, lại thêm một phen bực mình.</li>
+      <li><span class="x">✕</span> Quản lý tiền chán đến mức chẳng có động lực làm đều.</li>
+    </ul>
+  </div>
+  <p class="center reveal" style="margin-top:28px;font-size:18px;color:var(--ink-soft)">
+    Mỗi tháng trôi qua không kiểm soát là thêm một tháng tiền chảy đi <b>không dấu vết.</b>
+  </p>
+</section>
+
+<!-- ░ GIẢI PHÁP ░ -->
+<section class="wrap">
+  <div class="center reveal">
+    <span class="eyebrow">Giải pháp</span>
+    <h2>Ghi một khoản chỉ mất <span class="grad">3 giây</span></h2>
+    <p style="max-width:560px;margin:14px auto 0">Không form, không cột, không rối. Nhắn một câu là xong.</p>
+  </div>
+  <div class="grid g3 stagger" style="margin-top:36px">
+    <div class="card feat"><div class="step-num">1</div><h3>Nhắn như chat</h3><p>Gõ "ăn sáng 30k" hay "grab 45k". Dùng tiếng Việt đời thường, không cần cú pháp.</p></div>
+    <div class="card feat"><div class="step-num">2</div><h3>AI tự phân loại</h3><p>ManiCash tách số tiền, loại thu/chi và danh mục giúp bạn, kể cả khi viết tắt.</p></div>
+    <div class="card feat"><div class="step-num">3</div><h3>Bấm xác nhận</h3><p>Liếc qua, đúng thì xác nhận. Sổ sạch đẹp, "số dư an toàn" cập nhật ngay.</p></div>
+  </div>
+</section>
+
+<!-- ░ USP ░ -->
+<section class="wrap">
+  <div class="center reveal">
+    <span class="eyebrow">Vì sao là ManiCash</span>
+    <h2>Một app, lo trọn dòng tiền của bạn</h2>
+  </div>
+  <div class="grid g3 stagger" style="margin-top:36px">
+    <div class="card feat"><div class="feat-ico">💬</div><h3>AI Money Chat</h3><p>Nhập giao dịch bằng lời nói. Đây là cách nhanh nhất để giữ thói quen ghi sổ mỗi ngày.</p></div>
+    <div class="card feat"><div class="feat-ico">🛡️</div><h3>Số dư an toàn</h3><p>Biết ngay còn tiêu được bao nhiêu sau khi đã chừa bill, ngân sách và mục tiêu tiết kiệm.</p></div>
+    <div class="card feat"><div class="feat-ico">👛</div><h3>Hệ thống 6 ví</h3><p>Ví chính, Quỹ Bill, Dự phòng, Mục tiêu, Đầu tư, Giáo dục. Tự chia tiền theo tỷ lệ bạn đặt.</p></div>
+    <div class="card feat"><div class="feat-ico">📊</div><h3>CFO Lord Diamond</h3><p>Chấm điểm sức khoẻ tài chính và báo cáo cuối tháng, gợi ý cắt giảm và tăng thu nhập.</p></div>
+    <div class="card feat"><div class="feat-ico">🔔</div><h3>Nhắc bill thông minh</h3><p>Quản gia nhắc hạn bill, nhắc tiết kiệm đúng lúc. Không còn trễ hạn, không còn phí phạt.</p></div>
+    <div class="card feat"><div class="feat-ico">📲</div><h3>Tự ghi từ SMS <span style="font-size:11px;color:#fff;background:var(--grad);padding:2px 7px;border-radius:6px;vertical-align:middle">PRO</span></h3><p>Kết nối SMS ngân hàng để ghi sổ tự động. Bạn chỉ việc duyệt, gần như không phải nhập tay.</p></div>
+  </div>
+</section>
+
+<!-- ░ GAME HOÁ ░ -->
+<section class="wrap">
+  <div class="card reveal" style="padding:46px 30px">
+    <div class="center">
+      <span class="eyebrow">Điểm khác biệt</span>
+      <h2>Quản lý tiền mà <span class="grad">gây nghiện</span> theo nghĩa tốt</h2>
+      <p style="max-width:610px;margin:14px auto 0">Mỗi lần ghi sổ là một lần lên XP. Giữ streak, mở khoá huy hiệu, leo hạng từ Sắt tới Kim Cương.</p>
+    </div>
+    <div class="ranks">
+      <span class="rank">🥈 Sắt</span><span class="rank">🥉 Đồng</span><span class="rank">⚪ Bạc</span>
+      <span class="rank">🥇 Vàng</span><span class="rank">💠 Bạch Kim</span><span class="rank">🟢 Lục Bảo</span>
+      <span class="rank last">💎 Kim Cương</span>
+    </div>
+    <div class="grid g3 stagger" style="margin-top:32px">
+      <div class="feat center"><div class="feat-ico" style="margin:0 auto 14px">🔥</div><h3>Streak mỗi ngày</h3><p>Chuỗi ngày ghi chép liên tiếp giữ bạn quay lại đều đặn.</p></div>
+      <div class="feat center"><div class="feat-ico" style="margin:0 auto 14px">🫧</div><h3>BreathGate</h3><p>Thở 30 giây trước khoản chi lớn. Nhịn được thì thưởng XP.</p></div>
+      <div class="feat center"><div class="feat-ico" style="margin:0 auto 14px">⏳</div><h3>Wishlist Cooling</h3><p>Đặt món muốn mua vào "suy nghĩ lại" để chặn tiêu bốc đồng.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ░ TRUST ░ -->
+<section class="wrap trust">
+  <div class="center reveal"><span class="eyebrow">Yên tâm khi dùng</span><h2>Nhẹ đầu, an toàn, không ràng buộc</h2></div>
+  <div class="grid g2 stagger" style="margin-top:32px">
+    <div class="card"><div class="feat-ico">🇻🇳</div><h3>Thuần Việt</h3><p>Giao diện, danh mục và cách nói chuyện hợp văn hoá chi tiêu của người Việt. Tiền VND, có dấu đầy đủ.</p></div>
+    <div class="card"><div class="feat-ico">🔐</div><h3>Dữ liệu là của bạn</h3><p>Đăng nhập an toàn. Với SMS, app chỉ đọc khoản tiền và luôn để bạn tự xác nhận từng giao dịch.</p></div>
+    <div class="card"><div class="feat-ico">🎁</div><h3>Dùng thử không rủi ro</h3><p>Trải nghiệm trọn bộ Pro 30 ngày miễn phí, không cần thẻ, không tự động trừ tiền.</p></div>
+    <div class="card"><div class="feat-ico">♾️</div><h3>Bản miễn phí dùng mãi</h3><p>Hết hạn thử vẫn dùng được các tính năng cốt lõi. Bạn nâng cấp khi thấy thật sự xứng đáng.</p></div>
+  </div>
+</section>
+
+
+<!-- ░ BẢNG GIÁ ░ -->
+<section class="wrap" id="bang-gia">
+  <div class="center reveal">
+    <span class="eyebrow">Bảng giá</span>
+    <h2>Rẻ hơn <span class="grad">một ly trà sữa mỗi tuần</span></h2>
+    <p style="max-width:520px;margin:14px auto 0">Mở khoá AI không giới hạn, CFO viết riêng và tự ghi từ SMS.</p>
+  </div>
+  <div class="price-grid stagger">
+    <div class="card plan">
+      <h3>Pro tháng</h3>
+      <div class="price">49.000đ <small>/ tháng</small></div>
+      <div class="save">&nbsp;</div>
+      <ul>
+        <li>AI Money Chat không giới hạn</li>
+        <li>CFO Lord Diamond viết riêng</li>
+        <li>Tự động ghi từ SMS</li>
+        <li>Không giới hạn mục tiêu &amp; wishlist</li>
+      </ul>
+      <a class="btn btn-ghost" href="#tai-app">Chọn gói tháng</a>
+    </div>
+    <div class="card plan best">
+      <span class="tag-best">🔥 Tiết kiệm nhất</span>
+      <h3>Pro năm</h3>
+      <div class="price">539.000đ <small>/ năm</small></div>
+      <div class="save">Chỉ ~44.900đ/tháng · tiết kiệm ~8%</div>
+      <ul>
+        <li>Toàn bộ quyền lợi Pro</li>
+        <li>Giá tốt nhất theo tháng</li>
+        <li>Ưu tiên tính năng mới</li>
+        <li>Yên tâm cả năm, không lo gia hạn</li>
+      </ul>
+      <a class="btn btn-primary" href="#tai-app">Chọn gói năm</a>
+    </div>
+    <div class="card plan">
+      <h3>Pro 6 tháng</h3>
+      <div class="price">280.000đ <small>/ 6 tháng</small></div>
+      <div class="save">Chỉ ~46.700đ/tháng · tiết kiệm ~5%</div>
+      <ul>
+        <li>Toàn bộ quyền lợi Pro</li>
+        <li>Linh hoạt nửa năm</li>
+        <li>Tự động ghi từ SMS</li>
+        <li>Báo cáo CFO cá nhân hoá</li>
+      </ul>
+      <a class="btn btn-ghost" href="#tai-app">Chọn gói 6 tháng</a>
+    </div>
+  </div>
+  <div class="trial-banner reveal">🎁 Mới tải? Dùng thử <b>trọn bộ Pro 30 ngày MIỄN PHÍ</b> · không cần thẻ, không tự trừ tiền.</div>
+</section>
+
+<!-- ░ FAQ ░ -->
+<section class="wrap" style="max-width:800px">
+  <div class="center reveal"><span class="eyebrow">Còn băn khoăn?</span><h2>Câu hỏi thường gặp</h2></div>
+  <div style="margin-top:32px" class="reveal">
+    <details open><summary>App này khác gì mấy app ghi chi tiêu tôi từng bỏ ngang?</summary>
+      <p>Khác ở chỗ bạn không phải điền form. Chỉ nhắn một câu là AI ghi xong, cộng thêm XP, streak và thăng hạng nên ghi sổ thành thói quen vui chứ không phải nghĩa vụ. Đó là lý do người dùng giữ được lâu.</p></details>
+    <details><summary>Nhập liệu có mất thời gian không?</summary>
+      <p>Một khoản chỉ mất khoảng 3 giây để nhắn và xác nhận. Lên bản Pro, bạn còn có thể kết nối SMS ngân hàng để app tự ghi, gần như không phải gõ tay.</p></details>
+    <details><summary>Có tốn tiền không? 49k có đáng không?</summary>
+      <p>Bản miễn phí dùng được mãi với các tính năng cốt lõi. Nếu muốn AI không giới hạn, CFO viết riêng và tự ghi từ SMS thì lên Pro từ 49.000đ/tháng, rẻ hơn một ly trà sữa mỗi tuần. Bạn được thử trọn Pro 30 ngày miễn phí trước khi quyết định.</p></details>
+    <details><summary>App có an toàn dữ liệu không?</summary>
+      <p>Đăng nhập được bảo mật và dữ liệu tài chính là của riêng bạn. Với tính năng SMS, app chỉ đọc thông tin khoản tiền và luôn để bạn tự duyệt từng giao dịch trước khi ghi.</p></details>
+    <details><summary>Tôi không rành công nghệ, dùng có khó không?</summary>
+      <p>Nếu bạn biết nhắn tin là bạn dùng được ManiCash. Mọi thứ bắt đầu từ một cuộc trò chuyện, không bảng biểu phức tạp, luôn có nút quay lại nên không bao giờ bị mắc kẹt.</p></details>
+  </div>
+</section>
+
+<!-- ░ CTA CHỐT ░ -->
+<section class="wrap" id="tai-app">
+  <div class="final reveal">
+    <span class="eyebrow">Bắt đầu hôm nay</span>
+    <h2>Tháng này, hãy biết chính xác <span class="grad">tiền của bạn đi đâu</span></h2>
+    <p style="max-width:560px;margin:14px auto 0;color:var(--ink-soft)">Tải ManiCash và dùng thử trọn bộ Pro 30 ngày miễn phí. Không cần thẻ, không ràng buộc, huỷ bất cứ lúc nào.</p>
+    <div class="btn-row">
+      <a class="btn btn-primary btn-pulse" href="#" data-cta="store">Tải app ngay 💎</a>
+    </div>
+
+    <div id="dang-ky" style="margin-top:32px">
+      <p style="color:var(--ink);font-weight:700">Chưa tiện tải? Để lại số điện thoại, bọn mình báo ngay khi có bản mới &amp; ưu đãi:</p>
+      <form id="leadForm" onsubmit="return submitLead(event)">
+        <input type="tel" id="phone" placeholder="Số điện thoại của bạn" required pattern="[0-9 +().-]{8,}" />
+        <button class="btn btn-primary" type="submit">Đăng ký nhận tin</button>
+      </form>
+      <div class="form-note">Bọn mình chỉ dùng số này để báo tin về ManiCash. Không spam.</div>
+      <div id="thanks">🎉 Cảm ơn bạn! Bọn mình sẽ liên hệ sớm nhất.</div>
+    </div>
+  </div>
+
+  <p class="disclaimer">
+    ManiCash là công cụ hỗ trợ ghi chép và phân tích chi tiêu cá nhân, không phải dịch vụ tư vấn đầu tư hay tài chính chuyên nghiệp.
+    Mọi quyết định tài chính là của bạn. Giá đã bao gồm các gói nêu trên, có thể thay đổi theo từng đợt khuyến mãi.
+  </p>
+</section>
+
+<footer>
+  <div class="wrap">
+    💎 <b style="color:var(--ink)">ManiCash</b> · Quản lý tài chính cá nhân cho người Việt trẻ.<br/>
+    <span>© 2026 ManiCash. Built with 💎</span>
+  </div>
+</footer>
+
+<div class="sticky"><a class="btn btn-primary btn-pulse" href="#tai-app">Tải app · Dùng thử Pro 30 ngày 🚀</a></div>
+
+<script>
+  function submitLead(e){
+    e.preventDefault();
+    var p=document.getElementById('phone').value.trim();
+    if(p.length<8){return false;}
+    document.getElementById('leadForm').style.display='none';
+    document.querySelector('.form-note').style.display='none';
+    document.getElementById('thanks').style.display='block';
+    /* TODO: gan endpoint that (Google Form / Sheet / CRM) de luu so dien thoai */
+    return false;
+  }
+  (function(){
+    var els=document.querySelectorAll('.reveal,.stagger');
+    if(!('IntersectionObserver' in window)){els.forEach(function(el){el.classList.add('in')});return;}
+    var io=new IntersectionObserver(function(entries){
+      entries.forEach(function(en){if(en.isIntersecting){en.target.classList.add('in');io.unobserve(en.target);}});
+    },{threshold:.14,rootMargin:'0px 0px -8% 0px'});
+    els.forEach(function(el){io.observe(el);});
+  })();
+</script>
+</body>
+</html>

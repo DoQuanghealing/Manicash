@@ -29,9 +29,17 @@ const FOLLOW_UP_PHRASES = ['tai sao', 'vi sao', 'sao lai', 'bang cach nao', 'lam
 /** True nếu câu (đã normalize) mang tính hỏi tiếp nối. */
 export function detectFollowUp(normalizedText: string): boolean {
   if (!normalizedText) return false;
-  if (FOLLOW_UP_PHRASES.some((p) => normalizedText.includes(p))) return true;
+  if (hasStrongFollowUpPhrase(normalizedText)) return true;
   const tokens = normalizedText.split(' ');
   return tokens.some((t) => FOLLOW_UP_SINGLE_TOKENS.has(t));
+}
+
+/**
+ * Tín hiệu tiếp nối MẠNH: cụm nghi vấn WHY/HOW/deixis ("tai sao", "bang cach
+ * nao", "cai nay"...). Khác token đơn ("do", "no") vốn dễ nhiễu.
+ */
+function hasStrongFollowUpPhrase(normalizedText: string): boolean {
+  return FOLLOW_UP_PHRASES.some((p) => normalizedText.includes(p));
 }
 
 /** Lấy confidence cao hơn giữa hai nguồn. */
@@ -72,9 +80,17 @@ function extractLogTransactionSlots(intent: ChatIntent): void {
 export function routeIntent(rawText: string): ChatIntent {
   const intent = classifyIntent(rawText);
 
-  // Override follow-up: chỉ khi classifier KHÔNG rõ ràng (UNKNOWN) mà câu lại
-  // mang từ khóa tiếp nối -> ép FOLLOW_UP (pipeline llm). Session check ở handler.
-  if (intent.type === 'UNKNOWN' && detectFollowUp(intent.normalizedText)) {
+  // Override follow-up:
+  //  - UNKNOWN + bất kỳ tín hiệu tiếp nối nào (cụm hoặc token "do"/"no").
+  //  - Cụm nghi vấn MẠNH ("tai sao", "bang cach nao"...) override cả intent
+  //    confidence < high: câu WHY/HOW không trả lời được bằng handler
+  //    deterministic (vd "tại sao mục mua sắm lại lố" dính mustMatch của
+  //    QUERY_CATEGORY_SPENDING ở mức medium dù không có keyword "bao nhiêu").
+  // Session check ở handler.
+  if (
+    (intent.type === 'UNKNOWN' && detectFollowUp(intent.normalizedText)) ||
+    (intent.confidence !== 'high' && hasStrongFollowUpPhrase(intent.normalizedText))
+  ) {
     intent.type = 'FOLLOW_UP';
     intent.confidence = 'high';
     intent.pipeline = 'llm';

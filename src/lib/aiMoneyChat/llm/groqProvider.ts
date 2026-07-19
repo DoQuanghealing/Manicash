@@ -44,6 +44,12 @@ export class GroqProvider implements LLMProvider {
     const content = data.choices?.[0]?.message?.content;
     if (typeof content !== 'string') throw new Error('Groq response missing content.');
 
-    return { content, tokensUsed: data.usage?.total_tokens ?? 0 };
+    return {
+      content,
+      tokensUsed: data.usage?.total_tokens ?? 0,
+      tokensIn: data.usage?.prompt_tokens,
+      tokensOut: data.usage?.completion_tokens,
+      model: String(body.model),
+    };
   }
 }
