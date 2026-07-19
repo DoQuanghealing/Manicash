@@ -8,6 +8,7 @@ import type { EarningTask, TaskStatus } from '@/types/task';
 import { calculateTaskXP } from '@/types/task';
 import { useTaskStore } from '@/stores/useTaskStore';
 import { formatCurrencyShort } from '@/utils/formatCurrency';
+import TaskEvalPanel from './TaskEvalPanel';
 import './TaskCard.css';
 
 const STATUS_CONFIG: Record<TaskStatus, { label: string; color: string; bg: string; emoji: string }> = {
@@ -138,6 +139,9 @@ export default function TaskCard({ task, status, onComplete, onOverdueAction, on
                 ✏️ Chỉnh sửa
               </button>
             )}
+
+            {/* T5 — Quản gia thẩm định (chỉ tier Phú Vương; ẩn với task đã xong) */}
+            {status !== 'completed' && <TaskEvalPanel task={task} />}
           </motion.div>
         )}
       </AnimatePresence>

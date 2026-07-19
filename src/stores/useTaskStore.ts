@@ -3,7 +3,7 @@
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import type { EarningTask, SubTask, TaskStatus, XPPenalty, OverdueReason } from '@/types/task';
+import type { EarningTask, SubTask, TaskStatus, XPPenalty, OverdueReason, TaskAiEval } from '@/types/task';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { STORE_KEYS, STORE_VERSIONS, onRehydrateMark } from '@/stores/persistConfig';
 
@@ -99,6 +99,8 @@ interface TaskState {
 
   addTask: (data: Pick<EarningTask, 'name' | 'expectedAmount' | 'startDate' | 'endDate'> & { subTasks?: Omit<SubTask, 'id' | 'isCompleted'>[] }) => EarningTask;
   updateTask: (id: string, data: Partial<Pick<EarningTask, 'name' | 'expectedAmount' | 'startDate' | 'endDate'>>) => void;
+  /** T5: cache kết quả AI thẩm định NGAY trên task (đổi task → hash đổi → gọi lại). */
+  setTaskAiEval: (id: string, aiEval: TaskAiEval) => void;
   completeTask: (id: string, actualAmount: number) => void;
   deleteOverdueTask: (id: string, reason: OverdueReason) => void;
   /** Phase 5 (undo): xóa hẳn 1 task (dùng cho undo task vừa tạo). Trả false nếu không thấy. */
@@ -165,6 +167,11 @@ export const useTaskStore = create<TaskState>()(
   updateTask: (id, data) =>
     set((s) => ({
       tasks: s.tasks.map((t) => t.id === id ? { ...t, ...data } : t),
+    })),
+
+  setTaskAiEval: (id, aiEval) =>
+    set((s) => ({
+      tasks: s.tasks.map((t) => t.id === id ? { ...t, aiEval } : t),
     })),
 
   completeTask: (id, actualAmount) => {
