@@ -7,6 +7,7 @@ import { resolveVibe } from '@/lib/ageGroup';
 import { getCopy } from '@/data/vibedCopy';
 import SafeToSpendCard from './SafeToSpendCard';
 import CoachSuggestionCard from './CoachSuggestionCard';
+import CareCard from '@/components/butler/CareCard';
 import AlertsInbox from './AlertsInbox';
 import MissionChecklist from './MissionChecklist';
 import OnboardingQuestPanel from './OnboardingQuestPanel';
@@ -39,6 +40,9 @@ export default function OverviewContent() {
 
         {/* ═══ BLOCK 1c: Đề xuất chủ động của quản gia (chỉ tier Phú Vương) ═══ */}
         <CoachSuggestionCard />
+
+        {/* ═══ BLOCK 1c2: Nhịp chăm sóc Care Companion (chỉ tier Phú Vương · 0đ) ═══ */}
+        <CareCard />
 
         {/* ═══ BLOCK 1b: Alerts inbox — gộp budget/pending-txn/idle-money thành 1 thanh ═══ */}
         <AlertsInbox />
