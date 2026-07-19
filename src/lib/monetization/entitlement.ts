@@ -21,23 +21,71 @@ export const PRO_PLUS_PRICE_VND = 99_000;
 export const PRO_PLUS_PRODUCT_ID = 'manicash_pro_plus_monthly';
 
 /** SKU Pro theo kỳ hạn. amount = VND (số nguyên), periodDays = số ngày cấp. */
-export type ProSkuId = 'monthly' | 'half_year' | 'yearly';
+/** SKU Pro theo KỲ HẠN (dùng cho bộ chọn kỳ hạn trên trang giá). */
+export type ProPeriodSkuId = 'monthly' | 'half_year' | 'yearly';
+/** Toàn bộ SKU bán được (gồm sản phẩm riêng Pro Plus). */
+export type ProSkuId = ProPeriodSkuId | 'pro_plus_monthly';
 
 export interface ProSku {
   amount: number;
   periodDays: number;
   productId: string;
+  /** Tier được cấp khi mua SKU này. Bỏ trống = 'pro'. */
+  grantsTier?: Tier;
 }
 
 export const PRO_SKUS: Record<ProSkuId, ProSku> = {
   monthly: { amount: 49_000, periodDays: 30, productId: 'manicash_pro_monthly' },
   half_year: { amount: 280_000, periodDays: 180, productId: 'manicash_pro_6month' },
   yearly: { amount: 539_000, periodDays: 365, productId: 'manicash_pro_yearly' },
+  // PV-5 — Phú Vương: SKU DUY NHẤT cấp pro_plus (mở cấp quản gia 3).
+  pro_plus_monthly: {
+    amount: PRO_PLUS_PRICE_VND,
+    periodDays: 30,
+    productId: PRO_PLUS_PRODUCT_ID,
+    grantsTier: 'pro_plus',
+  },
 };
 
 /** Lấy SKU theo id, trả null nếu không hợp lệ (dùng để validate server-side). */
 export function getProSku(id: string): ProSku | null {
   return (PRO_SKUS as Record<string, ProSku>)[id] ?? null;
+}
+
+/**
+ * Tier mà một SKU cấp. SKU lạ/thiếu → 'pro' (fail-safe: KHÔNG bao giờ tự nâng lên
+ * pro_plus khi không chắc — thà cấp thấp rồi hỗ trợ tay còn hơn phát nhầm quyền).
+ */
+export type PaidTier = Exclude<Tier, 'free'>;
+
+function toPaidTier(t: Tier | undefined): PaidTier {
+  return t === 'pro_plus' ? 'pro_plus' : 'pro';
+}
+
+export function tierForSku(skuId: string | null | undefined): PaidTier {
+  if (!skuId) return 'pro';
+  return toPaidTier(getProSku(skuId)?.grantsTier);
+}
+
+/** Như tierForSku nhưng tra theo productId của store (Google Play / Apple IAP). */
+export function tierForProductId(productId: string | null | undefined): PaidTier {
+  if (!productId) return 'pro';
+  return toPaidTier(Object.values(PRO_SKUS).find((s) => s.productId === productId)?.grantsTier);
+}
+
+/**
+ * Bộ field entitlement ghi lên users/{uid} theo tier. NGUỒN DUY NHẤT để mọi đường cấp
+ * (PayOS webhook, verify route, admin) ghi CÙNG một hình dạng — tránh lệch như bug
+ * "mua Pro Plus vẫn ra Pro".
+ */
+export function entitlementFieldsForTier(tier: Tier): {
+  tier: Exclude<Tier, 'free'>;
+  plan: 'premium' | 'premium_plus';
+  isPremium: true;
+} {
+  return tier === 'pro_plus'
+    ? { tier: 'pro_plus', plan: 'premium_plus', isPremium: true }
+    : { tier: 'pro', plan: 'premium', isPremium: true };
 }
 
 /** Giới hạn quyền dùng bản Free (Pro = không giới hạn). Chặn mềm → mở modal nâng cấp. */

@@ -6,7 +6,7 @@
 
 import { FieldValue } from 'firebase-admin/firestore';
 import { getAdminDb } from '@/lib/firebaseAdmin';
-import { computeProExpiry, PRO_PERIOD_DAYS } from './entitlement';
+import { computeProExpiry, PRO_PERIOD_DAYS, tierForSku, entitlementFieldsForTier, type Tier } from './entitlement';
 
 export type PaidOutcome = 'no_intent' | 'already' | 'mismatch' | 'not_pending' | 'granted';
 
@@ -14,6 +14,8 @@ export interface ApplyPaidResult {
   outcome: PaidOutcome;
   uid?: string;
   premiumExpiresAt?: string;
+  /** Tier thực sự đã cấp (theo SKU của đơn) — dùng cho log/đối soát. */
+  grantedTier?: Tier;
 }
 
 function readExpiryString(raw: unknown): string | null {
@@ -58,6 +60,9 @@ export async function applyPaidOrderAtomic(input: {
 
     const periodDays: number = typeof intent.periodDays === 'number' ? intent.periodDays : PRO_PERIOD_DAYS;
     const plan: string = typeof intent.plan === 'string' ? intent.plan : 'monthly';
+    // PV-5: tier lấy TỪ SKU của đơn (intent.plan), không hard-code nữa — nếu không
+    // đơn Phú Vương 99k vẫn chỉ cấp Pro. SKU lạ → 'pro' (fail-safe, không phát nhầm quyền).
+    const grantedTier = tierForSku(plan);
 
     const userRef = db.doc(`users/${uid}`);
     const userSnap = await tx.get(userRef);
@@ -70,9 +75,7 @@ export async function applyPaidOrderAtomic(input: {
     tx.set(
       userRef,
       {
-        tier: 'pro',
-        plan: 'premium',
-        isPremium: true,
+        ...entitlementFieldsForTier(grantedTier),
         premiumExpiresAt,
         billingProvider: 'payos',
         billingOrderIds: FieldValue.arrayUnion(orderId),
@@ -86,6 +89,7 @@ export async function applyPaidOrderAtomic(input: {
       amount: webhookAmount,
       status: 'paid',
       plan,
+      grantedTier,
       periodDays,
       provider: 'payos',
       paidAt: nowIso,
@@ -93,11 +97,12 @@ export async function applyPaidOrderAtomic(input: {
     tx.set(db.collection('grant_events').doc(), {
       uid,
       provider: 'payos',
+      grantedTier,
       periodDays,
       orderId,
       at: nowIso,
     });
 
-    return { outcome: 'granted' as const, uid, premiumExpiresAt };
+    return { outcome: 'granted' as const, uid, premiumExpiresAt, grantedTier };
   });
 }

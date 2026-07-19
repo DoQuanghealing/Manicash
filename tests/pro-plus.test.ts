@@ -7,7 +7,15 @@ import {
 } from '@/lib/aiMoneyChat/llm/aiCostCore';
 import { resolveAiMoneyPlan, getMonthlyCreditLimit } from '@/lib/aiMoneyChat/quotaCore';
 import { getAiQuotaLimits } from '@/lib/aiMoneyChat/aiQuotaPolicy';
-import { resolveTier, isProPlusActive, PRO_PLUS_PRICE_VND } from '@/lib/monetization/entitlement';
+import {
+  resolveTier,
+  isProPlusActive,
+  PRO_PLUS_PRICE_VND,
+  PRO_SKUS,
+  tierForSku,
+  tierForProductId,
+  entitlementFieldsForTier,
+} from '@/lib/monetization/entitlement';
 import {
   billingLevelCap,
   resolveButlerLevel,
@@ -97,6 +105,63 @@ it('billingLevelCap: khi enforce, pro_plus→3, pro→2, free→1', () => {
   } finally {
     if (prev === undefined) delete process.env.NEXT_PUBLIC_BUTLER_BILLING_ENFORCED;
     else process.env.NEXT_PUBLIC_BUTLER_BILLING_ENFORCED = prev;
+  }
+});
+
+console.log('\nĐường cấp quyền — SKU quyết định tier (bug: mua Pro Plus vẫn ra Pro)');
+
+it('SKU pro_plus_monthly cấp pro_plus; SKU Pro cấp pro', () => {
+  eq(tierForSku('pro_plus_monthly'), 'pro_plus');
+  eq(tierForSku('monthly'), 'pro');
+  eq(tierForSku('half_year'), 'pro');
+  eq(tierForSku('yearly'), 'pro');
+  eq(PRO_SKUS.pro_plus_monthly.amount, 99_000, 'giá SKU khớp 99k');
+});
+
+it('SKU lạ/thiếu → pro (fail-safe: KHÔNG tự phát nhầm quyền cấp 3)', () => {
+  eq(tierForSku('khong-ton-tai'), 'pro');
+  eq(tierForSku(null), 'pro');
+  eq(tierForSku(undefined), 'pro');
+  eq(tierForProductId('san-pham-la'), 'pro');
+});
+
+it('tra theo productId của store (Google Play / Apple)', () => {
+  eq(tierForProductId(PRO_SKUS.pro_plus_monthly.productId), 'pro_plus');
+  eq(tierForProductId(PRO_SKUS.monthly.productId), 'pro');
+});
+
+it('entitlementFieldsForTier: hình dạng field ghi lên users/{uid}', () => {
+  const plus = entitlementFieldsForTier('pro_plus');
+  eq(plus.tier, 'pro_plus');
+  eq(plus.plan, 'premium_plus');
+  eq(plus.isPremium, true);
+  const pro = entitlementFieldsForTier('pro');
+  eq(pro.tier, 'pro');
+  eq(pro.plan, 'premium');
+});
+
+it('HỒI QUY: mua SKU 99k → ghi field → resolveTier → MỞ ĐƯỢC cấp 3', () => {
+  const prevMon = process.env.NEXT_PUBLIC_MONETIZATION_ENABLED;
+  const prevEnf = process.env.NEXT_PUBLIC_BUTLER_BILLING_ENFORCED;
+  process.env.NEXT_PUBLIC_MONETIZATION_ENABLED = 'true';
+  process.env.NEXT_PUBLIC_BUTLER_BILLING_ENFORCED = 'true';
+  try {
+    // Mô phỏng đúng chuỗi thật: intent.plan='pro_plus_monthly' → tier → field → profile.
+    const granted = tierForSku('pro_plus_monthly');
+    const profile = { ...entitlementFieldsForTier(granted), premiumExpiresAt: future } as Partial<UserProfile>;
+
+    eq(resolveTier(profile), 'pro_plus', 'profile sau khi cấp phải ra pro_plus');
+    eq(billingLevelCap(resolveTier(profile)), 3, 'mở được cấp quản gia 3');
+    eq(resolveButlerLevel({ butlerTier: 'sovereign', billingTier: resolveTier(profile) }), 3);
+
+    // Đối chứng: mua gói Pro thường vẫn chỉ cấp 2.
+    const proProfile = { ...entitlementFieldsForTier(tierForSku('monthly')), premiumExpiresAt: future } as Partial<UserProfile>;
+    eq(billingLevelCap(resolveTier(proProfile)), 2, 'Pro thường vẫn cấp 2');
+  } finally {
+    if (prevMon === undefined) delete process.env.NEXT_PUBLIC_MONETIZATION_ENABLED;
+    else process.env.NEXT_PUBLIC_MONETIZATION_ENABLED = prevMon;
+    if (prevEnf === undefined) delete process.env.NEXT_PUBLIC_BUTLER_BILLING_ENFORCED;
+    else process.env.NEXT_PUBLIC_BUTLER_BILLING_ENFORCED = prevEnf;
   }
 });
 

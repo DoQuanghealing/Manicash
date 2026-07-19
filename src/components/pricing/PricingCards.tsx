@@ -8,7 +8,7 @@ import { useMemo, useState } from 'react';
 import { Check, Crown, Gift, Loader2, Sparkles } from 'lucide-react';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { purchasePro, startCheckout, startTrial } from '@/lib/monetization/billingClient';
-import { getPlanCard, PRO_SKUS, type ProSkuId } from '@/lib/monetization/entitlement';
+import { getPlanCard, PRO_SKUS, type ProPeriodSkuId } from '@/lib/monetization/entitlement';
 import { trackEvent } from '@/lib/analytics/events';
 import './pricing.css';
 
@@ -31,9 +31,9 @@ const PRO_FEATURE_LINES = [
   'Ưu tiên tính năng mới',
 ];
 
-const PERIOD_ORDER: ProSkuId[] = ['monthly', 'half_year', 'yearly'];
-const PERIOD_LABEL: Record<ProSkuId, string> = { monthly: 'Tháng', half_year: '6 tháng', yearly: 'Năm' };
-const PERIOD_NOTE: Record<ProSkuId, string> = { monthly: '', half_year: 'Tiết kiệm', yearly: 'Tặng ~2 tháng' };
+const PERIOD_ORDER: ProPeriodSkuId[] = ['monthly', 'half_year', 'yearly'];
+const PERIOD_LABEL: Record<ProPeriodSkuId, string> = { monthly: 'Tháng', half_year: '6 tháng', yearly: 'Năm' };
+const PERIOD_NOTE: Record<ProPeriodSkuId, string> = { monthly: '', half_year: 'Tiết kiệm', yearly: 'Tặng ~2 tháng' };
 
 type LoadingKind = 'pro' | 'trial' | null;
 
@@ -47,7 +47,7 @@ export default function PricingCards({ onSuccess }: PricingCardsProps) {
   const updateUserProfile = useAuthStore((s) => s.updateUserProfile);
   const card = useMemo(() => getPlanCard(user), [user]);
 
-  const [period, setPeriod] = useState<ProSkuId>('monthly');
+  const [period, setPeriod] = useState<ProPeriodSkuId>('monthly');
   const [loading, setLoading] = useState<LoadingKind>(null);
   const [message, setMessage] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
 

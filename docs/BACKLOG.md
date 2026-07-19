@@ -11,18 +11,20 @@ Sắp theo mức chặn. Mục nào cần PO thao tác tay đều ghi rõ.
 |---|---|---|
 | A1 | **Tạo SKU 99.000đ trong PayOS dashboard** (`manicash_pro_plus_monthly`) | Code đã có `PRO_PLUS_PRICE_VND`/`PRO_PLUS_PRODUCT_ID`. Claude KHÔNG tự đụng PayOS live. |
 | A2 | **Bật `NEXT_PUBLIC_BUTLER_BILLING_ENFORCED=true`** | Kích hoạt: cap cấp theo gói + taste quota + flow migration. Trước khi bật, mọi thứ inert (FOMO). |
-| A3 | **🚨 Nối đường cấp quyền Pro Plus** (`grantPro.ts`) | **BẮT BUỘC — đã xác minh** |
-| A4 | Test webhook PayOS end-to-end với SKU mới | Sau khi xong A3. |
+| ~~A3~~ | ~~Nối đường cấp quyền Pro Plus~~ | ✅ **ĐÃ XONG** (xem dưới) |
+| A4 | **Thêm thẻ mua Pro Plus vào trang giá** (`PricingCards.tsx`) | SKU `pro_plus_monthly` đã bán được qua API, nhưng **UI chưa có nút** → user chưa mua được. Cần copy + layout. |
+| A5 | Test webhook PayOS end-to-end với SKU `pro_plus_monthly` | Sau A1. |
 
-> 🚨 **A3 — mắt xích ĐỨT (đã kiểm chứng bằng code, không phải phỏng đoán):**
-> `src/lib/monetization/grantPro.ts` **hard-code** `tier: 'pro'`, `plan: 'premium'`, `isPremium: true`
-> (dòng ~89-91; `grantTrial.ts` tương tự dòng ~94-96).
+> ✅ **A3 đã sửa (2026-07-19).** Gốc bug: `payosGrant.ts` (đường LIVE) và `grantPro.ts` đều hard-code
+> `tier:'pro'`, bỏ qua SKU của đơn.
 >
-> Hệ quả: user trả **99.000đ mua Pro Plus vẫn chỉ được cấp `tier='pro'`** → `resolveTier` trả `'pro'`
-> → `billingLevelCap` = 2 → **KHÔNG mở được cấp 3**. Toàn bộ Pro Plus vô hiệu.
+> Cách sửa: **SKU tự khai nó cấp tier nào** (`ProSku.grantsTier`) + `tierForSku()` / `tierForProductId()`
+> + `entitlementFieldsForTier()` là NGUỒN DUY NHẤT ghi field entitlement. `payosGrant` giờ đọc
+> `intent.plan` → tier; `grantProToUser` nhận `skuId`/`productId`. SKU lạ → `'pro'` (fail-safe,
+> không bao giờ tự phát nhầm quyền cấp 3). Ghi thêm `grantedTier` vào `payments_index` + `grant_events`
+> để đối soát.
 >
-> Cần: thêm tham số SKU/tier vào `grantProToUser` để cấp `tier='pro_plus'` / `plan='premium_plus'`,
-> và webhook PayOS truyền đúng SKU. Đây là code chạm tiền — làm cẩn thận + test.
+> Có test hồi quy: *"mua SKU 99k → ghi field → resolveTier → mở được cấp 3"* + đối chứng Pro thường vẫn cấp 2.
 
 ## 🟠 B. Tính năng cấp 3 đã khai gate nhưng CHƯA build
 
