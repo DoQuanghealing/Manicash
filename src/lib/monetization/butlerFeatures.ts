@@ -85,6 +85,7 @@ export function isButlerBillingEnforced(): boolean {
 export function billingLevelCap(billingTier: Tier | undefined): ButlerLevel {
   if (!isButlerBillingEnforced()) return 3;
   // Fail-closed: thiếu thông tin billing khi đã enforce → coi như free.
+  if (billingTier === 'pro_plus') return 3; // Phú Vương (PV-5) — full option.
   return billingTier === 'pro' ? 2 : 1;
 }
 

@@ -13,7 +13,7 @@ import type { UserProfile } from '@/types/user';
 import { resolveAiMoneyPlan } from './quotaCore';
 
 export type AiFeature = 'report' | 'chat';
-export type AiTier = 'free' | 'pro';
+export type AiTier = 'free' | 'pro' | 'pro_plus';
 
 export interface AiQuotaLimits {
   perDay: number;
@@ -29,6 +29,12 @@ export const DEFAULT_AI_QUOTA: Record<AiTier, Record<AiFeature, AiQuotaLimits>> 
   pro: {
     report: { perDay: 3, perMonth: 60 },
     chat: { perDay: 20, perMonth: 300 },
+  },
+  // Pro Plus (Phú Vương) — hồ sơ "Rộng rãi" (docs/PRO_PLUS_ECONOMICS.md). Worst-case
+  // kịch trần tháng ~27k = 27,5% giá 99k → lãi ≥72%. Trần fix cứng 30k đỡ thêm phía trên.
+  pro_plus: {
+    report: { perDay: 15, perMonth: 300 },
+    chat: { perDay: 80, perMonth: 1200 },
   },
 };
 

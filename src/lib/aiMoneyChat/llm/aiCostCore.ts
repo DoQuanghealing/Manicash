@@ -88,6 +88,43 @@ export function costCeilingVnd(kind: AiCallKind): number {
   return estimateCostVnd(b.model, b.maxIn, b.maxOut);
 }
 
+/* ─────────── Trần chi phí FIX CỨNG mỗi user/tháng (T6 · docs/PRO_PLUS_ECONOMICS.md) ─────────── */
+
+export type CostCeilingTier = 'free' | 'pro' | 'pro_plus';
+
+/**
+ * Trần chi phí API tối đa CHO PHÉP mỗi user/tháng (VND). Vượt → degrade mềm về
+ * bản deterministic 0đ. Pro Plus = 30k (=30% giá 99k → lãi ≥67% kể cả kịch trần).
+ * Free = vô hạn ở đây (đã bị chặn bởi credit=0 ở lớp quota, không double-block).
+ */
+export function getUserMonthlyCostCeilingVnd(tier: CostCeilingTier): number {
+  if (tier === 'pro_plus') return readPositiveNumber(process.env.AI_USER_CEILING_PRO_PLUS_VND, 30_000);
+  if (tier === 'pro') return readPositiveNumber(process.env.AI_USER_CEILING_PRO_VND, 15_000);
+  return Number.POSITIVE_INFINITY;
+}
+
+export interface UserCostCeilingDecision {
+  allowed: boolean;
+  spentVnd: number;
+  ceilingVnd: number;
+  remainingVnd: number;
+}
+
+/** PURE: user đã tiêu X đồng API tháng này → còn được gọi lượt TỐN TIỀN không. */
+export function evaluateUserCostCeiling(
+  spentThisMonthVnd: number,
+  tier: CostCeilingTier,
+): UserCostCeilingDecision {
+  const ceilingVnd = getUserMonthlyCostCeilingVnd(tier);
+  const spentVnd = Math.max(0, spentThisMonthVnd);
+  return {
+    allowed: spentVnd < ceilingVnd,
+    spentVnd,
+    ceilingVnd,
+    remainingVnd: ceilingVnd === Number.POSITIVE_INFINITY ? Number.POSITIVE_INFINITY : Math.max(0, ceilingVnd - spentVnd),
+  };
+}
+
 /* ─────────── Circuit breaker toàn nền tảng ─────────── */
 
 /** Ngân sách API/ngày toàn nền tảng (VND). Override: AI_DAILY_SPEND_LIMIT_VND. */

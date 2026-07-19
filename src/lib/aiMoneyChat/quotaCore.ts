@@ -1,11 +1,14 @@
 import type { UserProfile } from '@/types/user';
 
-export type AiMoneyQuotaPlan = 'free' | 'pro';
+export type AiMoneyQuotaPlan = 'free' | 'pro' | 'pro_plus';
 
 export interface AiMoneyQuotaConfig {
   freeMonthlyCredits: number;
   proMonthlyCredits: number;
+  proPlusMonthlyCredits: number;
   hardMonthlyCredits: number;
+  /** Trần cứng credit cho Pro Plus (cao hơn — chứa đủ 1.200 chat + 300 report). */
+  hardMonthlyCreditsProPlus: number;
   fallbackParseCredits: number;
   cfoNarrationCredits: number;
 }
@@ -62,7 +65,10 @@ export function getAiMoneyQuotaConfig(): AiMoneyQuotaConfig {
   return {
     freeMonthlyCredits: readPositiveInt(process.env.AI_MONEY_CHAT_FREE_MONTHLY_CREDITS, 0),
     proMonthlyCredits: readPositiveInt(process.env.AI_MONEY_CHAT_PRO_MONTHLY_CREDITS, 1500),
+    // Pro Plus: 1.200 chat×1 + 300 report×8 = 3.600 credit; đệm lên 4.000.
+    proPlusMonthlyCredits: readPositiveInt(process.env.AI_MONEY_CHAT_PRO_PLUS_MONTHLY_CREDITS, 4000),
     hardMonthlyCredits: readPositiveInt(process.env.AI_MONEY_CHAT_HARD_MONTHLY_CREDITS, 1500),
+    hardMonthlyCreditsProPlus: readPositiveInt(process.env.AI_MONEY_CHAT_HARD_MONTHLY_CREDITS_PRO_PLUS, 4000),
     fallbackParseCredits: readPositiveInt(process.env.AI_MONEY_CHAT_FALLBACK_PARSE_CREDITS, 1),
     cfoNarrationCredits: readPositiveInt(process.env.AI_MONEY_CHAT_CFO_NARRATION_CREDITS, 8),
   };
@@ -74,6 +80,10 @@ export function resolveAiMoneyPlan(profile: Partial<UserProfile> | null | undefi
   const premiumExpiresAt = profile.premiumExpiresAt ? new Date(profile.premiumExpiresAt).getTime() : null;
   const premiumStillValid = premiumExpiresAt === null || Number.isNaN(premiumExpiresAt) || premiumExpiresAt > now.getTime();
 
+  // Pro Plus (Phú Vương) — superset của Pro, xét TRƯỚC.
+  if ((profile.tier === 'pro_plus' || profile.plan === 'premium_plus') && premiumStillValid) {
+    return 'pro_plus';
+  }
   if ((profile.tier === 'pro' || profile.plan === 'premium' || profile.isPremium) && premiumStillValid) {
     return 'pro';
   }
@@ -82,6 +92,9 @@ export function resolveAiMoneyPlan(profile: Partial<UserProfile> | null | undefi
 }
 
 export function getMonthlyCreditLimit(plan: AiMoneyQuotaPlan, config = getAiMoneyQuotaConfig()): number {
+  if (plan === 'pro_plus') {
+    return Math.min(config.proPlusMonthlyCredits, config.hardMonthlyCreditsProPlus);
+  }
   const planLimit = plan === 'pro' ? config.proMonthlyCredits : config.freeMonthlyCredits;
   return Math.min(planLimit, config.hardMonthlyCredits);
 }
@@ -154,7 +167,7 @@ export function evaluateQuota(
   config = getAiMoneyQuotaConfig(),
 ): AiMoneyQuotaSnapshot {
   const monthlyLimit = getMonthlyCreditLimit(input.plan, config);
-  const hardLimit = config.hardMonthlyCredits;
+  const hardLimit = input.plan === 'pro_plus' ? config.hardMonthlyCreditsProPlus : config.hardMonthlyCredits;
   const remainingCredits = Math.max(0, monthlyLimit - input.usedCredits);
   const allowed = input.chargeCredits > 0 && input.usedCredits + input.chargeCredits <= monthlyLimit;
 

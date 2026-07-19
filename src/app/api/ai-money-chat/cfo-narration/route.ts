@@ -14,7 +14,7 @@ import {
   type CfoNarrationInput,
   type CfoNarrationSource,
 } from '@/lib/aiMoneyChat/cfoNarration';
-import { checkSpendBreaker, logAiUsage } from '@/lib/aiMoneyChat/llm/aiUsageLog';
+import { checkSpendBreaker, checkUserCostCeiling, logAiUsage } from '@/lib/aiMoneyChat/llm/aiUsageLog';
 import { estimateCostVnd } from '@/lib/aiMoneyChat/llm/aiCostCore';
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
@@ -163,6 +163,12 @@ export async function POST(req: NextRequest) {
     const peek = await peekAiMoneyCfoNarrationCredit(uid);
     if (!peek.allowed) {
       return jsonResult('quota-exceeded', peek.reason, null, 402);
+    }
+
+    // T6 — TRẦN FIX CỨNG chi phí/user/tháng: vượt → degrade (client dùng narration deterministic).
+    const ceiling = await checkUserCostCeiling(uid, peek.plan);
+    if (!ceiling.allowed) {
+      return jsonResult('disabled', 'Quản gia đã dốc sức viết cho ngài cả tháng — xin nghỉ ít hôm. Mời ngài xem bản tóm tắt cơ bản, đầu tháng sau tôi lại chấp bút.');
     }
 
     // Groq lỗi -> throw -> catch -> 'error', CHƯA trừ credit.

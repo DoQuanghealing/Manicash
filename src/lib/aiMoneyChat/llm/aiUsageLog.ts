@@ -10,7 +10,13 @@
  */
 
 import { getCurrentAiMoneyDayKey, getCurrentAiMoneyMonthKey } from '../quotaCore';
-import { evaluateSpendBreaker, type SpendBreakerDecision } from './aiCostCore';
+import {
+  evaluateSpendBreaker,
+  evaluateUserCostCeiling,
+  type SpendBreakerDecision,
+  type UserCostCeilingDecision,
+  type CostCeilingTier,
+} from './aiCostCore';
 
 export interface AiUsageEntry {
   uid: string;
@@ -39,12 +45,14 @@ const STORE_KEY = Symbol.for('manicash.aiMoneyChat.aiUsageLog');
 interface MemUsageStore {
   entries: AiUsageEntry[];
   dailyVnd: Map<string, number>;
+  /** key `${uid}:${monthKey}` → tổng chi VND tháng của user (trần fix cứng T6). */
+  userMonthlyVnd: Map<string, number>;
 }
 type GlobalWithStore = typeof globalThis & { [STORE_KEY]?: MemUsageStore };
 
 function memStore(): MemUsageStore {
   const g = globalThis as GlobalWithStore;
-  if (!g[STORE_KEY]) g[STORE_KEY] = { entries: [], dailyVnd: new Map() };
+  if (!g[STORE_KEY]) g[STORE_KEY] = { entries: [], dailyVnd: new Map(), userMonthlyVnd: new Map() };
   return g[STORE_KEY]!;
 }
 
@@ -94,6 +102,11 @@ export async function logAiUsage(input: AiUsageInput): Promise<void> {
           },
           { merge: true },
         ),
+        // T6 — cộng dồn chi phí THỰC/user/tháng (co-located với credit doc) → trần fix cứng.
+        db.doc(`users/${entry.uid}/ai_usage/${entry.monthKey}`).set(
+          { costVndThisMonth: FieldValue.increment(entry.costVnd) },
+          { merge: true },
+        ),
       ]);
       return;
     }
@@ -101,6 +114,8 @@ export async function logAiUsage(input: AiUsageInput): Promise<void> {
     const mem = memStore();
     mem.entries.push(entry);
     mem.dailyVnd.set(entry.dayKey, (mem.dailyVnd.get(entry.dayKey) ?? 0) + entry.costVnd);
+    const umKey = `${entry.uid}:${entry.monthKey}`;
+    mem.userMonthlyVnd.set(umKey, (mem.userMonthlyVnd.get(umKey) ?? 0) + entry.costVnd);
   } catch (error) {
     // Ghi sổ hỏng → cảnh báo, KHÔNG gãy lượt của user. Breaker sẽ đếm thiếu lượt này
     // (chấp nhận: đối soát hóa đơn tuần sẽ lộ lệch).
@@ -134,12 +149,41 @@ export async function checkSpendBreaker(): Promise<SpendBreakerDecision> {
   return evaluateSpendBreaker(spent);
 }
 
+/** Tổng chi phí API THỰC của 1 user trong tháng (VND). Lỗi đọc → 0 (fail-open). */
+export async function getUserSpentThisMonthVnd(
+  uid: string,
+  monthKey = getCurrentAiMoneyMonthKey(),
+): Promise<number> {
+  try {
+    const db = await tryDb();
+    if (db) {
+      const snap = await db.doc(`users/${uid}/ai_usage/${monthKey}`).get();
+      const total = snap.exists ? snap.data()?.costVndThisMonth : 0;
+      return typeof total === 'number' && Number.isFinite(total) ? total : 0;
+    }
+    return memStore().userMonthlyVnd.get(`${uid}:${monthKey}`) ?? 0;
+  } catch (error) {
+    console.error('[aiUsageLog] failed to read user monthly spend:', error);
+    return 0;
+  }
+}
+
+/**
+ * TRẦN FIX CỨNG mỗi user/tháng (T6). Gọi TRƯỚC lượt LLM tốn tiền: vượt trần → caller
+ * degrade mềm về bản deterministic 0đ. Fail-OPEN (đọc lỗi → 0 → allowed) như breaker.
+ */
+export async function checkUserCostCeiling(uid: string, tier: CostCeilingTier): Promise<UserCostCeilingDecision> {
+  const spent = await getUserSpentThisMonthVnd(uid);
+  return evaluateUserCostCeiling(spent, tier);
+}
+
 /* ─────────── Test helpers (in-memory) ─────────── */
 
 export function __clearAiUsageLogForTest(): void {
   const mem = memStore();
   mem.entries = [];
   mem.dailyVnd.clear();
+  mem.userMonthlyVnd.clear();
 }
 
 export function __getAiUsageEntriesForTest(): AiUsageEntry[] {

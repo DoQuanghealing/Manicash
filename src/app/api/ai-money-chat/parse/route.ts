@@ -11,7 +11,7 @@ import {
   type AiMoneyQuotaChargeResult,
 } from '@/lib/aiMoneyChat/quota';
 import { getTaxonomyByDirection } from '@/lib/aiMoneyChat/taxonomy';
-import { checkSpendBreaker, logAiUsage } from '@/lib/aiMoneyChat/llm/aiUsageLog';
+import { checkSpendBreaker, checkUserCostCeiling, logAiUsage } from '@/lib/aiMoneyChat/llm/aiUsageLog';
 import { estimateCostVnd } from '@/lib/aiMoneyChat/llm/aiCostCore';
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
@@ -172,6 +172,12 @@ export async function POST(req: NextRequest) {
     const peek = await peekAiMoneyFallbackCredit(uid);
     if (!peek.allowed) {
       return jsonResult('quota-exceeded', peek.reason, null, 402);
+    }
+
+    // T6 — TRẦN FIX CỨNG chi phí/user/tháng: vượt → degrade (client dùng parser local 0đ).
+    const ceiling = await checkUserCostCeiling(uid, peek.plan);
+    if (!ceiling.allowed) {
+      return jsonResult('disabled', 'Quản gia đã phục vụ ngài hết công suất tháng này. Mời ngài nhập tay, đầu tháng sau tôi lại hỗ trợ.');
     }
 
     // Groq lỗi -> throw -> catch phía dưới -> 'error', CHƯA trừ credit (user không mất lượt oan).
