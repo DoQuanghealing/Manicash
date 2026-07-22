@@ -38,21 +38,22 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // ── Cấp thủ công theo uid ──
+  // ── Cấp thủ công theo uid (tier 'pro' | 'pro_plus' — pro_plus = bỏ qua mua để test) ──
   if (typeof body.uid === 'string') {
     const uid = body.uid.trim();
     const periodDays = Number(body.periodDays);
+    const tier: 'pro' | 'pro_plus' = body.tier === 'pro_plus' ? 'pro_plus' : 'pro';
     if (!uid) return NextResponse.json({ error: 'uid bắt buộc.' }, { status: 400 });
     if (!Number.isFinite(periodDays) || periodDays <= 0) {
       return NextResponse.json({ error: 'periodDays không hợp lệ.' }, { status: 400 });
     }
     try {
-      const result = await grantProManual({ uid, periodDays, actorUid: admin.uid });
-      await logAdminAction(admin, 'grant.manual', { uid, periodDays, ...result });
+      const result = await grantProManual({ uid, periodDays, tier, actorUid: admin.uid });
+      await logAdminAction(admin, 'grant.manual', { uid, periodDays, tier, ...result });
       return NextResponse.json(result);
     } catch (error) {
       console.error('[admin/grant] manual error:', error);
-      await logAdminAction(admin, 'grant.manual.error', { uid, periodDays });
+      await logAdminAction(admin, 'grant.manual.error', { uid, periodDays, tier });
       return NextResponse.json({ ok: false, reason: 'server_error' }, { status: 500 });
     }
   }

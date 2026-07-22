@@ -12,7 +12,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { getAdminDb, getAdminAuth } from '@/lib/firebaseAdmin';
 import { getPayos, isPayosConfigured } from '@/lib/monetization/payosClient';
 import { applyPaidOrderAtomic, type PaidOutcome } from '@/lib/monetization/payosGrant';
-import { computeProExpiry, PRO_PERIOD_DAYS } from '@/lib/monetization/entitlement';
+import { computeProExpiry, PRO_PERIOD_DAYS, entitlementFieldsForTier } from '@/lib/monetization/entitlement';
 
 const SCAN_LIMIT = 1000; // trần đọc mỗi collection (đủ cho giai đoạn sớm)
 const STALE_PENDING_MINUTES = 30;
@@ -325,21 +325,28 @@ export async function verifyAndGrantOrder(orderCode: number): Promise<GrantByOrd
 export interface ManualGrantResult {
   ok: boolean;
   premiumExpiresAt?: string;
+  tier?: 'pro' | 'pro_plus';
   reason?: string;
 }
 
 /**
- * Cấp Pro thủ công cho 1 uid (không gắn đơn PayOS). Stacking lên hạn hiện có.
+ * Cấp Pro/Pro Plus thủ công cho 1 uid (không gắn đơn PayOS). Stacking lên hạn hiện có.
  * Ghi grant_events(provider:'admin', orderId:'manual:<ts>') + cập nhật user.
+ *
+ * `tier` mặc định 'pro'. 'pro_plus' dùng để BỎ QUA MUA khi test full cấp 3 (DNA Oracle,
+ * task eval…). entitlementFieldsForTier là NGUỒN DUY NHẤT ghi field — không hard-code
+ * (đồng bộ với đường PayOS, tránh bug "mua Pro Plus vẫn ra Pro").
  */
 export async function grantProManual(input: {
   uid: string;
   periodDays: number;
   actorUid: string;
+  tier?: 'pro' | 'pro_plus';
   now?: number;
 }): Promise<ManualGrantResult> {
   const uid = input.uid.trim();
   if (!uid) return { ok: false, reason: 'no_uid' };
+  const tier: 'pro' | 'pro_plus' = input.tier === 'pro_plus' ? 'pro_plus' : 'pro';
   const periodDays = Number.isFinite(input.periodDays) && input.periodDays > 0 ? Math.floor(input.periodDays) : PRO_PERIOD_DAYS;
   const now = input.now ?? Date.now();
   const db = getAdminDb();
@@ -355,9 +362,7 @@ export async function grantProManual(input: {
     tx.set(
       userRef,
       {
-        tier: 'pro',
-        plan: 'premium',
-        isPremium: true,
+        ...entitlementFieldsForTier(tier),
         premiumExpiresAt: exp,
         billingProvider: 'admin',
         updatedAt: FieldValue.serverTimestamp(),
@@ -367,6 +372,7 @@ export async function grantProManual(input: {
     tx.set(db.collection('grant_events').doc(), {
       uid,
       provider: 'admin',
+      tier,
       periodDays,
       orderId,
       grantedBy: input.actorUid,
@@ -375,5 +381,5 @@ export async function grantProManual(input: {
     return exp;
   });
 
-  return { ok: true, premiumExpiresAt };
+  return { ok: true, premiumExpiresAt, tier };
 }
