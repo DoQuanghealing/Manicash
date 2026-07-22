@@ -143,16 +143,20 @@ export async function POST(req: NextRequest) {
       await logAiUsage({
         uid, feature: 'task_eval', model: u.model, provider: 'groq',
         tokensIn: u.tokensIn, tokensOut: u.tokensOut, tokensTotal: u.tokensIn + u.tokensOut,
-        costVnd: estimateCostVnd(u.model, u.tokensIn, u.tokensOut), fallbackUsed: false, latencyMs: 0,
+        costVnd: estimateCostVnd(u.model, u.tokensIn, u.tokensOut),
+        fallbackUsed: result.deterministicFallback, latencyMs: 0,
       });
     }
 
-    // #2 — CHỈ trừ credit khi LLM thật sự giao kết quả (không phải fallback deterministic).
+    // Trừ credit khi LLM ĐÃ CHẠY (usage != null), kể cả khi output không parse được.
+    // Trước đây chỉ trừ khi parse OK → kẻ xấu ép fallback (JSON rác) gọi Groq vô hạn
+    // mà daily rate-limit không tăng. "Đã gọi LLM = tính 1 lượt" đóng lỗ hổng đó.
+    // Groq lỗi (throw) → usage=null → miễn phí (đúng thiết kế #2). Đồng bộ với dna-oracle.
+    const charged = !!usage;
     let quota = peek;
     let tasteLeft = taste.remainingTaste;
-    if (!result.deterministicFallback) {
+    if (charged) {
       quota = await chargeAiMoneyCfoNarrationCredit(uid);
-      // Suất nếm cũng chỉ trừ khi đã giao kết quả thật.
       if (taste.isTaste) {
         await incrementTasteUsed(uid, 'task.eval');
         tasteLeft = Math.max(0, taste.remainingTaste - 1);
@@ -161,7 +165,11 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       source: result.deterministicFallback ? 'deterministic' : 'ai',
-      reason: result.deterministicFallback ? 'Bản đánh giá cơ bản (không tốn credit).' : 'Quản gia đã thẩm định.',
+      reason: result.deterministicFallback
+        ? charged
+          ? 'Quản gia trả bản cơ bản lần này (đã dùng 1 lượt).'
+          : 'Bản đánh giá cơ bản (không tốn credit).'
+        : 'Quản gia đã thẩm định.',
       taste: taste.isTaste
         ? { isTaste: true, remaining: tasteLeft, quota: taste.tasteQuota }
         : { isTaste: false },
