@@ -49,6 +49,8 @@ export async function POST(req: NextRequest) {
       periodDays: verified.periodDays,
       provider,
       orderId: verified.orderId ?? orderId,
+      // PV-5: tier lấy theo sản phẩm đã mua (Pro Plus có productId riêng).
+      productId,
     });
 
     return NextResponse.json({

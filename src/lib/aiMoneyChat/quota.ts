@@ -132,6 +132,43 @@ async function chargeAiMoneyCredits(
   });
 }
 
+/** Plan hiệu lực của user (đọc profile) — dùng cho gate cấp/taste ở route. */
+export async function resolveUserPlanForUid(uid: string) {
+  return resolveAiMoneyPlan(await getUserProfileForQuota(uid));
+}
+
+/* ─────────── Quota "nếm thử" (taste) — đếm theo feature/tháng ─────────── */
+
+/** Field an toàn trên doc ai_usage: 'chat.deep' → 'taste_chat_deep'. */
+function tasteField(feature: string): string {
+  return `taste_${feature.replace(/[^a-zA-Z0-9]/g, '_')}`;
+}
+
+/** Số lượt NẾM đã dùng tháng này cho feature. Lỗi đọc → 0 (fail-open, rộng lượng với user). */
+export async function readTasteUsed(uid: string, feature: string): Promise<number> {
+  try {
+    const monthKey = getCurrentAiMoneyMonthKey();
+    const snap = await getAdminDb().doc(`users/${uid}/ai_usage/${monthKey}`).get();
+    const v = snap.exists ? snap.data()?.[tasteField(feature)] : 0;
+    return typeof v === 'number' && Number.isFinite(v) ? v : 0;
+  } catch {
+    return 0;
+  }
+}
+
+/** Tăng counter nếm SAU khi đã giao kết quả (post-payment: nếm hỏng không tính). */
+export async function incrementTasteUsed(uid: string, feature: string): Promise<void> {
+  try {
+    const monthKey = getCurrentAiMoneyMonthKey();
+    await getAdminDb().doc(`users/${uid}/ai_usage/${monthKey}`).set(
+      { uid, monthKey, [tasteField(feature)]: FieldValue.increment(1), updatedAt: FieldValue.serverTimestamp() },
+      { merge: true },
+    );
+  } catch (error) {
+    console.error('[quota] failed to increment taste counter:', error);
+  }
+}
+
 /* ─────────── Fallback parse (chat) ─────────── */
 
 export async function peekAiMoneyFallbackCredit(uid: string): Promise<AiMoneyQuotaChargeResult> {

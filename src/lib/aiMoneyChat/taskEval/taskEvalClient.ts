@@ -14,6 +14,10 @@ export interface RequestTaskEvalOutcome {
   deterministicFallback: boolean;
   source: string;
   reason: string;
+  /** Hết suất nếm → UI mời nâng cấp (vẫn kèm bản cơ bản 0đ). */
+  upgradeRequired: boolean;
+  /** Đang dùng suất nếm: còn bao nhiêu lượt tháng này. */
+  taste?: { remaining: number; quota: number };
 }
 
 async function getFirebaseIdToken(): Promise<string | null> {
@@ -33,6 +37,7 @@ export async function requestTaskEval(ctx: TaskEvalContext): Promise<RequestTask
     deterministicFallback: true,
     source,
     reason,
+    upgradeRequired: source === 'upgrade-required',
   });
 
   try {
@@ -54,6 +59,10 @@ export async function requestTaskEval(ctx: TaskEvalContext): Promise<RequestTask
         deterministicFallback: data.source !== 'ai',
         source: data.source,
         reason: typeof data.reason === 'string' ? data.reason : '',
+        upgradeRequired: false,
+        taste: data.taste?.isTaste
+          ? { remaining: Number(data.taste.remaining) || 0, quota: Number(data.taste.quota) || 0 }
+          : undefined,
       };
     }
     // disabled / quota-exceeded / error → bản cơ bản (0đ).

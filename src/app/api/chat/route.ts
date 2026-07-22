@@ -83,11 +83,61 @@ function fallbackReply(intent: ChatIntent): ChatReply {
   };
 }
 
+/** Intent chạy LLM "tư vấn sâu" — gate bởi feature chat.deep (+ suất nếm cho Free). */
+const DEEP_INTENTS = new Set<ChatIntent['type']>([
+  'CFO_REPORT',
+  'ANALYZE_FINANCE',
+  'ADVICE_CUT_SPENDING',
+  'FOLLOW_UP',
+]);
+
+/**
+ * Gate tư vấn sâu: đủ cấp → chạy thoải mái; chưa đủ cấp (Free) → nếm 4 lượt/tháng,
+ * hết thì mời nâng cấp (nói thẳng số lượt, không mập mờ). Suất nếm CHỈ trừ khi
+ * đã giao kết quả (post-payment) — lỗi LLM không ăn lượt nếm của user.
+ */
+async function dispatchDeep(
+  uid: string,
+  intent: ChatIntent,
+  ctx: ChatHandlerContext,
+): Promise<ChatReply> {
+  const { resolveUserPlanForUid, readTasteUsed, incrementTasteUsed } = await import('@/lib/aiMoneyChat/quota');
+  const { billingLevelCap, evaluateFeatureTaste, describeTaste } = await import('@/lib/monetization/butlerFeatures');
+
+  const plan = await resolveUserPlanForUid(uid);
+  const level = billingLevelCap(plan);
+  const taste = evaluateFeatureTaste(level, 'chat.deep', await readTasteUsed(uid, 'chat.deep'));
+
+  if (!taste.allowed) {
+    return {
+      message: describeTaste(taste, 'Thông thái'),
+      ui: { kind: 'none' },
+      meta: { intent: intent.type, source: 'deterministic', latencyMs: 0 },
+    };
+  }
+
+  const reply = intent.type === 'FOLLOW_UP'
+    ? await handleFollowUp(uid, intent, ctx)
+    : await handleCFOReport(uid, intent, ctx);
+
+  // Chỉ trừ suất nếm khi LLM thật sự trả lời (fallback deterministic không tính).
+  if (taste.isTaste && reply.meta.source !== 'deterministic') {
+    await incrementTasteUsed(uid, 'chat.deep');
+    const left = Math.max(0, taste.remainingTaste - 1);
+    return { ...reply, message: `${reply.message}\n\n_Lượt nếm thử — ngài còn ${left}/${taste.tasteQuota} lượt tháng này._` };
+  }
+  return reply;
+}
+
 async function dispatch(
   uid: string,
   intent: ChatIntent,
   ctx: ChatHandlerContext,
 ): Promise<ChatReply> {
+  if (DEEP_INTENTS.has(intent.type)) {
+    return dispatchDeep(uid, intent, ctx);
+  }
+
   switch (intent.type) {
     case 'LOG_TRANSACTION':
       return handleLogTransaction(intent);
@@ -118,15 +168,7 @@ async function dispatch(
     case 'QUERY_STREAK':
       return handleQueryStreak(uid, intent, ctx);
 
-    // Nhóm LLM (Phase 3): CFO report / phân tích / tư vấn cắt giảm.
-    case 'CFO_REPORT':
-    case 'ANALYZE_FINANCE':
-    case 'ADVICE_CUT_SPENDING':
-      return handleCFOReport(uid, intent, ctx);
-
-    // FOLLOW_UP — tái dùng snapshot phiên (Phase 4).
-    case 'FOLLOW_UP':
-      return handleFollowUp(uid, intent, ctx);
+    // Nhóm LLM sâu (CFO_REPORT/ANALYZE/ADVICE/FOLLOW_UP) đã xử lý ở dispatchDeep phía trên.
 
     case 'UNKNOWN':
     default:

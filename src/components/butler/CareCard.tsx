@@ -14,7 +14,8 @@ import { useMoneySnapshotV1 } from '@/hooks/useMoneySnapshotV1';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useCareStore, isCareInCooldown } from '@/stores/useCareStore';
 import { generateCareScripts } from '@/lib/aiMoneyChat/care/careTriggers';
-import { resolveButlerLevel, hasFeature } from '@/lib/monetization/butlerFeatures';
+import { hasFeature } from '@/lib/monetization/butlerFeatures';
+import { useEffectiveButlerLevel } from '@/hooks/useEffectiveButlerLevel';
 import { getTodayKey } from '@/lib/moneyBrain/dateRange';
 import SquashCritter from './SquashCritter';
 import './CareCard.css';
@@ -29,7 +30,6 @@ const TONE_CLASS = {
 export default function CareCard() {
   const router = useRouter();
   const snapshot = useMoneySnapshotV1();
-  const tier = useSettingsStore((s) => s.butlerTier);
   const honorific = useSettingsStore((s) => s.honorific);
   const butlerName = useSettingsStore((s) => s.butlerName);
   const handled = useCareStore((s) => s.handled);
@@ -41,9 +41,9 @@ export default function CareCard() {
   const addr = honorific || 'ngài';
   const todayKey = getTodayKey(snapshot.clientNow, snapshot.timezone);
 
-  // Gate cấp 3 (Mercedes T1). FOMO: billing chưa cap → chỉ cần persona sovereign;
-  // khi PV-5 bật NEXT_PUBLIC_BUTLER_BILLING_ENFORCED → truyền thêm billingTier.
-  const canCare = hasFeature(resolveButlerLevel({ butlerTier: tier }), 'care.companion');
+  // Gate cấp 3 — dùng cấp HIỆU LỰC (đã tính trần gói + ân hạn migration PV-5).
+  const { level } = useEffectiveButlerLevel();
+  const canCare = hasFeature(level, 'care.companion');
 
   const top = useMemo(() => {
     if (!canCare) return null;

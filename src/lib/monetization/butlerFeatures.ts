@@ -60,6 +60,71 @@ export function minLevelFor(feature: ButlerFeature): ButlerLevel {
   return FEATURE_MIN_LEVEL[feature];
 }
 
+/* ─────────── Quota "nếm thử" (taste) ───────────
+ * Cho user CHƯA đủ cấp dùng thử vài lượt/tháng để thấy giá trị → hết thì mời nâng cấp.
+ * Minh bạch: luôn nói thẳng còn bao nhiêu lượt (không mập mờ). PO chốt 2026-07-19.
+ */
+export const FEATURE_TASTE_QUOTA: Partial<Record<ButlerFeature, number>> = {
+  'chat.deep': 4, // Free (cấp 1) nếm tư vấn sâu 4 lượt/tháng
+  'task.eval': 5, // Pro (cấp 2) nếm thẩm định nhiệm vụ 5 lượt/tháng → mời lên cấp 3
+};
+
+/** Số lượt nếm/tháng của feature (0 = không cho nếm). */
+export function tasteQuotaFor(feature: ButlerFeature): number {
+  return FEATURE_TASTE_QUOTA[feature] ?? 0;
+}
+
+export interface TasteDecision {
+  /** Dùng được lượt này không (đủ cấp HOẶC còn lượt nếm). */
+  allowed: boolean;
+  /** Đang dùng bằng suất nếm (chưa đủ cấp) — UI hiện nhãn "nếm thử". */
+  isTaste: boolean;
+  /** Còn bao nhiêu lượt nếm trong tháng (chỉ có nghĩa khi isTaste hoặc bị chặn). */
+  remainingTaste: number;
+  tasteQuota: number;
+  /** Cấp tối thiểu để dùng thoải mái (cho CTA nâng cấp). */
+  requiredLevel: ButlerLevel;
+}
+
+/**
+ * PURE: quyết định 1 lượt dùng feature khi xét CẢ cấp lẫn suất nếm.
+ * - Đủ cấp → allowed, isTaste=false (không tốn suất nếm).
+ * - Chưa đủ cấp + còn suất nếm → allowed, isTaste=true (caller phải tăng counter).
+ * - Chưa đủ cấp + hết suất → allowed=false → UI mời nâng cấp.
+ */
+export function evaluateFeatureTaste(
+  level: ButlerLevel,
+  feature: ButlerFeature,
+  tasteUsedThisMonth: number,
+): TasteDecision {
+  const requiredLevel = FEATURE_MIN_LEVEL[feature];
+  const tasteQuota = tasteQuotaFor(feature);
+  const used = Math.max(0, tasteUsedThisMonth);
+  const remainingTaste = Math.max(0, tasteQuota - used);
+
+  if (hasFeature(level, feature)) {
+    return { allowed: true, isTaste: false, remainingTaste, tasteQuota, requiredLevel };
+  }
+  // CHỈ cho nếm khi kém ĐÚNG 1 cấp: Free nếm chat.deep (cấp 2), Pro nếm task.eval (cấp 3).
+  // Kém từ 2 cấp trở lên → không nếm, mời nâng cấp thẳng.
+  const canTaste = tasteQuota > 0 && level >= requiredLevel - 1;
+  if (!canTaste) {
+    return { allowed: false, isTaste: false, remainingTaste: 0, tasteQuota, requiredLevel };
+  }
+  return { allowed: remainingTaste > 0, isTaste: true, remainingTaste, tasteQuota, requiredLevel };
+}
+
+/** Câu thông báo minh bạch cho UI (nói thẳng còn bao nhiêu lượt). */
+export function describeTaste(d: TasteDecision, upgradeName = 'Phú Vương'): string {
+  if (d.isTaste) {
+    return d.allowed
+      ? `Lượt nếm thử — ngài còn ${d.remainingTaste}/${d.tasteQuota} lượt tháng này.`
+      : `Ngài đã dùng hết ${d.tasteQuota} lượt nếm thử tháng này. Nâng lên ${upgradeName} để dùng thoải mái.`;
+  }
+  // Không đủ cấp và không được nếm (kém từ 2 cấp).
+  return d.allowed ? '' : `Tính năng này dành cho ${upgradeName}. Nâng cấp để quản gia phục vụ ngài.`;
+}
+
 /** Persona user chọn → level tương ứng (chưa xét billing). */
 export function levelFromButlerTier(tier: ButlerTier): ButlerLevel {
   switch (tier) {

@@ -8,7 +8,14 @@ import { useMemo, useState } from 'react';
 import { Check, Crown, Gift, Loader2, Sparkles } from 'lucide-react';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { purchasePro, startCheckout, startTrial } from '@/lib/monetization/billingClient';
-import { getPlanCard, PRO_SKUS, type ProSkuId } from '@/lib/monetization/entitlement';
+import {
+  getPlanCard,
+  PRO_SKUS,
+  tierForSku,
+  entitlementFieldsForTier,
+  type ProPeriodSkuId,
+  type ProSkuId,
+} from '@/lib/monetization/entitlement';
 import { trackEvent } from '@/lib/analytics/events';
 import './pricing.css';
 
@@ -31,11 +38,20 @@ const PRO_FEATURE_LINES = [
   'Ưu tiên tính năng mới',
 ];
 
-const PERIOD_ORDER: ProSkuId[] = ['monthly', 'half_year', 'yearly'];
-const PERIOD_LABEL: Record<ProSkuId, string> = { monthly: 'Tháng', half_year: '6 tháng', yearly: 'Năm' };
-const PERIOD_NOTE: Record<ProSkuId, string> = { monthly: '', half_year: 'Tiết kiệm', yearly: 'Tặng ~2 tháng' };
+/** Phú Vương (cấp quản gia 3) — nói ĐÚNG những gì cấp 3 mở thêm so với Pro. */
+const PRO_PLUS_FEATURE_LINES = [
+  'Quản gia Phú Vương 🐉 — cấp cao nhất',
+  'Quản gia chăm sóc chủ động (10 kịch bản, 0đ)',
+  'Thẩm định nhiệm vụ kiếm tiền không giới hạn',
+  'AI Money Chat 80 lượt/ngày · báo cáo sâu 15 lượt/ngày',
+  'Toàn bộ quyền lợi Pro',
+];
 
-type LoadingKind = 'pro' | 'trial' | null;
+const PERIOD_ORDER: ProPeriodSkuId[] = ['monthly', 'half_year', 'yearly'];
+const PERIOD_LABEL: Record<ProPeriodSkuId, string> = { monthly: 'Tháng', half_year: '6 tháng', yearly: 'Năm' };
+const PERIOD_NOTE: Record<ProPeriodSkuId, string> = { monthly: '', half_year: 'Tiết kiệm', yearly: 'Tặng ~2 tháng' };
+
+type LoadingKind = 'pro' | 'trial' | 'pro_plus' | null;
 
 interface PricingCardsProps {
   /** Gọi khi nâng cấp/dùng thử thành công (modal đóng lại). */
@@ -47,29 +63,33 @@ export default function PricingCards({ onSuccess }: PricingCardsProps) {
   const updateUserProfile = useAuthStore((s) => s.updateUserProfile);
   const card = useMemo(() => getPlanCard(user), [user]);
 
-  const [period, setPeriod] = useState<ProSkuId>('monthly');
+  const [period, setPeriod] = useState<ProPeriodSkuId>('monthly');
   const [loading, setLoading] = useState<LoadingKind>(null);
   const [message, setMessage] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
 
-  function applyGrant(premiumExpiresAt: string | null | undefined, provider: 'payos' | 'trial') {
+  /** Cập nhật lạc quan phía client — tier lấy từ SKU đã mua (server vẫn là nguồn sự thật). */
+  function applyGrant(
+    premiumExpiresAt: string | null | undefined,
+    provider: 'payos' | 'trial',
+    skuId: ProSkuId = 'monthly',
+  ) {
     updateUserProfile({
-      tier: 'pro',
-      plan: 'premium',
-      isPremium: true,
+      ...entitlementFieldsForTier(provider === 'trial' ? 'pro' : tierForSku(skuId)),
       premiumExpiresAt: premiumExpiresAt ?? null,
       billingProvider: provider,
       ...(provider === 'trial' ? { trialUsedAt: new Date().toISOString() } : {}),
     });
   }
 
-  async function handleCheckout() {
-    setLoading('pro');
+  /** Mua 1 SKU bất kỳ (kỳ hạn Pro hoặc Phú Vương). */
+  async function handleCheckout(skuId: ProSkuId, kind: Exclude<LoadingKind, null>) {
+    setLoading(kind);
     setMessage(null);
-    trackEvent('upgrade_start', { source: 'pricing', plan: period });
+    trackEvent('upgrade_start', { source: 'pricing', plan: skuId });
 
-    // PayOS bật → tạo link + chuyển hướng (cấp Pro qua webhook). Chưa bật → placeholder mock.
+    // PayOS bật → tạo link + chuyển hướng (cấp quyền qua webhook). Chưa bật → placeholder mock.
     if (process.env.NEXT_PUBLIC_PAYOS_ENABLED === 'true') {
-      const r = await startCheckout(period);
+      const r = await startCheckout(skuId);
       if (!r.ok) {
         setLoading(null);
         setMessage({ kind: 'err', text: r.reason });
@@ -82,9 +102,14 @@ export default function PricingCards({ onSuccess }: PricingCardsProps) {
     const result = await purchasePro();
     setLoading(null);
     if (result.ok) {
-      applyGrant(result.premiumExpiresAt, 'payos');
-      setMessage({ kind: 'ok', text: 'Chúc mừng! Bạn đã là thành viên Pro 💎' });
-      trackEvent('upgrade_success', { source: 'pricing', plan: period });
+      applyGrant(result.premiumExpiresAt, 'payos', skuId);
+      setMessage({
+        kind: 'ok',
+        text: tierForSku(skuId) === 'pro_plus'
+          ? 'Chúc mừng! Quản gia Phú Vương đã sẵn sàng hầu ngài 🐉'
+          : 'Chúc mừng! Bạn đã là thành viên Pro 💎',
+      });
+      trackEvent('upgrade_success', { source: 'pricing', plan: skuId });
       onSuccess?.();
     } else {
       setMessage({ kind: 'err', text: result.reason });
@@ -167,9 +192,49 @@ export default function PricingCards({ onSuccess }: PricingCardsProps) {
         {card.active === 'pro' ? (
           <p className="pc-note pc-note--ok">Bạn đang là Pro · còn {card.daysRemaining} ngày.</p>
         ) : (
-          <button type="button" className="pc-cta pc-cta--pro" onClick={handleCheckout} disabled={loading !== null}>
+          <button
+            type="button"
+            className="pc-cta pc-cta--pro"
+            onClick={() => handleCheckout(period, 'pro')}
+            disabled={loading !== null}
+          >
             {loading === 'pro' ? <Loader2 size={16} className="pc-spin" /> : <Sparkles size={16} />}
             {loading === 'pro' ? 'Đang xử lý...' : card.active === 'trial' ? 'Lên Pro trả phí' : 'Nâng cấp Pro'}
+          </button>
+        )}
+      </article>
+
+      {/* ─── Phú Vương (Pro Plus · cấp quản gia 3) ─── */}
+      <article className={`pc-card pc-plus ${card.active === 'pro_plus' ? 'pc-card--active' : ''}`}>
+        <header className="pc-head">
+          <span className="pc-name">🐉 Phú Vương</span>
+          {card.active === 'pro_plus'
+            ? <span className="pc-badge pc-badge--active">Đã kích hoạt</span>
+            : <span className="pc-badge pc-badge--plus">Cao cấp nhất</span>}
+        </header>
+
+        <div className="pc-price">
+          <span className="pc-amount">{formatVnd(PRO_SKUS.pro_plus_monthly.amount)}đ</span>
+          <span className="pc-per">/ tháng</span>
+        </div>
+
+        <ul className="pc-feats">
+          {PRO_PLUS_FEATURE_LINES.map((f) => (
+            <li key={f}><Check size={14} /> {f}</li>
+          ))}
+        </ul>
+
+        {card.active === 'pro_plus' ? (
+          <p className="pc-note pc-note--ok">Quản gia Phú Vương đang phục vụ · còn {card.daysRemaining} ngày.</p>
+        ) : (
+          <button
+            type="button"
+            className="pc-cta pc-cta--plus"
+            onClick={() => handleCheckout('pro_plus_monthly', 'pro_plus')}
+            disabled={loading !== null}
+          >
+            {loading === 'pro_plus' ? <Loader2 size={16} className="pc-spin" /> : <Crown size={16} />}
+            {loading === 'pro_plus' ? 'Đang xử lý...' : 'Lên Phú Vương'}
           </button>
         )}
       </article>

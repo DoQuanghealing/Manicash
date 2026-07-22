@@ -6,7 +6,14 @@
 
 import { FieldValue } from 'firebase-admin/firestore';
 import { getAdminDb } from '@/lib/firebaseAdmin';
-import { computeProExpiry, PRO_PERIOD_DAYS } from './entitlement';
+import {
+  computeProExpiry,
+  PRO_PERIOD_DAYS,
+  tierForSku,
+  tierForProductId,
+  entitlementFieldsForTier,
+  type Tier,
+} from './entitlement';
 import type { BillingProvider } from '@/types/user';
 
 export type { BillingProvider };
@@ -53,15 +60,30 @@ export async function verifyPurchase(input: VerifyPurchaseInput): Promise<Verifi
 }
 
 export interface GrantProResult {
-  tier: 'pro';
+  tier: Exclude<Tier, 'free'>;
   premiumExpiresAt: string;
 }
 
-/** Grant/renew Pro on users/{uid}. Stacks onto remaining time. Idempotent per orderId. */
+/**
+ * Grant/renew Pro (hoặc Pro Plus) on users/{uid}. Stacks onto remaining time.
+ * Idempotent per orderId.
+ *
+ * PV-5: tier cấp lấy từ `skuId` (SKU tự khai `grantsTier`). Không truyền → 'pro'
+ * (fail-safe: không bao giờ tự nâng lên pro_plus khi không chắc).
+ */
 export async function grantProToUser(
   uid: string,
-  opts: { periodDays?: number; provider: BillingProvider; orderId?: string },
+  opts: {
+    periodDays?: number;
+    provider: BillingProvider;
+    orderId?: string;
+    /** SKU nội bộ ('pro_plus_monthly'…) — ưu tiên nếu có. */
+    skuId?: string;
+    /** productId của store (Google Play / Apple) — dùng khi không có skuId. */
+    productId?: string;
+  },
 ): Promise<GrantProResult> {
+  const grantedTier = opts.skuId ? tierForSku(opts.skuId) : tierForProductId(opts.productId);
   const db = getAdminDb();
   const ref = db.doc(`users/${uid}`);
 
@@ -75,7 +97,7 @@ export async function grantProToUser(
       const existing = typeof data.premiumExpiresAt === 'string'
         ? data.premiumExpiresAt
         : data.premiumExpiresAt?.toDate?.()?.toISOString?.() ?? new Date().toISOString();
-      return { tier: 'pro' as const, premiumExpiresAt: existing };
+      return { tier: grantedTier, premiumExpiresAt: existing };
     }
 
     const currentExpiry = typeof data.premiumExpiresAt === 'string'
@@ -86,9 +108,7 @@ export async function grantProToUser(
     transaction.set(
       ref,
       {
-        tier: 'pro',
-        plan: 'premium',
-        isPremium: true,
+        ...entitlementFieldsForTier(grantedTier),
         premiumExpiresAt,
         billingProvider: opts.provider,
         billingOrderIds: opts.orderId
@@ -99,6 +119,6 @@ export async function grantProToUser(
       { merge: true },
     );
 
-    return { tier: 'pro' as const, premiumExpiresAt };
+    return { tier: grantedTier, premiumExpiresAt };
   });
 }

@@ -10,9 +10,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import type { EarningTask } from '@/types/task';
 import type { MoneyTaskSnapshot } from '@/lib/moneyBrain/types';
 import { useTaskStore } from '@/stores/useTaskStore';
-import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useCapacitySurveyStore } from '@/stores/useCapacitySurveyStore';
-import { resolveButlerLevel, hasFeature } from '@/lib/monetization/butlerFeatures';
+import { hasFeature, tasteQuotaFor, minLevelFor } from '@/lib/monetization/butlerFeatures';
+import { useEffectiveButlerLevel } from '@/hooks/useEffectiveButlerLevel';
 import { computeTaskFeasibility } from '@/lib/aiMoneyChat/taskEval/taskFeasibility';
 import { computeTaskEvalHash } from '@/lib/aiMoneyChat/taskEval/taskEvalHash';
 import { buildTaskEvalContext } from '@/lib/aiMoneyChat/taskEval/taskEvalContext';
@@ -31,14 +31,18 @@ interface TaskEvalPanelProps {
 }
 
 export default function TaskEvalPanel({ task }: TaskEvalPanelProps) {
-  const tier = useSettingsStore((s) => s.butlerTier);
   const allTasks = useTaskStore((s) => s.tasks);
   const setTaskAiEval = useTaskStore((s) => s.setTaskAiEval);
   const skills = useCapacitySurveyStore((s) => s.answers.skills);
 
   const [loading, setLoading] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
-  const canEval = hasFeature(resolveButlerLevel({ butlerTier: tier }), 'task.eval');
+  // Hiện panel khi đủ cấp HOẶC được nếm thử (kém đúng 1 cấp). Server chốt số lượt thật.
+  const { level } = useEffectiveButlerLevel();
+  const canEval =
+    hasFeature(level, 'task.eval') ||
+    (tasteQuotaFor('task.eval') > 0 && level >= minLevelFor('task.eval') - 1);
 
   // Điểm khả thi LIVE (0đ, realtime) — luôn tính client-side.
   const feasibility = useMemo(
@@ -56,6 +60,13 @@ export default function TaskEvalPanel({ task }: TaskEvalPanelProps) {
     try {
       const ctx = buildTaskEvalContext(task, allTasks, skills, new Date().toISOString());
       const out = await requestTaskEval(ctx);
+      setNotice(
+        out.upgradeRequired
+          ? out.reason
+          : out.taste
+            ? `Lượt nếm thử — còn ${out.taste.remaining}/${out.taste.quota} lượt tháng này.`
+            : null,
+      );
       setTaskAiEval(task.id, {
         hash: currentHash,
         feasibility: out.feasibility,
@@ -95,6 +106,8 @@ export default function TaskEvalPanel({ task }: TaskEvalPanelProps) {
       <button className="te-btn" onClick={onEvaluate} disabled={loading}>
         {loading ? '⏳ Quản gia đang xem…' : cached ? '🔄 Thẩm định lại' : '🧠 Quản gia thẩm định'}
       </button>
+
+      {notice && <p className="te-notice">{notice}</p>}
 
       {/* Kết quả AI (cache theo hash) */}
       <AnimatePresence>
