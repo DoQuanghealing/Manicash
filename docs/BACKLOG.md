@@ -37,10 +37,24 @@ Các gate tồn tại trong `butlerFeatures.FEATURE_MIN_LEVEL` nhưng không nơ
 
 | # | Feature | Trạng thái |
 |---|---|---|
-| B1 | `dna.oracle` — **PV-3 Financial DNA + Oracle** | Có spec (`docs/`), chưa build. Tính năng cấp 3 lớn nhất còn thiếu. |
+| ~~B1~~ | ~~`dna.oracle` — **PV-3 Financial DNA + Oracle**~~ | ✅ **ĐÃ BUILD (2026-07-22)** — branch `claude/pv3-financial-dna`, đã qua đội QA + redteam + blueteam. Xem dưới. |
 | B2 | `sync.multiDevice` — **PV-4 money sync đa thiết bị** | Chưa build. Liên quan D1. |
 | B3 | `query.full` — truy xuất cross-period + LLM-with-snapshot | Chưa build. |
-| B4 | `task.completion.watch` | **Gate mồ côi**: điểm khả thi live đang gate nhầm vào `task.eval`. Cleanup nhỏ (~5 phút). |
+| ~~B4~~ | ~~`task.completion.watch`~~ | ✅ **ĐÃ SỬA** — điểm khả thi live giờ gate đúng `task.completion.watch`, nút AI gate `task.eval` (tách bạch). |
+
+> ✅ **B1 PV-3 xong (2026-07-22).** Bài test tâm lý tiền → persona (5 money-script + lai,
+> deterministic) → Oracle 4 phần (LLM). Teaser 4 câu 0đ cho mọi cấp; **bản đầy đủ khoá
+> CỨNG `pro_plus`** (PO chốt: đặc quyền Phú Vương, KHÔNG taste). Billing post-payment,
+> chỉ lưu **bản phân tích** (KHÔNG raw phần viết — dữ liệu nhạy cảm chỉ sống trong request).
+> `growthOrientation` giờ đo được (lấp default 50 của capacity engine).
+>
+> ⚠️ **Hệ quả cần biết:** DNA Oracle là feature cấp-3 DUY NHẤT khoá thật ngay cả khi
+> `NEXT_PUBLIC_BUTLER_BILLING_ENFORCED` còn tắt (vì tốn LLM + nhạy cảm nhất). task.eval/care
+> vẫn FOMO. Muốn test đường AI thật cần 1 account **pro_plus**.
+>
+> 🔒 **Redteam đã đóng:** gate no-op (Pro lọt) · rate-limit bypass qua ép fallback ·
+> validator mảng rỗng vẫn trừ credit · growthOrientation injectable · rò text nhạy cảm ·
+> firestore deny tường minh. Còn **chờ PO**: duyệt bộ câu A (8 câu) + 3 câu B (đang là nháp).
 
 ## 🟡 C. Follow-up nhỏ (không chặn)
 

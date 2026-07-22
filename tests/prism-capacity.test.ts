@@ -95,7 +95,7 @@ function baseRaw(over: Partial<CapacityRawSignals>): CapacityRawSignals {
     streakDays: 0, chatUserMessages: 0, featuresUsed: 0, featuresTotal: 5,
     onboardingDone: -1, onboardingTotal: 7, skillsDeclared: -1,
     earningTasksTotal: 0, earningTasksCompleted: 0, freeTimeHoursPerWeek: -1,
-    emergencyFundMonths: -1, cfoReportViews: 0, ...over,
+    emergencyFundMonths: -1, cfoReportViews: 0, growthOrientation: -1, ...over,
   };
 }
 

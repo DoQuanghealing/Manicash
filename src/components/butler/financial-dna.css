@@ -1,0 +1,105 @@
+/* ═══ FinancialDnaPanel — La Bàn Tài Chính Nội Tâm (PV-3) ═══ */
+.dna-card{
+  position:relative; padding:16px; border-radius:16px; margin-bottom:12px;
+  background:linear-gradient(165deg,#141022,#0e0a18);
+  border:1px solid rgba(167,139,250,.26);
+}
+.dna-card--locked{ border-color:rgba(148,163,184,.22); }
+
+.dna-head{ display:flex; gap:11px; align-items:flex-start; margin-bottom:12px; }
+.dna-icon{
+  flex-shrink:0; width:36px; height:36px; border-radius:12px; display:grid; place-items:center;
+  font-size:19px; background:rgba(167,139,250,.14); border:1px solid rgba(167,139,250,.28);
+}
+.dna-title{ margin:0; font:700 14px system-ui,sans-serif; color:#f3f0fb; }
+.dna-sub{ margin:2px 0 0; font-size:12px; line-height:1.5; color:#c3bcd6; }
+
+/* ── Quiz ── */
+.dna-quiz{ display:flex; flex-direction:column; gap:14px; }
+.dna-q-text{ margin:0 0 7px; font:600 12.5px system-ui,sans-serif; color:#e8e4f5; line-height:1.5; }
+.dna-q-num{
+  display:inline-grid; place-items:center; width:18px; height:18px; margin-right:4px;
+  border-radius:6px; background:rgba(167,139,250,.18); color:#c4b5fd;
+  font:700 10.5px system-ui,sans-serif;
+}
+.dna-q-opts{ display:flex; flex-direction:column; gap:6px; }
+.dna-opt{
+  text-align:left; padding:8px 11px; border-radius:10px; cursor:pointer;
+  background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.07);
+  color:#d5cfe6; font:500 12px system-ui,sans-serif; line-height:1.45;
+  transition:border-color .15s, background .15s;
+}
+.dna-opt:hover{ border-color:rgba(167,139,250,.4); }
+.dna-opt.is-on{
+  background:rgba(167,139,250,.16); border-color:#a78bfa; color:#f3f0fb;
+}
+
+/* ── Buttons ── */
+.dna-btn{
+  margin-top:13px; width:100%; padding:10px 14px; border-radius:11px; border:none; cursor:pointer;
+  background:linear-gradient(135deg,#8b5cf6,#6d28d9); color:#fff;
+  font:700 12.5px system-ui,sans-serif;
+}
+.dna-btn:disabled{ opacity:.45; cursor:default; }
+.dna-btn:not(:disabled):hover{ filter:brightness(1.08); }
+.dna-btn--ghost{
+  background:transparent; border:1px solid rgba(255,255,255,.14); color:#c3bcd6;
+}
+.dna-btn--gold{ background:linear-gradient(135deg,#f59e0b,#b45309); }
+.dna-btn--danger{
+  background:transparent; border:1px solid rgba(239,68,68,.4); color:#fca5a5;
+}
+
+/* ── Teaser (locked) ── */
+.dna-teaser-result{
+  margin-top:13px; padding:12px; border-radius:12px;
+  background:rgba(167,139,250,.08); border:1px solid rgba(167,139,250,.22);
+  font-size:12.5px; line-height:1.55; color:#e8e4f5;
+}
+.dna-teaser-result p{ margin:0 0 7px; }
+.dna-teaser-tagline{ color:#c4b5fd; font-style:italic; }
+.dna-locked-note{ color:#c3bcd6; font-size:12px; }
+
+/* ── Reflection + consent ── */
+.dna-consent-copy{
+  margin:0 0 11px; padding:11px 12px; border-radius:11px; font-size:12.5px; line-height:1.6;
+  color:#e8e4f5; background:rgba(245,158,11,.07); border:1px solid rgba(245,158,11,.22);
+}
+.dna-consent-actions{ display:flex; flex-direction:column; gap:2px; }
+.dna-reflect-fields{ display:flex; flex-direction:column; gap:11px; margin-top:11px; }
+.dna-reflect-field{ display:flex; flex-direction:column; gap:5px; }
+.dna-reflect-field span{ font:600 12px system-ui,sans-serif; color:#e8e4f5; }
+.dna-reflect-field textarea{
+  resize:vertical; min-height:58px; padding:9px 11px; border-radius:10px;
+  background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1);
+  color:#f3f0fb; font:400 12.5px system-ui,sans-serif; line-height:1.5;
+}
+.dna-reflect-field textarea:focus{ outline:none; border-color:#a78bfa; }
+.dna-privacy-note{ margin:0; font-size:11.5px; color:#8a83a3; }
+.dna-notice{ margin:9px 0 0; font-size:12px; color:#fbbf24; line-height:1.5; }
+
+/* ── Report ── */
+.dna-report{ display:flex; flex-direction:column; gap:11px; }
+.dna-report-persona{
+  display:flex; gap:10px; align-items:center; padding:11px 12px; border-radius:12px;
+  background:rgba(167,139,250,.1); border:1px solid rgba(167,139,250,.26);
+}
+.dna-report-icon{ font-size:24px; }
+.dna-report-persona strong{ display:block; font:700 13.5px system-ui,sans-serif; color:#f3f0fb; }
+.dna-report-meta{ font-size:11px; color:#8a83a3; }
+.dna-report-reflection{ margin:0; font-size:12.5px; line-height:1.65; color:#e8e4f5; }
+.dna-block{ padding:10px 12px; border-radius:11px; background:rgba(255,255,255,.03); }
+.dna-block--blind{ background:rgba(239,68,68,.06); }
+.dna-block--action{ background:rgba(34,197,94,.06); }
+.dna-block-title{ display:block; margin-bottom:5px; font:700 12px system-ui,sans-serif; color:#e8e4f5; }
+.dna-block ul{ margin:0; padding-left:17px; display:flex; flex-direction:column; gap:4px; }
+.dna-block li{ font-size:12px; line-height:1.5; color:#d5cfe6; }
+.dna-mindset{
+  padding:11px 12px; border-radius:11px;
+  background:linear-gradient(135deg,rgba(245,158,11,.1),rgba(245,158,11,.04));
+  border:1px solid rgba(245,158,11,.2);
+}
+.dna-mindset p{ margin:0; font-size:12.5px; line-height:1.6; color:#fde68a; }
+.dna-disclaimer{ margin:0; font-size:10.5px; color:#8a83a3; font-style:italic; }
+.dna-report-actions{ display:flex; gap:8px; }
+.dna-report-actions .dna-btn{ margin-top:0; }
