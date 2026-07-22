@@ -67,6 +67,13 @@ service cloud.firestore {
       match /cfo_narration/{monthKey} {
         allow read, write: if false;
       }
+
+      // PV-3 Financial DNA (persona + báo cáo Oracle, dữ liệu nhạy cảm) — Admin SDK
+      // only. Deny TƯỜNG MINH: không dựa vào default-deny catch-all cuối file, để
+      // nếu sau này ai thêm rule rộng `users/{uid}/{doc=**}` thì doc này VẪN khoá.
+      match /financial_dna/{docId} {
+        allow read, write: if false;
+      }
     }
 
     // SMS webhook tokens — the owner may read their token (settings page shows it);

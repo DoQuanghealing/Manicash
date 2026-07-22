@@ -113,7 +113,9 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Chỉ xóa được tài khoản test.' }, { status: 403 });
     }
     await getAdminAuth().deleteUser(uid).catch(() => {});
-    await db.doc(`users/${uid}`).delete().catch(() => {});
+    // recursiveDelete để dọn CẢ subcollection (financial_dna, ai_usage, money…) —
+    // .delete() thường chỉ xoá doc gốc, bỏ sót dữ liệu nhạy cảm dưới nó (redteam LOW).
+    await db.recursiveDelete(db.doc(`users/${uid}`)).catch(() => {});
     await logAdminAction(admin, 'testAccount.delete', { uid });
     return NextResponse.json({ ok: true });
   } catch (error) {

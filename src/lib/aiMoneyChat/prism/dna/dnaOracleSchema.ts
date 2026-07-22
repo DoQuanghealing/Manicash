@@ -54,13 +54,19 @@ export function validateDnaOracleReport(input: unknown): DnaOracleReport | null 
     typeof o.personaReflection === 'string' ? o.personaReflection.trim().slice(0, LIMITS.textMax) : '';
   const mindsetShift = typeof o.mindsetShift === 'string' ? o.mindsetShift.trim().slice(0, LIMITS.textMax) : '';
   const growthOrientation = clamp100(o.growthOrientation);
-  if (!personaReflection || !mindsetShift || growthOrientation === null) return null;
+  const behaviorActions = cleanStringArray(o.behaviorActions, LIMITS.behaviorActions);
+  // behaviorActions là phần LÕI mà user trả tiền (spec §5: "2–3 giải pháp hành vi").
+  // Rỗng → coi báo cáo KHÔNG hợp lệ → route fallback bản deterministic (đủ 4 phần),
+  // tránh trừ credit cho báo cáo thiếu ruột (QA + redteam).
+  if (!personaReflection || !mindsetShift || growthOrientation === null || behaviorActions.length === 0) {
+    return null;
+  }
 
   return {
     personaReflection,
     strengths: cleanStringArray(o.strengths, LIMITS.strengths),
     blindspots: cleanStringArray(o.blindspots, LIMITS.blindspots),
-    behaviorActions: cleanStringArray(o.behaviorActions, LIMITS.behaviorActions),
+    behaviorActions,
     mindsetShift,
     growthOrientation,
   };

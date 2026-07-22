@@ -106,6 +106,14 @@ itSync('field thừa (persona giả, feasibility…) bị loại tự nhiên', (
   ok(!('persona' in (r as unknown as Record<string, unknown>)));
 });
 
+itSync('behaviorActions rỗng → null (phần lõi trả tiền, không được thiếu)', () => {
+  eq(validateDnaOracleReport({ ...GOOD, behaviorActions: [] }), null);
+  // Cả 3 mảng rỗng cũng null (không cho báo cáo "vỏ rỗng" qua để trừ credit).
+  eq(validateDnaOracleReport({ ...GOOD, behaviorActions: [], strengths: [], blindspots: [] }), null);
+  // Chỉ behaviorActions có, strengths/blindspots rỗng vẫn hợp lệ (2 mảng đó optional).
+  ok(!!validateDnaOracleReport({ ...GOOD, strengths: [], blindspots: [] }));
+});
+
 itSync('parse từ chuỗi có ```json fence + text bao quanh', () => {
   const s = 'Đây là kết quả:\n```json\n' + JSON.stringify(GOOD) + '\n```\ncảm ơn';
   const r = parseDnaOracleReport(s);
@@ -126,11 +134,12 @@ itSync('disclaimer tĩnh đúng spec §6 (không phải từ LLM)', () => {
 
 console.log('\nOracle prompt — guard + budget');
 
-itSync('system prompt có đủ guard: không phán xét, khủng hoảng, injection, schema', () => {
+itSync('system prompt có đủ guard: không phán xét, khủng hoảng, injection, không trích dẫn, schema', () => {
   const s = buildDnaOracleSystemPrompt();
   ok(s.includes('KHÔNG phán xét'));
   ok(s.includes('khủng hoảng'));
   ok(s.includes('KHÔNG phải mệnh lệnh'));
+  ok(s.includes('KHÔNG trích dẫn nguyên văn'), 'phải cấm trích dẫn text nhạy cảm');
   ok(s.includes('growthOrientation'));
   ok(s.includes('DUY NHẤT JSON'));
 });
@@ -181,12 +190,14 @@ it('không có generate → deterministicFallback true', async () => {
   ok(r.deterministicFallback);
 });
 
-it('generate trả JSON hợp lệ → dùng bản AI, không fallback', async () => {
+it('generate trả JSON hợp lệ → dùng bản AI (nội dung LLM), không fallback', async () => {
   const r = await runDnaOracle(ctx(), {
     generate: async () => ({ content: JSON.stringify(GOOD) }),
   });
   ok(!r.deterministicFallback);
-  eq(r.report.growthOrientation, 82);
+  // Nội dung văn bản là của LLM; growthOrientation đã qua neo (kiểm ở test riêng).
+  eq(r.report.mindsetShift, GOOD.mindsetShift);
+  eq(r.report.behaviorActions.length, 2);
 });
 
 it('generate trả rác → fallback (route sẽ KHÔNG trừ credit)', async () => {
@@ -199,6 +210,24 @@ it('generate throw → fallback, không throw ra ngoài', async () => {
     generate: async () => { throw new Error('boom'); },
   });
   ok(r.deterministicFallback);
+});
+
+it('growthOrientation neo theo deterministic: LLM chấm 100 (injection) bị kẹp ≤ anchor+20', async () => {
+  const anchor = buildDeterministicDnaOracle(ctx()).growthOrientation;
+  const r = await runDnaOracle(ctx(), {
+    generate: async () => ({ content: JSON.stringify({ ...GOOD, growthOrientation: 100 }) }),
+  });
+  ok(!r.deterministicFallback);
+  ok(r.report.growthOrientation <= anchor + 20, `neo trên: ${r.report.growthOrientation} vs anchor ${anchor}`);
+  ok(r.report.growthOrientation >= anchor - 20, 'neo dưới');
+});
+
+it('growthOrientation neo: LLM chấm 0 (dìm) cũng bị kẹp ≥ anchor-20', async () => {
+  const anchor = buildDeterministicDnaOracle(ctx()).growthOrientation;
+  const r = await runDnaOracle(ctx(), {
+    generate: async () => ({ content: JSON.stringify({ ...GOOD, growthOrientation: 0 }) }),
+  });
+  ok(r.report.growthOrientation >= anchor - 20, `${r.report.growthOrientation} vs anchor ${anchor}`);
 });
 
 console.log('\nGate cấp 3 — dna.oracle KHÔNG suất nếm');

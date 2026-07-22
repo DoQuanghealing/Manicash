@@ -8,7 +8,7 @@
  */
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFinancialDnaStore } from '@/stores/useFinancialDnaStore';
 import { useEffectiveButlerLevel } from '@/hooks/useEffectiveButlerLevel';
 import { useSettingsStore } from '@/stores/useSettingsStore';
@@ -98,11 +98,27 @@ export default function FinancialDnaPanel() {
   const teaserPersona = useMemo(() => resolveTeaserPersona(answers), [answers]);
   const fullPersona = useMemo(() => resolveDnaPersona(answers), [answers]);
 
+  // Bản phân tích cũ vô hiệu ngay khi đổi câu trả lời (tránh header persona LIVE
+  // lệch với body báo cáo ĐÓNG BĂNG). Xoá local; lần luận giải sau server ghi đè.
   function pick(questionId: string, optionId: string) {
     const next = answers.filter((a) => a.questionId !== questionId);
     next.push({ questionId, optionId });
     saveAnswers(next);
+    if (analysis) clearAnalysis();
   }
+
+  // Persist rehydrate có thể mang analysis tới SAU first render (lúc đó stage đã init
+  // = 'quiz'). Nhảy sang 'report' ĐÚNG MỘT LẦN khi đó — sau đó không override nữa,
+  // để "Làm lại bài test" (setStage 'quiz' dù analysis còn) không bị kéo ngược lại.
+  const hydratedRef = useRef(false);
+  useEffect(() => {
+    if (hydratedRef.current) return;
+    if (analysis) {
+      hydratedRef.current = true;
+      setStage('report');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [analysis]);
 
   async function analyze() {
     setLoading(true);
@@ -290,7 +306,15 @@ export default function FinancialDnaPanel() {
           <p className="dna-disclaimer">{DNA_ORACLE_DISCLAIMER}</p>
 
           <div className="dna-report-actions">
-            <button className="dna-btn dna-btn--ghost" disabled={loading} onClick={() => setStage('quiz')}>
+            <button
+              className="dna-btn dna-btn--ghost"
+              disabled={loading}
+              onClick={() => {
+                // Reset consent để lần làm lại được chọn lại chia sẻ hay bỏ qua.
+                setConsent('undecided');
+                setStage('quiz');
+              }}
+            >
               Làm lại bài test
             </button>
             <button className="dna-btn dna-btn--danger" disabled={loading} onClick={deleteAnalysis}>

@@ -27,6 +27,20 @@ export interface DnaOracleResult {
 }
 
 /**
+ * growthOrientation ghi ngược vào capacity engine (điểm năng lực). LLM chấm số này
+ * từ free-text KHÔNG tin cậy → injection "chấm =100" có thể thổi phồng. Neo theo bản
+ * deterministic (suy từ câu trả lời quiz) + chỉ cho LLM lệch tối đa GROWTH_DRIFT điểm.
+ */
+const GROWTH_DRIFT = 20;
+
+function anchorGrowthOrientation(llmValue: number, ctx: DnaOracleContext): number {
+  const anchor = buildDeterministicDnaOracle(ctx).growthOrientation;
+  const lo = Math.max(0, anchor - GROWTH_DRIFT);
+  const hi = Math.min(100, anchor + GROWTH_DRIFT);
+  return Math.max(lo, Math.min(hi, llmValue));
+}
+
+/**
  * Fallback deterministic (0đ): báo cáo từ profile persona đã tính.
  * growthOrientation suy từ điểm quiz (Kiến Tạo là tín hiệu chính, Né Tránh kéo
  * xuống) — vẫn là số "đo được" từ câu trả lời thật, tốt hơn default 50.
@@ -77,8 +91,10 @@ export async function runDnaOracle(ctx: DnaOracleContext, deps: RunDnaOracleDeps
     if (!parsed) {
       return { report: buildDeterministicDnaOracle(ctx), deterministicFallback: true };
     }
+    // Neo growthOrientation theo bản deterministic (chống injection thổi phồng điểm).
+    const report = { ...parsed, growthOrientation: anchorGrowthOrientation(parsed.growthOrientation, ctx) };
     return {
-      report: parsed,
+      report,
       deterministicFallback: false,
       provider: result.provider,
       tokensUsed: result.tokensUsed,
