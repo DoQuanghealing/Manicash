@@ -37,6 +37,7 @@ import { computeCapacity, classifyCapacity } from '@/lib/aiMoneyChat/prism/capac
 import { buildCapacityComponents, type CapacityRawSignals } from '@/lib/aiMoneyChat/prism/capacity/buildCapacity';
 import { surveyToSignals } from '@/lib/aiMoneyChat/prism/capacity/capacitySurvey';
 import { useCapacitySurveyStore } from '@/stores/useCapacitySurveyStore';
+import { useFinancialDnaStore } from '@/stores/useFinancialDnaStore';
 import CapacityCard from './CapacityCard';
 import CapacitySurveyCard from './CapacitySurveyCard';
 import { useTransactionHabitStore } from '@/stores/useTransactionHabitStore';
@@ -799,6 +800,9 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
       freeTimeHoursPerWeek: survey.freeTimeHoursPerWeek,
       emergencyFundMonths: monthlyExpense > 0 ? emergencyBalance / monthlyExpense : -1,
       cfoReportViews: 0,
+      // PV-3: Tư duy Tăng trưởng đo từ Financial DNA Oracle (-1 = chưa làm bài test).
+      growthOrientation:
+        useFinancialDnaStore.getState().analysis?.report.growthOrientation ?? -1,
     };
 
     const { components, pending } = buildCapacityComponents(raw);

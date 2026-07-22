@@ -8,6 +8,7 @@ import { useFinanceStore } from '@/stores/useFinanceStore';
 import { useBudgetStore } from '@/stores/useBudgetStore';
 import { useGoalsStore } from '@/stores/useGoalsStore';
 import { useTaskStore } from '@/stores/useTaskStore';
+import { useFinancialDnaStore } from '@/stores/useFinancialDnaStore';
 
 export interface UserDataExport {
   exportedAt: string;
@@ -35,6 +36,11 @@ export interface UserDataExport {
   };
   goals: unknown[];
   tasks: unknown[];
+  /** PV-3: câu trả lời trắc nghiệm + bản phân tích (KHÔNG có raw phần viết — không lưu ở đâu cả). */
+  financialDna: {
+    answers: unknown[];
+    analysis: unknown | null;
+  };
 }
 
 export function collectUserData(): UserDataExport {
@@ -44,6 +50,7 @@ export function collectUserData(): UserDataExport {
   const { carryOver, categoryBudgets } = useBudgetStore.getState();
   const { goals } = useGoalsStore.getState();
   const { tasks } = useTaskStore.getState();
+  const { answers: dnaAnswers, analysis: dnaAnalysis } = useFinancialDnaStore.getState();
 
   return {
     exportedAt: new Date().toISOString(),
@@ -82,6 +89,10 @@ export function collectUserData(): UserDataExport {
     },
     goals,
     tasks,
+    financialDna: {
+      answers: dnaAnswers,
+      analysis: dnaAnalysis,
+    },
   };
 }
 

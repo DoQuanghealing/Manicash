@@ -43,6 +43,9 @@ export default function TaskEvalPanel({ task }: TaskEvalPanelProps) {
   const canEval =
     hasFeature(level, 'task.eval') ||
     (tasteQuotaFor('task.eval') > 0 && level >= minLevelFor('task.eval') - 1);
+  // Điểm khả thi LIVE gate theo ĐÚNG feature của nó (backlog B4 — trước gate nhầm
+  // vào task.eval). Taster (cấp 2) vẫn thấy nút AI nhưng không thấy điểm live.
+  const canWatch = hasFeature(level, 'task.completion.watch');
 
   // Điểm khả thi LIVE (0đ, realtime) — luôn tính client-side.
   const feasibility = useMemo(
@@ -53,7 +56,7 @@ export default function TaskEvalPanel({ task }: TaskEvalPanelProps) {
   const currentHash = useMemo(() => computeTaskEvalHash(task), [task]);
   const cached = task.aiEval && task.aiEval.hash === currentHash ? task.aiEval : null;
 
-  if (!canEval) return null;
+  if (!canEval && !canWatch) return null;
 
   async function onEvaluate() {
     setLoading(true);
@@ -86,7 +89,8 @@ export default function TaskEvalPanel({ task }: TaskEvalPanelProps) {
 
   return (
     <div className="te-panel">
-      {/* Điểm khả thi deterministic (0đ) */}
+      {/* Điểm khả thi deterministic (0đ) — feature task.completion.watch (cấp 3) */}
+      {canWatch && (
       <div className="te-score-row">
         <div className="te-score-head">
           <span className="te-score-title">🧭 Khả năng hoàn thành</span>
@@ -101,11 +105,14 @@ export default function TaskEvalPanel({ task }: TaskEvalPanelProps) {
           lịch sử {feasibility.signals.historicalRate}%
         </span>
       </div>
+      )}
 
-      {/* Nút AI thẩm định */}
+      {/* Nút AI thẩm định — feature task.eval (cấp 3, Pro nếm 5 lượt/tháng) */}
+      {canEval && (
       <button className="te-btn" onClick={onEvaluate} disabled={loading}>
         {loading ? '⏳ Quản gia đang xem…' : cached ? '🔄 Thẩm định lại' : '🧠 Quản gia thẩm định'}
       </button>
+      )}
 
       {notice && <p className="te-notice">{notice}</p>}
 

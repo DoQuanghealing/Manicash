@@ -30,6 +30,8 @@ export interface CapacityRawSignals {
   // MMS
   emergencyFundMonths: number; // emergency / chi tháng (-1 nếu chưa tính được)
   cfoReportViews: number; // proxy Investment Mindset
+  /** PV-3: điểm Tư duy Tăng trưởng từ Financial DNA Oracle (0–100); -1 = chưa đo. */
+  growthOrientation: number;
 }
 
 export interface CapacityBuildResult {
@@ -112,9 +114,15 @@ export function buildCapacityComponents(raw: CapacityRawSignals): CapacityBuildR
     pending.push('Lập quỹ khẩn cấp');
   }
   const investmentMindset = cap(raw.cfoReportViews, 10);
-  // Growth Orientation = phần đánh giá AI qua hội thoại -> để dành P6 (Oracle).
-  const growthOrientation = 50;
-  pending.push('Mở khóa nhận xét AI Oracle (Pro) để đo Tư duy Tăng trưởng');
+  // PV-3: Growth Orientation giờ ĐO ĐƯỢC từ Financial DNA Oracle. Chưa làm bài
+  // test -> default trung tính 50 + pending (như trước).
+  let growthOrientation: number;
+  if (raw.growthOrientation >= 0) {
+    growthOrientation = Math.max(0, Math.min(100, raw.growthOrientation));
+  } else {
+    growthOrientation = 50;
+    pending.push('Làm bài La Bàn Tài Chính Nội Tâm (Phú Vương) để đo Tư duy Tăng trưởng');
+  }
 
   return {
     components: {
