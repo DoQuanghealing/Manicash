@@ -129,20 +129,21 @@ export default function UsersContent() {
     }
   }, []);
 
-  async function grantPro(uid: string, periodDays: number) {
+  async function grantPro(uid: string, periodDays: number, tier: 'pro' | 'pro_plus' = 'pro') {
     setActing(true);
     setNotice(null);
     try {
       const headers = await authHeaders(true);
       if (!headers) return;
       const res = await fetch(apiUrl('/api/admin/grant'), {
-        method: 'POST', headers, body: JSON.stringify({ uid, periodDays }),
+        method: 'POST', headers, body: JSON.stringify({ uid, periodDays, tier }),
       });
       const j = await res.json().catch(() => null);
       if (res.ok && j?.ok) {
-        setNotice(`Đã cấp Pro ${periodDays} ngày cho ${shortUid(uid)} ✓`);
+        const label = tier === 'pro_plus' ? 'Pro Plus (Phú Vương)' : 'Pro';
+        setNotice(`Đã cấp ${label} ${periodDays} ngày cho ${shortUid(uid)} ✓`);
         await Promise.all([openProfile(uid), load()]);
-      } else setError(j?.error || 'Không cấp được Pro');
+      } else setError(j?.error || 'Không cấp được gói');
     } catch { setError('Lỗi kết nối'); } finally { setActing(false); }
   }
 
@@ -252,7 +253,7 @@ export default function UsersContent() {
                       </td>
                       <td>
                         {r.isPremium
-                          ? <span className="usr-badge usr-badge-pro">Pro</span>
+                          ? <span className="usr-badge usr-badge-pro">{r.plan === 'premium_plus' ? 'Pro+ 🐉' : 'Pro'}</span>
                           : <span className="usr-badge usr-badge-muted">Free</span>}
                       </td>
                       <td>
@@ -283,7 +284,7 @@ export default function UsersContent() {
                   <div className="usr-panel-name">{profile.identity.displayName ?? profile.identity.email ?? shortUid(profile.identity.uid)}</div>
                   <div className="usr-panel-email">{profile.identity.email ?? '—'}</div>
                   <div className="usr-panel-tags">
-                    {profile.commerce.isPremium && <span className="usr-badge usr-badge-pro">Pro</span>}
+                    {profile.commerce.isPremium && <span className="usr-badge usr-badge-pro">{profile.commerce.plan === 'premium_plus' ? 'Pro+ 🐉' : 'Pro'}</span>}
                     {profile.identity.isAdmin && <span className="usr-badge usr-badge-admin">Admin</span>}
                     {profile.account.isTestAccount && <span className="usr-badge usr-badge-muted">Test</span>}
                     {profile.identity.disabled && <span className="usr-badge usr-badge-danger">Banned</span>}
@@ -329,7 +330,7 @@ export default function UsersContent() {
                   <div className="usr-block-title">Hành động</div>
                   <div className="usr-actions">
                     {[30, 180, 365].map((d) => (
-                      <button key={d} className="adm-btn adm-btn-sm" disabled={acting} onClick={() => grantPro(profile.identity.uid, d)}>
+                      <button key={d} className="adm-btn adm-btn-sm" disabled={acting} onClick={() => grantPro(profile.identity.uid, d, 'pro')}>
                         + Pro {d}d
                       </button>
                     ))}
@@ -344,6 +345,25 @@ export default function UsersContent() {
                     <button className="adm-btn adm-btn-sm adm-btn-danger" disabled={acting} onClick={() => userAction(profile.identity.uid, 'ban', 'Đã ban')}>Ban</button>
                     <button className="adm-btn adm-btn-sm" disabled={acting} onClick={() => userAction(profile.identity.uid, 'unban', 'Đã gỡ ban')}>Gỡ ban</button>
                   </div>
+
+                  {/* Bỏ qua mua — cấp Pro Plus (Phú Vương, cấp 3) để TEST full tính năng */}
+                  <div className="usr-block-title" style={{ marginTop: 12 }}>🐉 Bỏ qua mua — Pro Plus (test cấp 3)</div>
+                  <div className="usr-actions">
+                    {[30, 180, 365].map((d) => (
+                      <button
+                        key={d}
+                        className="adm-btn adm-btn-sm"
+                        style={{ borderColor: '#b45309', color: '#fbbf24' }}
+                        disabled={acting}
+                        onClick={() => grantPro(profile.identity.uid, d, 'pro_plus')}
+                      >
+                        + Pro Plus {d}d
+                      </button>
+                    ))}
+                  </div>
+                  <p className="usr-dim" style={{ marginTop: 6, fontSize: 11 }}>
+                    Mở full cấp 3 (DNA Oracle, task eval, care…) không cần thanh toán. Ghi vào admin_audit + grant_events.
+                  </p>
                 </div>
               </>
             )}

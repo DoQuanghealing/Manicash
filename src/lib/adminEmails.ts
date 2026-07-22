@@ -10,7 +10,10 @@
  *
  * Module isomorphic: client dùng để ẩn/hiện nút; server (requireAdmin) dùng để CHẶN thật.
  */
-export const ADMIN_EMAILS: readonly string[] = ['doduongquang8686@gmail.com'];
+export const ADMIN_EMAILS: readonly string[] = [
+  'doduongquang8686@gmail.com',
+  'freshlife1381@gmail.com', // PO — tài khoản test (2026-07-22), vào admin để bỏ qua mua test full
+];
 
 export function isAdminEmail(email?: string | null): boolean {
   if (!email) return false;
