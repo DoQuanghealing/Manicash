@@ -21,7 +21,7 @@ import {
   type TaskEvalContext,
 } from '@/lib/aiMoneyChat/taskEval/taskEvalPrompt';
 import { runTaskEval } from '@/lib/aiMoneyChat/taskEval/taskEvalService';
-import { resolveChatProvider, callChatCompletion } from '@/lib/aiMoneyChat/llm/chatProvider';
+import { resolveProviderPool, callChatCompletion } from '@/lib/aiMoneyChat/llm/chatProvider';
 
 const MAX_NAME = 120;
 
@@ -71,8 +71,8 @@ export async function POST(req: NextRequest) {
   if (process.env.AI_MONEY_CHAT_AI_FALLBACK_ENABLED !== 'true') {
     return jsonResult('disabled', 'AI task eval is disabled by server flag.');
   }
-  const provider = resolveChatProvider();
-  if (!provider) return jsonResult('no-key', 'No LLM API key configured (AI_LLM_API_KEY / GROQ_API_KEY).');
+  const pool = resolveProviderPool();
+  if (pool.length === 0) return jsonResult('no-key', 'No LLM provider key configured (CEREBRAS/GROQ/AGNES/AI_LLM).');
 
   try {
     const uid = await getVerifiedRequestUid(req);
@@ -103,26 +103,26 @@ export async function POST(req: NextRequest) {
       return jsonResult('upgrade-required', describeTaste(taste), 402);
     }
 
-    // runTaskEval KHÔNG throw: LLM lỗi → fallback deterministic (0đ, không trừ).
-    let usage: { model: string; tokensIn: number; tokensOut: number } | null = null;
+    // runTaskEval KHÔNG throw: cả pool lỗi → fallback deterministic (0đ, không trừ).
+    let usage: { model: string; tokensIn: number; tokensOut: number; providerLabel: string } | null = null;
     const result = await runTaskEval(ctx, {
       generate: async () => {
-        const g = await callChatCompletion(provider, {
+        const g = await callChatCompletion(pool, {
           system: buildTaskEvalSystemPrompt(),
           user: buildTaskEvalUserPrompt(ctx),
           temperature: 0.4,
           maxTokens: 450,
           jsonMode: true,
         });
-        usage = { model: g.model, tokensIn: g.tokensIn, tokensOut: g.tokensOut };
-        return { content: g.content, provider: provider.label };
+        usage = { model: g.model, tokensIn: g.tokensIn, tokensOut: g.tokensOut, providerLabel: g.providerLabel };
+        return { content: g.content, provider: g.providerLabel };
       },
     });
 
     if (usage) {
-      const u = usage as { model: string; tokensIn: number; tokensOut: number };
+      const u = usage as { model: string; tokensIn: number; tokensOut: number; providerLabel: string };
       await logAiUsage({
-        uid, feature: 'task_eval', model: u.model, provider: provider.label,
+        uid, feature: 'task_eval', model: u.model, provider: u.providerLabel,
         tokensIn: u.tokensIn, tokensOut: u.tokensOut, tokensTotal: u.tokensIn + u.tokensOut,
         costVnd: estimateCostVnd(u.model, u.tokensIn, u.tokensOut),
         fallbackUsed: result.deterministicFallback, latencyMs: 0,

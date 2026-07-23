@@ -20,7 +20,7 @@ import {
 import { minLevelFor } from '@/lib/monetization/butlerFeatures';
 import { checkSpendBreaker, checkUserCostCeiling, logAiUsage } from '@/lib/aiMoneyChat/llm/aiUsageLog';
 import { estimateCostVnd } from '@/lib/aiMoneyChat/llm/aiCostCore';
-import { resolveChatProvider, callChatCompletion } from '@/lib/aiMoneyChat/llm/chatProvider';
+import { resolveProviderPool, callChatCompletion } from '@/lib/aiMoneyChat/llm/chatProvider';
 import { sanitizeDnaAnswers, DNA_QUESTIONS } from '@/lib/aiMoneyChat/prism/dna/dnaQuestions';
 import { resolveDnaPersona } from '@/lib/aiMoneyChat/prism/dna/personaEngine';
 import {
@@ -109,8 +109,8 @@ export async function POST(req: NextRequest) {
   if (process.env.AI_MONEY_CHAT_AI_FALLBACK_ENABLED !== 'true') {
     return jsonResult('disabled', 'AI DNA Oracle is disabled by server flag.');
   }
-  const provider = resolveChatProvider();
-  if (!provider) return jsonResult('no-key', 'No LLM API key configured (AI_LLM_API_KEY / GROQ_API_KEY).');
+  const pool = resolveProviderPool();
+  if (pool.length === 0) return jsonResult('no-key', 'No LLM provider key configured (CEREBRAS/GROQ/AGNES/AI_LLM).');
 
   try {
     const uid = await getVerifiedRequestUid(req);
@@ -149,26 +149,26 @@ export async function POST(req: NextRequest) {
       return jsonResult('disabled', 'Quản gia đã tận tâm phục vụ ngài cả tháng — nay xin nghỉ dưỡng não bộ ít hôm. Mời ngài dùng bản cơ bản, đầu tháng sau tôi lại hầu ngài.');
     }
 
-    // runDnaOracle KHÔNG throw: Groq lỗi (throw) → fallback, usage=null → KHÔNG trừ.
-    let usage: { model: string; tokensIn: number; tokensOut: number } | null = null;
+    // runDnaOracle KHÔNG throw: cả pool lỗi (throw) → fallback, usage=null → KHÔNG trừ.
+    let usage: { model: string; tokensIn: number; tokensOut: number; providerLabel: string } | null = null;
     const result = await runDnaOracle(ctx, {
       generate: async () => {
-        const g = await callChatCompletion(provider, {
+        const g = await callChatCompletion(pool, {
           system: buildDnaOracleSystemPrompt(),
           user: buildDnaOracleUserPrompt(ctx),
           temperature: 0.5,
           maxTokens: 700,
           jsonMode: true,
         });
-        usage = { model: g.model, tokensIn: g.tokensIn, tokensOut: g.tokensOut };
-        return { content: g.content, provider: provider.label };
+        usage = { model: g.model, tokensIn: g.tokensIn, tokensOut: g.tokensOut, providerLabel: g.providerLabel };
+        return { content: g.content, provider: g.providerLabel };
       },
     });
 
     if (usage) {
-      const u = usage as { model: string; tokensIn: number; tokensOut: number };
+      const u = usage as { model: string; tokensIn: number; tokensOut: number; providerLabel: string };
       await logAiUsage({
-        uid, feature: 'dna_oracle', model: u.model, provider: provider.label,
+        uid, feature: 'dna_oracle', model: u.model, provider: u.providerLabel,
         tokensIn: u.tokensIn, tokensOut: u.tokensOut, tokensTotal: u.tokensIn + u.tokensOut,
         costVnd: estimateCostVnd(u.model, u.tokensIn, u.tokensOut),
         fallbackUsed: result.deterministicFallback, latencyMs: 0,
