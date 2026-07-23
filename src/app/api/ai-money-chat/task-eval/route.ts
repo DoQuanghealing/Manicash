@@ -111,7 +111,8 @@ export async function POST(req: NextRequest) {
           system: buildTaskEvalSystemPrompt(),
           user: buildTaskEvalUserPrompt(ctx),
           temperature: 0.4,
-          maxTokens: 450,
+          // Headroom cho reasoning model (gpt-oss tiêu token suy luận trước output).
+          maxTokens: 700,
           jsonMode: true,
         });
         usage = { model: g.model, tokensIn: g.tokensIn, tokensOut: g.tokensOut, providerLabel: g.providerLabel };

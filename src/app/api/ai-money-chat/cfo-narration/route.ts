@@ -130,7 +130,8 @@ export async function POST(req: NextRequest) {
       system: CFO_NARRATION_SYSTEM_PROMPT,
       user: buildCfoNarrationPrompt(input),
       temperature: 0.6,
-      maxTokens: 320,
+      // Headroom cho reasoning model (gpt-oss tiêu token suy luận trước output).
+      maxTokens: 600,
     });
     // T2 — ghi sổ ai_usage_log (token đã tiêu kể cả khi validate fail / không charge).
     await logAiUsage({
