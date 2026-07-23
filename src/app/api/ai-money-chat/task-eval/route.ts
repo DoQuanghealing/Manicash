@@ -21,8 +21,8 @@ import {
   type TaskEvalContext,
 } from '@/lib/aiMoneyChat/taskEval/taskEvalPrompt';
 import { runTaskEval } from '@/lib/aiMoneyChat/taskEval/taskEvalService';
+import { resolveChatProvider, callChatCompletion } from '@/lib/aiMoneyChat/llm/chatProvider';
 
-const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const MAX_NAME = 120;
 
 type Src = 'ai' | 'deterministic' | 'disabled' | 'no-key' | 'unauthorized' | 'quota-exceeded' | 'upgrade-required' | 'error';
@@ -57,31 +57,6 @@ function parsePayload(body: unknown): TaskEvalContext | null {
   };
 }
 
-interface GroqResult { content: string; model: string; tokensIn: number; tokensOut: number }
-
-async function callGroq(apiKey: string, ctx: TaskEvalContext): Promise<GroqResult> {
-  const model = process.env.AI_MONEY_CHAT_GROQ_MODEL || 'llama-3.3-70b-versatile';
-  const response = await fetch(GROQ_API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: 'system', content: buildTaskEvalSystemPrompt() },
-        { role: 'user', content: buildTaskEvalUserPrompt(ctx) },
-      ],
-      temperature: 0.4,
-      max_tokens: 450,
-      response_format: { type: 'json_object' },
-    }),
-  });
-  if (!response.ok) throw new Error(`Groq API error: ${response.status}`);
-  const data = await response.json();
-  const content = data.choices?.[0]?.message?.content;
-  if (typeof content !== 'string') throw new Error('Groq response missing content.');
-  return { content, model, tokensIn: data.usage?.prompt_tokens ?? 0, tokensOut: data.usage?.completion_tokens ?? 0 };
-}
-
 function jsonResult(source: Src, reason: string, status = 200) {
   return NextResponse.json({ source, reason }, { status });
 }
@@ -96,8 +71,8 @@ export async function POST(req: NextRequest) {
   if (process.env.AI_MONEY_CHAT_AI_FALLBACK_ENABLED !== 'true') {
     return jsonResult('disabled', 'AI task eval is disabled by server flag.');
   }
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) return jsonResult('no-key', 'GROQ_API_KEY is not configured.');
+  const provider = resolveChatProvider();
+  if (!provider) return jsonResult('no-key', 'No LLM API key configured (AI_LLM_API_KEY / GROQ_API_KEY).');
 
   try {
     const uid = await getVerifiedRequestUid(req);
@@ -128,20 +103,26 @@ export async function POST(req: NextRequest) {
       return jsonResult('upgrade-required', describeTaste(taste), 402);
     }
 
-    // runTaskEval KHÔNG throw: Groq lỗi → fallback deterministic (0đ, không trừ).
+    // runTaskEval KHÔNG throw: LLM lỗi → fallback deterministic (0đ, không trừ).
     let usage: { model: string; tokensIn: number; tokensOut: number } | null = null;
     const result = await runTaskEval(ctx, {
       generate: async () => {
-        const g = await callGroq(apiKey, ctx);
+        const g = await callChatCompletion(provider, {
+          system: buildTaskEvalSystemPrompt(),
+          user: buildTaskEvalUserPrompt(ctx),
+          temperature: 0.4,
+          maxTokens: 450,
+          jsonMode: true,
+        });
         usage = { model: g.model, tokensIn: g.tokensIn, tokensOut: g.tokensOut };
-        return { content: g.content, provider: 'groq' };
+        return { content: g.content, provider: provider.label };
       },
     });
 
     if (usage) {
       const u = usage as { model: string; tokensIn: number; tokensOut: number };
       await logAiUsage({
-        uid, feature: 'task_eval', model: u.model, provider: 'groq',
+        uid, feature: 'task_eval', model: u.model, provider: provider.label,
         tokensIn: u.tokensIn, tokensOut: u.tokensOut, tokensTotal: u.tokensIn + u.tokensOut,
         costVnd: estimateCostVnd(u.model, u.tokensIn, u.tokensOut),
         fallbackUsed: result.deterministicFallback, latencyMs: 0,
@@ -151,7 +132,7 @@ export async function POST(req: NextRequest) {
     // Trừ credit khi LLM ĐÃ CHẠY (usage != null), kể cả khi output không parse được.
     // Trước đây chỉ trừ khi parse OK → kẻ xấu ép fallback (JSON rác) gọi Groq vô hạn
     // mà daily rate-limit không tăng. "Đã gọi LLM = tính 1 lượt" đóng lỗ hổng đó.
-    // Groq lỗi (throw) → usage=null → miễn phí (đúng thiết kế #2). Đồng bộ với dna-oracle.
+    // LLM lỗi (throw) → usage=null → miễn phí (đúng thiết kế #2). Đồng bộ với dna-oracle.
     const charged = !!usage;
     let quota = peek;
     let tasteLeft = taste.remainingTaste;

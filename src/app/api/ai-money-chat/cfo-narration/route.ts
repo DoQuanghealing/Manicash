@@ -16,8 +16,7 @@ import {
 } from '@/lib/aiMoneyChat/cfoNarration';
 import { checkSpendBreaker, checkUserCostCeiling, logAiUsage } from '@/lib/aiMoneyChat/llm/aiUsageLog';
 import { estimateCostVnd } from '@/lib/aiMoneyChat/llm/aiCostCore';
-
-const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+import { resolveChatProvider, callChatCompletion } from '@/lib/aiMoneyChat/llm/chatProvider';
 
 function toFiniteInt(value: unknown): number {
   return typeof value === 'number' && Number.isFinite(value) ? Math.round(value) : 0;
@@ -62,51 +61,6 @@ function parsePayload(body: unknown): CfoNarrationInput | null {
   };
 }
 
-interface GroqNarrationResult {
-  text: string;
-  model: string;
-  tokensIn: number;
-  tokensOut: number;
-  tokensTotal: number;
-}
-
-async function callGroq(apiKey: string, input: CfoNarrationInput): Promise<GroqNarrationResult> {
-  const model = process.env.AI_MONEY_CHAT_GROQ_MODEL || 'llama-3.3-70b-versatile';
-  const response = await fetch(GROQ_API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: 'system', content: CFO_NARRATION_SYSTEM_PROMPT },
-        { role: 'user', content: buildCfoNarrationPrompt(input) },
-      ],
-      temperature: 0.6,
-      max_tokens: 320,
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Groq API error: ${response.status}`);
-  }
-
-  const data = await response.json();
-  const content = data.choices?.[0]?.message?.content;
-  if (typeof content !== 'string') {
-    throw new Error('Groq response missing content.');
-  }
-  return {
-    text: content,
-    model,
-    tokensIn: data.usage?.prompt_tokens ?? 0,
-    tokensOut: data.usage?.completion_tokens ?? 0,
-    tokensTotal: data.usage?.total_tokens ?? 0,
-  };
-}
-
 function jsonResult(source: CfoNarrationSource, reason: string, text: string | null = null, status = 200) {
   return NextResponse.json({ source, reason, text, cached: false }, { status });
 }
@@ -128,9 +82,9 @@ export async function POST(req: NextRequest) {
     return jsonResult('disabled', 'AI narration is disabled by server flag.');
   }
 
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) {
-    return jsonResult('no-key', 'GROQ_API_KEY is not configured.');
+  const provider = resolveChatProvider();
+  if (!provider) {
+    return jsonResult('no-key', 'No LLM API key configured (AI_LLM_API_KEY / GROQ_API_KEY).');
   }
 
   try {
@@ -171,22 +125,27 @@ export async function POST(req: NextRequest) {
       return jsonResult('disabled', 'Quản gia đã dốc sức viết cho ngài cả tháng — xin nghỉ ít hôm. Mời ngài xem bản tóm tắt cơ bản, đầu tháng sau tôi lại chấp bút.');
     }
 
-    // Groq lỗi -> throw -> catch -> 'error', CHƯA trừ credit.
-    const groq = await callGroq(apiKey, input);
+    // LLM lỗi -> throw -> catch -> 'error', CHƯA trừ credit.
+    const llm = await callChatCompletion(provider, {
+      system: CFO_NARRATION_SYSTEM_PROMPT,
+      user: buildCfoNarrationPrompt(input),
+      temperature: 0.6,
+      maxTokens: 320,
+    });
     // T2 — ghi sổ ai_usage_log (token đã tiêu kể cả khi validate fail / không charge).
     await logAiUsage({
       uid,
       feature: 'cfo_narration',
-      model: groq.model,
-      provider: 'groq',
-      tokensIn: groq.tokensIn,
-      tokensOut: groq.tokensOut,
-      tokensTotal: groq.tokensTotal,
-      costVnd: estimateCostVnd(groq.model, groq.tokensIn, groq.tokensOut),
+      model: llm.model,
+      provider: provider.label,
+      tokensIn: llm.tokensIn,
+      tokensOut: llm.tokensOut,
+      tokensTotal: llm.tokensTotal,
+      costVnd: estimateCostVnd(llm.model, llm.tokensIn, llm.tokensOut),
       fallbackUsed: false,
       latencyMs: 0,
     });
-    const narration = validateNarration(groq.text);
+    const narration = validateNarration(llm.content);
     if (!narration) {
       // Groq trả rác (validate fail) -> user không nhận được gì -> KHÔNG trừ credit.
       return jsonResult('error', 'AI narration failed validation.');
