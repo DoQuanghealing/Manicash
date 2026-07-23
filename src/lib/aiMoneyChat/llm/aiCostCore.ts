@@ -19,11 +19,12 @@ export const MODEL_PRICING_USD_PER_1M: Record<string, AiPriceUsdPer1M> = {
   'gpt-4o-mini': { input: 0.15, output: 0.6 },
   'llama-3.3-70b-versatile': { input: 0.59, output: 0.79 },
   'llama-3.1-8b-instant': { input: 0.05, output: 0.08 },
-  // Agnes AI — free tier (2026-07). Giá 0 để trần chi phí/user không degrade nhầm
-  // khi thực tế không tốn tiền. ⚠️ Nếu Agnes chuyển sang tính phí, CẬP NHẬT giá thật
-  // ở đây (không thì UNKNOWN_MODEL_PRICING mới là fail-safe cho model chưa khai).
+  // Free tier (2026-07): Agnes + Cerebras. Giá 0 để trần chi phí/user không degrade
+  // nhầm khi thực tế không tốn tiền. ⚠️ Nếu nhà nào chuyển sang tính phí, CẬP NHẬT giá
+  // thật ở đây (không thì UNKNOWN_MODEL_PRICING mới là fail-safe cho model chưa khai).
   'agnes-2.0-flash': { input: 0, output: 0 },
   'agnes-2.5-flash': { input: 0, output: 0 },
+  'llama-3.3-70b': { input: 0, output: 0 }, // Cerebras free (tên model khác Groq '…-versatile')
 };
 
 /** Model không có trong bảng → giá đắt nhất đã biết (fail-safe). */

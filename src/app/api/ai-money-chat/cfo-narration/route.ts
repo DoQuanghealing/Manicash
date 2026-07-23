@@ -16,7 +16,7 @@ import {
 } from '@/lib/aiMoneyChat/cfoNarration';
 import { checkSpendBreaker, checkUserCostCeiling, logAiUsage } from '@/lib/aiMoneyChat/llm/aiUsageLog';
 import { estimateCostVnd } from '@/lib/aiMoneyChat/llm/aiCostCore';
-import { resolveChatProvider, callChatCompletion } from '@/lib/aiMoneyChat/llm/chatProvider';
+import { resolveProviderPool, callChatCompletion } from '@/lib/aiMoneyChat/llm/chatProvider';
 
 function toFiniteInt(value: unknown): number {
   return typeof value === 'number' && Number.isFinite(value) ? Math.round(value) : 0;
@@ -82,9 +82,9 @@ export async function POST(req: NextRequest) {
     return jsonResult('disabled', 'AI narration is disabled by server flag.');
   }
 
-  const provider = resolveChatProvider();
-  if (!provider) {
-    return jsonResult('no-key', 'No LLM API key configured (AI_LLM_API_KEY / GROQ_API_KEY).');
+  const pool = resolveProviderPool();
+  if (pool.length === 0) {
+    return jsonResult('no-key', 'No LLM provider key configured (CEREBRAS/GROQ/AGNES/AI_LLM).');
   }
 
   try {
@@ -125,8 +125,8 @@ export async function POST(req: NextRequest) {
       return jsonResult('disabled', 'Quản gia đã dốc sức viết cho ngài cả tháng — xin nghỉ ít hôm. Mời ngài xem bản tóm tắt cơ bản, đầu tháng sau tôi lại chấp bút.');
     }
 
-    // LLM lỗi -> throw -> catch -> 'error', CHƯA trừ credit.
-    const llm = await callChatCompletion(provider, {
+    // Cả pool lỗi -> throw -> catch -> 'error', CHƯA trừ credit.
+    const llm = await callChatCompletion(pool, {
       system: CFO_NARRATION_SYSTEM_PROMPT,
       user: buildCfoNarrationPrompt(input),
       temperature: 0.6,
@@ -137,7 +137,7 @@ export async function POST(req: NextRequest) {
       uid,
       feature: 'cfo_narration',
       model: llm.model,
-      provider: provider.label,
+      provider: llm.providerLabel,
       tokensIn: llm.tokensIn,
       tokensOut: llm.tokensOut,
       tokensTotal: llm.tokensTotal,
