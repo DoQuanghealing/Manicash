@@ -41,7 +41,9 @@ const KNOWN: Record<string, KnownProvider> = {
     baseUrl: 'https://api.cerebras.ai/v1',
     keyEnv: 'CEREBRAS_API_KEY',
     modelEnv: 'CEREBRAS_MODEL',
-    defaultModel: 'llama-3.3-70b',
+    // gpt-oss-120b có mặt rộng trên free tier Cerebras (llama-3.3-70b nhiều account
+    // KHÔNG có → 404). Override qua CEREBRAS_MODEL nếu account bạn khác.
+    defaultModel: 'gpt-oss-120b',
   },
   groq: {
     label: 'groq',

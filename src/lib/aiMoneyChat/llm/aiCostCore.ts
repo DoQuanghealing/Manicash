@@ -25,6 +25,11 @@ export const MODEL_PRICING_USD_PER_1M: Record<string, AiPriceUsdPer1M> = {
   'agnes-2.0-flash': { input: 0, output: 0 },
   'agnes-2.5-flash': { input: 0, output: 0 },
   'llama-3.3-70b': { input: 0, output: 0 }, // Cerebras free (tên model khác Groq '…-versatile')
+  'gpt-oss-120b': { input: 0, output: 0 }, // Cerebras free (OpenAI open-weight 120B)
+  'openai/gpt-oss-120b': { input: 0, output: 0 }, // Groq free tier (cùng model, prefix khác)
+  'openai/gpt-oss-20b': { input: 0, output: 0 },
+  'zai-glm-4.7': { input: 0, output: 0 }, // Cerebras free
+  'gemma-4-31b': { input: 0, output: 0 }, // Cerebras free
 };
 
 /** Model không có trong bảng → giá đắt nhất đã biết (fail-safe). */

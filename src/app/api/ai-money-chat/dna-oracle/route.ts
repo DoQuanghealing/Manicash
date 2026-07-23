@@ -157,7 +157,8 @@ export async function POST(req: NextRequest) {
           system: buildDnaOracleSystemPrompt(),
           user: buildDnaOracleUserPrompt(ctx),
           temperature: 0.5,
-          maxTokens: 700,
+          // Headroom cho reasoning model (gpt-oss tiêu ~100-200 tok suy luận trước output).
+          maxTokens: 1100,
           jsonMode: true,
         });
         usage = { model: g.model, tokensIn: g.tokensIn, tokensOut: g.tokensOut, providerLabel: g.providerLabel };
