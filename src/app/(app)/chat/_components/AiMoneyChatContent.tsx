@@ -71,6 +71,8 @@ import { useGoalsStore } from '@/stores/useGoalsStore';
 import { useDashboardStore } from '@/stores/useDashboardStore';
 import { useTaskStore } from '@/stores/useTaskStore';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { useSettingsStore } from '@/stores/useSettingsStore';
+import { butlerInitials } from '@/utils/butlerNameUtils';
 import './ai-money-chat.css';
 
 interface AiMoneyChatContentProps {
@@ -256,12 +258,13 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
   const categoryBudgets = useBudgetStore((s) => s.categoryBudgets);
   const currentBudgetMonth = useBudgetStore((s) => s.currentMonth);
   const carryOver = useBudgetStore((s) => s.carryOver);
+  const butlerName = useSettingsStore((s) => s.butlerName);
   const [input, setInput] = useState('');
-  const [messages, setMessages] = useState<ChatMessage[]>([
+  const [messages, setMessages] = useState<ChatMessage[]>(() => [
     {
       id: 'welcome',
       role: 'assistant',
-      text: 'Tôi là Lord Diamond. Hãy nhập giao dịch ("mua trà sữa 50k"), hỏi số liệu ("tôi còn bao nhiêu tiền", "tiền điện đóng chưa") hay yêu cầu phân tích ("lên báo cáo CFO tháng này"). 🕒 Lịch sử chat được lưu 7 ngày.',
+      text: `Tôi là ${useSettingsStore.getState().butlerName}. Hãy nhập giao dịch ("mua trà sữa 50k"), hỏi số liệu ("tôi còn bao nhiêu tiền", "tiền điện đóng chưa") hay yêu cầu phân tích ("lên báo cáo CFO tháng này"). 🕒 Lịch sử chat được lưu 7 ngày.`,
     },
   ]);
   const historyLoadedRef = useRef(false);
@@ -1175,9 +1178,9 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
         style={{ pointerEvents: panelOpen ? 'none' : 'auto' }}
       >
         <header className="tg-header">
-          <div className="tg-header-avatar" aria-hidden="true">LD</div>
+          <div className="tg-header-avatar" aria-hidden="true">{butlerInitials(butlerName)}</div>
           <div className="tg-header-meta">
-            <strong>Lord Diamond</strong>
+            <strong>{butlerName}</strong>
             <span className="tg-header-sub">
               <i className="tg-status-dot" aria-hidden="true" />
               Quản gia tài chính{memoryRuleCount > 0 ? ` · nhớ ${memoryRuleCount} thói quen` : ''}
@@ -1193,10 +1196,10 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
         )}
 
         {!guardianDismissed && guardianAlerts.length > 0 && (
-          <div className="tg-guardian" role="status" aria-label="Cảnh báo từ Lord Diamond">
+          <div className="tg-guardian" role="status" aria-label={`Cảnh báo từ ${butlerName}`}>
             <div className="tg-guardian-head">
               <span className="tg-guardian-avatar" aria-hidden>🛡️</span>
-              <span className="tg-guardian-title">Lord Diamond để ý thấy</span>
+              <span className="tg-guardian-title">{butlerName} để ý thấy</span>
               <button
                 type="button"
                 className="tg-guardian-close"
