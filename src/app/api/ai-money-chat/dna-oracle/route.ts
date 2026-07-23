@@ -20,6 +20,7 @@ import {
 import { minLevelFor } from '@/lib/monetization/butlerFeatures';
 import { checkSpendBreaker, checkUserCostCeiling, logAiUsage } from '@/lib/aiMoneyChat/llm/aiUsageLog';
 import { estimateCostVnd } from '@/lib/aiMoneyChat/llm/aiCostCore';
+import { resolveChatProvider, callChatCompletion } from '@/lib/aiMoneyChat/llm/chatProvider';
 import { sanitizeDnaAnswers, DNA_QUESTIONS } from '@/lib/aiMoneyChat/prism/dna/dnaQuestions';
 import { resolveDnaPersona } from '@/lib/aiMoneyChat/prism/dna/personaEngine';
 import {
@@ -31,7 +32,6 @@ import {
 } from '@/lib/aiMoneyChat/prism/dna/dnaOraclePrompt';
 import { runDnaOracle } from '@/lib/aiMoneyChat/prism/dna/dnaOracleService';
 
-const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 /** Cần trả lời tối thiểu 6/8 câu mới luận giải bản đầy đủ (đủ tín hiệu). */
 const MIN_ANSWERS_FOR_FULL = 6;
 const MAX_REFLECTIONS = 3;
@@ -85,31 +85,6 @@ function parseCapacity(v: unknown): DnaCapacityScores | undefined {
   return { FDS, TAS, IPS, MMS };
 }
 
-interface GroqResult { content: string; model: string; tokensIn: number; tokensOut: number }
-
-async function callGroq(apiKey: string, ctx: DnaOracleContext): Promise<GroqResult> {
-  const model = process.env.AI_MONEY_CHAT_GROQ_MODEL || 'llama-3.3-70b-versatile';
-  const response = await fetch(GROQ_API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: 'system', content: buildDnaOracleSystemPrompt() },
-        { role: 'user', content: buildDnaOracleUserPrompt(ctx) },
-      ],
-      temperature: 0.5,
-      max_tokens: 700,
-      response_format: { type: 'json_object' },
-    }),
-  });
-  if (!response.ok) throw new Error(`Groq API error: ${response.status}`);
-  const data = await response.json();
-  const content = data.choices?.[0]?.message?.content;
-  if (typeof content !== 'string') throw new Error('Groq response missing content.');
-  return { content, model, tokensIn: data.usage?.prompt_tokens ?? 0, tokensOut: data.usage?.completion_tokens ?? 0 };
-}
-
 function dnaDocRef(uid: string) {
   return getAdminDb().doc(`users/${uid}/financial_dna/current`);
 }
@@ -134,8 +109,8 @@ export async function POST(req: NextRequest) {
   if (process.env.AI_MONEY_CHAT_AI_FALLBACK_ENABLED !== 'true') {
     return jsonResult('disabled', 'AI DNA Oracle is disabled by server flag.');
   }
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) return jsonResult('no-key', 'GROQ_API_KEY is not configured.');
+  const provider = resolveChatProvider();
+  if (!provider) return jsonResult('no-key', 'No LLM API key configured (AI_LLM_API_KEY / GROQ_API_KEY).');
 
   try {
     const uid = await getVerifiedRequestUid(req);
@@ -178,16 +153,22 @@ export async function POST(req: NextRequest) {
     let usage: { model: string; tokensIn: number; tokensOut: number } | null = null;
     const result = await runDnaOracle(ctx, {
       generate: async () => {
-        const g = await callGroq(apiKey, ctx);
+        const g = await callChatCompletion(provider, {
+          system: buildDnaOracleSystemPrompt(),
+          user: buildDnaOracleUserPrompt(ctx),
+          temperature: 0.5,
+          maxTokens: 700,
+          jsonMode: true,
+        });
         usage = { model: g.model, tokensIn: g.tokensIn, tokensOut: g.tokensOut };
-        return { content: g.content, provider: 'groq' };
+        return { content: g.content, provider: provider.label };
       },
     });
 
     if (usage) {
       const u = usage as { model: string; tokensIn: number; tokensOut: number };
       await logAiUsage({
-        uid, feature: 'dna_oracle', model: u.model, provider: 'groq',
+        uid, feature: 'dna_oracle', model: u.model, provider: provider.label,
         tokensIn: u.tokensIn, tokensOut: u.tokensOut, tokensTotal: u.tokensIn + u.tokensOut,
         costVnd: estimateCostVnd(u.model, u.tokensIn, u.tokensOut),
         fallbackUsed: result.deterministicFallback, latencyMs: 0,
