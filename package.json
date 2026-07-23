@@ -107,7 +107,8 @@
     "test:money-sync": "npm run test:sync-serialize && npm run test:sync-merge && npm run test:sync-service && npm run test:sync-queue && npm run test:sync-runtime && npm run test:sync-remote && npm run test:sync-remote-runtime && npm run test:sync-suppression && npm run test:sync-apply && npm run test:sync-prod-units && npm run test:sync-controller",
     "test:dna-persona": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/dna-persona.test.ts'))\"",
     "test:dna-oracle": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/dna-oracle.test.ts'))\"",
-    "test:llm-pool": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/llm-provider-pool.test.ts'))\""
+    "test:llm-pool": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/llm-provider-pool.test.ts'))\"",
+    "eval:dna": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./scripts/eval-dna.ts'))\""
   },
   "dependencies": {
     "@capacitor-firebase/authentication": "^8.3.0",
