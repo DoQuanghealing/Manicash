@@ -7,8 +7,10 @@ import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
   ChevronLeft,
   Check,
+  History,
   Lock,
   Moon,
+  Paperclip,
   Plus,
   Scale,
   Send,
@@ -228,11 +230,11 @@ function FormattedText({ text }: { text: string }) {
   );
 }
 
-function TypingIndicator() {
+function TypingIndicator({ initials }: { initials: string }) {
   return (
-    <div className="tg-msg tg-msg-assistant">
-      <div className="tg-msg-avatar" aria-hidden="true">LD</div>
-      <div className="tg-bubble tg-bubble-typing">
+    <div className="tg-msg tg-msg-assistant tg-msg--head">
+      <div className="tg-msg-avatar" aria-hidden="true">{initials}</div>
+      <div className="tg-bubble tg-bubble-typing tg-bubble--tail">
         <span className="tg-typing-dot" />
         <span className="tg-typing-dot" />
         <span className="tg-typing-dot" />
@@ -241,9 +243,55 @@ function TypingIndicator() {
   );
 }
 
+/* ── Nhóm tin nhắn kiểu Telegram ─────────────────────────────────────────
+ * Tin liên tiếp cùng vai trò, cùng ngày gộp thành một "cụm": chỉ tin ĐẦU cụm
+ * có tên người gửi + khoảng cách trên, chỉ tin CUỐI cụm có avatar + đuôi bóng.
+ * Ngày đổi → chèn dải ngày và cắt cụm. */
+interface MsgLayout {
+  isHead: boolean;
+  isTail: boolean;
+  /** Nhãn dải ngày cần chèn TRƯỚC tin này (null nếu không đổi ngày). */
+  daySeparator: string | null;
+}
+
+function dayKeyOf(m: ChatMessage): string {
+  return m.createdAt ? m.createdAt.slice(0, 10) : '';
+}
+
+function formatDayLabel(key: string): string {
+  if (!key) return 'Hôm nay';
+  const today = toLocalISODate(new Date());
+  if (key === today) return 'Hôm nay';
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (key === toLocalISODate(yesterday)) return 'Hôm qua';
+  const [y, mo, d] = key.split('-');
+  return `${Number(d)} tháng ${Number(mo)}${String(y) === String(new Date().getFullYear()) ? '' : `, ${y}`}`;
+}
+
+function formatClock(iso: string | undefined): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
+function computeLayout(messages: ChatMessage[]): MsgLayout[] {
+  return messages.map((m, i) => {
+    const prev = i > 0 ? messages[i - 1] : null;
+    const next = i < messages.length - 1 ? messages[i + 1] : null;
+    const day = dayKeyOf(m);
+    const dayChanged = !prev || dayKeyOf(prev) !== day;
+    return {
+      isHead: dayChanged || prev!.role !== m.role,
+      isTail: !next || next.role !== m.role || dayKeyOf(next) !== day,
+      daySeparator: dayChanged ? formatDayLabel(day) : null,
+    };
+  });
+}
+
 export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps) {
   const expenseCategories = useCategoryStore((s) => s.expenseCategories);
-  const memoryRuleCount = useAiMoneyMemoryStore((s) => s.rules.length);
   const applyMemoryToIntent = useAiMoneyMemoryStore((s) => s.applyMemoryToIntent);
   const addMemoryCorrection = useAiMoneyMemoryStore((s) => s.addCorrection);
   const goals = useGoalsStore((s) => s.goals);
@@ -1165,6 +1213,9 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
     else if (activePanel === 'earning') handleCancelEarning();
   }
 
+  /** Vị trí từng tin trong cụm (đầu/cuối) + mốc đổi ngày — xem computeLayout. */
+  const layout = useMemo(() => computeLayout(messages), [messages]);
+
   const ease = [0.16, 1, 0.3, 1] as const;
   const baseTransition = { duration: prefersReduced ? 0 : 0.32, ease };
   const panelTransition = { duration: prefersReduced ? 0 : 0.34, ease };
@@ -1177,15 +1228,33 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
         transition={baseTransition}
         style={{ pointerEvents: panelOpen ? 'none' : 'auto' }}
       >
+        {/* Header Telegram: 3 viên thuốc nổi trên nền, tin nhắn cuộn phía dưới.
+         * Nút trái giữ đúng vị trí "quay lại" của Telegram nhưng ở đây /chat là
+         * một tab (không có gì để quay lại) nên gán cho lịch sử thao tác. */}
         <header className="tg-header">
-          <div className="tg-header-avatar" aria-hidden="true">{butlerInitials(butlerName)}</div>
+          <button
+            type="button"
+            className="tg-header-lead"
+            onClick={() => setShowHistory((v) => !v)}
+            aria-pressed={showHistory}
+            aria-label="Lịch sử thao tác"
+          >
+            <History size={15} />
+            {auditRecords.length > 0 && <span>{auditRecords.length}</span>}
+          </button>
+
+          {/* Một dòng duy nhất: chấm "đang trực" + chức danh. Tên quản gia đã có ở
+           * avatar phải và ở đầu mỗi cụm tin, nhắc lại đây chỉ tổ chật pill. */}
           <div className="tg-header-meta">
-            <strong>{butlerName}</strong>
             <span className="tg-header-sub">
               <i className="tg-status-dot" aria-hidden="true" />
-              Quản gia tài chính{memoryRuleCount > 0 ? ` · nhớ ${memoryRuleCount} thói quen` : ''}
+              Quản gia tài chính
             </span>
           </div>
+
+          <Link href="/profile" className="tg-header-avatar" aria-label={`Hồ sơ ${butlerName}`}>
+            {butlerInitials(butlerName)}
+          </Link>
         </header>
 
         {!enabled && (
@@ -1232,15 +1301,26 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
           {messages.map((message, index) => {
             const isLast = index === messages.length - 1;
             const showSuggestions = isLast && message.suggestions && message.suggestions.length > 0;
+            const lay = layout[index];
+            const clock = formatClock(message.createdAt);
             return (
               <Fragment key={message.id}>
-                <div className={`tg-msg tg-msg-${message.role}`}>
+                {lay.daySeparator && <div className="tg-day">{lay.daySeparator}</div>}
+                <div className={`tg-msg tg-msg-${message.role}${lay.isHead ? ' tg-msg--head' : ''}`}>
                   {message.role !== 'user' && (
-                    <div className="tg-msg-avatar" aria-hidden="true">
-                      {message.role === 'assistant' ? 'LD' : <Check size={13} />}
+                    <div
+                      className={`tg-msg-avatar${lay.isTail ? '' : ' tg-msg-avatar--ghost'}`}
+                      aria-hidden="true"
+                    >
+                      {message.role === 'assistant' ? butlerInitials(butlerName) : <Check size={13} />}
                     </div>
                   )}
-                  <div className={`tg-bubble${message.capacity || message.survey ? ' tg-bubble--wide' : ''}`}>
+                  <div
+                    className={`tg-bubble${message.capacity || message.survey ? ' tg-bubble--wide' : ''}${lay.isTail ? ' tg-bubble--tail' : ''}`}
+                  >
+                    {lay.isHead && message.role === 'assistant' && (
+                      <span className="tg-bubble-sender">{butlerName}</span>
+                    )}
                     {message.survey ? (
                       <>
                         <p>{message.text}</p>
@@ -1257,6 +1337,14 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
                       <FormattedText text={message.text} />
                     ) : (
                       <p>{message.text}</p>
+                    )}
+                    {clock && (
+                      <span className="tg-bubble-meta">
+                        {clock}
+                        {message.role === 'user' && (
+                          <span className="tg-bubble-ticks" aria-label="Đã gửi">✓✓</span>
+                        )}
+                      </span>
                     )}
                   </div>
                 </div>
@@ -1278,7 +1366,7 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
               </Fragment>
             );
           })}
-          {(isAiFallbackLoading || isChatLoading) && <TypingIndicator />}
+          {(isAiFallbackLoading || isChatLoading) && <TypingIndicator initials={butlerInitials(butlerName)} />}
 
           {pendingAction && (
             <div className="tg-action-card" role="group" aria-label="Xác nhận thao tác">
@@ -1398,14 +1486,29 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
         )}
 
         <form className="tg-composer" onSubmit={handleSubmit}>
-          <input
-            type="text"
-            placeholder="Nhập giao dịch hoặc gõ / để xem lệnh nhanh"
-            value={input}
-            onChange={(event) => setInput(event.target.value)}
-            disabled={!enabled}
-            aria-label="Nhập giao dịch bằng ngôn ngữ tự nhiên"
-          />
+          <div className="tg-composer-field">
+            {/* Vị trí kẹp giấy của Telegram — ở đây là lối tắt sang form nhập tay. */}
+            <Link href="/input" className="tg-composer-aux" aria-label="Nhập tiền thủ công">
+              <Paperclip size={19} />
+            </Link>
+            <input
+              type="text"
+              placeholder="Tin nhắn"
+              value={input}
+              onChange={(event) => setInput(event.target.value)}
+              disabled={!enabled}
+              aria-label="Nhập giao dịch bằng ngôn ngữ tự nhiên"
+            />
+            <button
+              type="button"
+              className="tg-composer-aux"
+              onClick={() => setInput((v) => (v.startsWith('/') ? v : '/'))}
+              disabled={!enabled}
+              aria-label="Xem lệnh nhanh"
+            >
+              <Sparkles size={18} />
+            </button>
+          </div>
           <button type="submit" className="tg-send" disabled={!enabled || !input.trim()} aria-label="Gửi">
             <Send size={18} />
           </button>
