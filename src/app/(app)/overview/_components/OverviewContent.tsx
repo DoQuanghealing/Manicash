@@ -10,10 +10,7 @@ import CoachSuggestionCard from './CoachSuggestionCard';
 import CareCard from '@/components/butler/CareCard';
 import SovereignMigrationBanner from '@/components/butler/SovereignMigrationBanner';
 import AlertsInbox from './AlertsInbox';
-import MissionChecklist from './MissionChecklist';
-import OnboardingQuestPanel from './OnboardingQuestPanel';
-import DailyQuestCard from './DailyQuestCard';
-import WeeklyChallengeCard from './WeeklyChallengeCard';
+import TasksHub from './TasksHub';
 import SeasonalEventBanner from './SeasonalEventBanner';
 import UpcomingHolidayHint from './UpcomingHolidayHint';
 import WishlistPopup from './WishlistPopup';
@@ -22,7 +19,6 @@ import BankSyncReminder from '@/components/ui/BankSyncReminder';
 import { isSmsWebhookEnabled } from '@/lib/featureFlags';
 
 import MoneyGrid from './MoneyGrid';
-import './overview-tasks.css';
 
 export default function OverviewContent() {
   // NOTE: checkAndRollover đã được gọi ở RolloverGuard (app layout),
@@ -59,21 +55,8 @@ export default function OverviewContent() {
         {/* ═══ BLOCK 5: Wishlist Popup (auto khi hết cooling) ═══ */}
         <WishlistPopup />
 
-        {/* ═══ BLOCK 6: Khu "Nhiệm vụ" — gom 4 loại quest rời vào 1 khay có tiêu đề ═══ */}
-        <section className="ov-tasks">
-          <div className="ov-tasks-head">
-            <span className="ov-tasks-icon" aria-hidden="true">🎯</span>
-            <h2 className="ov-tasks-title">Nhiệm vụ của bạn</h2>
-          </div>
-          {/* 6a: Lộ trình tân thủ 7 bước (tự ẩn khi xong) */}
-          <OnboardingQuestPanel />
-          {/* 6b: 3 nhiệm vụ hàng ngày */}
-          <DailyQuestCard />
-          {/* 6c: Thử thách tuần */}
-          <WeeklyChallengeCard />
-          {/* 6d: Gói nhiệm vụ tối ưu tài chính (legacy 3-bước) */}
-          <MissionChecklist />
-        </section>
+        {/* ═══ BLOCK 6: Khu "Nhiệm vụ" — 1 cửa sổ, chia giai đoạn (tab), làm từng bộ ═══ */}
+        <TasksHub />
 
         {/* ═══ BLOCK 7: Wellness & Chữa lành ═══ */}
         <WellnessCard />
