@@ -1,0 +1,172 @@
+<style>
+  :root{
+    --page:#0d0b14; --bg:#0A0A12; --text:#F3F0FB; --text2:#9c96af; --text3:#6f6a82;
+    --border:rgba(255,255,255,.08); --surface:rgba(255,255,255,.06); --green:#22C55E;
+    --tg-tint:transparent; --tg-doodle:rgba(139,92,246,.15);
+    --tg-in-bg:rgba(255,255,255,.08); --tg-out-bg:#6D28D9; --tg-pill-bg:rgba(20,18,30,.66);
+    --sender:#4FC3F7; --in-border:var(--border); --in-shadow:none;
+    --shadow:0 10px 30px rgba(0,0,0,.45);
+  }
+  :root[data-theme="light"]{
+    --page:#eceaf2; --bg:#F6F6F9; --text:#1A1A2E; --text2:#6a6577; --text3:#9a94a6;
+    --border:rgba(0,0,0,.07); --surface:#fff;
+    --tg-tint:rgba(42,30,72,.075); --tg-doodle:rgba(109,40,217,.13);
+    --tg-in-bg:#ffffff; --tg-out-bg:#7C3AED; --tg-pill-bg:rgba(255,255,255,.86);
+    --sender:#0284C7; --in-border:rgba(42,30,72,.07); --in-shadow:0 2px 6px rgba(42,30,72,.10);
+    --shadow:0 8px 24px rgba(60,40,120,.10);
+  }
+  *{box-sizing:border-box}
+  .wrap{min-height:100%; background:
+      radial-gradient(1000px 600px at 80% -10%, rgba(124,58,237,.16), transparent 60%),
+      radial-gradient(900px 500px at 0% 110%, rgba(249,115,22,.10), transparent 55%), var(--page);
+    color:var(--text); font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    padding:28px 18px 56px; display:flex; flex-direction:column; align-items:center; gap:22px}
+  .topbar{width:100%; max-width:1120px; display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap}
+  .kicker{font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--text3); font-weight:700}
+  .h1{font-size:clamp(20px,3.4vw,28px); font-weight:800; margin:2px 0 0; letter-spacing:-.02em}
+  .sub{color:var(--text2); font-size:13.5px; margin:6px 0 0; max-width:66ch; line-height:1.55}
+  .toggle{border:1px solid var(--border); background:var(--surface); color:var(--text); border-radius:999px; padding:9px 15px; font:600 13px system-ui; cursor:pointer; white-space:nowrap}
+  .row3{width:100%; max-width:1120px; display:grid; grid-template-columns:repeat(3,1fr); gap:26px; justify-items:center}
+  @media (max-width:900px){ .row3{grid-template-columns:1fr} }
+
+  .col{display:flex; flex-direction:column; align-items:center; gap:12px}
+  .tag{display:inline-flex; align-items:center; gap:8px; font-size:13px; font-weight:750}
+  .tag b{width:22px;height:22px;border-radius:7px;display:grid;place-items:center;color:#fff;font-size:12px;font-weight:800;background:linear-gradient(135deg,#8B5CF6,#F97316)}
+  .desc{font-size:12px; color:var(--text2); text-align:center; max-width:30ch; line-height:1.5; min-height:34px}
+
+  .phone{width:300px; border-radius:38px; padding:10px; background:linear-gradient(160deg,#26222f,#0c0a12); box-shadow:var(--shadow),0 0 0 1px rgba(255,255,255,.05) inset}
+  .screen{position:relative; border-radius:30px; overflow:hidden; height:560px; display:flex; flex-direction:column;
+    background:linear-gradient(var(--tg-tint),var(--tg-tint)), var(--bg)}
+  .screen::before{content:""; position:absolute; inset:0; z-index:0; pointer-events:none;
+    background:var(--tg-doodle);
+    -webkit-mask-image:var(--doodle); mask-image:var(--doodle);
+    -webkit-mask-size:200px 200px; mask-size:200px 200px; -webkit-mask-repeat:repeat; mask-repeat:repeat}
+  .base{position:relative; z-index:1; display:flex; flex-direction:column; height:100%; min-height:0}
+
+  .chead{position:absolute; top:0; left:0; right:0; z-index:4; display:flex; align-items:center; gap:6px; padding:8px 9px; pointer-events:none}
+  .chead>*{pointer-events:auto}
+  .lead{display:inline-flex; align-items:center; gap:4px; height:34px; padding:0 11px; border-radius:999px; border:1px solid var(--border); background:var(--tg-pill-bg); backdrop-filter:blur(14px); color:var(--text2); font-size:11px; font-weight:700}
+  .meta{flex:1; min-width:0; display:flex; align-items:center; justify-content:center; height:34px; padding:0 12px; border-radius:999px; border:1px solid var(--border); background:var(--tg-pill-bg); backdrop-filter:blur(14px)}
+  .meta span{display:flex; align-items:center; gap:8px; color:var(--text); font-size:13px; font-weight:700; line-height:1.5}
+  .dot{position:relative; width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 6px rgba(34,197,94,.7)}
+  .dot::after{content:""; position:absolute; inset:-4px; border-radius:50%; border:1.5px solid var(--green); animation:online 1.9s cubic-bezier(.22,1,.36,1) infinite}
+  @keyframes online{0%{transform:scale(.6);opacity:.95} 70%{transform:scale(1.35);opacity:0} 100%{opacity:0}}
+  .hava{display:grid; place-items:center; width:34px;height:34px; border-radius:50%; background:linear-gradient(135deg,#7C3AED,#F97316); color:#fff; font-size:12px; font-weight:900; border:2px solid var(--tg-pill-bg)}
+
+  .thread{flex:1; min-height:0; overflow-y:auto; display:flex; flex-direction:column; gap:2px; padding:56px 13px 10px; scrollbar-width:none}
+  .thread::-webkit-scrollbar{display:none}
+  .msg{display:flex; gap:6px; align-items:flex-end; max-width:100%}
+  .msg.me{justify-content:flex-end}
+  .msg.head{margin-top:9px}
+  .ava{display:grid; place-items:center; width:26px;height:26px; border-radius:50%; background:linear-gradient(135deg,#7C3AED,#F97316); color:#fff; font-size:9px; font-weight:800}
+  .ava.ghost{visibility:hidden}
+  .bub{position:relative; max-width:80%; padding:7px 11px; border-radius:15px; font-size:13px; line-height:1.45; color:var(--text)}
+  .bub p{margin:0}
+  .msg.ai .bub{background:var(--tg-in-bg); border:1px solid var(--in-border); box-shadow:var(--in-shadow)}
+  .msg.me .bub{background:linear-gradient(135deg,#7C3AED,var(--tg-out-bg)); color:#fff}
+  .sender{display:block; margin-bottom:1px; color:var(--sender); font-size:11px; font-weight:700}
+  .bmeta{float:right; margin:1px 0 -2px 8px; padding-top:5px; font-size:10px; color:var(--text3)}
+  .msg.me .bmeta{color:rgba(255,255,255,.72)}
+  :root{--tail:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='19' viewBox='0 0 13 19'%3E%3Cpath d='M13 0H6v11c0 4.2-2.6 7.2-6 8h13z' fill='%23fff'/%3E%3C/svg%3E")}
+  .bub.tail::after{content:""; position:absolute; bottom:0; width:13px; height:19px; -webkit-mask:var(--tail) no-repeat 100%/100% 100%; mask:var(--tail) no-repeat 100%/100% 100%}
+  .msg.ai .bub.tail{border-bottom-left-radius:3px}
+  .msg.ai .bub.tail::after{left:-7px; background:var(--tg-in-bg)}
+  .msg.me .bub.tail{border-bottom-right-radius:3px}
+  .msg.me .bub.tail::after{right:-7px; transform:scaleX(-1); background:var(--tg-out-bg)}
+</style>
+
+<div class="wrap">
+  <div class="topbar">
+    <div>
+      <div class="kicker">ManiCash · 3 nền chat để chọn</div>
+      <h1 class="h1">Chọn hoạ tiết nền khung chat</h1>
+      <p class="sub">Hoạ tiết tự vẽ (line-art, rất mờ — không giành phần với bong bóng). Bấm "Đổi sáng / tối" để xem cả hai nền. Ngài chọn mẫu nào, tôi ráp thẳng vào app; hoặc muốn tôi làm cho <b>đổi được trong Cài đặt</b> cũng được.</p>
+    </div>
+    <button class="toggle" id="tg">◐ Đổi sáng / tối</button>
+  </div>
+
+  <div class="row3" id="row3">
+    <div class="col">
+      <div class="tag"><b>A</b> Ngũ đế · thỏi vàng</div>
+      <div class="desc">Đồng xu cổ vuông lỗ + thỏi vàng — chất phong thuỷ, chiêu tài.</div>
+      <div class="phone"><div class="screen" data-p="A"><div class="base">
+        <div class="chead"><div class="lead">⟲ 12</div><div class="meta"><span><i class="dot"></i> Quản gia tài chính</span></div><div class="hava">VT</div></div>
+        <div class="thread">
+          <div class="msg ai head"><div class="ava">VT</div><div class="bub tail"><span class="sender">Vượng Tài</span><p>Ngài nhắn thẳng — "mua trà sữa 50k" — ta ghi sổ ngay.<span class="bmeta">08:15</span></p></div></div>
+          <div class="msg me head"><div class="bub tail"><p>quỹ khẩn cấp sao rồi?<span class="bmeta">08:16 ✓✓</span></p></div></div>
+          <div class="msg ai head"><div class="ava">VT</div><div class="bub tail"><span class="sender">Vượng Tài</span><p>Đang là <b>6.8 triệu</b> ≈ 1.4 tháng chi tiêu. Nên nhích lên 3 tháng cho vững.<span class="bmeta">08:16</span></p></div></div>
+        </div>
+      </div></div></div>
+    </div>
+
+    <div class="col">
+      <div class="tag"><b>B</b> Vân mây cách điệu</div>
+      <div class="desc">Mây cuộn kiểu Á Đông — thanh thoát, an nhiên, ít "vật chất".</div>
+      <div class="phone"><div class="screen" data-p="B"><div class="base">
+        <div class="chead"><div class="lead">⟲ 12</div><div class="meta"><span><i class="dot"></i> Quản gia tài chính</span></div><div class="hava">VT</div></div>
+        <div class="thread">
+          <div class="msg ai head"><div class="ava">VT</div><div class="bub tail"><span class="sender">Vượng Tài</span><p>Ngài nhắn thẳng — "mua trà sữa 50k" — ta ghi sổ ngay.<span class="bmeta">08:15</span></p></div></div>
+          <div class="msg me head"><div class="bub tail"><p>quỹ khẩn cấp sao rồi?<span class="bmeta">08:16 ✓✓</span></p></div></div>
+          <div class="msg ai head"><div class="ava">VT</div><div class="bub tail"><span class="sender">Vượng Tài</span><p>Đang là <b>6.8 triệu</b> ≈ 1.4 tháng chi tiêu. Nên nhích lên 3 tháng cho vững.<span class="bmeta">08:16</span></p></div></div>
+        </div>
+      </div></div></div>
+    </div>
+
+    <div class="col">
+      <div class="tag"><b>C</b> Nơ · kẹo · đô · sách</div>
+      <div class="desc">Nơ, cục kẹo, xu đô la, quyển sách — trẻ trung, dễ thương.</div>
+      <div class="phone"><div class="screen" data-p="C"><div class="base">
+        <div class="chead"><div class="lead">⟲ 12</div><div class="meta"><span><i class="dot"></i> Quản gia tài chính</span></div><div class="hava">VT</div></div>
+        <div class="thread">
+          <div class="msg ai head"><div class="ava">VT</div><div class="bub tail"><span class="sender">Vượng Tài</span><p>Ngài nhắn thẳng — "mua trà sữa 50k" — ta ghi sổ ngay.<span class="bmeta">08:15</span></p></div></div>
+          <div class="msg me head"><div class="bub tail"><p>quỹ khẩn cấp sao rồi?<span class="bmeta">08:16 ✓✓</span></p></div></div>
+          <div class="msg ai head"><div class="ava">VT</div><div class="bub tail"><span class="sender">Vượng Tài</span><p>Đang là <b>6.8 triệu</b> ≈ 1.4 tháng chi tiêu. Nên nhích lên 3 tháng cho vững.<span class="bmeta">08:16</span></p></div></div>
+        </div>
+      </div></div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Vẽ 3 tile SVG. Encode bằng encodeURIComponent để khỏi sai cú pháp data-URI.
+  var G = "fill='none' stroke='#fff' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'";
+
+  // Xu ngũ đế (tròn + lỗ vuông) tại (cx,cy,r)
+  function coin(cx,cy,r){var h=r*0.55;return "<circle cx='"+cx+"' cy='"+cy+"' r='"+r+"'/><rect x='"+(cx-h/2)+"' y='"+(cy-h/2)+"' width='"+h+"' height='"+h+"' rx='1'/>";}
+  // Thỏi vàng (mặt trước hình thang + mặt trên) tại (x,y)
+  function ingot(x,y){return "<path d='M"+x+" "+y+" h26 l4 11 h-34 z M"+x+" "+y+" l-3 -7 h24 l3 7'/>";}
+  var tileA = "<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'><g "+G+">"
+    + coin(32,34,12) + ingot(96,22) + coin(150,44,10)
+    + ingot(24,100) + coin(112,116,12) + coin(168,140,10)
+    + ingot(150,168) + coin(64,172,11)
+    + "</g></svg>";
+
+  // Vân mây cuộn tại (x,y)
+  function cloud(x,y){return "<path d='M"+x+" "+y+" c-7 0 -7 9 0 9 h22 c9 0 9 -11 0 -11 c1 -7 -11 -8 -14 -2 c-4 -3 -9 -1 -9 4 z'/>"
+    + "<path d='M"+(x+3)+" "+(y+4)+" a3 3 0 1 1 4 1'/>";}
+  var tileB = "<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'><g "+G+">"
+    + cloud(24,42) + cloud(128,30) + cloud(92,104) + cloud(28,150) + cloud(146,158)
+    + "</g></svg>";
+
+  // Nơ tại (cx,cy)
+  function bow(cx,cy){return "<path d='M"+cx+" "+cy+" l-13 -7 l0 14 z M"+cx+" "+cy+" l13 -7 l0 14 z'/><circle cx='"+cx+"' cy='"+cy+"' r='3.2'/><path d='M"+(cx-3)+" "+(cy+4)+" l-5 9 M"+(cx+3)+" "+(cy+4)+" l5 9'/>";}
+  // Kẹo tại (cx,cy)
+  function candy(cx,cy){return "<ellipse cx='"+cx+"' cy='"+cy+"' rx='8' ry='6'/><path d='M"+(cx-8)+" "+cy+" l-6 -5 l0 10 z M"+(cx+8)+" "+cy+" l6 -5 l0 10 z'/>";}
+  // Xu đô la tại (cx,cy,r)
+  function dollar(cx,cy,r){return "<circle cx='"+cx+"' cy='"+cy+"' r='"+r+"'/><path d='M"+cx+" "+(cy-7)+" v14 M"+(cx+3)+" "+(cy-4)+" a3.5 3 0 0 0 -3 -2 h-1 a3 3 0 0 0 0 6 h2 a3 3 0 0 1 0 6 h-1 a3.5 3 0 0 1 -3 -2'/>";}
+  // Sách mở tại (cx,cy)
+  function book(cx,cy){return "<path d='M"+(cx-12)+" "+(cy-7)+" q12 -4 12 0 q0 -4 12 0 v15 q-12 -4 -12 0 q0 -4 -12 0 z'/><path d='M"+cx+" "+(cy-7)+" v15'/>";}
+  var tileC = "<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'><g "+G+">"
+    + bow(38,34) + candy(140,40) + dollar(96,104,12) + book(44,140) + candy(168,150) + bow(140,164)
+    + "</g></svg>";
+
+  var TILES = {A:tileA, B:tileB, C:tileC};
+  document.querySelectorAll('.screen[data-p]').forEach(function(s){
+    var svg = TILES[s.getAttribute('data-p')];
+    s.style.setProperty('--doodle', "url(\"data:image/svg+xml,"+encodeURIComponent(svg)+"\")");
+  });
+
+  var r=document.documentElement, b=document.getElementById('tg');
+  function cur(){ return r.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'); }
+  b.addEventListener('click',function(){ r.dataset.theme = cur()==='dark'?'light':'dark'; });
+</script>

@@ -217,64 +217,84 @@
   cursor: not-allowed;
 }
 
-/* ── Emoji picker ── */
-.pem-emoji-grid {
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  gap: 6px;
+/* ── Icon picker (Fluent Emoji 3D) ───────────────────────────────────────
+ * Bố cục học theo bảng sticker Telegram: hàng tab danh mục ở trên, lưới icon
+ * cuộn dọc bên dưới. Icon là ảnh WebP 128px trong public/emoji/fluent3d/. */
+.pem-picker {
   margin-top: 10px;
-  padding: 10px;
-  background: rgba(255, 255, 255, 0.03);
   border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.05);
+  overflow: hidden;
 }
 
-.pem-emoji-cell {
+.pem-picker-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.pem-picker-tab {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  padding: 7px 0;
+  background: transparent;
+  border: none;
+  border-radius: 9px;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: background 0.15s ease, opacity 0.15s ease;
+}
+.pem-picker-tab:hover { opacity: 0.85; }
+.pem-picker-tab.is-active {
+  opacity: 1;
+  background: rgba(124, 58, 237, 0.2);
+}
+.pem-picker-tab img { display: block; }
+
+.pem-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+  padding: 8px;
+  max-height: 208px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.pem-picker-cell {
   width: 100%;
   aspect-ratio: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  place-items: center;
   background: transparent;
   border: 1px solid transparent;
   border-radius: 10px;
-  font-size: 22px;
   cursor: pointer;
   transition: background 0.15s ease, transform 0.15s ease;
 }
-
-.pem-emoji-cell:hover {
+.pem-picker-cell:hover {
   background: rgba(255, 255, 255, 0.08);
-  transform: scale(1.1);
+  transform: scale(1.12);
 }
-
-.pem-emoji-cell.is-active {
+.pem-picker-cell.is-active {
   background: rgba(124, 58, 237, 0.25);
   border-color: rgba(124, 58, 237, 0.6);
 }
+.pem-picker-cell img { display: block; }
 
-/* Telegram-style continuous motion */
-.pem-emoji-cell--bounce { animation: pem-bounce 1.8s ease-in-out infinite; }
-.pem-emoji-cell--wiggle { animation: pem-wiggle 2.2s ease-in-out infinite; }
-.pem-emoji-cell--pulse  { animation: pem-pulse 2.0s ease-in-out infinite; }
-.pem-emoji-cell--spin   { animation: pem-spin 6s linear infinite; }
+/* Nền sáng: các lớp trắng-mờ trên gần như vô hình → đảo sang nền tối-mờ. */
+[data-theme='light'] .pem-picker {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.07);
+}
+[data-theme='light'] .pem-picker-tabs { border-bottom-color: rgba(0, 0, 0, 0.07); }
+[data-theme='light'] .pem-picker-cell:hover { background: rgba(0, 0, 0, 0.06); }
 
-@keyframes pem-bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
-}
-@keyframes pem-wiggle {
-  0%, 100% { transform: rotate(0deg); }
-  25% { transform: rotate(-6deg); }
-  75% { transform: rotate(6deg); }
-}
-@keyframes pem-pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.12); }
-}
-@keyframes pem-spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+@media (prefers-reduced-motion: reduce) {
+  .pem-picker-cell:hover { transform: none; }
 }
 
 .pem-spin {

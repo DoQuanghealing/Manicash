@@ -1,0 +1,255 @@
+<style>
+  :root{
+    --page:#0d0b14; --bg:#0A0A12; --text:#F3F0FB; --text2:#9c96af; --text3:#6f6a82;
+    --border:rgba(255,255,255,.08); --surface:rgba(255,255,255,.06);
+    --purple:#8B5CF6; --purple2:#7C3AED; --orange:#F97316; --green:#22C55E;
+    --tg-tint:transparent;
+    --tg-doodle:rgba(139,92,246,.13);
+    --tg-in-bg:rgba(255,255,255,.08);
+    --tg-out-bg:#6D28D9;
+    --tg-pill-bg:rgba(20,18,30,.66);
+    --sender:#4FC3F7;
+    --in-border:var(--border);
+    --in-shadow:none;
+    --shadow:0 10px 30px rgba(0,0,0,.45);
+  }
+  :root[data-theme="light"]{
+    --page:#eceaf2; --bg:#F6F6F9; --text:#1A1A2E; --text2:#6a6577; --text3:#9a94a6;
+    --border:rgba(0,0,0,.07); --surface:#fff;
+    /* Phủ nhẹ tông tím-xám lên nền trắng để bong bóng trắng nổi lên, bớt lóa */
+    --tg-tint:rgba(42,30,72,.075);
+    --tg-doodle:rgba(109,40,217,.10);
+    --tg-in-bg:#ffffff;
+    --tg-out-bg:#7C3AED;
+    --tg-pill-bg:rgba(255,255,255,.86);
+    --sender:#0284C7;
+    --in-border:rgba(42,30,72,.07);
+    --in-shadow:0 2px 6px rgba(42,30,72,.10);
+    --shadow:0 8px 24px rgba(60,40,120,.10);
+  }
+  *{box-sizing:border-box}
+  .wrap{min-height:100%; background:
+      radial-gradient(1000px 600px at 80% -10%, rgba(124,58,237,.16), transparent 60%),
+      radial-gradient(900px 500px at 0% 110%, rgba(249,115,22,.10), transparent 55%), var(--page);
+    color:var(--text); font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    padding:28px 18px 56px; display:flex; flex-direction:column; align-items:center; gap:22px}
+  .topbar{width:100%; max-width:980px; display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap}
+  .kicker{font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--text3); font-weight:700}
+  .h1{font-size:clamp(20px,3.4vw,28px); font-weight:800; margin:2px 0 0; letter-spacing:-.02em}
+  .sub{color:var(--text2); font-size:13.5px; margin:6px 0 0; max-width:60ch; line-height:1.55}
+  .toggle{border:1px solid var(--border); background:var(--surface); color:var(--text); border-radius:999px; padding:9px 15px; font:600 13px system-ui; cursor:pointer; white-space:nowrap}
+  .stage{width:100%; max-width:980px; display:grid; grid-template-columns:minmax(300px,340px) 1fr; gap:34px; align-items:start}
+  @media (max-width:760px){ .stage{grid-template-columns:1fr; justify-items:center} }
+
+  .phone{width:340px; border-radius:42px; padding:11px; background:linear-gradient(160deg,#26222f,#0c0a12); box-shadow:var(--shadow),0 0 0 1px rgba(255,255,255,.05) inset}
+  /* --tg-tint phủ lên nền nhưng nằm DƯỚI doodle (doodle vẽ ở ::before) */
+  .screen{position:relative; border-radius:33px; overflow:hidden; height:720px; display:flex; flex-direction:column;
+    background:linear-gradient(var(--tg-tint),var(--tg-tint)), var(--bg)}
+
+  /* ═══ 1. Nền doodle tài chính — KHÔNG cuộn, giống Telegram ═══ */
+  .screen::before{content:""; position:absolute; inset:0; z-index:0; pointer-events:none;
+    background:var(--tg-doodle);
+    -webkit-mask-image:var(--doodle); mask-image:var(--doodle);
+    -webkit-mask-size:200px 200px; mask-size:200px 200px;
+    -webkit-mask-repeat:repeat; mask-repeat:repeat}
+  /* Mẫu C chốt: nơ · kẹo · xu đô · mũi tên tăng trưởng zíc zắc · vương miện */
+  :root{--doodle:url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'200'%20height%3D'200'%20viewBox%3D'0%200%20200%20200'%3E%3Cg%20fill%3D'none'%20stroke%3D'%23fff'%20stroke-width%3D'1.7'%20stroke-linecap%3D'round'%20stroke-linejoin%3D'round'%3E%3Cpath%20d%3D'M36%2036%20l-13%20-7%20l0%2014%20z%20M36%2036%20l13%20-7%20l0%2014%20z'%2F%3E%3Ccircle%20cx%3D'36'%20cy%3D'36'%20r%3D'3.2'%2F%3E%3Cpath%20d%3D'M33%2040%20l-5%209%20M39%2040%20l5%209'%2F%3E%3Cpath%20d%3D'M112%2037%20L113%2024%20L118%2031%20L123%2021%20L128%2031%20L133%2024%20L134%2037%20Z'%2F%3E%3Cpath%20d%3D'M114%2034%20h18'%2F%3E%3Ccircle%20cx%3D'113'%20cy%3D'24'%20r%3D'1.4'%2F%3E%3Ccircle%20cx%3D'123'%20cy%3D'21'%20r%3D'1.4'%2F%3E%3Ccircle%20cx%3D'133'%20cy%3D'24'%20r%3D'1.4'%2F%3E%3Cpath%20d%3D'M160%2052%20l6%20-7%20l5%204%20l6%20-9%20l5%203%20l7%20-10'%2F%3E%3Cpath%20d%3D'M183%2033%20l-6%200%20M183%2033%20l0%206'%2F%3E%3Cellipse%20cx%3D'30'%20cy%3D'104'%20rx%3D'8'%20ry%3D'6'%2F%3E%3Cpath%20d%3D'M22%20104%20l-6%20-5%20l0%2010%20z%20M38%20104%20l6%20-5%20l0%2010%20z'%2F%3E%3Ccircle%20cx%3D'104'%20cy%3D'112'%20r%3D'12'%2F%3E%3Cpath%20d%3D'M104%20105%20v14%20M107%20108%20a3.5%203%200%200%200%20-3%20-2%20h-1%20a3%203%200%200%200%200%206%20h2%20a3%203%200%200%201%200%206%20h-1%20a3.5%203%200%200%201%20-3%20-2'%2F%3E%3Cpath%20d%3D'M160%20163%20L161%20150%20L166%20157%20L171%20147%20L176%20157%20L181%20150%20L182%20163%20Z'%2F%3E%3Cpath%20d%3D'M162%20160%20h18'%2F%3E%3Ccircle%20cx%3D'161'%20cy%3D'150'%20r%3D'1.4'%2F%3E%3Ccircle%20cx%3D'171'%20cy%3D'147'%20r%3D'1.4'%2F%3E%3Ccircle%20cx%3D'181'%20cy%3D'150'%20r%3D'1.4'%2F%3E%3Cpath%20d%3D'M58%20172%20l-13%20-7%20l0%2014%20z%20M58%20172%20l13%20-7%20l0%2014%20z'%2F%3E%3Ccircle%20cx%3D'58'%20cy%3D'172'%20r%3D'3.2'%2F%3E%3Cpath%20d%3D'M55%20176%20l-5%209%20M61%20176%20l5%209'%2F%3E%3Cpath%20d%3D'M120%20168%20l6%20-7%20l5%204%20l6%20-9%20l5%203%20l7%20-10'%2F%3E%3Cpath%20d%3D'M143%20149%20l-6%200%20M143%20149%20l0%206'%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E")}
+
+  .base{position:relative; z-index:1; display:flex; flex-direction:column; height:100%; min-height:0}
+
+  /* ═══ 2. Header = 3 viên thuốc NỔI ═══ */
+  .chead{position:absolute; top:0; left:0; right:0; z-index:4; display:flex; align-items:center; gap:6px; padding:9px 10px; pointer-events:none}
+  .chead>*{pointer-events:auto}
+  .lead{display:inline-flex; align-items:center; gap:4px; flex:0 0 auto; height:36px; padding:0 12px; border-radius:999px;
+    border:1px solid var(--border); background:var(--tg-pill-bg); backdrop-filter:blur(14px); color:var(--text2); font-size:12px; font-weight:700; cursor:pointer}
+  .lead svg{width:15px;height:15px}
+  .meta{flex:1 1 auto; min-width:0; display:flex; align-items:center; justify-content:center; height:36px; padding:0 14px;
+    border-radius:999px; border:1px solid var(--border); background:var(--tg-pill-bg); backdrop-filter:blur(14px)}
+  .meta span{display:flex; align-items:center; gap:8px; color:var(--text); font-size:13.5px; font-weight:700; line-height:1.5;
+    max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  /* Chấm "đang trực": lõi xanh đặc + vòng xanh lá lan ra rồi mờ, lặp vô hạn */
+  .dot{position:relative; flex:0 0 auto; width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 6px rgba(34,197,94,.7)}
+  .dot::after{content:""; position:absolute; inset:-4px; border-radius:50%; border:1.5px solid var(--green);
+    animation:online 1.9s cubic-bezier(.22,1,.36,1) infinite}
+  @keyframes online{0%{transform:scale(.6);opacity:.95} 70%{transform:scale(1.35);opacity:0} 100%{transform:scale(1.35);opacity:0}}
+  @media (prefers-reduced-motion: reduce){ .dot::after{animation:none; opacity:.55} }
+  .hava{display:grid; place-items:center; flex:0 0 auto; width:38px;height:38px; border-radius:50%;
+    background:linear-gradient(135deg,#7C3AED,#F97316); color:#fff; font-size:13px; font-weight:900;
+    border:2px solid var(--tg-pill-bg); box-shadow:0 2px 10px rgba(124,58,237,.4)}
+
+  /* ═══ luồng tin ═══ */
+  .thread{flex:1; min-height:0; overflow-y:auto; display:flex; flex-direction:column; gap:2px; padding:62px 14px 8px; scrollbar-width:none}
+  .thread::-webkit-scrollbar{display:none}
+
+  /* ═══ 4. Dải ngày = pill mờ, dính khi cuộn ═══ */
+  .day{align-self:center; position:sticky; top:0; z-index:2; margin:6px 0; padding:4px 12px; border-radius:999px;
+    background:var(--tg-pill-bg); backdrop-filter:blur(14px); color:var(--text2); font-size:11px; font-weight:600}
+
+  .msg{display:flex; gap:6px; align-items:flex-end; max-width:100%}
+  .msg.me{justify-content:flex-end}
+  .msg.head{margin-top:10px}
+  .ava{display:grid; place-items:center; flex:0 0 auto; width:28px;height:28px; border-radius:50%;
+    background:linear-gradient(135deg,#7C3AED,#F97316); color:#fff; font-size:10px; font-weight:800}
+  .ava.ghost{visibility:hidden}
+
+  .bub{position:relative; max-width:78%; padding:7px 12px; border-radius:16px; font-size:13.5px; line-height:1.45; color:var(--text)}
+  .bub p{margin:0; white-space:pre-line}
+  .msg.ai .bub{background:var(--tg-in-bg); border:1px solid var(--in-border); box-shadow:var(--in-shadow)}
+  .msg.me .bub{background:linear-gradient(135deg,#7C3AED,var(--tg-out-bg)); color:#fff}
+
+  /* ═══ 6. Tên người gửi in đậm màu ═══ */
+  .sender{display:block; margin-bottom:1px; color:var(--sender); font-size:12px; font-weight:700}
+
+  /* ═══ 5. Giờ + ✓✓ nằm TRONG bóng, dồn phải, chữ chảy quanh ═══ */
+  .bmeta{display:flex; align-items:center; justify-content:flex-end; gap:3px; float:right; margin:1px 0 -2px 8px;
+    padding-top:5px; font-size:10px; line-height:1; color:var(--text3)}
+  .msg.me .bmeta{color:rgba(255,255,255,.72)}
+  .ticks{font-size:11px; letter-spacing:-2px}
+
+  /* ═══ 3. Đuôi bóng — cắt bằng CSS mask nên chạy tốt trên nền hoạ tiết + gradient ═══ */
+  :root{--tail:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='19' viewBox='0 0 13 19'%3E%3Cpath d='M13 0H6v11c0 4.2-2.6 7.2-6 8h13z' fill='%23fff'/%3E%3C/svg%3E")}
+  .bub.tail::after{content:""; position:absolute; bottom:0; width:13px; height:19px;
+    -webkit-mask-image:var(--tail); mask-image:var(--tail);
+    -webkit-mask-size:100% 100%; mask-size:100% 100%; -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat}
+  .msg.ai .bub.tail{border-bottom-left-radius:3px}
+  .msg.ai .bub.tail::after{left:-7px; background:var(--tg-in-bg)}
+  .msg.me .bub.tail{border-bottom-right-radius:3px}
+  .msg.me .bub.tail::after{right:-7px; transform:scaleX(-1); background:var(--tg-out-bg)}
+
+  /* ═══ 7. Ô soạn: viên thuốc (kẹp giấy · nhập · icon) + nút tròn ═══ */
+  .composer{display:flex; align-items:center; gap:8px; padding:8px 10px 14px}
+  .field{flex:1; min-width:0; display:flex; align-items:center; gap:2px; min-height:46px; padding:0 6px;
+    border:1px solid var(--border); border-radius:999px; background:var(--tg-pill-bg); backdrop-filter:blur(14px)}
+  .field input{flex:1; min-width:0; height:44px; padding:0 4px; border:0; outline:0; background:transparent; color:var(--text); font-size:13.5px; font-family:inherit}
+  .field input::placeholder{color:var(--text3)}
+  .aux{display:grid; place-items:center; flex:0 0 auto; width:36px;height:36px; border-radius:50%; border:0; background:transparent; color:var(--text3); cursor:pointer}
+  .aux:hover{background:rgba(255,255,255,.07); color:var(--text)}
+  .aux svg{width:19px;height:19px}
+  .send{display:grid; place-items:center; flex:0 0 auto; width:46px;height:46px; border-radius:50%; border:0; cursor:pointer;
+    background:linear-gradient(135deg,#F97316,#7C3AED); color:#fff; box-shadow:0 4px 12px rgba(124,58,237,.4)}
+  .send svg{width:18px;height:18px}
+
+  .notes{display:flex; flex-direction:column; gap:12px; max-width:440px}
+  .note{display:flex; gap:13px; padding:14px 15px; border:1px solid var(--border); border-radius:16px; background:var(--surface)}
+  .note .n{flex:0 0 auto; width:26px;height:26px;border-radius:9px;display:grid;place-items:center;font-weight:800;font-size:13px;color:#fff;background:linear-gradient(135deg,#8B5CF6,#F97316)}
+  .note h3{margin:0 0 3px;font-size:14px;font-weight:750}
+  .note p{margin:0;font-size:12.8px;color:var(--text2);line-height:1.5}
+  .legend{font-size:12px;color:var(--text3); line-height:1.6}
+  .legend code{background:var(--surface); padding:1px 5px; border-radius:5px; font-size:11.5px}
+</style>
+
+<div class="wrap">
+  <div class="topbar">
+    <div>
+      <div class="kicker">ManiCash · Demo v3 · dựng theo Telegram</div>
+      <h1 class="h1">Chat quản gia — bản Telegram</h1>
+      <p class="sub">Bản này khớp 1:1 với code đã sửa trong app (<code>ai-money-chat.css</code> +
+        <code>AiMoneyChatContent.tsx</code>). Cuộn trong khung để thấy dải ngày dính và header nổi trên tin nhắn.</p>
+    </div>
+    <button class="toggle" id="tg">◐ Đổi sáng / tối</button>
+  </div>
+
+  <div class="stage">
+    <div class="phone"><div class="screen"><div class="base">
+
+      <div class="chead">
+        <button class="lead" title="Lịch sử thao tác">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
+          <span>12</span>
+        </button>
+        <div class="meta">
+          <span><i class="dot"></i> Quản gia tài chính</span>
+        </div>
+        <div class="hava">VT</div>
+      </div>
+
+      <div class="thread" id="thread">
+        <div class="day">Hôm qua</div>
+
+        <div class="msg ai head">
+          <div class="ava ghost">VT</div>
+          <div class="bub"><span class="sender">Vượng Tài</span>
+            <p>Ta là Vượng Tài. Ngài cứ nhắn thẳng — "mua trà sữa 50k" — ta ghi sổ ngay.</p>
+            <span class="bmeta">21:42</span></div>
+        </div>
+        <div class="msg ai">
+          <div class="ava">VT</div>
+          <div class="bub tail"><p>Hoặc hỏi ta số dư, hạn hoá đơn, hay bảo ta lên báo cáo.</p>
+            <span class="bmeta">21:42</span></div>
+        </div>
+
+        <div class="msg me head">
+          <div class="bub tail"><p>tiền điện tháng này đóng chưa?</p>
+            <span class="bmeta">21:43<span class="ticks">✓✓</span></span></div>
+        </div>
+
+        <div class="msg ai head">
+          <div class="ava">VT</div>
+          <div class="bub tail"><span class="sender">Vượng Tài</span>
+            <p>Hoá đơn điện <b>320.000đ</b> còn <b>4 ngày</b> nữa tới hạn, chưa thanh toán. Ngài muốn ta ghi nhắc chứ?</p>
+            <span class="bmeta">21:43</span></div>
+        </div>
+
+        <div class="msg me head">
+          <div class="bub"><p>ừ nhắc giúp</p><span class="bmeta">21:44<span class="ticks">✓✓</span></span></div>
+        </div>
+        <div class="msg me">
+          <div class="bub tail"><p>còn quỹ khẩn cấp sao rồi?</p><span class="bmeta">21:44<span class="ticks">✓✓</span></span></div>
+        </div>
+
+        <div class="day">Hôm nay</div>
+
+        <div class="msg ai head">
+          <div class="ava">VT</div>
+          <div class="bub tail"><span class="sender">Vượng Tài</span>
+            <p>Đã ghi nhắc ✎. Quỹ khẩn cấp của ngài đang là <b>6.8 triệu</b> ≈ <b>1.4 tháng</b> chi tiêu. Ta gợi ý nhích lên 3 tháng cho vững.</p>
+            <span class="bmeta">08:15</span></div>
+        </div>
+
+        <div class="msg me head">
+          <div class="bub tail"><p>ok tháng sau tính</p><span class="bmeta">08:16<span class="ticks">✓✓</span></span></div>
+        </div>
+
+        <div class="msg ai head">
+          <div class="ava">VT</div>
+          <div class="bub tail"><span class="sender">Vượng Tài</span>
+            <p>Vâng, ta để dành lời khuyên đó cho đầu tháng. Chúc ngài một ngày tốt lành ☀️</p>
+            <span class="bmeta">08:16</span></div>
+        </div>
+      </div>
+
+      <div class="composer">
+        <div class="field">
+          <button class="aux" title="Nhập tay">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+          </button>
+          <input placeholder="Tin nhắn" />
+          <button class="aux" title="Lệnh nhanh">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .962 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.962 0z"/></svg>
+          </button>
+        </div>
+        <button class="send"><svg viewBox="0 0 24 24" fill="none"><path d="M4 12l16-8-6 16-3-6-7-2Z" fill="#fff"/></svg></button>
+      </div>
+
+    </div></div></div>
+
+    <div class="notes">
+      <div class="note"><div class="n">1</div><div><h3>Nền doodle, không cuộn</h3><p>Hoạ tiết tài chính <b>tự vẽ</b> (xu · biểu đồ · đá quý · túi tiền · hoá đơn · thẻ · đồng hồ · mũi tên · ví) — học bố cục Telegram nhưng không dùng lại tranh của họ.</p></div></div>
+      <div class="note"><div class="n">2</div><div><h3>Header 3 viên thuốc nổi</h3><p>Trái = lịch sử thao tác (chỗ nút "quay lại" của Telegram; /chat là tab nên không có gì để quay lại). Giữa = <b>một dòng</b> "Quản gia tài chính" + chấm xanh có vòng nhấp nháy báo đang trực. Phải = avatar. Tin nhắn chạy phía dưới.</p></div></div>
+      <div class="note"><div class="n">3</div><div><h3>Đuôi bóng, chỉ ở tin cuối cụm</h3><p>Đuôi cắt bằng CSS mask nên hiện đúng trên nền hoạ tiết và trên bóng gradient — cách "che bằng màu nền" thông thường sẽ lộ vệt.</p></div></div>
+      <div class="note"><div class="n">4</div><div><h3>Gộp cụm + dải ngày dính</h3><p>Tin liên tiếp cùng người, cùng ngày sát nhau; chỉ tin đầu có tên, chỉ tin cuối có avatar. Đổi ngày thì chèn pill và cắt cụm.</p></div></div>
+      <div class="note"><div class="n">5</div><div><h3>Giờ + ✓✓ trong bóng</h3><p>Dồn góc phải dưới, chữ chảy quanh (dùng <code>float</code>) đúng như Telegram — không đẩy thành dòng riêng.</p></div></div>
+      <p class="legend">Mockup tĩnh để duyệt nhìn. Code thật đã sửa trong app; tôi <b>chưa chạy được</b> màn chat thật vì
+        <code>/chat</code> yêu cầu đăng nhập.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function(){
+    var r=document.documentElement, b=document.getElementById('tg');
+    function cur(){ return r.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'); }
+    b.addEventListener('click',function(){ r.dataset.theme = cur()==='dark'?'light':'dark'; });
+    var th=document.getElementById('thread'); th.scrollTop = th.scrollHeight;
+  })();
+</script>

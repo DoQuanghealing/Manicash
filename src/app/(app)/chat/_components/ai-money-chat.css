@@ -1,4 +1,13 @@
-/* ═══ AI Money Chat — Telegram-style messaging + slide-over panels ═══ */
+/* ═══ AI Money Chat — dựng theo giao diện Telegram ═══
+ *
+ * Các đặc trưng bám sát bản tham chiếu:
+ *   1. Nền doodle lặp (ở đây vẽ hoạ tiết tài chính riêng của ManiCash, KHÔNG
+ *      dùng lại artwork của Telegram — bố cục thì học, tranh vẽ thì tự làm).
+ *   2. Header là 3 "viên thuốc" NỔI trên nền, tin nhắn cuộn phía dưới.
+ *   3. Bong bóng có đuôi nhọn ở tin cuối mỗi cụm; giờ + dấu ✓✓ nằm TRONG bóng.
+ *   4. Dải ngày là pill mờ căn giữa.
+ *   5. Ô soạn hình viên thuốc: kẹp giấy trái · nhập giữa · nút tròn phải.
+ */
 
 .tg-chat {
   position: relative;
@@ -9,71 +18,167 @@
   overflow: hidden;
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
+  /* Lớp --tg-tint phủ lên nền nhưng NẰM DƯỚI doodle (doodle vẽ ở ::before).
+   * Cần nó vì nền light là --c-bg-secondary = #FFF, trùng đúng màu bong bóng
+   * quản gia → trắng trên trắng, vừa lóa vừa không tách được ô chat. */
   background:
-    radial-gradient(120% 80% at 50% 0%, rgba(124, 58, 237, 0.08), transparent 60%),
+    linear-gradient(var(--tg-tint), var(--tg-tint)),
+    radial-gradient(120% 80% at 50% 0%, rgba(124, 58, 237, 0.10), transparent 62%),
     var(--c-bg-secondary);
+  --tg-tint: transparent; /* nền tối vốn đã đủ tương phản, không cần phủ */
+
+  /* Màu nét doodle — đổi theo theme, hình dạng lấy từ mask bên dưới. */
+  --tg-doodle: rgba(139, 92, 246, 0.13);
+  /* Nền/đuôi bong bóng: tách biến để đuôi (mask) luôn khớp màu thân bóng. */
+  --tg-in-bg: rgba(255, 255, 255, 0.08);
+  --tg-out-bg: #6D28D9;
+  /* Nền viên thuốc header + dải ngày (mờ, có blur phía sau). */
+  --tg-pill-bg: rgba(20, 18, 30, 0.66);
+}
+
+/* Lớp hoạ tiết: nằm dưới mọi thứ và KHÔNG cuộn — giống Telegram. */
+.tg-chat::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: var(--tg-doodle);
+  -webkit-mask-image: var(--tg-doodle-mask);
+  mask-image: var(--tg-doodle-mask);
+  -webkit-mask-size: 200px 200px;
+  mask-size: 200px 200px;
+  -webkit-mask-repeat: repeat;
+  mask-repeat: repeat;
+}
+
+/* Hoạ tiết (mẫu C PO chốt): nơ · kẹo · xu đô la · mũi tên tăng trưởng zíc zắc ·
+ * vương miện. Vẽ bằng nét trắng, CSS mask chỉ lấy kênh alpha nên màu thật do
+ * --tg-doodle quyết định. Sinh lại/chỉnh bố cục: node scripts/build-chat-doodle.mjs */
+.tg-chat {
+  --tg-doodle-mask: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'200'%20height%3D'200'%20viewBox%3D'0%200%20200%20200'%3E%3Cg%20fill%3D'none'%20stroke%3D'%23fff'%20stroke-width%3D'1.7'%20stroke-linecap%3D'round'%20stroke-linejoin%3D'round'%3E%3Cpath%20d%3D'M36%2036%20l-13%20-7%20l0%2014%20z%20M36%2036%20l13%20-7%20l0%2014%20z'%2F%3E%3Ccircle%20cx%3D'36'%20cy%3D'36'%20r%3D'3.2'%2F%3E%3Cpath%20d%3D'M33%2040%20l-5%209%20M39%2040%20l5%209'%2F%3E%3Cpath%20d%3D'M112%2037%20L113%2024%20L118%2031%20L123%2021%20L128%2031%20L133%2024%20L134%2037%20Z'%2F%3E%3Cpath%20d%3D'M114%2034%20h18'%2F%3E%3Ccircle%20cx%3D'113'%20cy%3D'24'%20r%3D'1.4'%2F%3E%3Ccircle%20cx%3D'123'%20cy%3D'21'%20r%3D'1.4'%2F%3E%3Ccircle%20cx%3D'133'%20cy%3D'24'%20r%3D'1.4'%2F%3E%3Cpath%20d%3D'M160%2052%20l6%20-7%20l5%204%20l6%20-9%20l5%203%20l7%20-10'%2F%3E%3Cpath%20d%3D'M183%2033%20l-6%200%20M183%2033%20l0%206'%2F%3E%3Cellipse%20cx%3D'30'%20cy%3D'104'%20rx%3D'8'%20ry%3D'6'%2F%3E%3Cpath%20d%3D'M22%20104%20l-6%20-5%20l0%2010%20z%20M38%20104%20l6%20-5%20l0%2010%20z'%2F%3E%3Ccircle%20cx%3D'104'%20cy%3D'112'%20r%3D'12'%2F%3E%3Cpath%20d%3D'M104%20105%20v14%20M107%20108%20a3.5%203%200%200%200%20-3%20-2%20h-1%20a3%203%200%200%200%200%206%20h2%20a3%203%200%200%201%200%206%20h-1%20a3.5%203%200%200%201%20-3%20-2'%2F%3E%3Cpath%20d%3D'M160%20163%20L161%20150%20L166%20157%20L171%20147%20L176%20157%20L181%20150%20L182%20163%20Z'%2F%3E%3Cpath%20d%3D'M162%20160%20h18'%2F%3E%3Ccircle%20cx%3D'161'%20cy%3D'150'%20r%3D'1.4'%2F%3E%3Ccircle%20cx%3D'171'%20cy%3D'147'%20r%3D'1.4'%2F%3E%3Ccircle%20cx%3D'181'%20cy%3D'150'%20r%3D'1.4'%2F%3E%3Cpath%20d%3D'M58%20172%20l-13%20-7%20l0%2014%20z%20M58%20172%20l13%20-7%20l0%2014%20z'%2F%3E%3Ccircle%20cx%3D'58'%20cy%3D'172'%20r%3D'3.2'%2F%3E%3Cpath%20d%3D'M55%20176%20l-5%209%20M61%20176%20l5%209'%2F%3E%3Cpath%20d%3D'M120%20168%20l6%20-7%20l5%204%20l6%20-9%20l5%203%20l7%20-10'%2F%3E%3Cpath%20d%3D'M143%20149%20l-6%200%20M143%20149%20l0%206'%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");
 }
 
 /* ── Base layer (chat) ── */
 .tg-base {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   height: 100%;
   min-height: 0;
 }
 
-/* ── Header ── */
+/* ── Header: 3 viên thuốc nổi, tin nhắn chạy phía dưới ────────────────── */
 .tg-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 4;
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
-  /* Gọn hơn: bớt chiều cao khối tên (trước padding to = header cao). */
-  padding: 8px var(--space-md);
-  border-bottom: 1px solid var(--glass-border);
-  background: var(--glass-bg);
+  gap: var(--space-xs);
+  padding: 9px 10px;
+  pointer-events: none; /* khoảng trống giữa các pill cho chuột lọt xuống */
+}
+.tg-header > * { pointer-events: auto; }
+
+/* Viên thuốc trái — mở/đóng lịch sử thao tác (vị trí nút "quay lại" của Telegram) */
+.tg-header-lead {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--glass-border);
+  background: var(--tg-pill-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  color: var(--c-text-secondary);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  transition: background var(--duration-fast), color var(--duration-fast);
+}
+.tg-header-lead:hover,
+.tg-header-lead[aria-pressed='true'] {
+  background: var(--glass-bg-active);
+  color: var(--c-text-primary);
+}
+
+/* Viên thuốc giữa — MỘT dòng: chấm "đang trực" + chức danh.
+ * Trước đây nhồi 2 dòng (tên + chức danh) vào 36px nên chữ bị cắt ngang. */
+.tg-header-meta {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--glass-border);
+  background: var(--tg-pill-bg);
   backdrop-filter: blur(var(--glass-blur));
 }
-
-.tg-header-avatar {
-  display: grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  border-radius: var(--radius-full);
-  background: linear-gradient(135deg, #7C3AED, #F97316);
-  color: #fff;
-  font-size: 12px;
-  font-weight: 900;
-  letter-spacing: 0.5px;
-  border: 1.5px solid rgba(255, 255, 255, 0.9);
-  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.35);
-}
-
-/* Dynamic-Island: cụm meta nằm trong "pill" (kiểu notch iPhone). Gọn + theme-aware. */
-.tg-header-meta {
-  padding: 3px 11px 3px 9px;
-  border-radius: var(--radius-full);
-  background: var(--glass-bg-active);
-  border: 1px solid var(--glass-border);
-}
-
-.tg-header-meta { display: flex; flex-direction: column; gap: 0; min-width: 0; }
-.tg-header-meta strong { color: var(--c-text-primary); font-size: var(--text-sm); font-weight: 700; line-height: 1.25; }
 
 .tg-header-sub {
   display: flex;
   align-items: center;
-  gap: 6px;
-  color: var(--c-text-secondary);
-  font-size: var(--text-xs);
+  gap: 8px;
+  color: var(--c-text-primary);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  /* line-height rộng hơn chiều cao chữ để phần dưới của dấu (ạ, ợ) không bị xén */
+  line-height: 1.5;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
+/* Avatar tròn bên phải — bấm để mở hồ sơ quản gia */
+.tg-header-avatar {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, #7C3AED, #F97316);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  border: 2px solid var(--tg-pill-bg);
+  box-shadow: 0 2px 10px rgba(124, 58, 237, 0.4);
+  overflow: hidden;
+}
+.tg-header-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Chấm "đang trực": lõi xanh đặc + vòng xanh lá lan ra rồi mờ dần, lặp vô hạn. */
 .tg-status-dot {
-  width: 7px;
-  height: 7px;
+  position: relative;
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
   border-radius: var(--radius-full);
   background: var(--c-green);
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.18);
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.7);
+}
+.tg-status-dot::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: var(--radius-full);
+  border: 1.5px solid var(--c-green);
+  animation: tg-online 1.9s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+@keyframes tg-online {
+  0%   { transform: scale(0.6); opacity: 0.95; }
+  70%  { transform: scale(1.35); opacity: 0; }
+  100% { transform: scale(1.35); opacity: 0; }
 }
 
 .tg-disabled {
@@ -97,19 +202,38 @@
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: var(--space-sm);
-  padding: var(--space-md);
+  gap: 2px; /* Telegram: tin cùng cụm sát nhau; cách cụm do .tg-msg--head lo */
+  /* Chừa chỗ cho header nổi (36px pill + 9px padding × 2). */
+  padding: 62px var(--space-md) var(--space-sm);
   scrollbar-width: none;
 }
 .tg-thread::-webkit-scrollbar { display: none; }
 
+/* Dải ngày — pill mờ căn giữa, dính khi cuộn như Telegram */
+.tg-day {
+  align-self: center;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  margin: 6px 0;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  background: var(--tg-pill-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  color: var(--c-text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+}
+
 .tg-msg {
   display: flex;
-  gap: var(--space-xs);
+  gap: 6px;
   align-items: flex-end;
   max-width: 100%;
 }
 .tg-msg-user { justify-content: flex-end; }
+/* Tin mở đầu một cụm mới → tách khỏi cụm trước */
+.tg-msg--head { margin-top: 10px; }
 
 .tg-msg-avatar {
   display: grid;
@@ -122,13 +246,18 @@
   color: #fff;
   font-size: 10px;
   font-weight: 800;
+  overflow: hidden;
 }
+.tg-msg-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .tg-msg-system .tg-msg-avatar { background: rgba(34, 197, 94, 0.16); color: var(--c-green-light); }
+/* Chỗ trống giữ cột avatar cho các tin giữa cụm (chỉ tin cuối mới có avatar) */
+.tg-msg-avatar--ghost { visibility: hidden; }
 
 .tg-bubble {
+  position: relative;
   max-width: 78%;
-  padding: 9px 13px;
-  border-radius: 18px;
+  padding: 7px 12px 7px;
+  border-radius: 16px;
   font-size: var(--text-sm);
   line-height: 1.45;
   color: var(--c-text-primary);
@@ -136,11 +265,37 @@
 .tg-bubble p { white-space: pre-line; }
 .tg-bubble--wide { max-width: 100%; width: 100%; }
 
+/* Tên người gửi in đậm màu — dấu hiệu nhận dạng của Telegram */
+.tg-bubble-sender {
+  display: block;
+  margin-bottom: 1px;
+  color: #4FC3F7;
+  font-size: var(--text-xs);
+  font-weight: 700;
+}
+
+/* Giờ + dấu đã nhận, nằm TRONG bóng, dồn phải */
+.tg-bubble-meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 3px;
+  margin: 1px 0 -2px;
+  font-size: 10px;
+  line-height: 1;
+  color: var(--c-text-muted);
+  /* Đẩy xuống ngang hàng dòng chữ cuối, giống Telegram */
+  float: right;
+  margin-left: 8px;
+  padding-top: 5px;
+}
+.tg-msg-user .tg-bubble-meta { color: rgba(255, 255, 255, 0.72); }
+.tg-bubble-ticks { font-size: 11px; letter-spacing: -2px; }
+
 /* Assistant + system bubbles: left, surface */
 .tg-msg-assistant .tg-bubble,
 .tg-msg-system .tg-bubble {
-  border-bottom-left-radius: 6px;
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--tg-in-bg);
   border: 1px solid var(--glass-border);
 }
 .tg-msg-system .tg-bubble {
@@ -151,9 +306,47 @@
 
 /* User bubble: right, accent */
 .tg-msg-user .tg-bubble {
-  border-bottom-right-radius: 6px;
-  background: linear-gradient(135deg, #7C3AED, #6D28D9);
+  background: linear-gradient(135deg, #7C3AED, var(--tg-out-bg));
   color: #fff;
+}
+
+/* ── Đuôi bong bóng ────────────────────────────────────────────────────
+ * Chỉ tin CUỐI mỗi cụm mới có đuôi (đúng hành vi Telegram). Đuôi là một khối
+ * màu được CSS mask cắt thành hình sừng cong, nên hoạt động cả trên nền hoạ
+ * tiết lẫn bóng có gradient — khác cách "che bằng màu nền" vốn sẽ lộ vệt.
+ * Góc dính đuôi bỏ bo tròn để thân và đuôi liền mạch. */
+.tg-bubble--tail::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  width: 13px;
+  height: 19px;
+  -webkit-mask-image: var(--tg-tail-mask);
+  mask-image: var(--tg-tail-mask);
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+.tg-chat {
+  --tg-tail-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='19' viewBox='0 0 13 19'%3E%3Cpath d='M13 0H6v11c0 4.2-2.6 7.2-6 8h13z' fill='%23fff'/%3E%3C/svg%3E");
+}
+
+.tg-msg-assistant .tg-bubble--tail,
+.tg-msg-system .tg-bubble--tail { border-bottom-left-radius: 3px; }
+.tg-msg-assistant .tg-bubble--tail::after,
+.tg-msg-system .tg-bubble--tail::after {
+  left: -7px;
+  background: var(--tg-in-bg);
+}
+.tg-msg-system .tg-bubble--tail::after { background: rgba(34, 197, 94, 0.1); }
+
+.tg-msg-user .tg-bubble--tail { border-bottom-right-radius: 3px; }
+.tg-msg-user .tg-bubble--tail::after {
+  right: -7px;
+  transform: scaleX(-1);
+  /* Đuôi nằm ở mép cuối gradient → tô đúng màu kết thúc là liền mạch. */
+  background: var(--tg-out-bg);
 }
 
 /* Typing indicator */
@@ -468,27 +661,55 @@
 .tg-slash-label { color: var(--c-text-secondary); font-size: var(--text-xs); }
 
 /* ── Composer ── */
+/* ── Ô soạn tin: một viên thuốc chứa kẹp giấy + ô nhập + icon, nút tròn tách rời ── */
 .tg-composer {
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
-  padding: var(--space-sm) var(--space-md) var(--space-md);
+  gap: 8px;
+  padding: var(--space-sm) 10px var(--space-md);
 }
+
+.tg-composer-field {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 46px;
+  padding: 0 6px;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-full);
+  background: var(--tg-pill-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  transition: border-color var(--duration-fast);
+}
+.tg-composer-field:focus-within { border-color: rgba(124, 58, 237, 0.5); }
+
 .tg-composer input {
   flex: 1;
   min-width: 0;
-  min-height: 46px;
-  padding: 0 var(--space-lg);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-full);
+  height: 44px;
+  padding: 0 4px;
+  border: 0;
   outline: 0;
-  background: rgba(255, 255, 255, 0.06);
+  background: transparent;
   color: var(--c-text-primary);
   font-size: var(--text-sm);
-  transition: border-color var(--duration-fast);
 }
 .tg-composer input::placeholder { color: var(--c-text-muted); }
-.tg-composer input:focus { border-color: rgba(124, 58, 237, 0.5); }
+
+/* Nút phụ trong viên thuốc (kẹp giấy, icon) */
+.tg-composer-aux {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  color: var(--c-text-muted);
+  transition: background var(--duration-fast), color var(--duration-fast);
+}
+.tg-composer-aux:hover { background: var(--glass-bg-hover); color: var(--c-text-primary); }
 
 .tg-send {
   display: grid;
@@ -760,12 +981,30 @@
 /* ═══ LIGHT MODE — chat: các khối hard-code màu tối làm nền sáng bị "lóa/lõ" ═══
  * Ô nhập trắng-mờ 6% gần như vô hình trên nền trắng; slash/guardian/footer nền đen
  * đặc. Override cho light dùng nền sáng + viền rõ. Dark giữ nguyên. */
-[data-theme="light"] .tg-composer input {
+/* Nền sáng: các lớp trắng-mờ gần như vô hình → đảo sang nền trắng đặc + viền rõ. */
+[data-theme="light"] .tg-chat {
+  /* Phủ nhẹ tông tím-xám lên nền trắng (~#F0EEF3) để bong bóng trắng nổi lên
+   * và bớt lóa. Muốn đậm/nhạt hơn chỉ cần chỉnh alpha ở đây. */
+  --tg-tint: rgba(42, 30, 72, 0.075);
+  --tg-doodle: rgba(109, 40, 217, 0.10);
+  --tg-in-bg: #ffffff;
+  --tg-out-bg: #7C3AED;
+  --tg-pill-bg: rgba(255, 255, 255, 0.86);
+}
+[data-theme="light"] .tg-bubble-sender { color: #0284C7; }
+/* Bóng đổ rõ hơn + viền dịu để ô chat quản gia tách hẳn khỏi nền đã phủ tối. */
+[data-theme="light"] .tg-msg-assistant .tg-bubble,
+[data-theme="light"] .tg-msg-system .tg-bubble {
+  border-color: rgba(42, 30, 72, 0.07);
+  box-shadow: 0 2px 6px rgba(42, 30, 72, 0.10);
+}
+
+[data-theme="light"] .tg-composer-field {
   background: #fff;
   border-color: var(--glass-border-hover);
   box-shadow: var(--glass-shadow);
 }
-[data-theme="light"] .tg-composer input:focus { border-color: rgba(124, 58, 237, 0.45); }
+[data-theme="light"] .tg-composer-field:focus-within { border-color: rgba(124, 58, 237, 0.45); }
 [data-theme="light"] .tg-slash {
   background: rgba(255, 255, 255, 0.96);
   box-shadow: var(--glass-shadow);
@@ -778,6 +1017,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .tg-typing-dot { animation: none; }
+  /* Vẫn giữ vòng tĩnh để "đang trực" đọc được, chỉ bỏ phần nhấp nháy. */
+  .tg-status-dot::after { animation: none; opacity: 0.55; }
   .tg-chip, .tg-send, .tg-primary { transition: none; }
 }
 

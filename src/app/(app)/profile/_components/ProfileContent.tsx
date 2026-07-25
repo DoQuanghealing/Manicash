@@ -21,7 +21,7 @@ import AccountDeletionDialog from '@/components/ui/AccountDeletionDialog';
 import ButlerSettingsCard from './ButlerSettingsCard';
 import FinancialDnaPanel from '@/components/butler/FinancialDnaPanel';
 import EcosystemSection from './EcosystemSection';
-import { getEmojiFromAvatar, isEmojiAvatar } from '@/data/avatarIcons';
+import { resolveAvatar } from '@/data/avatarIcons';
 import { getBanMenh } from '@/lib/banMenh';
 import { Flame, Pencil, Shield, Target, CheckSquare, Trash2, Mail, Calendar, Clock, Sparkles, LogOut, UserX, Crown, ChevronRight } from 'lucide-react';
 import { useSignOut } from '@/hooks/useSignOut';
@@ -86,8 +86,7 @@ export default function ProfileContent() {
 
   const displayName = user?.displayName || firebaseUser?.displayName || 'Chiến binh';
   const photoURL = user?.photoURL || firebaseUser?.photoURL;
-  const avatarEmoji = getEmojiFromAvatar(photoURL);
-  const isPhotoAvatar = !!photoURL && !isEmojiAvatar(photoURL);
+  const avatar = resolveAvatar(photoURL);
   const initials = displayName.substring(0, 2).toUpperCase();
 
   // ── Personal info section ──
@@ -142,11 +141,11 @@ export default function ProfileContent() {
           style={{ background: `linear-gradient(135deg, ${rankData.current.gradientFrom}, ${rankData.current.gradientTo})` }}
         />
         <div className="profile-avatar-container">
-          {isPhotoAvatar ? (
+          {avatar.kind === 'photo' || avatar.kind === 'icon' ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={photoURL!} alt="Avatar" className="profile-avatar" />
-          ) : avatarEmoji ? (
-            <div className="profile-avatar-emoji">{avatarEmoji}</div>
+            <img src={avatar.src} alt="Avatar" className="profile-avatar" />
+          ) : avatar.kind === 'emoji' ? (
+            <div className="profile-avatar-emoji">{avatar.emoji}</div>
           ) : (
             <div className="profile-avatar-fallback">{initials}</div>
           )}

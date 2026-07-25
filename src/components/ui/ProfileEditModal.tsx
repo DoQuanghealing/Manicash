@@ -21,11 +21,15 @@ import { VIBE_LABELS, type VibeMode } from '@/lib/ageGroup';
 import IOSDateField from './IOSDateField';
 import IOSTimeField from './IOSTimeField';
 import {
-  AVATAR_EMOJIS,
-  buildEmojiAvatar,
-  getEmojiFromAvatar,
-  isEmojiAvatar,
+  buildIconAvatar,
+  resolveAvatar,
 } from '@/data/avatarIcons';
+import {
+  FLUENT_EMOJI_CATS,
+  FLUENT_EMOJI_ICONS,
+  fluentEmojiSrc,
+  type FluentEmojiCat,
+} from '@/data/fluentEmojiPack';
 import {
   compressImageToDataURL,
   estimateDataURLSize,
@@ -55,6 +59,7 @@ export default function ProfileEditModal({ isOpen, onClose }: ProfileEditModalPr
   const [birthTime, setBirthTime] = useState('');  // HH:mm
   const [photoURL, setPhotoURL] = useState<string | null>(null);
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
+  const [iconCat, setIconCat] = useState<FluentEmojiCat>('money');
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [photoSizeKB, setPhotoSizeKB] = useState<number | null>(null);
@@ -118,9 +123,8 @@ export default function ProfileEditModal({ isOpen, onClose }: ProfileEditModalPr
     }
   };
 
-  const handlePickEmoji = (emoji: string) => {
-    setPhotoURL(buildEmojiAvatar(emoji));
-    setEmojiPickerOpen(false);
+  const handlePickIcon = (id: string) => {
+    setPhotoURL(buildIconAvatar(id));
     setPhotoSizeKB(null);
   };
 
@@ -202,9 +206,9 @@ export default function ProfileEditModal({ isOpen, onClose }: ProfileEditModalPr
     }
   };
 
-  const currentEmoji = getEmojiFromAvatar(photoURL);
-  const isPhoto = !!photoURL && !isEmojiAvatar(photoURL);
+  const avatar = resolveAvatar(photoURL);
   const initials = (displayName || user?.displayName || 'NH').substring(0, 2).toUpperCase();
+  const catIcons = FLUENT_EMOJI_ICONS.filter((i) => i.cat === iconCat);
 
   return (
     <AnimatePresence>
@@ -242,11 +246,11 @@ export default function ProfileEditModal({ isOpen, onClose }: ProfileEditModalPr
                 <label className="pem-label">Ảnh đại diện</label>
                 <div className="pem-avatar-row">
                   <div className="pem-avatar-preview">
-                    {isPhoto ? (
+                    {avatar.kind === 'photo' || avatar.kind === 'icon' ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={photoURL!} alt="Avatar" />
-                    ) : currentEmoji ? (
-                      <span className="pem-avatar-emoji">{currentEmoji}</span>
+                      <img src={avatar.src} alt="Avatar" />
+                    ) : avatar.kind === 'emoji' ? (
+                      <span className="pem-avatar-emoji">{avatar.emoji}</span>
                     ) : (
                       <span className="pem-avatar-fallback">{initials}</span>
                     )}
@@ -295,19 +299,38 @@ export default function ProfileEditModal({ isOpen, onClose }: ProfileEditModalPr
                 {uploadError && <p className="pem-error">{uploadError}</p>}
 
                 {emojiPickerOpen && (
-                  <div className="pem-emoji-grid">
-                    {AVATAR_EMOJIS.map((opt) => (
-                      <button
-                        key={opt.emoji}
-                        type="button"
-                        className={`pem-emoji-cell pem-emoji-cell--${opt.motion} ${currentEmoji === opt.emoji ? 'is-active' : ''}`}
-                        onClick={() => handlePickEmoji(opt.emoji)}
-                        aria-label={opt.label}
-                        title={opt.label}
-                      >
-                        {opt.emoji}
-                      </button>
-                    ))}
+                  <div className="pem-picker">
+                    <div className="pem-picker-tabs" role="tablist" aria-label="Nhóm icon">
+                      {FLUENT_EMOJI_CATS.map((c) => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          role="tab"
+                          aria-selected={iconCat === c.id}
+                          className={`pem-picker-tab${iconCat === c.id ? ' is-active' : ''}`}
+                          onClick={() => setIconCat(c.id)}
+                          title={c.label}
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={fluentEmojiSrc(c.icon)} alt="" width={22} height={22} />
+                        </button>
+                      ))}
+                    </div>
+                    <div className="pem-picker-grid" role="tabpanel">
+                      {catIcons.map((opt) => (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          className={`pem-picker-cell${avatar.kind === 'icon' && avatar.id === opt.id ? ' is-active' : ''}`}
+                          onClick={() => handlePickIcon(opt.id)}
+                          aria-label={opt.label}
+                          title={opt.label}
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={fluentEmojiSrc(opt.id)} alt="" width={34} height={34} loading="lazy" />
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 )}
               </section>

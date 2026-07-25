@@ -1,0 +1,638 @@
+[
+  {
+    "id": "money-bag",
+    "name": "Money bag",
+    "cat": "money",
+    "bytes": 4536
+  },
+  {
+    "id": "money-with-wings",
+    "name": "Money with wings",
+    "cat": "money",
+    "bytes": 4192
+  },
+  {
+    "id": "dollar-banknote",
+    "name": "Dollar banknote",
+    "cat": "money",
+    "bytes": 2686
+  },
+  {
+    "id": "coin",
+    "name": "Coin",
+    "cat": "money",
+    "bytes": 4408
+  },
+  {
+    "id": "credit-card",
+    "name": "Credit card",
+    "cat": "money",
+    "bytes": 2006
+  },
+  {
+    "id": "bank",
+    "name": "Bank",
+    "cat": "money",
+    "bytes": 3678
+  },
+  {
+    "id": "chart-increasing",
+    "name": "Chart increasing",
+    "cat": "money",
+    "bytes": 3782
+  },
+  {
+    "id": "chart-decreasing",
+    "name": "Chart decreasing",
+    "cat": "money",
+    "bytes": 3754
+  },
+  {
+    "id": "bar-chart",
+    "name": "Bar chart",
+    "cat": "money",
+    "bytes": 3314
+  },
+  {
+    "id": "briefcase",
+    "name": "Briefcase",
+    "cat": "money",
+    "bytes": 2322
+  },
+  {
+    "id": "gem-stone",
+    "name": "Gem stone",
+    "cat": "money",
+    "bytes": 3158
+  },
+  {
+    "id": "receipt",
+    "name": "Receipt",
+    "cat": "money",
+    "bytes": 3128
+  },
+  {
+    "id": "shopping-cart",
+    "name": "Shopping cart",
+    "cat": "money",
+    "bytes": 7226
+  },
+  {
+    "id": "balance-scale",
+    "name": "Balance scale",
+    "cat": "money",
+    "bytes": 7216
+  },
+  {
+    "id": "abacus",
+    "name": "Abacus",
+    "cat": "money",
+    "bytes": 9308
+  },
+  {
+    "id": "money-mouth-face",
+    "name": "Money-mouth face",
+    "cat": "money",
+    "bytes": 5742
+  },
+  {
+    "id": "chart-increasing-with-yen",
+    "name": "Chart increasing with yen",
+    "cat": "money",
+    "bytes": 3872
+  },
+  {
+    "id": "convenience-store",
+    "name": "Convenience store",
+    "cat": "money",
+    "bytes": 3832
+  },
+  {
+    "id": "shopping-bags",
+    "name": "Shopping bags",
+    "cat": "money",
+    "bytes": 3184
+  },
+  {
+    "id": "ledger",
+    "name": "Ledger",
+    "cat": "money",
+    "bytes": 3408
+  },
+  {
+    "id": "fox",
+    "name": "Fox",
+    "cat": "animal",
+    "bytes": 4800
+  },
+  {
+    "id": "dragon",
+    "name": "Dragon",
+    "cat": "animal",
+    "bytes": 7096
+  },
+  {
+    "id": "lion",
+    "name": "Lion",
+    "cat": "animal",
+    "bytes": 5572
+  },
+  {
+    "id": "turtle",
+    "name": "Turtle",
+    "cat": "animal",
+    "bytes": 3790
+  },
+  {
+    "id": "whale",
+    "name": "Whale",
+    "cat": "animal",
+    "bytes": 5404
+  },
+  {
+    "id": "unicorn",
+    "name": "Unicorn",
+    "cat": "animal",
+    "bytes": 4994
+  },
+  {
+    "id": "owl",
+    "name": "Owl",
+    "cat": "animal",
+    "bytes": 5338
+  },
+  {
+    "id": "octopus",
+    "name": "Octopus",
+    "cat": "animal",
+    "bytes": 4838
+  },
+  {
+    "id": "panda",
+    "name": "Panda",
+    "cat": "animal",
+    "bytes": 5030
+  },
+  {
+    "id": "eagle",
+    "name": "Eagle",
+    "cat": "animal",
+    "bytes": 3904
+  },
+  {
+    "id": "cat-face",
+    "name": "Cat face",
+    "cat": "animal",
+    "bytes": 5004
+  },
+  {
+    "id": "dog-face",
+    "name": "Dog face",
+    "cat": "animal",
+    "bytes": 4408
+  },
+  {
+    "id": "tiger-face",
+    "name": "Tiger face",
+    "cat": "animal",
+    "bytes": 5730
+  },
+  {
+    "id": "wolf",
+    "name": "Wolf",
+    "cat": "animal",
+    "bytes": 4660
+  },
+  {
+    "id": "bear",
+    "name": "Bear",
+    "cat": "animal",
+    "bytes": 5046
+  },
+  {
+    "id": "rabbit-face",
+    "name": "Rabbit face",
+    "cat": "animal",
+    "bytes": 5082
+  },
+  {
+    "id": "monkey-face",
+    "name": "Monkey face",
+    "cat": "animal",
+    "bytes": 4418
+  },
+  {
+    "id": "penguin",
+    "name": "Penguin",
+    "cat": "animal",
+    "bytes": 4390
+  },
+  {
+    "id": "frog",
+    "name": "Frog",
+    "cat": "animal",
+    "bytes": 5428
+  },
+  {
+    "id": "hamster",
+    "name": "Hamster",
+    "cat": "animal",
+    "bytes": 5328
+  },
+  {
+    "id": "koala",
+    "name": "Koala",
+    "cat": "animal",
+    "bytes": 3900
+  },
+  {
+    "id": "butterfly",
+    "name": "Butterfly",
+    "cat": "animal",
+    "bytes": 7856
+  },
+  {
+    "id": "honeybee",
+    "name": "Honeybee",
+    "cat": "animal",
+    "bytes": 4948
+  },
+  {
+    "id": "dolphin",
+    "name": "Dolphin",
+    "cat": "animal",
+    "bytes": 4956
+  },
+  {
+    "id": "grinning-face",
+    "name": "Grinning face",
+    "cat": "face",
+    "bytes": 5360
+  },
+  {
+    "id": "smiling-face-with-sunglasses",
+    "name": "Smiling face with sunglasses",
+    "cat": "face",
+    "bytes": 5776
+  },
+  {
+    "id": "star-struck",
+    "name": "Star-struck",
+    "cat": "face",
+    "bytes": 5766
+  },
+  {
+    "id": "face-with-tears-of-joy",
+    "name": "Face with tears of joy",
+    "cat": "face",
+    "bytes": 5548
+  },
+  {
+    "id": "smiling-face-with-heart-eyes",
+    "name": "Smiling face with heart-eyes",
+    "cat": "face",
+    "bytes": 5214
+  },
+  {
+    "id": "winking-face",
+    "name": "Winking face",
+    "cat": "face",
+    "bytes": 5500
+  },
+  {
+    "id": "thinking-face",
+    "name": "Thinking face",
+    "cat": "face",
+    "bytes": 5890
+  },
+  {
+    "id": "nerd-face",
+    "name": "Nerd face",
+    "cat": "face",
+    "bytes": 6126
+  },
+  {
+    "id": "partying-face",
+    "name": "Partying face",
+    "cat": "face",
+    "bytes": 5896
+  },
+  {
+    "id": "cowboy-hat-face",
+    "name": "Cowboy hat face",
+    "cat": "face",
+    "bytes": 6072
+  },
+  {
+    "id": "zany-face",
+    "name": "Zany face",
+    "cat": "face",
+    "bytes": 5860
+  },
+  {
+    "id": "smiling-face-with-halo",
+    "name": "Smiling face with halo",
+    "cat": "face",
+    "bytes": 5852
+  },
+  {
+    "id": "hugging-face",
+    "name": "Hugging face",
+    "cat": "face",
+    "bytes": 5928
+  },
+  {
+    "id": "shushing-face",
+    "name": "Shushing face",
+    "cat": "face",
+    "bytes": 5230
+  },
+  {
+    "id": "face-with-monocle",
+    "name": "Face with monocle",
+    "cat": "face",
+    "bytes": 5852
+  },
+  {
+    "id": "smirking-face",
+    "name": "Smirking face",
+    "cat": "face",
+    "bytes": 5250
+  },
+  {
+    "id": "sleeping-face",
+    "name": "Sleeping face",
+    "cat": "face",
+    "bytes": 5734
+  },
+  {
+    "id": "exploding-head",
+    "name": "Exploding head",
+    "cat": "face",
+    "bytes": 6500
+  },
+  {
+    "id": "rocket",
+    "name": "Rocket",
+    "cat": "symbol",
+    "bytes": 4946
+  },
+  {
+    "id": "glowing-star",
+    "name": "Glowing star",
+    "cat": "symbol",
+    "bytes": 6124
+  },
+  {
+    "id": "crystal-ball",
+    "name": "Crystal ball",
+    "cat": "symbol",
+    "bytes": 3996
+  },
+  {
+    "id": "crescent-moon",
+    "name": "Crescent moon",
+    "cat": "symbol",
+    "bytes": 3768
+  },
+  {
+    "id": "high-voltage",
+    "name": "High voltage",
+    "cat": "symbol",
+    "bytes": 2424
+  },
+  {
+    "id": "top-hat",
+    "name": "Top hat",
+    "cat": "symbol",
+    "bytes": 3188
+  },
+  {
+    "id": "four-leaf-clover",
+    "name": "Four leaf clover",
+    "cat": "symbol",
+    "bytes": 5004
+  },
+  {
+    "id": "rainbow",
+    "name": "Rainbow",
+    "cat": "symbol",
+    "bytes": 4528
+  },
+  {
+    "id": "artist-palette",
+    "name": "Artist palette",
+    "cat": "symbol",
+    "bytes": 5008
+  },
+  {
+    "id": "fire",
+    "name": "Fire",
+    "cat": "symbol",
+    "bytes": 3916
+  },
+  {
+    "id": "sparkles",
+    "name": "Sparkles",
+    "cat": "symbol",
+    "bytes": 5432
+  },
+  {
+    "id": "sun",
+    "name": "Sun",
+    "cat": "symbol",
+    "bytes": 4234
+  },
+  {
+    "id": "trophy",
+    "name": "Trophy",
+    "cat": "symbol",
+    "bytes": 4814
+  },
+  {
+    "id": "crown",
+    "name": "Crown",
+    "cat": "symbol",
+    "bytes": 5000
+  },
+  {
+    "id": "ring",
+    "name": "Ring",
+    "cat": "symbol",
+    "bytes": 4888
+  },
+  {
+    "id": "key",
+    "name": "Key",
+    "cat": "symbol",
+    "bytes": 3660
+  },
+  {
+    "id": "light-bulb",
+    "name": "Light bulb",
+    "cat": "symbol",
+    "bytes": 3854
+  },
+  {
+    "id": "locked-with-key",
+    "name": "Locked with key",
+    "cat": "symbol",
+    "bytes": 4312
+  },
+  {
+    "id": "shield",
+    "name": "Shield",
+    "cat": "symbol",
+    "bytes": 3780
+  },
+  {
+    "id": "bullseye",
+    "name": "Bullseye",
+    "cat": "symbol",
+    "bytes": 5554
+  },
+  {
+    "id": "compass",
+    "name": "Compass",
+    "cat": "symbol",
+    "bytes": 5986
+  },
+  {
+    "id": "hourglass-done",
+    "name": "Hourglass done",
+    "cat": "symbol",
+    "bytes": 4036
+  },
+  {
+    "id": "bubble-tea",
+    "name": "Bubble tea",
+    "cat": "food",
+    "bytes": 3346
+  },
+  {
+    "id": "hamburger",
+    "name": "Hamburger",
+    "cat": "food",
+    "bytes": 4020
+  },
+  {
+    "id": "pizza",
+    "name": "Pizza",
+    "cat": "food",
+    "bytes": 4278
+  },
+  {
+    "id": "sushi",
+    "name": "Sushi",
+    "cat": "food",
+    "bytes": 3856
+  },
+  {
+    "id": "birthday-cake",
+    "name": "Birthday cake",
+    "cat": "food",
+    "bytes": 5008
+  },
+  {
+    "id": "hot-beverage",
+    "name": "Hot beverage",
+    "cat": "food",
+    "bytes": 4726
+  },
+  {
+    "id": "cookie",
+    "name": "Cookie",
+    "cat": "food",
+    "bytes": 4804
+  },
+  {
+    "id": "ice-cream",
+    "name": "Ice cream",
+    "cat": "food",
+    "bytes": 4914
+  },
+  {
+    "id": "watermelon",
+    "name": "Watermelon",
+    "cat": "food",
+    "bytes": 4404
+  },
+  {
+    "id": "strawberry",
+    "name": "Strawberry",
+    "cat": "food",
+    "bytes": 3930
+  },
+  {
+    "id": "steaming-bowl",
+    "name": "Steaming bowl",
+    "cat": "food",
+    "bytes": 5468
+  },
+  {
+    "id": "doughnut",
+    "name": "Doughnut",
+    "cat": "food",
+    "bytes": 5466
+  },
+  {
+    "id": "party-popper",
+    "name": "Party popper",
+    "cat": "party",
+    "bytes": 8000
+  },
+  {
+    "id": "balloon",
+    "name": "Balloon",
+    "cat": "party",
+    "bytes": 3852
+  },
+  {
+    "id": "wrapped-gift",
+    "name": "Wrapped gift",
+    "cat": "party",
+    "bytes": 3374
+  },
+  {
+    "id": "confetti-ball",
+    "name": "Confetti ball",
+    "cat": "party",
+    "bytes": 7410
+  },
+  {
+    "id": "red-envelope",
+    "name": "Red envelope",
+    "cat": "party",
+    "bytes": 3034
+  },
+  {
+    "id": "firecracker",
+    "name": "Firecracker",
+    "cat": "party",
+    "bytes": 3428
+  },
+  {
+    "id": "christmas-tree",
+    "name": "Christmas tree",
+    "cat": "party",
+    "bytes": 4004
+  },
+  {
+    "id": "sparkler",
+    "name": "Sparkler",
+    "cat": "party",
+    "bytes": 4798
+  },
+  {
+    "id": "ribbon",
+    "name": "Ribbon",
+    "cat": "party",
+    "bytes": 4822
+  },
+  {
+    "id": "military-medal",
+    "name": "Military medal",
+    "cat": "party",
+    "bytes": 4106
+  }
+]
