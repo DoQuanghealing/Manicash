@@ -1,5 +1,10 @@
 /* ═══ ZodiacRunner — Con giáp chạy trên header ═══
  *
+ * ⚠️ CHỜ HOÀN THIỆN (WIP) — đây là entry mở "Bộ sưu tầm" (RewardCollectionDrawer).
+ * Hiện đang ẨN ở header qua cờ isCollectionEnabled() (mặc định OFF). Giữ nguyên
+ * code + data để bật lại khi kho linh vật/giao diện hoàn thiện.
+ * Xem: src/lib/featureFlags.ts → isCollectionEnabled().
+ *
  * Hiển thị 1 con giáp đang được user chọn (activeZodiac) hoặc fallback:
  *   1. activeZodiac đã set & unlocked
  *   2. Mệnh chủ tự động (yearOfBirth → chiIndex)

@@ -1,0 +1,144 @@
+<style>
+  :root{
+    --page:#0d0b14; --bg:#0A0A12; --text:#F3F0FB; --text2:#9c96af; --text3:#6f6a82;
+    --border:rgba(255,255,255,.08); --glass-bg:rgba(255,255,255,.04); --glass-hover:rgba(255,255,255,.07);
+    --green:#22C55E; --radius:16px;
+  }
+  :root[data-theme="light"]{
+    --page:#eceaf2; --bg:#F6F6F9; --text:#1A1A2E; --text2:#6a6577; --text3:#9a94a6;
+    --border:rgba(0,0,0,.07); --glass-bg:#fff; --glass-hover:rgba(124,58,237,.06);
+  }
+  *{box-sizing:border-box}
+  .wrap{min-height:100%; background:
+      radial-gradient(1000px 600px at 80% -10%, rgba(124,58,237,.16), transparent 60%), var(--page);
+    color:var(--text); font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    padding:28px 18px 56px; display:flex; flex-direction:column; align-items:center; gap:22px}
+  .topbar{width:100%; max-width:900px; display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap}
+  .kicker{font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--text3); font-weight:700}
+  .h1{font-size:clamp(20px,3.4vw,28px); font-weight:800; margin:2px 0 0}
+  .sub{color:var(--text2); font-size:13.5px; margin:6px 0 0; max-width:62ch; line-height:1.55}
+  .toggle{border:1px solid var(--border); background:var(--glass-bg); color:var(--text); border-radius:999px; padding:9px 15px; font:600 13px system-ui; cursor:pointer}
+  .stage{display:grid; grid-template-columns:1fr 1fr; gap:26px; width:100%; max-width:900px; align-items:start}
+  @media (max-width:760px){ .stage{grid-template-columns:1fr} }
+  .lbl{font-size:12px; font-weight:700; color:var(--text3); margin:0 0 8px; text-transform:uppercase; letter-spacing:.1em}
+
+  /* Bản CŨ — 4 card dàn dọc */
+  .old{display:flex; flex-direction:column; gap:10px; padding:12px; border-radius:var(--radius); background:var(--glass-bg); border:1px solid var(--border)}
+  .oldcard{border:1px solid var(--border); border-radius:12px; padding:13px 14px; background:var(--glass-hover)}
+  .oldcard h4{margin:0 0 6px; font-size:13.5px; font-weight:750}
+  .oldcard p{margin:0; font-size:12px; color:var(--text2); line-height:1.5}
+  .oldrow{display:flex; align-items:center; gap:8px; padding:7px 0; font-size:12.5px; border-top:1px solid var(--border)}
+  .oldrow:first-of-type{border-top:0}
+
+  /* ═══ TasksHub MỚI ═══ */
+  .thub{display:flex; flex-direction:column; gap:12px; padding:12px; border-radius:var(--radius); background:var(--glass-bg); border:1px solid var(--border)}
+  .thub-head{display:flex; align-items:center; gap:8px; padding:0 2px}
+  .thub-head-title{margin:0; font-size:13.5px; font-weight:800}
+  .thub-tabs{display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; padding-bottom:2px}
+  .thub-tabs::-webkit-scrollbar{display:none}
+  .thub-tab{position:relative; flex:0 0 auto; display:inline-flex; align-items:center; gap:6px; padding:7px 12px; border-radius:999px;
+    border:1px solid var(--border); background:var(--glass-hover); color:var(--text2); font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap;
+    transition:transform .15s, color .15s}
+  .thub-tab:not(.on):hover{color:var(--text); transform:translateY(-1px)}
+  .thub-tab.on{background:linear-gradient(135deg,#7C3AED,#6D28D9); border-color:transparent; color:#fff; box-shadow:0 4px 12px rgba(124,58,237,.35)}
+  .thub-tab.done:not(.on){opacity:.62}
+  .thub-pill{padding:1px 7px; border-radius:999px; background:rgba(0,0,0,.18); font-size:10.5px; font-weight:800; line-height:1.5}
+  .thub-tab.on .thub-pill{background:rgba(255,255,255,.22)}
+  :root[data-theme="light"] .thub-pill{background:rgba(0,0,0,.08)}
+  .thub-dot{position:absolute; top:5px; right:6px; width:7px;height:7px; border-radius:50%; background:#22C55E;
+    box-shadow:0 0 0 2px var(--glass-bg),0 0 6px rgba(34,197,94,.8); animation:dot 1.8s ease-in-out infinite}
+  @keyframes dot{0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.3);opacity:.7}}
+
+  .panel{border:1px solid var(--border); border-radius:12px; padding:14px; background:var(--glass-hover); min-height:190px}
+  .p-head{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px}
+  .p-head h3{margin:0; font-size:14px; font-weight:750}
+  .p-head .prog{font-size:11px; color:var(--text2)}
+  .p-sub{margin:0 0 12px; font-size:12px; color:var(--text2); line-height:1.5}
+  .task{display:flex; align-items:center; gap:10px; padding:10px; border:1px solid var(--border); border-radius:11px; margin-bottom:8px}
+  .task .em{font-size:18px}
+  .task .b{flex:1}
+  .task .b p{margin:0; font-size:13px; font-weight:650}
+  .task .b span{font-size:11px; color:var(--text2)}
+  .task .go{font-size:11px; font-weight:700; color:#a78bfa; white-space:nowrap}
+  .bar{height:8px; border-radius:99px; background:var(--border); overflow:hidden; margin:10px 0}
+  .bar i{display:block; height:100%; background:linear-gradient(90deg,#7C3AED,#22C55E)}
+  .cta{display:block; width:100%; margin-top:6px; padding:11px; border:0; border-radius:12px; cursor:pointer;
+    background:linear-gradient(135deg,#7C3AED,#6D28D9); color:#fff; font-weight:750; font-size:13px}
+  .note{max-width:440px; font-size:12.5px; color:var(--text2); line-height:1.6}
+  .note b{color:var(--text)}
+</style>
+
+<div class="wrap">
+  <div class="topbar">
+    <div>
+      <div class="kicker">ManiCash · Khu nhiệm vụ — trước / sau</div>
+      <h1 class="h1">Gom nhiệm vụ vào 1 cửa sổ, chia giai đoạn</h1>
+      <p class="sub">Trái: hiện trạng — 4 khối dàn dọc, cuộn dài, bừa. Phải: bản mới — 1 khay, thanh tab giai đoạn, mỗi lúc chỉ 1 bộ. Bấm thử các tab. "Đổi sáng / tối" để xem cả 2 nền.</p>
+    </div>
+    <button class="toggle" id="tg">◐ Đổi sáng / tối</button>
+  </div>
+
+  <div class="stage">
+    <div>
+      <p class="lbl">❌ Hiện tại — dàn 1 đống</p>
+      <div class="old">
+        <div style="display:flex;gap:8px;align-items:center;padding:0 2px"><span>🎯</span><b style="font-size:13.5px">Nhiệm vụ của bạn</b></div>
+        <div class="oldcard"><h4>☀️ Nhiệm vụ hôm nay · 1/3</h4>
+          <div class="oldrow">🔥 Điểm danh hôm nay <span style="margin-left:auto;color:#a78bfa">Điểm danh ›</span></div>
+          <div class="oldrow">💸 Ghi 2 chi tiêu <span style="margin-left:auto;color:#a78bfa">Ghi ngay ›</span></div>
+          <div class="oldrow">📊 Kiểm tra số dư <span style="margin-left:auto;color:#f59e0b">Nhận +10</span></div>
+        </div>
+        <div class="oldcard"><h4>📦 Thử thách tuần này</h4><p>Thử thách Kiềm Chế 7 ngày · 0/2 · +350 XP</p>
+          <div style="height:8px;border-radius:99px;background:var(--border);margin-top:8px"></div></div>
+        <div class="oldcard"><h4>🚀 Nhiệm vụ tối ưu tài chính</h4><p>3 tài khoản: Thu nhập · Chi tiêu · Tiết kiệm</p></div>
+        <div class="oldcard"><h4>🌱 Tân thủ 3/7</h4><p>Lộ trình 7 bước cho người mới</p></div>
+      </div>
+    </div>
+
+    <div>
+      <p class="lbl">✅ Mới — 1 cửa sổ, chia giai đoạn</p>
+      <div class="thub">
+        <div class="thub-head"><span>🎯</span><h2 class="thub-head-title">Nhiệm vụ của bạn</h2></div>
+        <div class="thub-tabs" id="tabs">
+          <button class="thub-tab" data-k="onboarding"><span>🌱</span> Tân thủ <span class="thub-pill">3/7</span></button>
+          <button class="thub-tab on" data-k="daily"><span>☀️</span> Hôm nay <span class="thub-pill">1/3</span><span class="thub-dot"></span></button>
+          <button class="thub-tab" data-k="weekly"><span>📦</span> Tuần</button>
+          <button class="thub-tab" data-k="mission"><span>🚀</span> Tối ưu <span class="thub-pill">0/3</span></button>
+        </div>
+        <div class="panel" id="panel"></div>
+      </div>
+      <p class="note" style="margin-top:14px">Chỉ <b>1 bộ nhiệm vụ hiển thị mỗi lúc</b>. Tab có <b>badge tiến độ</b> (3/7, 1/3…) và <b>chấm xanh nhấp nháy</b> khi có quà chờ nhận. Tab "Tân thủ" tự ẩn khi xong. Toàn bộ logic từng bộ giữ nguyên — chỉ đổi cách trình bày.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  var PANELS = {
+    onboarding: '<div class="p-head"><h3>🌱 Lộ trình tân thủ</h3><span class="prog">3/7 hoàn thành</span></div>'
+      +'<div class="bar"><i style="width:43%"></i></div>'
+      +'<div class="task"><span class="em">📝</span><div class="b"><p>Bước 4: Ghi giao dịch đầu tiên</p><span>Nhập "cà phê 30k" vào chat</span></div><span class="go">Làm ngay ›</span></div>'
+      +'<p class="p-sub">Tiếp theo: Bước 5 Đặt ngân sách · Bước 6 Tạo mục tiêu…</p>',
+    daily: '<div class="p-head"><h3>☀️ Nhiệm vụ hôm nay</h3><span class="prog">1/3 đã xong</span></div>'
+      +'<div class="task"><span class="em">🔥</span><div class="b"><p>Điểm danh hôm nay</p><span>Streak tăng khi ghi giao dịch đầu tiên</span></div><span class="go">Điểm danh ›</span></div>'
+      +'<div class="task"><span class="em">💸</span><div class="b"><p>Ghi 2 chi tiêu hôm nay</p><span>Nhập "+" để ghi mọi khoản</span></div><span class="go">Ghi ngay ›</span></div>'
+      +'<div class="task" style="border-color:rgba(245,158,11,.4)"><span class="em">📊</span><div class="b"><p>Kiểm tra số dư có thể tiêu</p><span>Xem Safe-to-Spend</span></div><span class="go" style="color:#f59e0b">🎁 Nhận +10</span></div>',
+    weekly: '<div class="p-head"><h3>📦 Thử thách Kiềm Chế 7 ngày</h3><span class="prog">0/2</span></div>'
+      +'<p class="p-sub">Mỗi lần bấm "Kiềm chế" thay vì "Mua" là một thắng lợi nhỏ. Đạt 2 lần thử thách tuần này.</p>'
+      +'<div style="font-size:28px;font-weight:800">0 <span style="font-size:14px;color:var(--text3);font-weight:600">/ 2</span></div>'
+      +'<div class="bar"><i style="width:0%"></i></div>'
+      +'<div style="display:flex;gap:8px;font-size:11px;color:var(--text2);margin-bottom:6px"><span style="color:#a78bfa;font-weight:700">+350 XP</span> · 🛡️ Thợ Săn Tiết Kiệm</div>'
+      +'<button class="cta">Mở Wishlist ›</button>',
+    mission: '<div class="p-head"><h3>🚀 Nhiệm vụ tối ưu tài chính</h3><span class="prog">0/3</span></div>'
+      +'<p class="p-sub">Tiền bạn sẽ được dùng tối ưu nếu thực hiện gói 3 tài khoản này.</p>'
+      +'<div class="task"><span class="em">💰</span><div class="b"><p>Tài khoản THU NHẬP</p><span>Cổng vào duy nhất của tiền</span></div><span class="go">Tick ›</span></div>'
+      +'<div class="task"><span class="em">🛒</span><div class="b"><p>Tài khoản CHI TIÊU</p><span>Hoá đơn + chi hằng ngày</span></div><span class="go">Tick ›</span></div>'
+      +'<div class="task"><span class="em">🏦</span><div class="b"><p>Tài khoản TIẾT KIỆM</p><span>3 quỹ: dự phòng · đầu tư · tự do</span></div><span class="go">Tick ›</span></div>',
+  };
+  var panel=document.getElementById('panel'), tabs=document.getElementById('tabs');
+  function show(k){ panel.innerHTML=PANELS[k]; [...tabs.children].forEach(b=>b.classList.toggle('on', b.dataset.k===k)); }
+  tabs.addEventListener('click',function(e){var b=e.target.closest('.thub-tab'); if(b) show(b.dataset.k);});
+  show('daily');
+  var r=document.documentElement, tg=document.getElementById('tg');
+  function cur(){return r.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');}
+  tg.addEventListener('click',function(){ r.dataset.theme=cur()==='dark'?'light':'dark'; });
+</script>

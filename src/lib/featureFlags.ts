@@ -12,3 +12,14 @@
 export function isSmsWebhookEnabled(): boolean {
   return process.env.NEXT_PUBLIC_SMS_WEBHOOK_ENABLED === 'true';
 }
+
+/**
+ * Bộ sưu tầm (kho linh vật con giáp + giao diện) — CHỜ HOÀN THIỆN.
+ * Entry ở header (ZodiacRunner mở RewardCollectionDrawer) tạm ẩn để không lộ
+ * tính năng chưa xong. Code + data (rewardCatalog, RewardCollectionDrawer,
+ * ZodiacRunner) vẫn giữ nguyên trong repo. Bật lại khi hoàn thiện:
+ *   NEXT_PUBLIC_COLLECTION_ENABLED=true
+ */
+export function isCollectionEnabled(): boolean {
+  return process.env.NEXT_PUBLIC_COLLECTION_ENABLED === 'true';
+}

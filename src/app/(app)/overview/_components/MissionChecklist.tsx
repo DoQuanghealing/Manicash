@@ -22,7 +22,7 @@ interface NextAction {
   icon: string;
 }
 
-const MISSION_STEPS: MissionStep[] = [
+export const MISSION_STEPS: MissionStep[] = [
   {
     id: 'account-income',
     title: 'Tài khoản THU NHẬP',

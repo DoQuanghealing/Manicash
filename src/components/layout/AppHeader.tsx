@@ -7,6 +7,7 @@ import { getRankByXP } from '@/data/rankDefinitions';
 import { useRouter } from 'next/navigation';
 import { resolveVibe } from '@/lib/ageGroup';
 import { getCopy } from '@/data/vibedCopy';
+import { isCollectionEnabled } from '@/lib/featureFlags';
 import ZodiacRunner from './ZodiacRunner';
 import './AppHeader.css';
 
@@ -53,7 +54,8 @@ export default function AppHeader() {
 
         <div className="header-greeting-block">
           <p className="header-greeting-text">
-            <ZodiacRunner />
+            {/* Entry "Bộ sưu tầm" (linh vật) — ẩn khi kho chưa hoàn thiện (WIP). */}
+            {isCollectionEnabled() && <ZodiacRunner />}
             {greetVerb},{' '}
             <span className="header-greeting-name">{firstName}</span>
           </p>
