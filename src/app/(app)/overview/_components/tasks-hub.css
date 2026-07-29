@@ -108,3 +108,10 @@
   .thub-tab-dot { animation: none; }
   .thub-tab:hover { transform: none; }
 }
+
+/* ── Tab "Sự kiện": event panel + teaser holiday xếp dọc ── */
+.thub-seasonal {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}

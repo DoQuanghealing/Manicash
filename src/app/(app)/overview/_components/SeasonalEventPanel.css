@@ -1,153 +1,9 @@
-/* ═══ SeasonalEventBanner styles ═══ */
+/* ═══ SeasonalEventPanel styles ═══ */
 
-/* ── Trigger banner ── */
-.seb-trigger {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+/* ── Inline panel (trong hub Nhiệm vụ) — không fixed như modal ── */
+.seb-inline {
+  display: block;
   width: 100%;
-  padding: 14px 16px;
-  background: linear-gradient(135deg, var(--seb-color, #F97316) 0%, rgba(124, 58, 237, 0.4) 100%);
-  border: 1px solid var(--seb-color, #F97316);
-  border-radius: 16px;
-  cursor: pointer;
-  color: white;
-  font-family: inherit;
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.25);
-}
-
-.seb-trigger::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at top right, rgba(255, 255, 255, 0.2), transparent 60%);
-  pointer-events: none;
-}
-
-.seb-trigger-icon {
-  width: 52px;
-  height: 52px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.15);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  backdrop-filter: blur(8px);
-}
-
-.seb-trigger-emoji {
-  font-size: 32px;
-  line-height: 1;
-  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.3));
-}
-
-.seb-trigger-content { flex: 1; min-width: 0; text-align: left; }
-
-.seb-trigger-meta {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  color: rgba(255, 255, 255, 0.9);
-  margin-bottom: 4px;
-}
-
-.seb-trigger-name {
-  font-size: 15px;
-  font-weight: 800;
-  margin: 0 0 2px;
-  color: white;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-}
-
-.seb-trigger-sub {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.85);
-  margin: 0 0 8px;
-  line-height: 1.4;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.seb-trigger-progress {
-  height: 4px;
-  background: rgba(0, 0, 0, 0.25);
-  border-radius: 4px;
-  overflow: hidden;
-  margin-bottom: 3px;
-}
-
-.seb-trigger-progress-fill {
-  height: 100%;
-  background: white;
-  transition: width 0.5s ease;
-}
-
-.seb-trigger-progress-text {
-  font-size: 10px;
-  color: rgba(255, 255, 255, 0.85);
-  margin: 0;
-  font-weight: 600;
-}
-
-.seb-trigger-arrow {
-  color: white;
-  flex-shrink: 0;
-  opacity: 0.8;
-}
-
-/* ── Modal backdrop + panel ── */
-.seb-backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(10, 10, 18, 0.78);
-  backdrop-filter: blur(8px);
-  z-index: 100;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding: 16px;
-  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 84px);
-  padding-top: calc(env(safe-area-inset-top, 0px) + 16px);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-
-.seb-panel {
-  width: 100%;
-  max-width: 520px;
-  background: var(--c-bg-secondary, #14132A);
-  border-radius: 22px;
-  border: 1px solid var(--seb-color, #F97316);
-  padding: 24px 18px 18px;
-  margin: auto;
-  position: relative;
-  max-height: calc(100dvh - 120px);
-  overflow-y: auto;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
-}
-
-.seb-close {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.06);
-  border: none;
-  color: var(--c-text-primary, #F4F4F5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  z-index: 2;
 }
 
 /* ── Header ── */
@@ -188,12 +44,48 @@
   padding: 0 8px;
 }
 
-.seb-header-period {
-  font-size: 10px;
-  color: var(--c-text-secondary, #A1A1AA);
-  margin: 0;
+/* ── Thời gian diễn ra + đếm ngược ── */
+.seb-header-dates {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.seb-header-daterange {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.05em;
+  color: var(--c-text-secondary, #A1A1AA);
+  letter-spacing: 0.02em;
+}
+
+.seb-header-countdown {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--seb-color, #F97316);
+  background: color-mix(in srgb, var(--seb-color, #F97316) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--seb-color, #F97316) 40%, transparent);
+}
+
+.seb-header-countdown.is-urgent {
+  color: #EF4444;
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.4);
+  animation: seb-countdown-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes seb-countdown-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
 }
 
 .seb-header-lunar {

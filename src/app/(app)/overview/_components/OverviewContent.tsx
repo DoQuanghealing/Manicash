@@ -11,8 +11,6 @@ import CareCard from '@/components/butler/CareCard';
 import SovereignMigrationBanner from '@/components/butler/SovereignMigrationBanner';
 import AlertsInbox from './AlertsInbox';
 import TasksHub from './TasksHub';
-import SeasonalEventBanner from './SeasonalEventBanner';
-import UpcomingHolidayHint from './UpcomingHolidayHint';
 import WishlistPopup from './WishlistPopup';
 import MonthlyReportModal from './MonthlyReportModal';
 import BankSyncReminder from '@/components/ui/BankSyncReminder';
@@ -27,11 +25,7 @@ export default function OverviewContent() {
   return (
     <>
       <div className="stack stack-md">
-        {/* ═══ BLOCK 0: Sự kiện theo mùa (tự ẩn khi không có event active) ═══ */}
-        <SeasonalEventBanner />
-
-        {/* ═══ BLOCK 0b: Holiday lunar sắp đến (tự ẩn nếu trùng với event đang active) ═══ */}
-        <UpcomingHolidayHint />
+        {/* ═══ Sự kiện theo mùa + teaser holiday: đã gộp vào TasksHub (tab "Sự kiện") ═══ */}
 
         {/* ═══ BLOCK 1: Safe-to-Spend Balance ═══ */}
         {/* ═══ PV-5: báo trước migration Free-sovereign (14 ngày + 7 ngày trial) ═══ */}
