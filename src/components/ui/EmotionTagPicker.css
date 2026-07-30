@@ -1,0 +1,98 @@
+.emotion-picker-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: calc(var(--z-modal) + 10);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2xl);
+}
+
+.emotion-picker-card {
+  width: 100%;
+  max-width: 360px;
+  padding: var(--space-2xl);
+  border-radius: var(--radius-2xl);
+  background: rgba(20, 15, 40, 0.95);
+  border: 1px solid rgba(124, 58, 237, 0.25);
+  box-shadow: 0 0 80px rgba(124, 58, 237, 0.2);
+  text-align: center;
+}
+
+.emotion-picker-title {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--c-text-primary);
+  margin-bottom: var(--space-xs);
+}
+
+.emotion-picker-subtitle {
+  font-size: var(--text-xs);
+  color: var(--c-text-secondary);
+  margin-bottom: var(--space-xl);
+}
+
+.emotion-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+}
+
+.emotion-picker-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: var(--space-sm) 4px;
+  border-radius: var(--radius-lg);
+  background: rgba(124, 58, 237, 0.08);
+  border: 1px solid rgba(124, 58, 237, 0.15);
+  transition: transform 0.15s, background 0.15s;
+}
+
+.emotion-picker-chip:active {
+  transform: scale(0.94);
+  background: rgba(124, 58, 237, 0.18);
+}
+
+.emotion-picker-emoji {
+  font-size: 1.5rem;
+}
+
+.emotion-picker-label {
+  font-size: var(--text-xs);
+  color: var(--c-text-primary);
+  font-weight: 600;
+}
+
+.emotion-picker-skip {
+  width: 100%;
+  padding: 12px;
+  border-radius: var(--radius-lg);
+  background: transparent;
+  border: 1px solid var(--glass-border);
+  color: var(--c-text-secondary);
+  font-weight: 600;
+  font-size: var(--text-sm);
+}
+
+/* ═══ LIGHT MODE ═══ */
+[data-theme="light"] .emotion-picker-overlay {
+  background: rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="light"] .emotion-picker-card {
+  background: rgba(255, 255, 255, 0.96);
+  border-color: rgba(124, 58, 237, 0.15);
+  box-shadow: 0 8px 48px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .emotion-picker-chip {
+  background: rgba(124, 58, 237, 0.06);
+  border-color: rgba(124, 58, 237, 0.12);
+}

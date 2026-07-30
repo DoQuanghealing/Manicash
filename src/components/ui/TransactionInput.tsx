@@ -17,6 +17,7 @@ import BreathGate from './BreathGate';
 import CelebrationModal from './CelebrationModal';
 import BillFundReminder from './BillFundReminder';
 import SplitSuccessPopup from './SplitSuccessPopup';
+import EmotionTagPicker from './EmotionTagPicker';
 import './TransactionInput.css';
 
 const BREATHGATE_THRESHOLD = 3_000_000;
@@ -43,6 +44,7 @@ export default function TransactionInput() {
   });
   const [showBreathGate, setShowBreathGate] = useState(false);
   const [butlerComment, setButlerComment] = useState<string | null>(null);
+  const [showEmotionPicker, setShowEmotionPicker] = useState(false);
 
   // Celebration state
   const [showCelebration, setShowCelebration] = useState(false);
@@ -326,6 +328,9 @@ export default function TransactionInput() {
             setLastIncomeAmount(celebrationData.amount);
             setLastIncomeTxnId(celebrationData.txnId);
             setShowBillReminder(true);
+          } else if (celebrationData.type === 'expense') {
+            // Hỏi cảm xúc chi tiêu — bỏ qua được, không chặn navigate.
+            setShowEmotionPicker(true);
           } else {
             router.push('/ledger');
           }
@@ -357,6 +362,16 @@ export default function TransactionInput() {
         result={splitResult}
         onClose={() => {
           setSplitResult(null);
+          router.push('/ledger');
+        }}
+      />
+
+      {/* Emotion Tag Picker — chỉ cho expense, bỏ qua được */}
+      <EmotionTagPicker
+        isOpen={showEmotionPicker}
+        transactionId={celebrationData.txnId}
+        onDone={() => {
+          setShowEmotionPicker(false);
           router.push('/ledger');
         }}
       />

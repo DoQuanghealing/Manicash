@@ -42,6 +42,7 @@ import { useCapacitySurveyStore } from '@/stores/useCapacitySurveyStore';
 import { useFinancialDnaStore } from '@/stores/useFinancialDnaStore';
 import CapacityCard from './CapacityCard';
 import CapacitySurveyCard from './CapacitySurveyCard';
+import EmotionTagPicker from '@/components/ui/EmotionTagPicker';
 import { useTransactionHabitStore } from '@/stores/useTransactionHabitStore';
 import { topHabits, type TransactionHabit } from '@/lib/aiMoneyChat/prism/transactionMemory';
 import { toMoneySnapshotV1, getBudgetCategoryProgress } from '@/lib/moneyBrain';
@@ -329,6 +330,8 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
   // Phase 5: audit history + undo.
   const [showHistory, setShowHistory] = useState(false);
   const [undoingId, setUndoingId] = useState<string | null>(null);
+  // Sau khi ghi 1 khoản chi qua chat — hỏi cảm xúc lúc mua (bỏ qua được).
+  const [emotionPickerTxnId, setEmotionPickerTxnId] = useState<string | null>(null);
   const auditRecords = useActionAuditStore((s) => s.records);
   const addEarningTask = useTaskStore((s) => s.addTask);
   const threadRef = useRef<HTMLDivElement>(null);
@@ -638,6 +641,10 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
         undoReason: result.undoReason,
         undoSnapshot: result.undoSnapshot,
       });
+      if (pendingAction.action === 'CREATE_EXPENSE') {
+        const after = result.undoSnapshot?.after as { transactionId?: string } | undefined;
+        if (after?.transactionId) setEmotionPickerTxnId(after.transactionId);
+      }
     } else {
       audit.markFailed(requestId, result.message);
     }
@@ -1728,6 +1735,12 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
           </motion.section>
         )}
       </AnimatePresence>
+
+      <EmotionTagPicker
+        isOpen={!!emotionPickerTxnId}
+        transactionId={emotionPickerTxnId ?? ''}
+        onDone={() => setEmotionPickerTxnId(null)}
+      />
     </div>
   );
 }
