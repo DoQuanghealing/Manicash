@@ -170,6 +170,15 @@ export const useAuthStore = create<AuthStore>()(
       newShields += 1;
     }
 
+    // Trim activeDates giữ last 60 ngày (đủ dài hơn event dài nhất) + ghi nhận hôm nay.
+    const prevActiveDates = user.activeDates || {};
+    const activeDatesCutoff = getDateKey(new Date(Date.now() - 60 * 24 * 60 * 60 * 1000));
+    const trimmedActiveDates: Record<string, true> = {};
+    for (const k of Object.keys(prevActiveDates)) {
+      if (k >= activeDatesCutoff) trimmedActiveDates[k] = true;
+    }
+    trimmedActiveDates[today] = true;
+
     set({
       user: {
         ...user,
@@ -177,6 +186,7 @@ export const useAuthStore = create<AuthStore>()(
         lastActiveDate: today,
         streakShields: newShields,
         shieldsUsedAt: shieldsUsed,
+        activeDates: trimmedActiveDates,
         updatedAt: new Date().toISOString(),
       },
     });

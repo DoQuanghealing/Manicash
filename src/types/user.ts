@@ -38,6 +38,9 @@ export interface UserProfile extends AccountDeletionState {
   lastResistAt?: string;
   /** Lưu YYYY-MM-DD → count resist trong ngày đó. Giới hạn last 30 ngày. */
   resistByDate?: Record<string, number>;
+  /** Ngày (YYYY-MM-DD) user có tương tác thật (log giao dịch) → streak advance. Giới hạn last 60 ngày.
+   * Dùng để đếm "số ngày mở app" chính xác trong 1 kỳ event, thay vì suy diễn qua streak. */
+  activeDates?: Record<string, true>;
   /** Số shield đang giữ — protect streak khi bỏ lỡ 1 ngày. Tự tăng mỗi mốc 7-day streak. */
   streakShields?: number;
   /** Lịch sử dùng shield — ISO timestamp, để UI hiện toast. */
