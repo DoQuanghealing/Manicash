@@ -11,6 +11,9 @@ import { STORE_KEYS, STORE_VERSIONS, onRehydrateMark } from '@/stores/persistCon
 export type TxnType = 'income' | 'expense' | 'transfer';
 export type WalletType = 'main' | 'emergency' | 'bill-fund';
 
+/** Cảm xúc lúc chi tiêu — tự khai, không phán xét. Optional, chỉ áp cho expense. */
+export type EmotionTag = 'self_reward' | 'stress' | 'sad' | 'preference' | 'excited' | 'anger' | 'jealousy';
+
 export interface Transaction {
   id: string;
   type: TxnType;
@@ -25,6 +28,8 @@ export interface Transaction {
   kind?: 'income' | 'expense' | 'split';
   splitBreakdown?: { billFund: number; reserve: number; goals: number; investment: number; };
   sourceTransactionId?: string;
+  /** Gắn sau khi tạo giao dịch (không chặn lúc nhập) — xem updateTransactionEmotion. */
+  emotionTag?: EmotionTag;
 }
 
 export interface BillSnapshot {
@@ -85,6 +90,8 @@ interface FinanceState {
   setBillPaidStatus: (billId: string, isPaid: boolean, billFundOverride?: number) => void;
   /** Phase 5 (undo): xóa 1 giao dịch + đảo ngược balance đã cộng/trừ. Trả false nếu không tìm thấy. */
   removeTransaction: (transactionId: string) => boolean;
+  /** Gắn/sửa/gỡ emotionTag cho 1 giao dịch đã tồn tại (tự khai, không phán xét). */
+  updateTransactionEmotion: (transactionId: string, tag: EmotionTag | null) => void;
   /** Reset tất cả bill về chưa đóng — gọi khi sang tháng mới (rollover). */
   resetBillsPaid: () => void;
   getTotalBills: () => number;
@@ -419,6 +426,14 @@ export const useFinanceStore = create<FinanceState>()(
       };
     });
     return true;
+  },
+
+  updateTransactionEmotion: (transactionId, tag) => {
+    set((state) => ({
+      transactions: state.transactions.map((t) =>
+        t.id === transactionId ? { ...t, emotionTag: tag ?? undefined } : t
+      ),
+    }));
   },
 
   resetBillsPaid: () =>

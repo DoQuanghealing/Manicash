@@ -216,10 +216,14 @@ export function collectSeasonalDelta(startedAt: string): Record<SeasonalMetric, 
     }
   }
 
-  // event_app_days: ước lượng qua streak (nếu streak >= delta-ngày-từ-startedAt)
-  // Đơn giản: số ngày unique đã active từ startedAt = min(streak, daysSinceStart)
-  const daysSinceStart = Math.floor((Date.now() - startTs) / (24 * 60 * 60 * 1000)) + 1;
-  const eventAppDays = Math.min(user?.streak || 0, daysSinceStart);
+  // event_app_days: số ngày unique có tương tác thật (log giao dịch → streak advance)
+  // từ startTs, đếm trực tiếp trong user.activeDates (xem useAuthStore.updateStreak).
+  let eventAppDays = 0;
+  if (user?.activeDates) {
+    for (const dateStr of Object.keys(user.activeDates)) {
+      if (dateStr >= startDateKey) eventAppDays += 1;
+    }
+  }
 
   return {
     event_saved: eventSaved,

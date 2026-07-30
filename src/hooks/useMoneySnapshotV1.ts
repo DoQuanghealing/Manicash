@@ -67,6 +67,7 @@ export function useMoneySnapshotV1(): MoneySnapshotV1 {
       weekKey:    getISOWeekKey(t.date, timezone),
       monthKey:   getMonthKey(t.date, timezone),
       time:       t.time,
+      emotionTag: t.emotionTag,
     }));
 
     return {

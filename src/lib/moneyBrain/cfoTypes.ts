@@ -153,6 +153,23 @@ export interface CFOContextPackV1 {
     }>;
   };
 
+  /** Chi tiêu theo cảm xúc (tự khai, không phán xét) — self_reward/preference/excited
+   * KHÔNG tính vào impulsive. Xem moneyBrain/emotionMetrics.ts. */
+  emotionalSpending: {
+    totalExpense: number;
+    taggedTotal: number;
+    byTag: Partial<Record<string, number>>;
+    impulsiveTotal: number;
+    impulsiveRatioOfExpense: number;
+    goalDelays: Array<{
+      id: string;
+      name: string;
+      baselineMonths: number;
+      projectedMonths: number | null;
+      delayPercent: number | null;
+    }>;
+  };
+
   earningTasks: {
     activeCount: number;
     overdueCount: number;

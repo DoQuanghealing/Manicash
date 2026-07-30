@@ -17,6 +17,9 @@ export type MoneyTxnType = 'income' | 'expense' | 'transfer';
 
 export type MoneyWallet = 'main' | 'emergency' | 'bill-fund' | string;
 
+/** Cảm xúc lúc chi tiêu — tự khai, không phán xét. Đồng bộ với EmotionTag (useFinanceStore). */
+export type MoneyEmotionTag = 'self_reward' | 'stress' | 'sad' | 'preference' | 'excited' | 'anger' | 'jealousy';
+
 export interface MoneyTransactionSnapshot {
   id: string;
   type: MoneyTxnType;
@@ -37,6 +40,7 @@ export interface MoneyTransactionSnapshot {
   monthKey: string;
   /** HH:mm. */
   time?: string;
+  emotionTag?: MoneyEmotionTag;
 }
 
 export interface MoneyBudgetSnapshot {

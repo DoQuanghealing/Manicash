@@ -13,14 +13,21 @@ import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useQuestStore } from '@/stores/useQuestStore';
 import { useMissionStore } from '@/stores/useMissionStore';
+import { useAuthStore } from '@/stores/useAuthStore';
+import { useFinanceStore } from '@/stores/useFinanceStore';
+import { useTaskStore } from '@/stores/useTaskStore';
 import { TOTAL_ONBOARDING_QUESTS } from '@/data/onboardingQuests';
+import { collectSeasonalDelta } from '@/lib/questMetrics';
+import { getUpcomingLunarHoliday, daysUntilHoliday, HOLIDAY_TO_EVENT } from '@/data/lunarCalendar';
 import OnboardingQuestPanel from './OnboardingQuestPanel';
 import DailyQuestCard from './DailyQuestCard';
 import WeeklyChallengeCard from './WeeklyChallengeCard';
 import MissionChecklist, { MISSION_STEPS } from './MissionChecklist';
+import SeasonalEventPanel from './SeasonalEventPanel';
+import UpcomingHolidayHint from './UpcomingHolidayHint';
 import './tasks-hub.css';
 
-type PhaseKey = 'onboarding' | 'daily' | 'weekly' | 'mission';
+type PhaseKey = 'onboarding' | 'daily' | 'weekly' | 'mission' | 'seasonal';
 
 interface PhaseTab {
   key: PhaseKey;
@@ -52,10 +59,30 @@ export default function TasksHub() {
   // ── Mission ──
   const completedMissionIds = useMissionStore((s) => s.completedMissionIds);
 
+  // ── Seasonal event + holiday teaser ──
+  const ensureSeasonal = useQuestStore((s) => s.ensureSeasonalEvent);
+  const evaluateSeasonal = useQuestStore((s) => s.evaluateSeasonal);
+  const getCurrentSeasonal = useQuestStore((s) => s.getCurrentSeasonal);
+  const seasonalStartedAt = useQuestStore((s) => s.seasonalStartedAt);
+  const seasonalChapterInstances = useQuestStore((s) => s.seasonalChapterInstances);
+  const seasonalFinalClaimedAt = useQuestStore((s) => s.seasonalFinalClaimedAt);
+
+  // Data sources cho seasonal delta
+  const user = useAuthStore((s) => s.user);
+  const transactions = useFinanceStore((s) => s.transactions);
+  const seasonalTasks = useTaskStore((s) => s.tasks);
+
   useEffect(() => {
     ensureToday();
     ensureWeekly();
-  }, [ensureToday, ensureWeekly]);
+    ensureSeasonal();
+  }, [ensureToday, ensureWeekly, ensureSeasonal]);
+
+  // Re-eval seasonal khi data đổi — chạy dù tab chưa mở để pill/chấm sáng cập nhật.
+  useEffect(() => {
+    if (!seasonalStartedAt) return;
+    evaluateSeasonal(collectSeasonalDelta(seasonalStartedAt));
+  }, [user, transactions, seasonalTasks, seasonalStartedAt, evaluateSeasonal, seasonalChapterInstances]);
 
   const tabs = useMemo<PhaseTab[]>(() => {
     const list: PhaseTab[] = [];
@@ -115,6 +142,40 @@ export default function TasksHub() {
       ready: false,
     });
 
+    // Sự kiện theo mùa — chỉ hiện khi có event active HOẶC holiday sắp tới (≤30 ngày).
+    // Luôn đứng cuối; không bao giờ là tab mặc định.
+    const activeEvent = getCurrentSeasonal();
+    const holiday = getUpcomingLunarHoliday();
+    const holidayDays = holiday ? daysUntilHoliday(holiday) : -1;
+    const holidayVisible =
+      !!holiday &&
+      holidayDays >= 0 &&
+      holidayDays <= 30 &&
+      !(activeEvent && HOLIDAY_TO_EVENT[holiday.id] === activeEvent.id);
+
+    if (activeEvent || holidayVisible) {
+      let pill = '';
+      let ready = false;
+      if (activeEvent) {
+        const chapters = activeEvent.chapters;
+        const claimed = chapters.filter((c) => seasonalChapterInstances[c.id]?.claimedAt).length;
+        const chapterReady = chapters.some(
+          (c) => seasonalChapterInstances[c.id]?.completedAt && !seasonalChapterInstances[c.id]?.claimedAt,
+        );
+        const allClaimed = claimed === chapters.length;
+        pill = `${claimed}/${chapters.length}`;
+        ready = chapterReady || (allClaimed && !seasonalFinalClaimedAt);
+      }
+      list.push({
+        key: 'seasonal',
+        label: 'Sự kiện',
+        icon: activeEvent?.icon ?? holiday?.icon ?? '📅',
+        pill,
+        done: false,
+        ready,
+      });
+    }
+
     return list;
   }, [
     isOnboardingDone,
@@ -124,6 +185,9 @@ export default function TasksHub() {
     dailyInstances,
     weeklyInstance,
     completedMissionIds,
+    getCurrentSeasonal,
+    seasonalChapterInstances,
+    seasonalFinalClaimedAt,
   ]);
 
   // Tab người dùng chọn (null = chưa chọn → dùng mặc định).
@@ -172,6 +236,12 @@ export default function TasksHub() {
             {active === 'daily' && <DailyQuestCard />}
             {active === 'weekly' && <WeeklyChallengeCard />}
             {active === 'mission' && <MissionChecklist />}
+            {active === 'seasonal' && (
+              <div className="thub-seasonal">
+                <SeasonalEventPanel />
+                <UpcomingHolidayHint />
+              </div>
+            )}
           </motion.div>
         </AnimatePresence>
       </div>

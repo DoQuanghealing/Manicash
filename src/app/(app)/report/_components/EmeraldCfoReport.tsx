@@ -7,7 +7,7 @@
 
 import { useMemo, useState, useCallback } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Gem, Coffee, Clock, RefreshCw, Zap, Lock, Bell, Check } from 'lucide-react';
+import { ArrowLeft, Gem, Coffee, Clock, RefreshCw, Zap, Lock, Bell, Check, HeartCrack } from 'lucide-react';
 import { useCFOSnapshot } from '@/hooks/useCFOSnapshot';
 import { buildCFOContextPack } from '@/lib/moneyBrain';
 import { useDashboardStore } from '@/stores/useDashboardStore';
@@ -128,6 +128,19 @@ export default function EmeraldCfoReport() {
     const monthsToReserve =
       ex.netCashflow > 0 && reserveGap > 0 ? Math.ceil(reserveGap / ex.netCashflow) : null;
 
+    // Chi tiêu theo cảm xúc — không phán xét, chỉ cảnh báo khi tỷ trọng đủ lớn.
+    const emo = ctx.emotionalSpending;
+    const emotionalPct = Math.round(emo.impulsiveRatioOfExpense * 100);
+    const stallGoal = emo.goalDelays.find((g) => g.projectedMonths === null);
+    const worstDelayGoal = emo.goalDelays
+      .filter((g) => g.delayPercent !== null)
+      .sort((a, b) => (b.delayPercent ?? 0) - (a.delayPercent ?? 0))[0];
+    const topGoalDelay = stallGoal
+      ? { name: stallGoal.name, stalls: true, delayPercent: null as number | null }
+      : worstDelayGoal
+        ? { name: worstDelayGoal.name, stalls: false, delayPercent: worstDelayGoal.delayPercent }
+        : null;
+
     return {
       income: ex.totalIncome,
       expense: ex.totalExpense,
@@ -149,6 +162,9 @@ export default function EmeraldCfoReport() {
       pipeline: ctx.earningTasks.expectedIncomePipeline,
       reserveTarget,
       monthsToReserve,
+      emotionalImpulsiveTotal: emo.impulsiveTotal,
+      emotionalPct,
+      topGoalDelay,
       hasData: ctx.history.availableMonths.length > 0 || ex.totalIncome > 0 || ex.totalExpense > 0,
     };
   }, [ctx]);
@@ -266,6 +282,32 @@ export default function EmeraldCfoReport() {
                   <p className="ec-inset-h"><span className="ec-ic rose"><RefreshCw size={13} /></span> Vòng lặp quen thuộc của anh</p>
                   <div className="ec-flow"><span className="ec-chip">Cạn &lt;1tr</span><span className="ec-ar">→</span><span className="ec-chip">Lao đi kiếm</span><span className="ec-ar">→</span><span className="ec-chip hot">Dư → lơ</span><span className="ec-ar">↺</span></div>
                 </div>
+                {d.emotionalImpulsiveTotal > 0 && (
+                  <div className="ec-inset">
+                    <p className="ec-inset-h"><span className="ec-ic rose"><HeartCrack size={13} /></span> Chi tiêu theo cảm xúc</p>
+                    <p className="ec-inset-b">
+                      Khoảng {d.emotionalPct}% chi tháng này (<b className="rose">{tr(d.emotionalImpulsiveTotal)}</b>) rơi vào lúc stress/buồn phiền/giận — không sao cả, chỉ là điều đáng để ý.
+                    </p>
+                    {d.topGoalDelay && (
+                      d.topGoalDelay.stalls ? (
+                        <p className="ec-inset-b">Mục tiêu <b>&quot;{d.topGoalDelay.name}&quot;</b> gần như đứng yên nếu giữ nhịp này.</p>
+                      ) : (
+                        <>
+                          <div className="ec-runway">
+                            <div className="ec-runway-fill" style={{ width: `${Math.min(100, d.topGoalDelay.delayPercent ?? 0)}%` }} />
+                          </div>
+                          <div className="ec-runway-lab">
+                            <span>Nhịp bình thường</span>
+                            <b>&quot;{d.topGoalDelay.name}&quot; chậm thêm ~{d.topGoalDelay.delayPercent}%</b>
+                          </div>
+                        </>
+                      )
+                    )}
+                    <Link href="/goals" className="ec-cta mint" style={{ marginTop: '10px', textDecoration: 'none' }}>
+                      Lần sau đưa vào Wishlist trước khi mua
+                    </Link>
+                  </div>
+                )}
                 <div className="ec-grow" />
                 <button
                   className='ec-cta gold'

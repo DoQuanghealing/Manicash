@@ -14,8 +14,11 @@ const MODE_SUMMARY: Record<CFOContextPackV1['financialMode'], string> = {
   protect_capital: 'Tập trung bảo toàn kỷ luật và phân bổ vốn thông minh.',
 };
 
+/** Ngưỡng % chi impulsive (stress/buồn/giận/ganh tị) trên tổng chi tháng để cảnh báo. */
+const IMPULSIVE_RATIO_WARNING_THRESHOLD = 0.15;
+
 export function buildDeterministicCFOFallback(context: CFOContextPackV1): CFOAIResponse {
-  const { executiveSummary: ex, bills, budget, goals, earningTasks, behavior } = context;
+  const { executiveSummary: ex, bills, budget, goals, earningTasks, behavior, emotionalSpending } = context;
 
   // ── Summary ──
   const summary = `${MODE_SUMMARY[context.financialMode]} HealthScore tháng này: ${ex.healthScore}/100.`;
@@ -39,6 +42,11 @@ export function buildDeterministicCFOFallback(context: CFOContextPackV1): CFOAIR
   }
   if (earningTasks.overdueCount > 0) {
     diagnosis.push(`${earningTasks.overdueCount} nhiệm vụ kiếm tiền đang trễ hạn.`);
+  }
+  if (emotionalSpending.impulsiveRatioOfExpense >= IMPULSIVE_RATIO_WARNING_THRESHOLD) {
+    diagnosis.push(
+      `Khoảng ${Math.round(emotionalSpending.impulsiveRatioOfExpense * 100)}% chi tiêu tháng này (${formatVND(emotionalSpending.impulsiveTotal)}) gắn với lúc stress/buồn phiền/giận/ganh tị — không sao cả, chỉ là điều đáng để ý.`,
+    );
   }
   if (diagnosis.length === 0) {
     diagnosis.push(
@@ -89,6 +97,25 @@ export function buildDeterministicCFOFallback(context: CFOContextPackV1): CFOAIR
   if (opportunities.length === 0) {
     opportunities.push('Tăng thu qua nhiệm vụ kiếm tiền và giữ kỷ luật chi tiêu.');
   }
+  if (emotionalSpending.impulsiveTotal > 0) {
+    opportunities.push(
+      'Lần sau muốn mua vì stress/buồn/giận, thử đưa món đó vào Wishlist trước 24-48h để cân nhắc lại — hoặc dành vài phút hít thở cho bình tĩnh.',
+    );
+  }
+
+  // ── Warnings: tác động lên mục tiêu nếu duy trì nhịp chi impulsive này ──
+  const warnings: string[] = [];
+  for (const delay of emotionalSpending.goalDelays) {
+    if (delay.projectedMonths === null) {
+      warnings.push(
+        `Nếu giữ nhịp chi tiêu cảm xúc này, mục tiêu "${delay.name}" gần như đứng yên — phần tiết kiệm dự kiến bị ăn hết.`,
+      );
+    } else if (delay.delayPercent !== null && delay.delayPercent > 0) {
+      warnings.push(
+        `Mục tiêu "${delay.name}" có thể chậm thêm khoảng ${delay.delayPercent}% so với kế hoạch nếu duy trì mức chi tiêu cảm xúc này.`,
+      );
+    }
+  }
 
   // ── Action plan 7 ngày ──
   const actionPlan7Days = [
@@ -120,5 +147,6 @@ export function buildDeterministicCFOFallback(context: CFOContextPackV1): CFOAIR
     opportunities: opportunities.slice(0, 6),
     actionPlan7Days: actionPlan7Days.slice(0, 7),
   };
+  if (warnings.length > 0) result.warnings = warnings.slice(0, 5);
   return result;
 }

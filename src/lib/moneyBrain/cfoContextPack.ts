@@ -55,6 +55,7 @@ import {
 } from './taskMetrics';
 import { getAvailableMonthKeys, getMonthlyHistory, hasEnoughHistory } from './historyMetrics';
 import { deriveFinancialMode } from './financialMode';
+import { getEmotionSpendingBreakdown, getGoalDelayFromEmotionSpending } from './emotionMetrics';
 
 export function buildCFOContextPack(snapshot: MoneySnapshotV1): CFOContextPackV1 {
   const monthKey = getCurrentMonthKey(snapshot.clientNow, snapshot.timezone);
@@ -81,6 +82,10 @@ export function buildCFOContextPack(snapshot: MoneySnapshotV1): CFOContextPackV1
 
   // ── Tasks ──
   const priorityTasks = getHighestPriorityIncomeTasks(snapshot, 5);
+
+  // ── Emotional spending ──
+  const emotionBreakdown = getEmotionSpendingBreakdown(snapshot);
+  const goalDelays = getGoalDelayFromEmotionSpending(snapshot, emotionBreakdown.impulsiveTotal);
 
   return {
     version: 'cfo_context_v1',
@@ -200,6 +205,15 @@ export function buildCFOContextPack(snapshot: MoneySnapshotV1): CFOContextPackV1
         monthlyContributionTarget: g.monthlyContributionTarget,
         requiredMonthlyContribution: g.requiredMonthlyContribution,
       })),
+    },
+
+    emotionalSpending: {
+      totalExpense: emotionBreakdown.totalExpense,
+      taggedTotal: emotionBreakdown.taggedTotal,
+      byTag: emotionBreakdown.byTag,
+      impulsiveTotal: emotionBreakdown.impulsiveTotal,
+      impulsiveRatioOfExpense: emotionBreakdown.impulsiveRatioOfExpense,
+      goalDelays,
     },
 
     earningTasks: {
