@@ -8,7 +8,7 @@
 
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { TrendingUp, TrendingDown, Receipt, PiggyBank } from 'lucide-react';
+import { TrendingUp, TrendingDown, PiggyBank } from 'lucide-react';
 import { useFinanceStore } from '@/stores/useFinanceStore';
 import { useDashboardStore } from '@/stores/useDashboardStore';
 import { formatCurrencyShort } from '@/utils/formatCurrency';
@@ -18,12 +18,12 @@ export default function MoneyGrid() {
   const router = useRouter();
   const monthlyIncome = useFinanceStore((s) => s.getMonthlyIncome());
   const monthlyExpense = useFinanceStore((s) => s.getMonthlyExpense());
-  const fixedBills = useFinanceStore((s) => s.fixedBills);
   const totalFixedBills = useFinanceStore((s) => s.getTotalFixedBillsAmount());
   const accounts = useDashboardStore((s) => s.accounts);
 
-  const paidBills = fixedBills.filter((b) => b.isPaid).length;
   const spentPercent = totalFixedBills > 0 ? Math.min(100, Math.round((monthlyExpense / Math.max(monthlyIncome, 1)) * 100)) : 0;
+  // Thẻ "Hóa đơn" đã bỏ khỏi lưới: nó mở đúng trang /overview/expenses như ô Chi
+  // tiêu nên chỉ tổ chiếm chỗ. Chi tiết hóa đơn nằm trong trang Chi tiêu.
   const fundsTotal = accounts.reserve.balance + accounts.goals.balance + accounts.investment.balance;
 
   const month = new Date().getMonth() + 1;
@@ -65,25 +65,7 @@ export default function MoneyGrid() {
 
         <motion.button
           type="button"
-          className="mg-tile"
-          onClick={() => router.push('/overview/expenses')}
-          whileTap={{ scale: 0.97 }}
-        >
-          <div className="mg-tile-top">
-            <span className="mg-icon mg-icon--bills"><Receipt size={17} /></span>
-            <span className="mg-pct mg-pct--muted">{paidBills}/{fixedBills.length}</span>
-          </div>
-          <span className="mg-label">Hóa đơn</span>
-          <div className="mg-bill-dots">
-            {fixedBills.slice(0, 5).map((b) => (
-              <span key={b.id} className={`mg-bill-dot ${b.isPaid ? 'mg-bill-dot--paid' : 'mg-bill-dot--unpaid'}`} />
-            ))}
-          </div>
-        </motion.button>
-
-        <motion.button
-          type="button"
-          className="mg-tile"
+          className="mg-tile mg-tile--wide"
           onClick={() => router.push('/overview/funds')}
           whileTap={{ scale: 0.97 }}
         >

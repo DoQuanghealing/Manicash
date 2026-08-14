@@ -29,6 +29,16 @@
   gap: 11px;
 }
 
+/* Ô cuối chiếm trọn hàng khi lưới còn 3 ô (Thu nhập · Chi tiêu · Tiết kiệm). */
+.mg-tile--wide {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+}
+
+.mg-tile--wide .mg-label { flex: 1; }
+
 .mg-tile {
   display: flex;
   flex-direction: column;
