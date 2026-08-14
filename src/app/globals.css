@@ -540,6 +540,11 @@ img, svg { display: block; max-width: 100%; }
   --c-text-secondary: #4A4A5A;
   --c-text-muted: #8E8E9A;
   --c-text-accent: #6D28D9;
+  /* Biến này KHÔNG được khai ở theme tối — mọi nơi dùng nó đều rơi vào fallback
+   * `rgba(255,255,255,…)`, tức chữ trắng trên nền trắng ở giao diện sáng (chú
+   * thích phiếu chi, nhãn "HÔM NAY"… mờ tịt). Khai riêng cho light là đủ: dark
+   * vẫn dùng fallback cũ nên không đổi gì. */
+  --c-text-tertiary: #5C5C6E;
 
   /* Semantic — adjusted for light bg contrast */
   --c-success: #16A34A;

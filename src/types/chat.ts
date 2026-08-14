@@ -3,7 +3,8 @@
 import type { CapacityResult } from '@/lib/aiMoneyChat/prism/capacity/capacityEngine';
 
 export interface ChatReceipt {
-  txnType: 'income' | 'expense';
+  /** 'saving' = cất vào quỹ (không tính vào thu/chi trong ngày). */
+  txnType: 'income' | 'expense' | 'saving';
   amount: number;
   categoryName: string;
   categoryIcon: string;

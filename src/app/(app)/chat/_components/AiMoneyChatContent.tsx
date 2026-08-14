@@ -42,6 +42,7 @@ import { useCapacitySurveyStore } from '@/stores/useCapacitySurveyStore';
 import { useFinancialDnaStore } from '@/stores/useFinancialDnaStore';
 import CapacityCard from './CapacityCard';
 import CapacitySurveyCard from './CapacitySurveyCard';
+import GuardianAlerts from './GuardianAlerts';
 import EmotionTagPicker from '@/components/ui/EmotionTagPicker';
 import { useTransactionHabitStore } from '@/stores/useTransactionHabitStore';
 import { topHabits, type TransactionHabit } from '@/lib/aiMoneyChat/prism/transactionMemory';
@@ -69,9 +70,9 @@ import type { ConfirmedMoneyIntent, ParsedMoneyIntent } from '@/lib/aiMoneyChat/
 import { useAiMoneyMemoryStore } from '@/stores/useAiMoneyMemoryStore';
 import { useBudgetStore } from '@/stores/useBudgetStore';
 import { useCategoryStore } from '@/stores/useCategoryStore';
-import { useFinanceStore, type TxnType, type WalletType } from '@/stores/useFinanceStore';
+import { useFinanceStore, type WalletType, type PaymentMethod } from '@/stores/useFinanceStore';
 import { useGoalsStore } from '@/stores/useGoalsStore';
-import { useDashboardStore } from '@/stores/useDashboardStore';
+import { useDashboardStore, type SavingsFund } from '@/stores/useDashboardStore';
 import { useTaskStore } from '@/stores/useTaskStore';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
@@ -82,14 +83,32 @@ interface AiMoneyChatContentProps {
   enabled: boolean;
 }
 
+/** Loại giao dịch trong khung xác nhận. 'saving' KHÔNG phải thu cũng không phải
+ * chi — tiền chỉ chuyển từ ví chính sang quỹ (bỏ ống heo, cất để dành). */
+type DraftType = 'expense' | 'income' | 'saving';
+
 interface DraftForm {
-  type: TxnType;
+  type: DraftType;
+  /** Tiền mặt hay chuyển khoản — quyết định tiền vào/ra túi nào. */
+  method: PaymentMethod;
   amount: string;
   categoryId: string;
   wallet: WalletType;
   note: string;
   date: string;
+  /** Chỉ dùng khi type = 'saving': cất vào quỹ nào. */
+  savingFund: SavingsFund;
 }
+
+/** Nhãn + biểu tượng của 3 quỹ tiết kiệm — dùng cho select và phiếu ghi nhận. */
+const SAVING_FUNDS: { id: SavingsFund; name: string; icon: string; color: string }[] = [
+  { id: 'reserve', name: 'Quỹ dự phòng', icon: '🛡️', color: '#0EA5E9' },
+  { id: 'goals', name: 'Quỹ mục tiêu', icon: '🎯', color: '#7C3AED' },
+  { id: 'investment', name: 'Quỹ đầu tư', icon: '📈', color: '#F59E0B' },
+];
+
+/** Câu chữ người Việt hay dùng khi cất tiền — đoán sẵn loại 'Tiết kiệm' cho user. */
+const SAVING_HINTS = ['ống heo', 'ong heo', 'tiết kiệm', 'tiet kiem', 'để dành', 'de danh', 'cất tiền', 'cat tien', 'bỏ ống', 'bo ong'];
 
 interface ReconciliationForm {
   income: string;
@@ -124,12 +143,16 @@ function formatVnd(amount: number): string {
 /** Phiếu ghi nhận thu/chi gọn + tổng thu/chi trong ngày — badge màu. */
 function TransactionReceipt({ receipt }: { receipt: NonNullable<ChatMessage['receipt']> }) {
   const isIncome = receipt.txnType === 'income';
+  const isSaving = receipt.txnType === 'saving';
+  const verb = isSaving ? 'Đã cất tiết kiệm' : isIncome ? 'Xác nhận đã thu' : 'Xác nhận đã chi';
+  // Tiết kiệm không cộng/trừ tài sản, chỉ đổi chỗ → dùng mũi tên thay vì +/−.
+  const sign = isSaving ? '→' : isIncome ? '+' : '−';
   return (
     <div className={`tg-receipt tg-receipt--${receipt.txnType}`}>
       <div className="tg-receipt-head">
-        <span className="tg-receipt-verb">{isIncome ? 'Xác nhận đã thu' : 'Xác nhận đã chi'}</span>
+        <span className="tg-receipt-verb">{verb}</span>
         <span className="tg-receipt-amount">
-          {isIncome ? '+' : '−'}{formatVnd(receipt.amount)}đ
+          {sign}{formatVnd(receipt.amount)}đ
         </span>
       </div>
       <span
@@ -175,10 +198,26 @@ function getDateConstraints() {
 }
 
 function makeDraftFromIntent(intent: ParsedMoneyIntent): DraftForm {
-  const type = intent.type && intent.type !== 'transfer' ? intent.type : 'expense';
+  let type: DraftType = intent.type && intent.type !== 'transfer' ? intent.type : 'expense';
+
+  /* "bỏ ống heo 500k" không phải chi tiêu — bộ phân tích chưa biết khái niệm
+   * tiết kiệm nên đoán ra 'expense'. Bắt bằng từ khoá và mở sẵn loại đúng;
+   * user vẫn đổi lại được ở ô Loại. */
+  const rawLower = `${intent.rawText} ${intent.note ?? ''}`.toLowerCase();
+  if (type === 'expense' && SAVING_HINTS.some((k) => rawLower.includes(k))) {
+    type = 'saving';
+  }
+
+  /* Nói "tiền mặt"/"trả tiền mặt" thì mở sẵn đúng hình thức; còn lại mặc định
+   * chuyển khoản (app khuyến khích CK vì đối soát được). */
+  const method: PaymentMethod = /tiền mặt|tien mat|cash|trả tay|tra tay/.test(rawLower)
+    ? 'cash'
+    : 'transfer';
 
   return {
     type,
+    method,
+    savingFund: 'reserve',
     amount: intent.amount ? formatVnd(intent.amount.value) : '',
     categoryId: intent.category?.categoryId ?? (type === 'income' ? 'other-in' : 'other'),
     wallet: intent.accountMapping?.legacyWallet ?? 'main',
@@ -379,7 +418,6 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
   const surveyAnswers = useCapacitySurveyStore((s) => s.answers);
 
   // P4 — Người Gác: cảnh báo chủ động (offline) khi mở chat.
-  const [guardianDismissed, setGuardianDismissed] = useState(false);
   const [idleDays, setIdleDays] = useState(0);
   const guardianAlerts = useMemo<GuardianAlert[]>(() => {
     if (!enabled) return [];
@@ -451,9 +489,9 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
     enabled &&
     draftIntent &&
     draftForm &&
-    draftForm.type !== 'transfer' &&
     parseAmountInput(draftForm.amount) > 0 &&
-    draftForm.categoryId,
+    // Tiết kiệm chọn quỹ chứ không chọn danh mục.
+    (draftForm.type === 'saving' ? draftForm.savingFund : draftForm.categoryId),
   );
 
   function appendMessages(nextMessages: ChatMessage[]) {
@@ -936,7 +974,7 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
     setDraftForm((current) => {
       if (!current) return current;
       const next = { ...current, ...updates };
-      if (updates.type) {
+      if (updates.type && updates.type !== 'saving') {
         const nextCategories = updates.type === 'income' ? INCOME_CATEGORIES : expenseCategories;
         const exists = nextCategories.some((category) => category.id === next.categoryId);
         if (!exists) {
@@ -1037,6 +1075,58 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
     if (!draftIntent || !draftForm) return;
 
     const amount = parseAmountInput(draftForm.amount);
+
+    /* ── Tiết kiệm: tiền rời ví chính sang quỹ, KHÔNG ghi là thu hay chi ──
+     * Dùng lại splitFunds (đường duy nhất chuyển tiền vào quỹ trong app): trừ
+     * ví chính, cộng quỹ, ghi giao dịch 'split' vào sổ, cộng tích lũy + XP. */
+    if (draftForm.type === 'saving') {
+      if (!amount) {
+        setError('Hãy kiểm tra lại số tiền trước khi lưu.');
+        return;
+      }
+      const fund = SAVING_FUNDS.find((f) => f.id === draftForm.savingFund) ?? SAVING_FUNDS[0];
+      try {
+        useDashboardStore.getState().splitFunds({
+          sourceAmount: amount,
+          billPercent: 0,
+          savingsPercent: 100,
+          savingsBreakdown: {
+            reserve: fund.id === 'reserve' ? 100 : 0,
+            goals: fund.id === 'goals' ? 100 : 0,
+            investment: fund.id === 'investment' ? 100 : 0,
+          },
+          occurredAt: new Date(`${draftForm.date}T12:00:00`),
+        });
+        trackEvent('chat_confirm', { type: 'saving', corrected: false });
+
+        const todayKey = getDateKey(new Date());
+        const today = useFinanceStore.getState().getDailySummary()[todayKey] ?? { income: 0, expense: 0 };
+        appendMessages([
+          {
+            id: makeMessageId('system'),
+            role: 'system',
+            text: `Đã cất ${formatVnd(amount)}đ vào ${fund.name}`,
+            receipt: {
+              txnType: 'saving',
+              amount,
+              categoryName: fund.name,
+              categoryIcon: fund.icon,
+              categoryColor: fund.color,
+              todayIncome: today.income,
+              todayExpense: today.expense,
+              description: draftForm.note.trim() || undefined,
+            },
+          },
+        ]);
+        setDraftIntent(null);
+        setDraftForm(null);
+        setError(null);
+      } catch (saveError) {
+        setError(saveError instanceof Error ? saveError.message : 'Không cất được vào quỹ.');
+      }
+      return;
+    }
+
     if (!amount || !draftForm.categoryId) {
       setError('Hãy kiểm tra lại số tiền và danh mục trước khi lưu.');
       return;
@@ -1049,6 +1139,7 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
       categoryId: draftForm.categoryId,
       note: draftForm.note.trim() || draftIntent.rawText,
       wallet: draftForm.wallet,
+      method: draftForm.method,
       occurredAt: new Date(`${draftForm.date}T12:00:00`).toISOString(),
       tags: draftIntent.tags,
     };
@@ -1207,7 +1298,11 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
   const panelOpen = activePanel !== null;
   const panelTitle =
     activePanel === 'confirm'
-      ? draftForm?.type === 'income' ? 'Xác nhận thu nhập' : 'Xác nhận chi tiêu'
+      ? draftForm?.type === 'income'
+        ? 'Xác nhận thu nhập'
+        : draftForm?.type === 'saving'
+          ? 'Xác nhận tiết kiệm'
+          : 'Xác nhận chi tiêu'
       : activePanel === 'reconcile'
         ? 'Đối chiếu số dư'
         : activePanel === 'earning'
@@ -1271,37 +1366,8 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
           </div>
         )}
 
-        {!guardianDismissed && guardianAlerts.length > 0 && (
-          <div className="tg-guardian" role="status" aria-label={`Cảnh báo từ ${butlerName}`}>
-            <div className="tg-guardian-head">
-              <span className="tg-guardian-avatar" aria-hidden>🛡️</span>
-              <span className="tg-guardian-title">{butlerName} để ý thấy</span>
-              <button
-                type="button"
-                className="tg-guardian-close"
-                onClick={() => setGuardianDismissed(true)}
-                aria-label="Đóng cảnh báo"
-              >
-                ×
-              </button>
-            </div>
-            {guardianAlerts.map((a) => (
-              <button
-                key={a.id}
-                type="button"
-                className={`tg-guardian-item tg-guardian-${a.severity}`}
-                disabled={!a.query}
-                onClick={() => a.query && parseInput(a.query)}
-              >
-                <span className="tg-guardian-icon" aria-hidden>{a.icon}</span>
-                <span className="tg-guardian-body">
-                  <span className="tg-guardian-item-title">{a.title}</span>
-                  <span className="tg-guardian-item-msg">{a.message}</span>
-                </span>
-                {a.query && <span className="tg-guardian-cta" aria-hidden>›</span>}
-              </button>
-            ))}
-          </div>
+        {guardianAlerts.length > 0 && (
+          <GuardianAlerts alerts={guardianAlerts} butlerName={butlerName} onRunQuery={parseInput} />
         )}
 
         <div className="tg-thread" ref={threadRef}>
@@ -1549,8 +1615,12 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
                 <>
                   {draftForm.amount && (
                     <div className="tg-amount">
-                      <span className={`tg-amount-value ${draftForm.type === 'income' ? 'is-income' : 'is-expense'}`}>
-                        {draftForm.type === 'income' ? '+' : '−'}{draftForm.amount}
+                      <span
+                        className={`tg-amount-value ${
+                          draftForm.type === 'income' ? 'is-income' : draftForm.type === 'saving' ? 'is-saving' : 'is-expense'
+                        }`}
+                      >
+                        {draftForm.type === 'income' ? '+' : draftForm.type === 'saving' ? '→' : '−'}{draftForm.amount}
                       </span>
                       <span className="tg-amount-cur">VND</span>
                     </div>
@@ -1559,9 +1629,10 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
                   <div className="tg-fields">
                     <label>
                       <span>Loại</span>
-                      <select value={draftForm.type} onChange={(event) => updateDraft({ type: event.target.value as TxnType })}>
+                      <select value={draftForm.type} onChange={(event) => updateDraft({ type: event.target.value as DraftType })}>
                         <option value="expense">Chi tiêu</option>
                         <option value="income">Thu nhập</option>
+                        <option value="saving">Tiết kiệm</option>
                       </select>
                     </label>
 
@@ -1570,22 +1641,52 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
                       <input value={draftForm.amount} inputMode="numeric" onChange={(event) => handleAmountChange(event.target.value)} />
                     </label>
 
-                    <label>
-                      <span>Danh mục</span>
-                      <select value={draftForm.categoryId} onChange={(event) => updateDraft({ categoryId: event.target.value })}>
-                        {categories.map((category) => (
-                          <option key={category.id} value={category.id}>{category.name}</option>
-                        ))}
-                      </select>
-                    </label>
+                    {/* Tiết kiệm chọn QUỸ đích; thu/chi chọn danh mục + ví. */}
+                    {draftForm.type === 'saving' ? (
+                      <label className="tg-field-wide">
+                        <span>Cất vào quỹ</span>
+                        <select
+                          value={draftForm.savingFund}
+                          onChange={(event) => updateDraft({ savingFund: event.target.value as SavingsFund })}
+                        >
+                          {SAVING_FUNDS.map((fund) => (
+                            <option key={fund.id} value={fund.id}>{fund.icon} {fund.name}</option>
+                          ))}
+                        </select>
+                      </label>
+                    ) : (
+                      <>
+                        <label>
+                          <span>Danh mục</span>
+                          <select value={draftForm.categoryId} onChange={(event) => updateDraft({ categoryId: event.target.value })}>
+                            {categories.map((category) => (
+                              <option key={category.id} value={category.id}>{category.name}</option>
+                            ))}
+                          </select>
+                        </label>
 
-                    <label>
-                      <span>Ví</span>
-                      <select value={draftForm.wallet} onChange={(event) => updateDraft({ wallet: event.target.value as WalletType })}>
-                        <option value="main">Ví chính</option>
-                        <option value="emergency">Quỹ dự phòng</option>
-                      </select>
-                    </label>
+                        <label>
+                          <span>Ví</span>
+                          <select value={draftForm.wallet} onChange={(event) => updateDraft({ wallet: event.target.value as WalletType })}>
+                            <option value="main">Ví chính</option>
+                            <option value="emergency">Quỹ dự phòng</option>
+                          </select>
+                        </label>
+                      </>
+                    )}
+
+                    {draftForm.type !== 'saving' && (
+                      <label>
+                        <span>Hình thức</span>
+                        <select
+                          value={draftForm.method}
+                          onChange={(event) => updateDraft({ method: event.target.value as PaymentMethod })}
+                        >
+                          <option value="transfer">🏦 Chuyển khoản</option>
+                          <option value="cash">💵 Tiền mặt</option>
+                        </select>
+                      </label>
+                    )}
 
                     <label>
                       <span>Ngày</span>
