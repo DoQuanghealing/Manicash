@@ -1,4 +1,4 @@
-import type { TxnType, WalletType } from '@/stores/useFinanceStore';
+import type { TxnType, WalletType, PaymentMethod } from '@/stores/useFinanceStore';
 
 export type MoneyIntentKind =
   | 'transaction'
@@ -57,6 +57,8 @@ export interface ConfirmedMoneyIntent {
   categoryId: string;
   note: string;
   wallet: WalletType;
+  /** Tiền mặt hay chuyển khoản. Thiếu = chuyển khoản (giao dịch cũ). */
+  method?: PaymentMethod;
   occurredAt: string;
   tags?: string[];
 }

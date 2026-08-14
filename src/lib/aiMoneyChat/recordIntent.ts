@@ -23,6 +23,7 @@ export function recordConfirmedMoneyIntent(
     categoryId: intent.categoryId,
     note: intent.note,
     wallet: intent.wallet,
+    method: intent.method,
   });
 
   const xpAction = intent.type === 'income'
