@@ -10,16 +10,7 @@ import { generateButlerReport } from '@/lib/butlerReport';
 
 import { getCurrentMonthKey, getMonthKeyFromDate } from '@/lib/dateHelpers';
 import { STORE_KEYS, STORE_VERSIONS, onRehydrateMark } from '@/stores/persistConfig';
-
-// Demo category budgets
-const SEED_BUDGETS: CategoryBudget[] = [
-  { categoryId: 'food',      monthlyLimit: 4_000_000, spent: 2_800_000, month: getCurrentMonthKey() },
-  { categoryId: 'coffee',    monthlyLimit: 800_000,   spent: 650_000,   month: getCurrentMonthKey() },
-  { categoryId: 'transport', monthlyLimit: 1_500_000, spent: 900_000,   month: getCurrentMonthKey() },
-  { categoryId: 'shopping',  monthlyLimit: 2_000_000, spent: 1_200_000, month: getCurrentMonthKey() },
-  { categoryId: 'entertain', monthlyLimit: 1_000_000, spent: 750_000,   month: getCurrentMonthKey() },
-  { categoryId: 'health',    monthlyLimit: 500_000,   spent: 200_000,   month: getCurrentMonthKey() },
-];
+import { DEMO_BUDGETS, DEMO_CARRY_OVER } from '@/data/demoSeed';
 
 interface BudgetState {
   carryOver: number;            // Dư tháng trước
@@ -86,11 +77,11 @@ const isDemoSeed = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
 export const useBudgetStore = create<BudgetState>()(
   persist(
     (set, get) => ({
-  carryOver: isDemoSeed ? 800_000 : 0,
+  carryOver: isDemoSeed ? DEMO_CARRY_OVER : 0,
   currentMonth: getCurrentMonthKey(),
-  categoryBudgets: isDemoSeed ? SEED_BUDGETS : [],
+  categoryBudgets: isDemoSeed ? DEMO_BUDGETS : [],
   rolloverNotified: false,
-  flaggedCategories: isDemoSeed ? ['entertain'] : [],
+  flaggedCategories: isDemoSeed ? ['cosmetics'] : [],
   flaggedTransactionIds: [],
   monthlySnapshots: [],
   unviewedReportMonth: null,

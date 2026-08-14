@@ -6,6 +6,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import type { EarningTask, SubTask, TaskStatus, XPPenalty, OverdueReason, TaskAiEval } from '@/types/task';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { STORE_KEYS, STORE_VERSIONS, onRehydrateMark } from '@/stores/persistConfig';
+import { DEMO_TASKS } from '@/data/demoSeed';
 
 function genId(prefix = 'task') {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
@@ -21,77 +22,6 @@ function getTaskStatus(task: EarningTask): TaskStatus {
   if (now > end) return 'overdue';
   return 'active';
 }
-
-const today = new Date();
-const msPerDay = 1000 * 60 * 60 * 24;
-const getDayStr = (offsetDays: number) => new Date(today.getTime() + offsetDays * msPerDay).toISOString();
-
-const SEED_TASKS: EarningTask[] = [
-  {
-    id: 'task-1', name: 'Freelance thiết kế logo',
-    expectedAmount: 3_000_000,
-    startDate: getDayStr(-2),
-    endDate: getDayStr(5),
-    createdAt: getDayStr(-3),
-    subTasks: [
-      { id: 'st-1a', name: 'Liên hệ khách hàng', isCompleted: true },
-      { id: 'st-1b', name: 'Gửi bản nháp v1', isCompleted: true },
-      { id: 'st-1c', name: 'Chỉnh sửa theo feedback', isCompleted: false },
-      { id: 'st-1d', name: 'Giao file final', isCompleted: false },
-      { id: 'st-1e', name: 'Nhận thanh toán', isCompleted: false },
-    ],
-  },
-  {
-    id: 'task-2', name: 'Bán hàng online Shopee',
-    expectedAmount: 1_500_000,
-    startDate: getDayStr(2),
-    endDate: getDayStr(10),
-    createdAt: getDayStr(-1),
-    subTasks: [
-      { id: 'st-2a', name: 'Chụp ảnh sản phẩm', isCompleted: false },
-      { id: 'st-2b', name: 'Đăng listing', isCompleted: false },
-      { id: 'st-2c', name: 'Xử lý đơn hàng', isCompleted: false },
-    ],
-  },
-  {
-    id: 'task-3', name: 'Dạy kèm tiếng Anh',
-    expectedAmount: 2_000_000,
-    startDate: getDayStr(-10),
-    endDate: getDayStr(-1),
-    createdAt: getDayStr(-12),
-    subTasks: [
-      { id: 'st-3a', name: 'Soạn giáo trình', isCompleted: true },
-      { id: 'st-3b', name: 'Dạy 8 buổi', isCompleted: false },
-    ],
-  },
-  {
-    id: 'task-4', name: 'Viết bài blog công nghệ',
-    expectedAmount: 800_000,
-    actualAmount: 800_000,
-    completedAt: getDayStr(-3),
-    startDate: getDayStr(-7),
-    endDate: getDayStr(-2),
-    createdAt: getDayStr(-8),
-    subTasks: [
-      { id: 'st-4a', name: 'Research chủ đề', isCompleted: true },
-      { id: 'st-4b', name: 'Viết bài 2000 từ', isCompleted: true },
-      { id: 'st-4c', name: 'Submit và chỉnh sửa', isCompleted: true },
-    ],
-  },
-  {
-    id: 'task-5', name: 'Chụp ảnh sự kiện',
-    expectedAmount: 5_000_000,
-    startDate: getDayStr(7),
-    endDate: getDayStr(14),
-    createdAt: today.toISOString(),
-    subTasks: [
-      { id: 'st-5a', name: 'Xác nhận lịch với khách', isCompleted: false },
-      { id: 'st-5b', name: 'Chuẩn bị thiết bị', isCompleted: false },
-      { id: 'st-5c', name: 'Chụp & chỉnh ảnh', isCompleted: false },
-      { id: 'st-5d', name: 'Giao ảnh', isCompleted: false },
-    ],
-  },
-];
 
 interface TaskState {
   tasks: EarningTask[];
@@ -122,7 +52,7 @@ const isDemoSeed = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
 export const useTaskStore = create<TaskState>()(
   persist(
     (set, get) => ({
-  tasks: isDemoSeed ? SEED_TASKS : [],
+  tasks: isDemoSeed ? DEMO_TASKS : [],
   xpPenalties: [],
 
   addTask: (data) => {

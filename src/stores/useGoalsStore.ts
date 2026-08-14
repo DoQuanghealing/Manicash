@@ -6,58 +6,11 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import type { Goal, Milestone, GoalDeposit, GoalDepositSource, GoalBankInfo } from '@/types/budget';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { STORE_KEYS, STORE_VERSIONS, onRehydrateMark } from '@/stores/persistConfig';
+import { DEMO_GOALS } from '@/data/demoSeed';
 
 function genId(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 }
-
-const SEED_GOALS: Goal[] = [
-  {
-    id: 'goal-house', name: 'Mua nhà', icon: '🏠',
-    targetAmount: 6_000_000_000, currentAmount: 120_000_000,
-    deadline: '2035-12-31', color: '#7C3AED',
-    /** Phase 1: khoản tiết kiệm đều mỗi tháng cho mục tiêu mua nhà */
-    monthlyContributionTarget: 5_000_000,
-    milestones: [
-      { id: 'ms-h1', name: 'Đặt cọc 500 triệu', amount: 500_000_000, targetDate: '2028-06-01', isCompleted: false },
-      { id: 'ms-h2', name: 'Tích lũy 2 tỷ', amount: 2_000_000_000, targetDate: '2031-12-01', isCompleted: false },
-    ],
-    createdAt: '2025-01-01',
-  },
-  {
-    id: 'goal-emergency', name: 'Quỹ khẩn cấp', icon: '🛡️',
-    targetAmount: 50_000_000, currentAmount: 12_500_000,
-    deadline: '2026-12-31', color: '#22C55E',
-    /** Phase 1: 2M/tháng để hoàn thành quỹ khẩn cấp trong thời hạn */
-    monthlyContributionTarget: 2_000_000,
-    milestones: [
-      { id: 'ms-e1', name: '25 triệu', amount: 25_000_000, targetDate: '2026-06-01', isCompleted: false },
-    ],
-    createdAt: '2025-03-01',
-  },
-  {
-    id: 'goal-car', name: 'Xe ô tô', icon: '🚗',
-    targetAmount: 800_000_000, currentAmount: 35_000_000,
-    deadline: '2029-12-31', color: '#3B82F6',
-    /** Phase 1: 3M/tháng tích lũy mua xe */
-    monthlyContributionTarget: 3_000_000,
-    milestones: [
-      { id: 'ms-c1', name: 'Đặt cọc 100 triệu', amount: 100_000_000, targetDate: '2027-06-01', isCompleted: false },
-    ],
-    createdAt: '2025-02-01',
-  },
-  {
-    id: 'goal-invest', name: 'Vốn đầu tư', icon: '📈',
-    targetAmount: 200_000_000, currentAmount: 45_000_000,
-    deadline: '2027-12-31', color: '#F97316',
-    /** Phase 1: 1.5M/tháng tích lũy vốn đầu tư */
-    monthlyContributionTarget: 1_500_000,
-    milestones: [
-      { id: 'ms-i1', name: '100 triệu đầu tiên', amount: 100_000_000, targetDate: '2026-12-01', isCompleted: false },
-    ],
-    createdAt: '2025-01-15',
-  },
-];
 
 interface GoalsState {
   goals: Goal[];
@@ -104,7 +57,7 @@ const isDemoSeed = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
 export const useGoalsStore = create<GoalsState>()(
   persist(
     (set, get) => ({
-  goals: isDemoSeed ? SEED_GOALS : [],
+  goals: isDemoSeed ? DEMO_GOALS : [],
 
   addGoal: (data) =>
     set((s) => ({
