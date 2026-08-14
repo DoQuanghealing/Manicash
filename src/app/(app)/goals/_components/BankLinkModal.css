@@ -257,3 +257,16 @@
 [data-theme="light"] .blm-title { color: #1A1A2E; }
 [data-theme="light"] .blm-input { background: rgba(0, 0, 0, 0.03); color: #1A1A2E; }
 [data-theme="light"] .blm-amount-input { color: #1A1A2E; }
+
+/* ═══ GIAO DIỆN SÁNG — chữ trắng vẽ cho nền tối sẽ mất hút trên nền trắng ═══
+ * Đổi sang thang xám đậm dần tương ứng, giữ nguyên thứ bậc chính/phụ/chú thích. */
+[data-theme="light"] .blm-close { color: #3A3A4E; }
+[data-theme="light"] .blm-sub { color: #55556A; }
+[data-theme="light"] .blm-info { color: #3A3A4E; }
+[data-theme="light"] .blm-label { color: #55556A; }
+[data-theme="light"] .blm-input::placeholder { color: #6E6E82; }
+[data-theme="light"] .blm-quick-bank { color: #3A3A4E; }
+[data-theme="light"] .blm-amount-input::placeholder { color: #9A9AA8; }
+[data-theme="light"] .blm-currency { color: #55556A; }
+[data-theme="light"] .blm-hint { color: #55556A; }
+[data-theme="light"] .blm-cancel { color: #3A3A4E; }
