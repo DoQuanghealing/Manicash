@@ -7,15 +7,6 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { useBudgetStore } from '@/stores/useBudgetStore';
 import { getMonthKeyFromDate, getCurrentMonthKey, getDateKey, getDateLabel } from '@/lib/dateHelpers';
 import { STORE_KEYS, STORE_VERSIONS, onRehydrateMark } from '@/stores/persistConfig';
-import {
-  DEMO_TRANSACTIONS,
-  DEMO_BILLS,
-  DEMO_BILL_PAYMENTS,
-  DEMO_MAIN_BALANCE,
-  DEMO_CASH_BALANCE,
-  DEMO_EMERGENCY_BALANCE,
-  DEMO_BILL_FUND_BALANCE,
-} from '@/data/demoSeed';
 
 export type TxnType = 'income' | 'expense' | 'transfer';
 export type WalletType = 'main' | 'emergency' | 'bill-fund';
@@ -154,19 +145,17 @@ function appendBillPayment(current: BillPayment[], bill: FixedBill): BillPayment
   return [...rest, record];
 }
 
-const isDemoSeed = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
-
 export const useFinanceStore = create<FinanceState>()(
   persist(
     (set, get) => ({
-  transactions: isDemoSeed ? DEMO_TRANSACTIONS : [],
-  mainBalance: isDemoSeed ? DEMO_MAIN_BALANCE : 0,
-  cashBalance: isDemoSeed ? DEMO_CASH_BALANCE : 0,
-  emergencyBalance: isDemoSeed ? DEMO_EMERGENCY_BALANCE : 0,
-  billFundBalance: isDemoSeed ? DEMO_BILL_FUND_BALANCE : 0,
-  fixedBills: isDemoSeed ? DEMO_BILLS : [],
+  transactions: [],
+  mainBalance: 0,
+  cashBalance: 0,
+  emergencyBalance: 0,
+  billFundBalance: 0,
+  fixedBills: [],
   billSnapshots: [],
-  billPayments: isDemoSeed ? DEMO_BILL_PAYMENTS : [],
+  billPayments: [],
 
   addTransaction: (txnData) => {
     const { transactionDate, ...restTxnData } = txnData;

@@ -4,7 +4,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { STORE_KEYS, STORE_VERSIONS } from '@/stores/persistConfig';
-import { DEMO_DASHBOARD_ACCOUNTS, DEMO_CONTRIBUTIONS } from '@/data/demoSeed';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useFinanceStore } from '@/stores/useFinanceStore';
 import { getMonthKeyFromDate, getCurrentMonthKey, isInCurrentWeek } from '@/lib/dateHelpers';
@@ -127,14 +126,12 @@ const EMPTY_ACCOUNTS: DashboardAccounts = {
   investment: { balance: 0, growth: '0%', icon: 'TrendingUp' },
 };
 
-const isDemoSeed = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
-
 export const useDashboardStore = create<DashboardState>()(
   persist(
     (set, get) => ({
-  accounts: isDemoSeed ? DEMO_DASHBOARD_ACCOUNTS : EMPTY_ACCOUNTS,
+  accounts: EMPTY_ACCOUNTS,
   auto_split: false,
-  monthlyContributions: isDemoSeed ? DEMO_CONTRIBUTIONS : { reserve: [], goals: [], investment: [] },
+  monthlyContributions: { reserve: [], goals: [], investment: [] },
 
   isSpendingOverLimit: () => {
     const { spending } = get().accounts;
@@ -400,7 +397,7 @@ export const useDashboardStore = create<DashboardState>()(
         const p = (persisted ?? {}) as Partial<DashboardState>;
         return {
           ...p,
-          accounts: p.accounts ?? (isDemoSeed ? DEMO_DASHBOARD_ACCOUNTS : EMPTY_ACCOUNTS),
+          accounts: p.accounts ?? EMPTY_ACCOUNTS,
           monthlyContributions:
             p.monthlyContributions ?? { reserve: [], goals: [], investment: [] },
         } as DashboardState;

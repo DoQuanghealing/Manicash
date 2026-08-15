@@ -35,18 +35,14 @@ interface WalletBankState {
   updateSubWallet: (groupId: WalletGroup, subId: string, updates: Partial<SubWallet>) => void;
 }
 
-const isDemoSeed = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
-
 export const DEFAULT_WALLETS: WalletGroupData[] = [
   {
     id: 'income',
     label: 'Thu nhập',
     icon: '💰',
     color: '#22C55E',
-    // Chế độ demo (chụp ảnh quảng cáo) mới có sẵn tên + số tài khoản; user thật
-    // vẫn thấy trống và tự khai. Số này là số giả, không thuộc về ai.
-    bankName: isDemoSeed ? 'Vietcombank' : '',
-    accountNumber: isDemoSeed ? '0071 0004 2688' : '',
+    bankName: '',
+    accountNumber: '',
     subWallets: [],
   },
   {

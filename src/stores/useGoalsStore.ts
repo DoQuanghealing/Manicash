@@ -6,7 +6,6 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import type { Goal, Milestone, GoalDeposit, GoalDepositSource, GoalBankInfo } from '@/types/budget';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { STORE_KEYS, STORE_VERSIONS, onRehydrateMark } from '@/stores/persistConfig';
-import { DEMO_GOALS } from '@/data/demoSeed';
 
 function genId(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
@@ -52,12 +51,10 @@ interface GoalsState {
   getDeposits: (id: string) => GoalDeposit[];
 }
 
-const isDemoSeed = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
-
 export const useGoalsStore = create<GoalsState>()(
   persist(
     (set, get) => ({
-  goals: isDemoSeed ? DEMO_GOALS : [],
+  goals: [],
 
   addGoal: (data) =>
     set((s) => ({

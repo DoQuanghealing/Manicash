@@ -6,7 +6,6 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import type { EarningTask, SubTask, TaskStatus, XPPenalty, OverdueReason, TaskAiEval } from '@/types/task';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { STORE_KEYS, STORE_VERSIONS, onRehydrateMark } from '@/stores/persistConfig';
-import { DEMO_TASKS } from '@/data/demoSeed';
 
 function genId(prefix = 'task') {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
@@ -47,12 +46,10 @@ interface TaskState {
   getSubTaskProgress: (taskId: string) => { done: number; total: number };
 }
 
-const isDemoSeed = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
-
 export const useTaskStore = create<TaskState>()(
   persist(
     (set, get) => ({
-  tasks: isDemoSeed ? DEMO_TASKS : [],
+  tasks: [],
   xpPenalties: [],
 
   addTask: (data) => {

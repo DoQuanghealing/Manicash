@@ -10,7 +10,6 @@ import { generateButlerReport } from '@/lib/butlerReport';
 
 import { getCurrentMonthKey, getMonthKeyFromDate } from '@/lib/dateHelpers';
 import { STORE_KEYS, STORE_VERSIONS, onRehydrateMark } from '@/stores/persistConfig';
-import { DEMO_BUDGETS, DEMO_CARRY_OVER } from '@/data/demoSeed';
 
 interface BudgetState {
   carryOver: number;            // Dư tháng trước
@@ -72,16 +71,14 @@ interface BudgetState {
   markReportViewed: () => void;
 }
 
-const isDemoSeed = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
-
 export const useBudgetStore = create<BudgetState>()(
   persist(
     (set, get) => ({
-  carryOver: isDemoSeed ? DEMO_CARRY_OVER : 0,
+  carryOver: 0,
   currentMonth: getCurrentMonthKey(),
-  categoryBudgets: isDemoSeed ? DEMO_BUDGETS : [],
+  categoryBudgets: [],
   rolloverNotified: false,
-  flaggedCategories: isDemoSeed ? ['cosmetics'] : [],
+  flaggedCategories: [],
   flaggedTransactionIds: [],
   monthlySnapshots: [],
   unviewedReportMonth: null,
