@@ -10,7 +10,6 @@ import { useGoalsStore } from '@/stores/useGoalsStore';
 import { useFinanceStore } from '@/stores/useFinanceStore';
 import { useBudgetStore } from '@/stores/useBudgetStore';
 import { useBadgeStore } from '@/stores/useBadgeStore';
-import { useSettingsStore } from '@/stores/useSettingsStore';
 import { getRankProgress, RANKS } from '@/data/rankDefinitions';
 import BadgeImage from '@/components/ui/BadgeImage';
 import HexagonLevelBadge from '@/components/ui/HexagonLevelBadge';
@@ -59,8 +58,6 @@ export default function ProfileContent() {
   const { user, firebaseUser } = useAuthStore();
   const proStatus = useProStatus();
   const { handleSignOut } = useSignOut();
-  const theme = useSettingsStore((s) => s.theme);
-  const toggleTheme = useSettingsStore((s) => s.toggleTheme);
   const [editOpen, setEditOpen] = useState(false);
   const [wipeOpen, setWipeOpen] = useState(false);
   const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
@@ -247,22 +244,8 @@ export default function ProfileContent() {
           </div>
           <ChevronRight size={16} className="profile-pro-chevron" />
         </button>
-        <div className="profile-toggle-row">
-          <div className="profile-toggle-info">
-            <strong>Giao diện sáng</strong>
-            <span>Đổi sang nền sáng (mặc định tối)</span>
-          </div>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={theme === 'light'}
-            aria-label="Bật giao diện sáng"
-            className={`profile-switch ${theme === 'light' ? 'is-on' : ''}`}
-            onClick={toggleTheme}
-          >
-            <span className="profile-switch-knob" />
-          </button>
-        </div>
+        {/* Nút đổi sáng/tối đã gỡ — app khoá ở chế độ sáng (PO chốt 18/08).
+            Để nút lại mà bấm không đổi gì thì người dùng đọc ra là lỗi. */}
       </section>
 
       {/* ═══ Quản gia (tên + cấp độ, đổi cấp độ = consent) ═══ */}

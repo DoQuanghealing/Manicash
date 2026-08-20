@@ -33,6 +33,10 @@
     "test:ai-cfo-report": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/ai-money-cfo-report.test.ts'))\"",
     "test:ai-earning": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/ai-money-earning-planner.test.ts'))\"",
     "test:analytics": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/analytics-events.test.ts'))\"",
+    "test:cash-pocket": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/cash-pocket.test.ts'))\"",
+    "test:expense-breakdown": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/expense-breakdown.test.ts'))\"",
+    "test:bill-analytics": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/bill-analytics.test.ts'))\"",
+    "test:money-blocks": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/money-blocks.test.ts'))\"",
     "test:monetization": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/monetization-entitlement.test.ts'))\"",
     "test:trial": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/monetization-trial.test.ts'))\"",
     "test:payos": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/payos-order.test.ts'))\"",
@@ -58,7 +62,7 @@
     "test:task-eval": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/task-eval.test.ts'))\"",
     "test:migration": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/sovereign-migration.test.ts'))\"",
     "test:pro-plus": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/pro-plus.test.ts'))\"",
-    "test:ai-all": "npm run test:ai-chat && npm run test:ai-memory && npm run test:ai-fallback && npm run test:ai-quota && npm run test:ai-reaction && npm run test:ai-checkin && npm run test:ai-reconciliation && npm run test:ai-cfo-report && npm run test:ai-earning && npm run test:analytics && npm run test:monetization && npm run test:butler && npm run test:ai-cost && npm run test:ai-usage-log && npm run test:ai-sim && npm run test:care && npm run test:task-feasibility && npm run test:task-eval && npm run test:pro-plus && npm run test:migration && npm run test:dna-persona && npm run test:dna-oracle && npm run test:llm-pool",
+    "test:ai-all": "npm run test:ai-chat && npm run test:ai-memory && npm run test:ai-fallback && npm run test:ai-quota && npm run test:ai-reaction && npm run test:ai-checkin && npm run test:ai-reconciliation && npm run test:ai-cfo-report && npm run test:ai-earning && npm run test:analytics && npm run test:monetization && npm run test:butler && npm run test:ai-cost && npm run test:ai-usage-log && npm run test:ai-sim && npm run test:care && npm run test:task-feasibility && npm run test:task-eval && npm run test:pro-plus && npm run test:migration && npm run test:dna-persona && npm run test:dna-oracle && npm run test:llm-pool && npm run test:money-ui",
     "test:phase2": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/phase2-backdate.test.ts'))\"",
     "test:mb-finance": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/moneybrain-finance-metrics.test.ts'))\"",
     "test:mb-budget": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/moneybrain-budget-metrics.test.ts'))\"",
@@ -109,7 +113,8 @@
     "test:dna-persona": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/dna-persona.test.ts'))\"",
     "test:dna-oracle": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/dna-oracle.test.ts'))\"",
     "test:llm-pool": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./tests/llm-provider-pool.test.ts'))\"",
-    "eval:dna": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./scripts/eval-dna.ts'))\""
+    "eval:dna": "node -e \"process.env.JITI_ALIAS=JSON.stringify({'@': process.cwd() + '/src'}); import('jiti/register').then(() => import('./scripts/eval-dna.ts'))\"",
+    "test:money-ui": "npm run test:cash-pocket && npm run test:expense-breakdown && npm run test:bill-analytics && npm run test:money-blocks"
   },
   "dependencies": {
     "@capacitor-firebase/authentication": "^8.3.0",

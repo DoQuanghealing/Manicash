@@ -1,0 +1,932 @@
+/* ═══════════════════════════════════════════════════════════════════
+   MoneyBlocks — cụm 3 khối Tiền trên trang Tổng quan
+   Phong cách: ĐẤT NẶN (clay pastel) — mẫu D, PO chốt 2026-08-16.
+
+   Chép từ khối `.m-d` trong money-blocks-probes.html, bỏ tiền tố `.m-d`,
+   mọi màu cứng đổi sang token `--clay-*` khai ở src/app/globals.css.
+   KHÔNG hardcode màu trong file này.
+
+   ⚠️⚠️ VÌ SAO MỌI SELECTOR ĐỀU CÓ TIỀN TỐ — ĐỌC TRƯỚC KHI SỬA ⚠️⚠️
+   File này import qua `import './MoneyBlocks.css'` nên Next.js gộp nó
+   thành CSS TOÀN CỤC, không phải CSS Module. Tên class trong mẫu thử
+   (`.stack`, `.amount`, `.chip`, `.tile`, `.goal`, `.legend`, `.rest`…)
+   là những từ rất chung.
+   `.stack` ĐANG là class tiện ích trong globals.css và đang được dùng ở
+   8 chỗ khác — trong đó có `OverviewContent.tsx` bọc chính trang này.
+   Viết `.stack { background: … }` trần là đổ nền kem lên toàn bộ trang
+   Tổng quan, Sổ, Mục tiêu, Nhập liệu…
+   Nên:
+     · gốc dùng `.money-blocks > .stack` — chỉ khớp đúng cụm này.
+       Trình duyệt không hỗ trợ :has() thì rule bị bỏ qua → mất nền kem
+       chứ KHÔNG phá trang khác (hỏng về phía an toàn).
+     · mọi thứ bên trong khối đều đi sau `.blk `.
+   Muốn bỏ tiền tố thì phải thêm một class bọc riêng trong TSX trước.
+
+   ── Ba thứ làm nên chất đất nặn, gỡ cái nào là hỏng cái đó ────────
+   1. Bóng CÓ MÀU (trộn từ màu của chính khối), không phải bóng đen.
+      Bóng đen alpha đọc ra "nhựa/kính"; bóng bằng màu của vật thể đọc
+      ra "vải, nỉ, đất nặn".
+   2. Không viền + bo góc rất lớn + bóng khuếch tán rộng.
+   3. Bo góc TỈ LỆ theo kích thước khối: ô nhỏ 14 · card 22 · panel 30.
+      Dùng chung một radius cho mọi cỡ là lỗi kinh điển làm mất chất.
+
+   ── Mẹo màu dùng nhiều lần trong file ─────────────────────────────
+   `color-mix(… var(--clay-yN) …, var(--clay-ink))` tự đổi hướng theo
+   theme: bản SÁNG mực là nâu đậm → màu bị TỐI đi; bản TỐI mực là kem
+   → màu được SÁNG lên. Một dòng CSS ra đúng tương phản ở cả hai theme.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ─────────────────────────────────────────────────────────────
+   0. NHÃN "TIỀN THÁNG NÀY" + PANEL BỌC 3 KHỐI
+   ───────────────────────────────────────────────────────────── */
+.frame-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 2px 6px 9px;
+  color: var(--clay-ink-2);
+}
+.frame-title span:first-child {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  line-height: 1.5;
+}
+.frame-title span:last-child {
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+/* Panel kem ấm bọc 3 khối.
+   Đất nặn CẦN nền kem mới đọc ra chất liệu — đặt thẳng lên nền
+   --c-bg-primary (navy đen / xám lạnh) thì bóng màu không có gì ăn vào
+   và khối trông bẹt. Đây chính là chỗ bản build đầu bị hụt so với mẫu.
+   Muốn bỏ thì xoá đúng khối rule này. */
+.money-blocks > .stack {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(10px, 3vw, 13px);
+  width: 100%;
+  min-width: 0;
+  padding: clamp(10px, 3vw, 13px);
+  border-radius: var(--clay-radius-panel);
+  background: var(--clay-bg);
+  color: var(--clay-ink);
+}
+
+/* Grain rất nhẹ — thớ vải, giết cảm giác "nhựa" của gradient.
+   Nằm DƯỚI các khối (z-index 0 vs .slot z-index 1) để không phủ mờ chữ. */
+.money-blocks > .stack::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: var(--clay-grain-opacity);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ─────────────────────────────────────────────────────────────
+   1. KHỐI CHUNG
+   .slot bọc [article.blk + .corner] — .corner nằm NGOÀI .blk nên luôn
+   nổi trên .blk-hit.
+   ───────────────────────────────────────────────────────────── */
+.slot {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+}
+
+.blk {
+  /* Màu "len" của khối — cũng là màu bóng đổ của chính nó */
+  --tint: var(--clay-y3);
+  /* Bản sáng giữ gần nguyên màu khối; bản tối chỉ giữ 24% hue rồi chìm
+     vào gần-đen, vì ở nền tối màu khối SÁNG HƠN nền — đổ bóng cùng màu
+     sẽ ra quầng sáng chứ không phải bóng. */
+  --sh: color-mix(in oklab, var(--tint) var(--clay-sh-tint), var(--clay-sh-into));
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  min-width: 0;
+  min-height: 196px;
+  padding: clamp(13px, 3.8vw, 16px);
+  border: none;
+  border-radius: var(--clay-radius-panel);
+  background: var(--clay-face);
+  color: var(--clay-ink);
+  box-shadow:
+    /* viền tóc ăn màu khối — 0% ở bản sáng nên vô hình, chỉ bản tối dùng */
+    0 0 0 1px color-mix(in oklab, var(--tint) var(--clay-edge-mix), transparent),
+    0 13px 25px -11px color-mix(in oklab, var(--sh) var(--clay-sh-o1), transparent),
+    0 3px 7px -3px    color-mix(in oklab, var(--sh) var(--clay-sh-o2), transparent),
+    inset 0 2px 3px var(--clay-bevel-top),
+    inset 0 -3px 7px var(--clay-bevel-bottom);
+}
+
+.blk-income  { --tint: var(--clay-y2); }
+.blk-expense { --tint: var(--clay-y1); }
+.blk-save    { --tint: var(--clay-y5); }
+
+/* Nút phủ kín thẻ để mở tấm trượt.
+   Là phần tử ĐỊNH VỊ nên nó phủ lên nội dung tĩnh — đúng ý đồ (bấm chỗ
+   nào cũng mở). Thứ gì bấm được riêng phải nổi lên trên: .view-switch. */
+.blk-hit {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border: none;
+  background: none;
+  border-radius: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.blk-hit:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--clay-y4) 80%, var(--clay-ink));
+  outline-offset: -3px;
+}
+/* Nhấn = khối đất nặn bị bóp lõm, không phải card trượt xuống.
+   Không có :has() thì mất hiệu ứng nhấn, không vỡ gì. */
+.blk:has(.blk-hit:active) {
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--tint) var(--clay-edge-mix), transparent),
+    0 6px 13px -10px color-mix(in oklab, var(--sh) var(--clay-sh-o1), transparent),
+    inset 0 3px 8px color-mix(in oklab, var(--tint) 35%, var(--clay-bevel-bottom)),
+    inset 0 -1px 2px var(--clay-bevel-top);
+}
+
+/* Hàng tiêu đề */
+.blk-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 30px;
+  min-width: 0;
+  padding-right: 42px;   /* né .corner / .eye-btn ở góc trên phải */
+}
+
+.blk-title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.45;     /* ≥1.35 cho dấu tiếng Việt */
+  color: var(--clay-ink);
+}
+
+/* Ô icon đầu khối (chi tiêu / tiết kiệm) — chứa <svg> */
+.blk .tile {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: var(--clay-radius-tile);
+  background: var(--tile-color, var(--tint));
+  color: var(--clay-on-tint);
+  box-shadow:
+    inset 0 2px 3px var(--clay-bevel-top),
+    0 5px 10px -5px color-mix(in oklab, var(--sh) var(--clay-sh-o2), transparent);
+}
+.blk .tile svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;     /* icon mảnh 1px phá vỡ ngôn ngữ đất nặn */
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.blk .t-exp { --tile-color: var(--clay-y1); }
+.blk .t-sav { --tile-color: var(--clay-y5); }
+
+/* Nhãn góc trên phải: "58% ngân sách", "Tháng 8" */
+.slot > .corner {
+  position: absolute;
+  top: clamp(11px, 3.4vw, 13px);
+  right: clamp(11px, 3.4vw, 13px);
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  padding: 0 11px;
+  border-radius: 999px;
+  background: var(--clay-face-2);
+  color: var(--clay-ink-2);
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.5;
+  white-space: nowrap;
+  box-shadow:
+    inset 0 1px 2px var(--clay-bevel-top),
+    0 4px 9px -4px color-mix(in oklab, var(--clay-y1) var(--clay-sh-tint), var(--clay-sh-into));
+}
+
+/* Nút con mắt — <button> chứa EMOJI (không phải svg) */
+.slot > .eye-btn {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: none;
+  font-size: 15px;
+  line-height: 1;
+  color: var(--clay-ink);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: box-shadow 140ms ease, translate 140ms ease;
+}
+.slot > .eye-btn:active,
+.slot > .eye-btn[aria-pressed="true"] {
+  translate: 0 1px;
+  box-shadow:
+    inset 0 3px 7px color-mix(in oklab, var(--clay-y1) 40%, var(--clay-bevel-bottom)),
+    inset 0 -1px 2px var(--clay-bevel-top);
+}
+.slot > .eye-btn:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--clay-y4) 80%, var(--clay-ink));
+  outline-offset: 2px;
+}
+
+/* Câu báo khi chưa có dữ liệu */
+.blk-empty {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--clay-radius-card);
+  background: color-mix(in oklab, var(--tint) var(--clay-tile-mix), var(--clay-face-2));
+  box-shadow: inset 0 1px 2px var(--clay-bevel-top);
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--clay-ink-2);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   2. KHỐI 1 — THU NHẬP
+   ───────────────────────────────────────────────────────────── */
+
+/* Đồng xu vàng xoay quanh trục dọc */
+.blk .coin-wrap {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  perspective: 140px;
+}
+.blk .coin {
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  transform-style: preserve-3d;
+  animation: mb-coin-spin 3.4s linear infinite;
+  background: linear-gradient(
+    128deg,
+    var(--clay-coin-1) 0%,
+    var(--clay-coin-2) 45%,
+    var(--clay-coin-3) 72%,
+    var(--clay-coin-1) 100%
+  );
+  box-shadow:
+    inset 0 0 0 2px color-mix(in oklab, var(--clay-coin-1) 70%, transparent),
+    inset 0 -3px 5px color-mix(in oklab, var(--clay-coin-3) 60%, transparent),
+    0 4px 9px -4px color-mix(in oklab, var(--clay-coin-2) 80%, transparent);
+}
+.blk .coin::after {
+  content: "₫";
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--clay-coin-ink);
+}
+@keyframes mb-coin-spin {
+  from { transform: rotateY(0deg); }
+  to   { transform: rotateY(360deg); }
+}
+
+/* Chữ hiệu ứng GƯƠNG + VIỀN BAO QUANH
+ *
+ * ⚠️ BẪY ĐÃ DÍNH MỘT LẦN: dải sáng rộng 280% mà để `no-repeat` rồi cho chạy
+ * vị trí từ 190% xuống -55% thì có lúc phần chữ nằm NGOÀI vùng phủ của dải.
+ * Chữ đang `fill: transparent` nên chỗ không có nền là biến mất hẳn — nhìn ra
+ * đúng cảnh "chữ tan dần từ trái sang phải". Hai lớp bảo hiểm:
+ *   1. `repeat` — không bao giờ có chỗ trống để tô.
+ *   2. Vị trí chỉ chạy trong 0%..100%, tức luôn phủ kín.
+ * Viền chữ dùng -webkit-text-stroke nên vẫn hiện kể cả nếu ruột có sự cố.
+ */
+.blk .shine {
+  background-image: linear-gradient(
+    100deg,
+    var(--mb-title-ink) 0 38%,
+    var(--mb-title-glint) 50%,
+    var(--mb-title-ink) 62% 100%
+  );
+  background-size: 280% 100%;
+  background-repeat: repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: var(--mb-title-stroke-w) var(--mb-title-stroke);
+  paint-order: stroke fill;
+  letter-spacing: 0.01em;
+  /* chừa chỗ cho dấu (ắ, ề, ữ) mà không đổi chiều cao dòng */
+  padding-block: 2px;
+  margin-block: -2px;
+  animation: mb-shine-sweep 4.2s ease-in-out infinite;
+}
+@keyframes mb-shine-sweep {
+  0%        { background-position: 100% 0; }
+  55%, 100% { background-position: 0% 0; }
+}
+
+/* Số lớn */
+.blk .amount {
+  display: block;
+  font-family: var(--font-display);
+  font-size: clamp(25px, 7.6vw, 29px);
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  line-height: 1.32;
+  font-variant-numeric: tabular-nums;
+  color: var(--clay-ink);
+  overflow-wrap: anywhere;
+}
+.blk .amt-mask {
+  letter-spacing: 0.06em;
+  color: var(--clay-ink-2);
+}
+/* hậu tố "đ" nhỏ — <Money> render <i>đ</i> */
+.blk .amount i,
+.blk .sl-val i,
+.blk .dm-val i {
+  font-style: normal;
+  font-size: 0.62em;
+  font-weight: 650;
+  margin-left: 1px;
+  opacity: 0.72;
+}
+
+.blk .chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.blk .chip {
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--clay-y2) var(--clay-tile-mix), var(--clay-face-2));
+  color: var(--clay-ink);
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+  box-shadow: inset 0 1px 2px var(--clay-bevel-top);
+}
+
+/* Chuyển mốc Tháng | Năm — phải NỔI TRÊN .blk-hit mới bấm được */
+.blk .view-switch {
+  position: relative;
+  z-index: 2;
+  align-self: flex-start;
+  display: inline-flex;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--clay-y3) var(--clay-tile-mix), var(--clay-face-2));
+  box-shadow: inset 0 2px 4px var(--clay-bevel-bottom);
+}
+.blk .view-switch button {
+  padding: 5px 13px;
+  border: none;
+  border-radius: 999px;
+  background: none;
+  color: var(--clay-ink-2);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.5;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+.blk .view-switch button.is-on {
+  background: var(--clay-face);
+  color: var(--clay-ink);
+  box-shadow:
+    inset 0 1px 2px var(--clay-bevel-top),
+    0 3px 7px -3px color-mix(in oklab, var(--clay-y3) var(--clay-sh-tint), var(--clay-sh-into));
+}
+.blk .view-switch button:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--clay-y4) 80%, var(--clay-ink));
+  outline-offset: 1px;
+}
+
+/* Vành khuyên mảnh ghép thu nhập (mốc THÁNG) */
+.blk .inc-body {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  margin-top: auto;
+}
+
+/* Biểu đồ đường (mốc NĂM) */
+.blk .spark-box {
+  margin-top: auto;
+  min-width: 0;
+  /* mực trộn vào màu len → sáng lên ở theme tối, tối đi ở theme sáng */
+  color: color-mix(in oklab, var(--clay-y2) 72%, var(--clay-ink));
+}
+.blk .spark-cap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: var(--clay-ink-2);
+}
+.blk .spark {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.blk .spark-line {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3.4;     /* nét dày — đường mảnh phá chất đất nặn */
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.blk .spark-dot {
+  fill: currentColor;
+  stroke: var(--clay-face);
+  stroke-width: 2;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   3. KHỐI 2 — CHI TIÊU
+   ───────────────────────────────────────────────────────────── */
+.blk .exp-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  min-width: 0;
+}
+
+.blk .stat-list {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.blk .stat-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: var(--clay-radius-tile);
+  background: color-mix(in oklab, var(--clay-y1) var(--clay-tile-mix), var(--clay-face-2));
+  box-shadow: inset 0 1px 2px var(--clay-bevel-top);
+}
+.blk .sl-lbl {
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: var(--clay-ink-2);
+}
+.blk .sl-val {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+  color: var(--clay-ink);
+  overflow-wrap: anywhere;
+}
+
+/* ── Vành khuyên ──
+   ⚠️ KHÔNG khai `background` cho .donut — TSX truyền conic-gradient
+   inline dựng từ dữ liệu thật. Ở đây chỉ lo kích thước, lỗ khoét, bóng.
+   `--ring-rest` phải khai vì chuỗi gradient của TSX có var(--ring-rest). */
+.blk .donut-col {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.blk .donut-hold {
+  --size: clamp(100px, 30vw, 118px);
+  --hole: calc(var(--size) * 0.28);
+  position: relative;
+  width: var(--size);
+  height: var(--size);
+  flex: none;
+}
+.blk .donut-hold.donut-sm {
+  --size: clamp(84px, 24vw, 94px);
+  --hole: calc(var(--size) * 0.30);
+}
+.blk .donut {
+  --ring-rest: var(--clay-track);
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  /* màu trong mask chỉ cần ĐỤC (alpha 1) — dùng token cho khỏi hardcode */
+  -webkit-mask: radial-gradient(circle, transparent var(--hole), var(--clay-ink) calc(var(--hole) + 0.5px));
+          mask: radial-gradient(circle, transparent var(--hole), var(--clay-ink) calc(var(--hole) + 0.5px));
+  filter: drop-shadow(0 6px 10px color-mix(in oklab, var(--sh) var(--clay-sh-o2), transparent));
+}
+.blk .donut-mid {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  padding: 0 8px;
+  text-align: center;
+  pointer-events: none;
+}
+.blk .dm-lbl {
+  font-size: 9.5px;
+  font-weight: 650;
+  letter-spacing: 0.05em;
+  line-height: 1.5;
+  color: var(--clay-ink-2);
+}
+.blk .dm-val {
+  font-family: var(--font-display);
+  font-size: clamp(12px, 3.6vw, 14px);
+  font-weight: 800;
+  line-height: 1.3;
+  font-variant-numeric: tabular-nums;
+  color: var(--clay-ink);
+  overflow-wrap: anywhere;
+}
+
+/* Nhãn "chưa chi — còn lại", mũi tên chỉ NGƯỢC LÊN cung chưa chi.
+   TSX phải xoay gradient sao cho phần chưa chi rơi xuống ĐÁY vòng,
+   nếu không mũi tên chỉ vào chỗ trống. */
+.blk .rest {
+  position: relative;
+  width: 100%;
+  margin-top: 8px;
+  padding: 6px 7px 7px;
+  border-radius: var(--clay-radius-tile);
+  text-align: center;
+  line-height: 1.45;
+  background: color-mix(in oklab, var(--clay-y2) var(--clay-tile-mix), var(--clay-face-2));
+  box-shadow: inset 0 1px 2px var(--clay-bevel-top);
+}
+.blk .rest::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  translate: -50% 0;
+  border: 6px solid transparent;
+  border-top: 0;
+  border-bottom-color: color-mix(in oklab, var(--clay-y2) var(--clay-tile-mix), var(--clay-face-2));
+}
+.blk .rest span {
+  display: block;
+  font-size: 9px;
+  font-weight: 650;
+  letter-spacing: 0.03em;
+  color: var(--clay-ink-2);
+}
+.blk .rest b {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+  color: var(--clay-ink);
+  overflow-wrap: anywhere;
+}
+
+/* Chú thích màu danh mục — .lg-dot nhận background INLINE từ dữ liệu */
+.blk .legend {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  min-width: 0;
+}
+.blk .legend-col {
+  grid-template-columns: 1fr;
+  flex: 1;
+  min-width: 0;
+  gap: 6px;
+}
+.blk .legend li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: var(--clay-ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+}
+.blk .legend b {
+  margin-left: auto;
+  padding-left: 6px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--clay-ink);
+}
+.blk .lg-dot {
+  width: 10px;
+  height: 10px;
+  flex: none;
+  border-radius: 50%;
+  box-shadow: inset 0 1px 1px var(--clay-bevel-top);
+}
+
+/* Dải chân: hôm qua · hôm nay · bill sắp đến hạn */
+.blk .blk-foot {
+  display: flex;
+  gap: 7px;
+  margin: 0;
+  margin-top: auto;
+  padding: 0;
+  list-style: none;
+  min-width: 0;
+}
+.blk .blk-foot li {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 8px 9px;
+  border-radius: var(--clay-radius-tile);
+  background: color-mix(in oklab, var(--clay-y3) var(--clay-tile-mix), var(--clay-face-2));
+  box-shadow: inset 0 1px 2px var(--clay-bevel-top);
+}
+.blk .bf-lbl {
+  font-size: 9.5px;
+  line-height: 1.5;
+  color: var(--clay-ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.blk .bf-val {
+  font-family: var(--font-display);
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+  color: var(--clay-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   4. KHỐI 3 — TIẾT KIỆM
+   ───────────────────────────────────────────────────────────── */
+
+/* Đường cong ngăn cách thay cho kẻ ngang */
+.blk .wave {
+  display: block;
+  width: 100%;
+  height: 16px;
+  margin: -2px 0 2px;
+}
+.blk .wave path {
+  fill: color-mix(in oklab, var(--clay-y5) var(--clay-tile-mix), var(--clay-face-2));
+}
+
+.blk .save-note {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--clay-ink-2);
+}
+
+.blk .goals {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  margin-top: auto;
+  padding: 0;
+  list-style: none;
+  min-width: 0;
+}
+
+/* Mỗi mục tiêu một màu len — cả 5 màu cùng độ sáng và độ tươi nên luôn
+   hoà nhau, đặt cạnh nhau không có cái nào lấn át */
+.blk .goal {
+  --tint: var(--clay-y5);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 9px 10px;
+  border-radius: var(--clay-radius-card);
+  background: color-mix(in oklab, var(--tint) var(--clay-tile-mix), var(--clay-face-2));
+  box-shadow:
+    inset 0 1px 2px var(--clay-bevel-top),
+    0 6px 12px -8px color-mix(in oklab, var(--tint) var(--clay-sh-tint), var(--clay-sh-into));
+}
+.blk .goal.g1 { --tint: var(--clay-y5); }
+.blk .goal.g2 { --tint: var(--clay-y2); }
+.blk .goal.g3 { --tint: var(--clay-y4); }
+
+/* Ô icon mục tiêu — chứa EMOJI (text), không phải svg */
+.blk .goal-ico {
+  width: 34px;
+  height: 34px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: var(--clay-radius-tile);
+  background: var(--tint);
+  font-size: 17px;
+  line-height: 1;
+  box-shadow:
+    inset 0 2px 3px var(--clay-bevel-top),
+    0 5px 10px -5px color-mix(in oklab, var(--tint) var(--clay-sh-tint), var(--clay-sh-into));
+}
+
+.blk .goal-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.blk .goal-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+.blk .goal-top b {
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1.45;
+  color: var(--clay-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.blk .goal-top em {
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.45;
+  font-variant-numeric: tabular-nums;
+  color: var(--clay-ink);
+  white-space: nowrap;
+}
+
+/* ⚠️ <span> là inline → đặt height lên nó KHÔNG ăn và các hàng sẽ chồng
+   đè. Bắt buộc display:block cho cả rãnh lẫn phần đã đầy. */
+.blk .goal-bar {
+  display: block;
+  width: 100%;
+  height: 11px;          /* clay: thanh phải DÀY, bo tròn hai đầu */
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--clay-track);
+  box-shadow: inset 0 2px 3px var(--clay-bevel-bottom);
+}
+.blk .goal-fill {
+  display: block;
+  height: 100%;
+  width: var(--p, 0%);   /* TSX truyền --p inline trên li.goal */
+  max-width: 100%;
+  border-radius: 999px;
+  background: var(--tint);
+  box-shadow: inset 0 2px 2px var(--clay-bevel-top);
+}
+.blk .goal-bot {
+  font-size: 9.5px;
+  line-height: 1.55;
+  font-variant-numeric: tabular-nums;
+  color: var(--clay-ink-2);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   5. MÁY RẤT HẸP (≤ 360px)
+   ───────────────────────────────────────────────────────────── */
+@media (max-width: 360px) {
+  .blk { gap: 8px; }
+  .blk .exp-body { gap: 9px; }
+  .blk .inc-body { gap: 9px; }
+  .blk .stat-list li { padding: 7px 9px; }
+  .blk .sl-val { font-size: 14px; }
+  .blk .legend { grid-template-columns: 1fr; }
+  .blk .legend-col { grid-template-columns: 1fr; }
+  .blk .blk-foot li { padding: 7px; }
+  .blk .bf-val { font-size: 12px; }
+  .blk .chip { font-size: 10px; padding: 4px 8px; }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   6. TẮT CHUYỂN ĐỘNG
+   .shine phải TRẢ CHỮ VỀ MÀU ĐẶC, không chỉ dừng animation — dừng
+   không thôi thì chữ đứng yên ở một khung hình bất kỳ của gradient,
+   có thể rơi đúng vệt sáng và mờ tịt.
+   ───────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .blk .coin {
+    animation: none;
+    transform: none;
+  }
+  .blk .shine {
+    animation: none;
+    background-image: none;
+    color: var(--mb-title-ink);
+    -webkit-text-fill-color: var(--mb-title-ink);
+    -webkit-text-stroke: var(--mb-title-stroke-w) var(--mb-title-stroke);
+  }
+  .blk .view-switch button,
+  .slot > .eye-btn {
+    transition: none;
+  }
+}
+
+
+/* ═══ Thu gọn ═══
+ * PO xem bản thật và thấy khoảng trắng lớn. Thủ phạm là ép ba khối bằng chiều
+ * cao (grid-auto-rows: 1fr) từ vòng trước: khối Thu nhập ít nội dung nhất bị kéo
+ * cao bằng khối Tiết kiệm nên thừa ra một mảng trống giữa chip và vành khuyên.
+ * Bỏ hẳn ép chiều cao — mỗi khối cao theo nội dung, đúng yêu cầu "gọn gàng".
+ * Nếu sau này muốn bằng nhau trở lại thì phải bù nội dung cho khối Thu nhập,
+ * chứ không phải kéo giãn khoảng trống.
+ */
+.money-blocks > .stack {
+  display: flex;
+  flex-direction: column;
+}
+
+.money-blocks .blk { height: auto; }
+
+/* Vành khuyên thu nhập: bỏ giãn, ôm sát chip phía trên. */
+.money-blocks .blk-income .inc-body {
+  flex: none;
+  align-items: center;
+  gap: 14px;
+  margin-top: 2px;
+}
+
+.money-blocks .blk-income .spark-box { flex: none; }
+
+/* Mục tiêu: khoảng cách đều và chặt, không dàn hàng theo chiều cao thừa. */
+.money-blocks .blk-save .goals {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Nút chuyển mốc nằm sát chip, không tách thành một tầng riêng. */
+.money-blocks .view-switch { margin-top: 2px; }
+
+/* ═══ Chống nhãn góc đè tiêu đề ═══
+ * Nhãn góc ("80% ngân sách") rộng ~95px trong khi hàng tiêu đề chỉ chừa 42px lề
+ * phải. Hiện an toàn vì "Chi tiêu" ngắn, nhưng đổi chữ dài hơn là đè lên nhau —
+ * loại lỗi chỉ lộ ra sau khi ai đó sửa một dòng text tưởng vô hại.
+ * Cho tiêu đề co lại và cắt bằng dấu ba chấm thay vì chạy vào dưới nhãn.
+ */
+.money-blocks .blk-row {
+  min-width: 0;
+  padding-right: 96px;
+}
+
+.money-blocks .blk-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Chữ hiệu ứng gương tô bằng gradient nên phần bị cắt vẫn phải nhận nền —
+   thiếu dòng này thì dấu ba chấm mất màu. */
+.money-blocks .blk-title.shine { padding-bottom: 1px; }

@@ -68,7 +68,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="vi" className={`${inter.variable} ${outfit.variable}`} data-theme="dark" suppressHydrationWarning>
+    <html lang="vi" className={`${inter.variable} ${outfit.variable}`} data-theme="light" suppressHydrationWarning>
       <body suppressHydrationWarning>
         <ServiceWorkerProvider />
         <AuthProvider>

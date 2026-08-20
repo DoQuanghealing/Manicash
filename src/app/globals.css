@@ -530,7 +530,9 @@ img, svg { display: block; max-width: 100%; }
    ═══════════════════════════════════════════════════ */
 [data-theme="light"] {
   /* Backgrounds */
-  --c-bg-primary: #F5F5F7;
+  /* Trắng — PO chốt 18/08. Cụm khối cũng nền trắng, khối tách khỏi nền bằng
+     viền mảnh + bóng nông chứ không bằng chênh lệch màu nền. */
+  --c-bg-primary: #FFFFFF;
   --c-bg-secondary: #FFFFFF;
   --c-bg-tertiary: #F0EFF5;
   --c-bg-elevated: #FFFFFF;
@@ -695,3 +697,179 @@ img, svg { display: block; max-width: 100%; }
                 0 0 0 0 rgba(249, 115, 22, 0);
   }
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   CLAY — token cho cụm 3 khối Tiền trên trang Tổng quan
+   (Thu nhập · Chi tiêu · Tiết kiệm — xem MoneyBlocks.css)
+
+   Phong cách "đất nặn": khối mềm, dày, KHÔNG viền, bo góc lớn, và
+   quan trọng nhất là BÓNG CÓ MÀU chứ không phải bóng đen. Bóng đen
+   alpha đọc ra "nhựa/kính"; bóng bằng chính màu của khối đọc ra
+   "vải, nỉ, đất nặn".
+
+   ── Vì sao dùng HEX chứ không oklch() ──────────────────────────────
+   Thang 5 màu dưới đây được dựng trong không gian oklch với ĐỘ SÁNG (L)
+   và ĐỘ TƯƠI (C) KHOÁ CỨNG, chỉ đổi hue — đó là lý do 5 màu luôn hoà
+   nhau như 5 cuộn len cùng loại sợi. Nhưng phần còn lại của file này
+   toàn hex/rgba nên giá trị đã được quy đổi sẵn sang hex cho đồng bộ.
+   KHI SỬA MÀU: đừng chỉnh trực tiếp hex, hãy đổi hue trong công thức
+   oklch ghi ở mỗi dòng rồi quy đổi lại — chỉnh tay hex sẽ phá vỡ tính
+   "cùng một loại len" và sinh ra một màu lạc loài nhìn thấy ngay.
+
+   ── Bản TỐI khác bản SÁNG ở CHỖ NÀO (đọc trước khi sửa) ────────────
+   Không suy ra tự động được. Ở nền sáng, màu pastel TỐI HƠN nền nên
+   đổ bóng bằng chính màu đó là ra bóng thật. Ở nền tối thì ngược lại:
+   màu khối SÁNG HƠN nền, đổ bóng cùng màu sẽ thành QUẦNG SÁNG chứ
+   không phải bóng. Nên bản tối phải:
+     1. Trộn màu khối vào gần-đen (--clay-sh-tint chỉ còn 24%) để bóng
+        vẫn tối hơn nền mà vẫn giữ được hue.
+     2. Bù lại độ tách khối đã mất bằng một viền tóc mảnh ăn màu khối
+        (--clay-edge-mix > 0). Bản sáng không cần, để 0%.
+     3. Gờ sáng ở đỉnh (--clay-bevel-top) phải RẤT nhẹ — để đậm như
+        bản sáng là ra viền trắng chói, mất chất mềm.
+   Sửa 3 biến đó mà không hiểu 3 lý do trên là ra giao diện "bùn xám".
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ─── Bản TỐI (mặc định — layout.tsx đặt data-theme="dark") ─── */
+:root {
+  /* Thang "len" — oklch(0.62 0.085 h), chỉ khác hue */
+  --clay-y1: #B4726C;   /* h 25  — đào / đất nung */
+  --clay-y2: #559674;   /* h 160 — bạc hà / ngọc  */
+  --clay-y3: #9E8247;   /* h 85  — vàng bơ        */
+  --clay-y4: #5E8AB8;   /* h 250 — xanh phấn      */
+  --clay-y5: #9D75A6;   /* h 320 — oải hương      */
+
+  /* Bề mặt — oklch(0.215/0.275 0.03 320): mận sâu, KHÔNG đen thuần */
+  --clay-bg: #1F1522;        /* nền sau cụm khối */
+  --clay-face: #2F2332;      /* mặt khối, sáng hơn nền 1 nấc */
+  --clay-face-2: #3A2C3E;    /* ô lồng bên trong khối */
+
+  /* Mực — ấm, không dùng xám trung tính */
+  --clay-ink: #F2E8EE;
+  --clay-ink-2: #B9A8BE;
+  --clay-on-tint: #140F17;   /* chữ/icon đặt TRÊN một màu len */
+
+  /* Độ dày khối */
+  --clay-bevel-top: rgba(232, 214, 240, 0.16);   /* gờ sáng đỉnh — nhẹ tay */
+  --clay-bevel-bottom: rgba(0, 0, 0, 0.42);      /* hõm tối ở đáy */
+
+  /* Công thức bóng CÓ MÀU (dùng trong MoneyBlocks.css) */
+  --clay-sh-tint: 24%;       /* bao nhiêu phần màu khối đi vào bóng */
+  --clay-sh-into: #07050A;   /* trộn vào đâu — nền tối thì trộn vào gần-đen */
+  --clay-sh-o1: 66%;         /* alpha lớp bóng toả rộng */
+  --clay-sh-o2: 46%;         /* alpha lớp bóng sát chân khối */
+  --clay-edge-mix: 20%;      /* viền tóc ăn màu khối — chỉ bản tối cần */
+
+  --clay-track: #241A28;     /* rãnh thanh tiến độ / vành khuyên phần trống */
+  --clay-grain-opacity: 0.10;
+
+  /* Vàng đồng xu */
+  --clay-coin-1: #FFE9AE;
+  --clay-coin-2: #E0AE45;
+  --clay-coin-3: #9A6B14;
+  --clay-coin-ink: #4A310A;
+
+  /* Chữ hiệu ứng gương */
+  --clay-shine-1: var(--clay-ink);
+  --clay-shine-2: #FFE7B0;
+
+  /* Bo góc — PHẢI tỉ lệ với kích thước khối, dùng cùng một radius cho
+     mọi cỡ là lỗi kinh điển làm mất chất đất nặn */
+  --clay-radius-tile: 14px;
+  --clay-radius-card: 22px;
+  --clay-radius-panel: 30px;
+
+  /* Bao nhiêu phần màu len đi vào nền ô lồng bên trong */
+  --clay-tile-mix: 26%;
+
+  /* Bí danh cho MoneySheet.css (tấm trượt từ đáy) — file đó đang gọi
+     4 tên này kèm fallback về token kính. Không khai thì tấm trượt
+     lặng lẽ rơi về giao diện kính cũ, lệch hẳn với 3 khối clay. */
+  --clay-surface: var(--clay-face);
+  --clay-edge: color-mix(in oklab, var(--clay-y5) 22%, transparent);
+  --clay-shadow-lg:
+    0 -14px 44px -14px color-mix(in oklab, var(--clay-y5) var(--clay-sh-tint), var(--clay-sh-into)),
+    0 -2px 10px -6px color-mix(in oklab, var(--clay-y5) var(--clay-sh-tint), var(--clay-sh-into));
+  --clay-inset: color-mix(in oklab, var(--clay-y5) 30%, var(--clay-face-2));
+}
+
+/* ─── Bảng màu cụm 3 khối tiền — MỘT chế độ SÁNG duy nhất ───
+ *
+ * PO chốt 18/08: nền TRẮNG, khối nhẹ bớt (bản kem trước bị chê "đậm đặc,
+ * nặng nề"), chủ đạo XANH RÊU · VÀNG KIM · CAM.
+ *
+ * Nguyên tắc giữ cho khối nhẹ:
+ *   · mặt khối gần trắng, màu chỉ là lớp rửa rất mỏng — KHÔNG tô đặc
+ *   · bóng đổ nông và trong, không dùng bóng đậm để tách khối
+ *   · sắc độ chỉ dùng để phân biệt ba khối, không dùng để gây chú ý
+ * Tô đậm lên là quay lại đúng cảm giác nặng nề PO vừa bỏ.
+ */
+[data-theme="light"], :root {
+  /* Ba màu chủ đạo */
+  --mb-moss:   #5F7A4F;   /* xanh rêu */
+  --mb-gold:   #C79A2E;   /* vàng kim */
+  --mb-orange: #E07B39;   /* cam      */
+
+  /* Sắc phấn dùng cho ô lồng, chấm danh mục, thanh tiến độ.
+     Cùng độ sáng để không cái nào nhảy ra trước. */
+  --clay-y1: #E9B98F;   /* cam nhạt   */
+  --clay-y2: #BFD1AC;   /* rêu nhạt   */
+  --clay-y3: #EDD79B;   /* kim nhạt   */
+  --clay-y4: #AFC9C0;   /* rêu ngả xanh */
+  --clay-y5: #DCC7A4;   /* cát ấm     */
+
+  /* Bề mặt — TRẮNG là nền, khối chỉ nhích hơn trắng một chút */
+  --clay-bg: #FFFFFF;
+  --clay-face: #FFFFFF;
+  --clay-face-2: #F6F5F1;   /* ô lồng bên trong khối */
+
+  --clay-ink: #2E3A2A;      /* rêu rất đậm — đọc như đen nhưng vẫn cùng họ màu */
+  --clay-ink-2: #66705E;
+  --clay-on-tint: #2A3325;
+
+  /* Gờ nổi: rất nhẹ. Đây là nút chính để chỉnh "nặng/nhẹ". */
+  --clay-bevel-top: rgba(255, 255, 255, 0.9);
+  --clay-bevel-bottom: rgba(95, 122, 79, 0.10);
+
+  --clay-sh-tint: 38%;      /* trước 92% — hạ mạnh để bóng không ăn màu đậm */
+  --clay-sh-into: #C9CFC2;
+  --clay-sh-o1: 34%;        /* trước 66% */
+  --clay-sh-o2: 20%;        /* trước 44% */
+  --clay-edge-mix: 26%;     /* nền trắng cần viền mảnh để khối không tan vào nền */
+
+  --clay-track: #EDEFE9;
+  --clay-grain-opacity: 0.03;
+  --clay-tile-mix: 16%;     /* trước 33% — ô lồng chỉ phớt màu */
+
+  --clay-coin-1: #FFF0BE;
+  --clay-coin-2: var(--clay-y3);
+  --clay-coin-3: var(--mb-gold);
+  --clay-coin-ink: #5A430C;
+
+  /* Tiêu đề khối: viền bao quanh chữ + vệt sáng quét qua */
+  --mb-title-ink: #2E3A2A;
+  --mb-title-glint: var(--mb-gold);
+  --mb-title-stroke: rgba(46, 58, 42, 0.55);
+  --mb-title-stroke-w: 0.6px;
+
+  --clay-shine-1: var(--mb-title-ink);
+  --clay-shine-2: var(--mb-title-glint);
+
+  --clay-radius-tile: 14px;
+  --clay-radius-card: 20px;
+  --clay-radius-panel: 26px;
+
+  /* Bí danh cho MoneySheet.css */
+  --clay-surface: var(--clay-face);
+  --clay-edge: rgba(95, 122, 79, 0.18);
+  --clay-shadow-lg:
+    0 -14px 44px -18px rgba(60, 70, 55, 0.22),
+    0 -2px 10px -8px rgba(60, 70, 55, 0.16);
+  --clay-inset: var(--clay-face-2);
+}
+
+/* Ba khối nhận ba màu chủ đạo — chỉ để phân biệt, không để gây chú ý. */
+.money-blocks .blk-income  { --mb-tint: var(--clay-y2); --mb-accent: var(--mb-moss); }
+.money-blocks .blk-expense { --mb-tint: var(--clay-y1); --mb-accent: var(--mb-orange); }
+.money-blocks .blk-save    { --mb-tint: var(--clay-y3); --mb-accent: var(--mb-gold); }

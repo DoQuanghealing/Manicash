@@ -1,0 +1,267 @@
+/* ═══ Nội dung bên trong tấm trượt — khung và nhịp chữ ═══
+ * Màu lấy từ biến --clay-* (phong cách đất nặn), có fallback về token cũ để
+ * không vỡ nếu bộ token clay chưa nạp.
+ */
+
+.sh-card {
+  background: var(--clay-card, var(--glass-bg));
+  border: 1px solid var(--clay-edge, var(--glass-border));
+  border-radius: var(--clay-radius, 20px);
+  box-shadow: var(--clay-shadow-sm, none);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ── Chọn mốc ngày/tuần/tháng/năm ── */
+.sh-periods {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--clay-inset, rgba(127, 127, 127, 0.1));
+}
+
+.sh-period {
+  padding: 7px 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  font-size: 12.5px;
+  color: var(--c-text-secondary);
+}
+
+.sh-period.is-active {
+  background: var(--clay-raised, var(--c-purple, #7C3AED));
+  color: var(--clay-on-raised, #fff);
+  box-shadow: var(--clay-shadow-sm, none);
+  font-weight: 600;
+}
+
+.sh-label {
+  font-size: 12px;
+  color: var(--c-text-secondary);
+  margin: 0;
+}
+
+.sh-total {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--c-text-primary);
+  margin: 0;
+  line-height: 1.15;
+}
+
+.sh-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--c-text-primary);
+  margin: 0;
+}
+
+.sh-empty {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--c-text-secondary);
+  margin: 0;
+}
+
+/* ── Hàng nhãn — giá trị ── */
+.sh-rows { display: flex; flex-direction: column; gap: 8px; }
+
+.sh-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.sh-row-label {
+  font-size: 12.5px;
+  color: var(--c-text-secondary);
+  display: flex;
+  flex-direction: column;
+}
+
+.sh-row-hint {
+  font-size: 11px;
+  font-style: normal;
+  color: var(--c-text-muted);
+}
+
+.sh-row-value {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--c-text-primary);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.sh-row-value.is-muted {
+  color: var(--c-text-muted);
+  font-weight: 500;
+}
+
+/* ── Tách hai túi / hai hình thức ── */
+.sh-split { display: flex; flex-direction: column; gap: 8px; }
+
+.sh-split-item {
+  display: grid;
+  grid-template-columns: 10px 1fr auto auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.sh-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+.sh-split-name { font-size: 12.5px; color: var(--c-text-secondary); }
+
+.sh-split-val {
+  font-family: var(--font-display);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--c-text-primary);
+  white-space: nowrap;
+}
+
+.sh-split-pct {
+  font-size: 11.5px;
+  color: var(--c-text-muted);
+  min-width: 38px;
+  text-align: right;
+}
+
+/* ── Ngân hàng ── */
+.sh-banks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
+
+.sh-banks li {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12.5px;
+}
+
+.sh-bank-name { color: var(--c-text-primary); font-weight: 500; }
+.sh-bank-acc { color: var(--c-text-muted); font-variant-numeric: tabular-nums; }
+
+/* ── Danh sách hóa đơn (khi chưa có lịch sử để so) ── */
+.sh-bills { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+
+.sh-bills li {
+  display: grid;
+  grid-template-columns: 20px 1fr auto auto;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+}
+
+.sh-bill-name { color: var(--c-text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sh-bill-amt { font-weight: 600; color: var(--c-text-primary); white-space: nowrap; }
+.sh-bill-due { font-size: 11px; white-space: nowrap; }
+
+.sh-bill-due.tone-paid { color: var(--c-income); }
+.sh-bill-due.tone-overdue { color: #EF4444; font-weight: 600; }
+.sh-bill-due.tone-urgent { color: var(--c-expense); font-weight: 600; }
+.sh-bill-due.tone-soon { color: #3B82F6; }
+.sh-bill-due.tone-later { color: var(--c-text-muted); }
+
+/* ── Cột hóa đơn 12 tháng ── */
+.sh-billbars {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 92px;
+}
+
+.sh-billbar {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.sh-billbar-fill {
+  width: 100%;
+  min-height: 2px;
+  border-radius: 4px 4px 2px 2px;
+  background: var(--clay-bar, #8B5CF6);
+  opacity: 0.55;
+}
+
+.sh-billbar-fill.is-current { opacity: 1; }
+
+.sh-billbar-label {
+  font-size: 9.5px;
+  color: var(--c-text-muted);
+  white-space: nowrap;
+}
+
+.sh-billdelta { font-size: 12px; line-height: 1.5; margin: 0; }
+.sh-billdelta.is-up { color: var(--c-expense); }
+.sh-billdelta.is-down { color: var(--c-income); }
+
+/* ── Kết luận ── */
+.sh-verdict { display: flex; flex-direction: column; gap: 4px; }
+.sh-verdict p { font-size: 12px; line-height: 1.5; margin: 0; }
+.sh-verdict .is-over { color: #EF4444; font-weight: 600; }
+.sh-verdict .is-good { color: var(--c-income); }
+
+/* ── Mục tiêu ── */
+.sh-goals { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+
+.sh-goal { display: flex; flex-direction: column; gap: 6px; }
+
+.sh-goal-top,
+.sh-goal-bottom { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+
+.sh-goal-name {
+  font-size: 13px;
+  color: var(--c-text-primary);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sh-goal-pct {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--c-text-secondary);
+  white-space: nowrap;
+}
+
+.sh-goal-bar {
+  display: block;
+  width: 100%;
+  height: 8px;
+  border-radius: 99px;
+  background: var(--clay-inset, rgba(127, 127, 127, 0.14));
+  overflow: hidden;
+}
+
+.sh-goal-fill { display: block; height: 100%; border-radius: 99px; }
+
+.sh-goal-bottom { font-size: 11.5px; color: var(--c-text-muted); }
+
+.sh-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 11px;
+  border: none;
+  border-radius: 14px;
+  background: var(--clay-raised, var(--c-purple, #7C3AED));
+  color: var(--clay-on-raised, #fff);
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: var(--clay-shadow-sm, none);
+}

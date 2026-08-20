@@ -1,0 +1,179 @@
+/* ═══ Biểu đồ trong tấm trượt ═══ */
+
+.sc-wrap { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+
+.sc-svg { width: 100%; height: auto; display: block; overflow: visible; }
+
+.sc-axis {
+  stroke: var(--c-text-faint);
+  stroke-width: 1;
+  opacity: 0.35;
+}
+
+/* ── Đường (thu nhập hai túi) ── */
+.sc-line {
+  fill: none;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ── Cột (chi tiêu vs ngưỡng) ── */
+.sc-bar {
+  fill: var(--clay-bar, #8B5CF6);
+  opacity: 0.5;
+}
+
+.sc-bar.is-current { opacity: 0.85; }
+
+/* Vượt ngưỡng LÀ điểm chính của biểu đồ này — đỏ rõ, không làm dịu. */
+.sc-bar.is-over { fill: #EF4444; opacity: 0.9; }
+.sc-bar.is-over.is-current { opacity: 1; }
+
+.sc-threshold {
+  stroke: #EF4444;
+  stroke-width: 1.4;
+  stroke-dasharray: 5 4;
+  opacity: 0.85;
+}
+
+.sc-threshold-label {
+  fill: #EF4444;
+  font-size: 8.5px;
+  font-weight: 600;
+}
+
+/* ── Trục ngang ── */
+.sc-xaxis {
+  display: flex;
+  justify-content: space-between;
+  gap: 2px;
+}
+
+.sc-xaxis span {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  font-size: 9.5px;
+  color: var(--c-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.sc-xaxis span.is-current {
+  color: var(--c-text-primary);
+  font-weight: 600;
+}
+
+.sc-legend {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.sc-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  color: var(--c-text-secondary);
+}
+
+.sc-legend i { width: 9px; height: 9px; border-radius: 50%; }
+
+.sc-empty,
+.sc-note {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--c-text-secondary);
+  margin: 0;
+}
+
+.sc-note { color: var(--c-text-muted); font-size: 11.5px; }
+
+/* ── Vành khuyên tỉ trọng ── */
+.sc-donut {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+}
+
+.sc-donut svg { width: 110px; height: 110px; }
+
+.sc-donut-track {
+  fill: none;
+  stroke: var(--clay-inset, rgba(127, 127, 127, 0.16));
+  stroke-width: 13;
+}
+
+.sc-donut-seg {
+  fill: none;
+  stroke-width: 13;
+  stroke-linecap: butt;
+}
+
+.sc-donut-center {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 110px;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+}
+
+.sc-donut-center b {
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--c-text-primary);
+  line-height: 1.1;
+}
+
+.sc-donut.is-over .sc-donut-center b { color: #EF4444; }
+
+.sc-donut-center span { font-size: 10px; color: var(--c-text-muted); }
+
+.sc-donut-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.sc-donut-legend li {
+  display: grid;
+  grid-template-columns: 9px 1fr;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.sc-donut-legend i { width: 9px; height: 9px; border-radius: 2px; }
+
+.sc-donut-legend-name {
+  font-size: 12px;
+  color: var(--c-text-secondary);
+  grid-column: 2;
+}
+
+.sc-donut-legend-val {
+  grid-column: 2;
+  font-size: 11.5px;
+  color: var(--c-text-primary);
+  font-weight: 600;
+}
+
+/* Máy hẹp: xếp dọc để vành khuyên không bóp chú thích. */
+@media (max-width: 360px) {
+  .sc-donut { grid-template-columns: 1fr; justify-items: center; }
+  .sc-donut-center { left: 50%; transform: translate(-55px, -50%); top: 55px; }
+  .sc-donut-legend { width: 100%; }
+}

@@ -16,7 +16,7 @@ import MonthlyReportModal from './MonthlyReportModal';
 import BankSyncReminder from '@/components/ui/BankSyncReminder';
 import { isSmsWebhookEnabled } from '@/lib/featureFlags';
 
-import MoneyGrid from './MoneyGrid';
+import MoneyBlocks from './MoneyBlocks';
 
 export default function OverviewContent() {
   // NOTE: checkAndRollover đã được gọi ở RolloverGuard (app layout),
@@ -44,7 +44,7 @@ export default function OverviewContent() {
         {isSmsWebhookEnabled() && <BankSyncReminder />}
 
         {/* ═══ BLOCK 2: Lưới "Tiền tháng này" 2×2 (entry-tile → mở route chi tiết) ═══ */}
-        <MoneyGrid />
+        <MoneyBlocks />
 
         {/* ═══ BLOCK 5: Wishlist Popup (auto khi hết cooling) ═══ */}
         <WishlistPopup />

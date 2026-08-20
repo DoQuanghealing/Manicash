@@ -10,7 +10,7 @@ interface ButlerSettingsProps {
 }
 
 export default function ButlerSettings({ onBack }: ButlerSettingsProps) {
-  const { butlerName, setButlerName, theme, toggleTheme } = useSettingsStore();
+  const { butlerName, setButlerName } = useSettingsStore();
   const [nameInput, setNameInput] = useState(butlerName);
   const [saved, setSaved] = useState(false);
 
@@ -62,36 +62,7 @@ export default function ButlerSettings({ onBack }: ButlerSettingsProps) {
         </p>
       </div>
 
-      {/* ═══ Section 2: Theme Toggle ═══ */}
-      <div className="bs-section">
-        <div className="bs-section-label">🎨 Giao diện</div>
-        <div className="bs-theme-row">
-          <div className="bs-theme-info">
-            <span className="bs-theme-icon">
-              {theme === 'dark' ? '🌙' : '☀️'}
-            </span>
-            <div className="bs-theme-text">
-              <span className="bs-theme-label">
-                {theme === 'dark' ? 'Chế độ tối' : 'Chế độ sáng'}
-              </span>
-              <span className="bs-theme-desc">
-                {theme === 'dark'
-                  ? 'Dễ nhìn trong đêm, tiết kiệm pin'
-                  : 'Sáng sủa, dễ đọc ban ngày'}
-              </span>
-            </div>
-          </div>
-          <button
-            className={`bs-toggle ${theme === 'light' ? 'active' : ''}`}
-            onClick={toggleTheme}
-            aria-label="Toggle theme"
-          >
-            <span className="bs-toggle-thumb">
-              {theme === 'dark' ? '🌙' : '☀️'}
-            </span>
-          </button>
-        </div>
-      </div>
+      {/* Mục đổi giao diện đã gỡ — app khoá ở chế độ sáng (PO chốt 18/08). */}
 
       {/* ═══ Footer ═══ */}
       <div className="bs-footer">

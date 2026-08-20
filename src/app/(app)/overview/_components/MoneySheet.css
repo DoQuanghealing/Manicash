@@ -1,0 +1,109 @@
+/* ═══ MoneySheet — khung tấm trượt từ đáy ═══
+ *
+ * Chỉ lo KHUNG (vị trí, kích thước, cuộn). Màu sắc/chất liệu theo phong cách
+ * "đất nặn" nằm ở MoneyBlocks.css qua các biến --clay-*.
+ *
+ * Nguyên tắc chống tràn: tấm trượt cao tối đa 90dvh, chừa mép an toàn của máy;
+ * phần cuộn là .ms-body chứ không phải cả tấm — nhờ vậy đầu đề và nút đóng luôn
+ * nằm trong màn hình dù nội dung dài bao nhiêu.
+ */
+
+.ms-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: rgba(8, 6, 16, 0.55);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+/* Lớp trượt: chỉ lo vị trí + kích thước. Không có hình thù riêng. */
+.ms-slide {
+  width: 100%;
+  max-width: 460px;
+  /* Cao tối đa 90dvh nhưng vẫn trừ mép an toàn — máy có tai thỏ không bị cụt.
+     dvh chứ không vh: thanh địa chỉ trên di động thu/nhả làm vh sai. */
+  max-height: min(90dvh, calc(100dvh - env(safe-area-inset-top) - 12px));
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.ms-sheet {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-radius: 26px 26px 0 0;
+  background: var(--clay-surface, var(--glass-bg));
+  border: 1px solid var(--clay-edge, var(--glass-border));
+  border-bottom: none;
+  box-shadow: var(--clay-shadow-lg, 0 -12px 40px rgba(0, 0, 0, 0.35));
+  padding-bottom: env(safe-area-inset-bottom);
+  overflow: hidden;
+  touch-action: none;
+}
+
+.ms-grabber {
+  width: 42px;
+  height: 4px;
+  border-radius: 99px;
+  background: var(--c-text-faint);
+  opacity: 0.45;
+  margin: 10px auto 2px;
+  flex-shrink: 0;
+}
+
+.ms-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 18px 12px;
+  flex-shrink: 0;
+}
+
+.ms-title {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--c-text-primary);
+  margin: 0;
+}
+
+.ms-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--clay-inset, rgba(127, 127, 127, 0.12));
+  border: none;
+  color: var(--c-text-secondary);
+  flex-shrink: 0;
+}
+
+.ms-body {
+  flex: 1;
+  min-height: 0;              /* để flex cho phép co lại và bật cuộn */
+  overflow-y: auto;
+  overscroll-behavior: contain; /* cuộn hết nội dung không kéo theo trang nền */
+  touch-action: pan-y;          /* trả lại cử chỉ cuộn dọc bên trong tấm */
+  -webkit-overflow-scrolling: touch;
+  padding: 0 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Ảnh/biểu đồ rộng không được đẩy tấm trượt tràn ngang. */
+.ms-body > * {
+  max-width: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ms-backdrop { backdrop-filter: none; }
+}

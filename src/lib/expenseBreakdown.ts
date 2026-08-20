@@ -119,17 +119,21 @@ export function getPeriodTotal(
   return filterExpensesForPeriod(transactions, period, now).reduce((s, t) => s + t.amount, 0);
 }
 
+/** Một ô trên trục thời gian, kèm khoảng [from, to) để gom giao dịch vào. */
+export interface PeriodSlot extends Omit<ExpenseBucket, 'amount'> {
+  from: Date;
+  to: Date;
+}
+
 /**
- * Dải cột so sánh: mỗi mốc nhìn lại vài kỳ liền trước để thấy xu hướng.
+ * Khung trục thời gian cho một mốc — CHƯA gắn số tiền.
  *   ngày  → 7 ngày · tuần → 6 tuần · tháng → 12 tháng · năm → 4 năm
+ *
+ * Tách riêng vì biểu đồ thu nhập, chi tiêu và ngưỡng phải chia kỳ GIỐNG HỆT
+ * nhau; hai bản sao của "tuần bắt đầu từ thứ mấy" là mầm lệch số về sau.
  */
-export function buildExpenseBuckets(
-  transactions: Transaction[],
-  period: ExpensePeriod,
-  now: Date = new Date(),
-): ExpenseBucket[] {
-  const expenses = transactions.filter((t) => t.type === 'expense');
-  const buckets: (ExpenseBucket & { from: Date; to: Date })[] = [];
+export function buildPeriodSlots(period: ExpensePeriod, now: Date = new Date()): PeriodSlot[] {
+  const buckets: PeriodSlot[] = [];
 
   if (period === 'day') {
     for (let i = 6; i >= 0; i--) {
@@ -138,7 +142,6 @@ export function buildExpenseBuckets(
         key: `d-${from.toDateString()}`,
         label: WEEKDAYS[from.getDay()],
         sub: dmy(from),
-        amount: 0,
         isCurrent: i === 0,
         from,
         to: addDays(from, 1),
@@ -153,7 +156,6 @@ export function buildExpenseBuckets(
         key: `w-${from.toDateString()}`,
         label: i === 0 ? 'Tuần này' : `${dmy(from)}`,
         sub: i === 0 ? dmy(from) : `→ ${dmy(addDays(to, -1))}`,
-        amount: 0,
         isCurrent: i === 0,
         from,
         to,
@@ -167,7 +169,6 @@ export function buildExpenseBuckets(
         key: `m-${year}-${m}`,
         label: `T${m + 1}`,
         sub: '',
-        amount: 0,
         isCurrent: m === now.getMonth(),
         from,
         to: new Date(year, m + 1, 1),
@@ -181,7 +182,6 @@ export function buildExpenseBuckets(
         key: `y-${y}`,
         label: `${y}`,
         sub: '',
-        amount: 0,
         isCurrent: i === 0,
         from: new Date(y, 0, 1),
         to: new Date(y + 1, 0, 1),
@@ -189,13 +189,34 @@ export function buildExpenseBuckets(
     }
   }
 
-  for (const txn of expenses) {
+  return buckets;
+}
+
+/**
+ * Dải cột so sánh chi tiêu: mỗi mốc nhìn lại vài kỳ liền trước để thấy xu hướng.
+ */
+export function buildExpenseBuckets(
+  transactions: Transaction[],
+  period: ExpensePeriod,
+  now: Date = new Date(),
+): ExpenseBucket[] {
+  const slots = buildPeriodSlots(period, now);
+  const totals = new Map<string, number>();
+
+  for (const txn of transactions) {
+    if (txn.type !== 'expense') continue;
     const d = txnDate(txn);
-    const slot = buckets.find((b) => d >= b.from && d < b.to);
-    if (slot) slot.amount += txn.amount;
+    const slot = slots.find((b) => d >= b.from && d < b.to);
+    if (slot) totals.set(slot.key, (totals.get(slot.key) ?? 0) + txn.amount);
   }
 
-  return buckets.map(({ from: _f, to: _t, ...rest }) => rest);
+  return slots.map((s) => ({
+    key: s.key,
+    label: s.label,
+    sub: s.sub,
+    isCurrent: s.isCurrent,
+    amount: totals.get(s.key) ?? 0,
+  }));
 }
 
 /**

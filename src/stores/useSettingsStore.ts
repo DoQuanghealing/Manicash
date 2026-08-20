@@ -61,7 +61,9 @@ function writeStorage(key: string, value: unknown) {
 }
 
 export const useSettingsStore = create<SettingsState>((set) => ({
-  theme: readStorage<ThemeMode>('manicash-theme', 'dark'),
+  // App khoá ở chế độ SÁNG (PO chốt 18/08). Bỏ qua giá trị đã lưu để
+  // user từng chọn 'dark' không bị kẹt lại ở giao diện đã gỡ.
+  theme: 'light',
   butlerName: readStorage<string>('manicash-butler-name', DEFAULT_BUTLER_NAME),
   honorific: readStorage<string>('manicash-honorific', ''),
   butlerTier: readStorage<ButlerTier>('manicash-butler-tier', 'basic'),
