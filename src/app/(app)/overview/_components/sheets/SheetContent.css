@@ -1,13 +1,16 @@
 /* ═══ Nội dung bên trong tấm trượt — khung và nhịp chữ ═══
- * Màu lấy từ biến --clay-* (phong cách đất nặn), có fallback về token cũ để
- * không vỡ nếu bộ token clay chưa nạp.
+ * ⚠️ File này từng viết `var(--clay-card, …)` `var(--clay-radius, …)`
+ * `var(--clay-bar, …)` `var(--clay-shadow-sm, …)` với ý "fallback phòng khi
+ * bộ token clay chưa nạp". Nhưng BỐN TÊN ĐÓ CHƯA TỪNG ĐƯỢC KHAI trong repo,
+ * nên fallback không phải đường lui — nó là đường duy nhất, và nó trỏ về hệ
+ * tối cũ (tím #8B5CF6, glass trắng-mờ). Đã trỏ thẳng vào token có thật.
  */
 
 .sh-card {
-  background: var(--clay-card, var(--glass-bg));
-  border: 1px solid var(--clay-edge, var(--glass-border));
-  border-radius: var(--clay-radius, 20px);
-  box-shadow: var(--clay-shadow-sm, none);
+  background: var(--clay-face);
+  border: 1px solid var(--clay-edge);
+  border-radius: var(--clay-radius-card);
+  /* Không đổ bóng: đây là ô lồng bên trong tấm trượt, không phải khối rời. */
   padding: 14px;
   display: flex;
   flex-direction: column;
@@ -33,10 +36,12 @@
   color: var(--c-text-secondary);
 }
 
+/* ⚠️ `--clay-raised` CHƯA TỪNG được khai ở đâu trong repo, nên hai chỗ dùng nó
+ * ở file này vẫn đang rơi xuống fallback tím `--c-purple` của hệ tối cũ — tức
+ * tấm trượt "đã chốt" vẫn còn chip tím. Trỏ thẳng vào token có thật. */
 .sh-period.is-active {
-  background: var(--clay-raised, var(--c-purple, #7C3AED));
-  color: var(--clay-on-raised, #fff);
-  box-shadow: var(--clay-shadow-sm, none);
+  background: var(--mb-moss);
+  color: #fff;
   font-weight: 600;
 }
 
@@ -192,7 +197,7 @@
   width: 100%;
   min-height: 2px;
   border-radius: 4px 4px 2px 2px;
-  background: var(--clay-bar, #8B5CF6);
+  background: var(--mb-orange);
   opacity: 0.55;
 }
 
@@ -259,9 +264,9 @@
   padding: 11px;
   border: none;
   border-radius: 14px;
-  background: var(--clay-raised, var(--c-purple, #7C3AED));
-  color: var(--clay-on-raised, #fff);
+  /* Cùng lỗi `--clay-raised` như .sh-period.is-active ở trên. */
+  background: var(--mb-moss);
+  color: #fff;
   font-size: 13px;
   font-weight: 600;
-  box-shadow: var(--clay-shadow-sm, none);
 }

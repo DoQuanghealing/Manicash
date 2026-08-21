@@ -1,9 +1,26 @@
-/* ═══ SeasonalEventPanel styles ═══ */
+/* ═══ SeasonalEventPanel — hệ SÁNG (nền trang TRẮNG) ═══
+ *
+ * Mọi khối trong panel đều mặt TRẮNG, tách nền bằng viền mảnh --clay-edge +
+ * --clay-shadow-card. Màu mùa lễ chỉ xuất hiện ở vạch nhấn, icon, nhãn, thanh
+ * tiến độ và nút — không tô đặc cả mặt khối.
+ */
 
 /* ── Inline panel (trong hub Nhiệm vụ) — không fixed như modal ── */
 .seb-inline {
   display: block;
   width: 100%;
+
+  /* ⚠️ ĐỌC TRƯỚC KHI CHỈNH MÀU MÙA
+   * `--seb-color` do TSX truyền inline từ dữ liệu sự kiện:
+   *   Hè #F97316 · Trung thu #EAB308 · Tết #DC2626
+   * Ba hex đó TƯƠI HƠN hệ sáng của app — đặt thẳng lên nền trắng thì nhãn
+   * 10px đọc không nổi và cả panel nhảy ra khỏi ngôn ngữ chung.
+   * Trộn về phía mực rêu --clay-ink để GIỮ hue của mùa nhưng kéo đúng độ đậm
+   * của hệ. Một dòng lo cho cả ba mùa; muốn nhạt/đậm hơn thì chỉ chỉnh %.
+   * Fallback --mb-orange, theo luật "phải chọn thì ưu tiên vàng kim / cam". */
+  --seb-accent: color-mix(in oklab, var(--seb-color, var(--mb-orange)) 42%, var(--clay-ink));
+  /* Lớp rửa rất mỏng — chỉ dùng cho trạng thái ĐANG DIỄN RA, không trang trí. */
+  --seb-wash: color-mix(in oklab, var(--seb-accent) 9%, var(--clay-face-2));
 }
 
 /* ── Header ── */
@@ -18,27 +35,27 @@
   line-height: 1;
   display: inline-block;
   margin-bottom: 8px;
-  filter: drop-shadow(0 4px 12px var(--seb-color, #F97316));
+  filter: drop-shadow(0 4px 12px color-mix(in oklab, var(--seb-accent) 26%, transparent));
 }
 
 .seb-header-meta {
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.12em;
-  color: var(--seb-color, #F97316);
+  color: var(--seb-accent);
   margin: 0 0 4px;
 }
 
 .seb-header-name {
   font-size: 19px;
   font-weight: 800;
-  color: var(--c-text-primary, #F4F4F5);
+  color: var(--clay-ink);
   margin: 0 0 4px;
 }
 
 .seb-header-sub {
   font-size: 12px;
-  color: var(--c-text-secondary, #A1A1AA);
+  color: var(--clay-ink-2);
   line-height: 1.5;
   margin: 0 0 6px;
   padding: 0 8px;
@@ -60,7 +77,7 @@
   gap: 5px;
   font-size: 11px;
   font-weight: 600;
-  color: var(--c-text-secondary, #A1A1AA);
+  color: var(--clay-ink-2);
   letter-spacing: 0.02em;
 }
 
@@ -71,15 +88,16 @@
   border-radius: 999px;
   font-size: 11px;
   font-weight: 700;
-  color: var(--seb-color, #F97316);
-  background: color-mix(in srgb, var(--seb-color, #F97316) 15%, transparent);
-  border: 1px solid color-mix(in srgb, var(--seb-color, #F97316) 40%, transparent);
+  color: var(--seb-accent);
+  background: var(--seb-wash);
+  border: 1px solid color-mix(in oklab, var(--seb-accent) 30%, transparent);
 }
 
+/* Sắp hết hạn = báo động thật → đất nung --mb-alert */
 .seb-header-countdown.is-urgent {
-  color: #EF4444;
-  background: rgba(239, 68, 68, 0.15);
-  border-color: rgba(239, 68, 68, 0.4);
+  color: var(--mb-alert);
+  background: color-mix(in oklab, var(--mb-alert) 10%, var(--clay-face-2));
+  border-color: color-mix(in oklab, var(--mb-alert) 32%, transparent);
   animation: seb-countdown-pulse 1.6s ease-in-out infinite;
 }
 
@@ -92,44 +110,48 @@
   display: inline-block;
   margin: 4px 0 6px;
   padding: 3px 10px;
-  background: rgba(234, 179, 8, 0.15);
-  border: 1px solid rgba(234, 179, 8, 0.3);
+  background: color-mix(in oklab, var(--mb-gold) 12%, var(--clay-face-2));
+  border: 1px solid color-mix(in oklab, var(--mb-gold) 30%, transparent);
   border-radius: 8px;
   font-size: 11px;
-  color: #EAB308;
+  color: color-mix(in oklab, var(--mb-gold) 62%, var(--clay-ink));
   font-weight: 600;
 }
 
 .seb-header-primary-date {
-  color: var(--c-text-secondary, #A1A1AA);
+  color: var(--clay-ink-2);
   font-weight: 500;
 }
 
 /* ── Progress block ── */
 .seb-progress-block {
-  background: rgba(255, 255, 255, 0.04);
-  border-radius: 10px;
+  background: var(--clay-face);
+  border: 1px solid var(--clay-edge);
+  box-shadow: var(--clay-shadow-card);
+  border-radius: var(--clay-radius-tile);
   padding: 10px 14px;
   margin-bottom: 16px;
 }
 
 .seb-progress-bar {
   height: 6px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--clay-track);
   border-radius: 6px;
   overflow: hidden;
   margin-bottom: 6px;
 }
 
+/* Thanh đầy tô ĐẶC một sắc, không gradient — cùng cách với .goal-fill bên
+   MoneyBlocks, gradient hai màu làm thanh 6px trông nhiễu. */
 .seb-progress-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--seb-color, #F97316), #EAB308);
+  background: var(--seb-accent);
   transition: width 0.5s ease;
 }
 
 .seb-progress-label {
   font-size: 11px;
-  color: var(--c-text-secondary, #A1A1AA);
+  color: var(--clay-ink-2);
   margin: 0;
   font-weight: 600;
   text-align: center;
@@ -147,17 +169,21 @@
   display: flex;
   gap: 12px;
   padding: 12px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
+  background: var(--clay-face);
+  border: 1px solid var(--clay-edge);
+  border-radius: var(--clay-radius-card);
+  box-shadow: var(--clay-shadow-card);
   transition: all 0.2s ease;
 }
 
+/* Chương đang diễn ra: lớp rửa mỏng + vạch nhấn trái, KHÔNG tô đặc cả thẻ.
+   Vạch vẽ bằng inset shadow để không đẩy nội dung như border-left. */
 .seb-chapter--active {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.04), var(--seb-color, #F97316) 100%);
-  background-blend-mode: overlay;
-  border-color: var(--seb-color, #F97316);
-  box-shadow: 0 0 18px rgba(249, 115, 22, 0.2);
+  background: var(--seb-wash);
+  border-color: color-mix(in oklab, var(--seb-accent) 42%, transparent);
+  box-shadow:
+    var(--clay-shadow-card),
+    inset 3px 0 0 var(--seb-accent);
 }
 
 .seb-chapter--claimed {
@@ -171,19 +197,20 @@
 .seb-chapter-icon {
   width: 42px;
   height: 42px;
-  border-radius: 11px;
-  background: rgba(255, 255, 255, 0.06);
+  border-radius: var(--clay-radius-tile);
+  background: var(--clay-face-2);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 22px;
   flex-shrink: 0;
-  color: var(--c-text-secondary, #A1A1AA);
+  color: var(--clay-ink-2);
 }
 
+/* Ô icon nhỏ nên tô đặc được — đây là dấu hiệu "đang ở chương này". */
 .seb-chapter--active .seb-chapter-icon {
-  background: rgba(255, 255, 255, 0.12);
-  color: white;
+  background: var(--seb-accent);
+  color: var(--clay-face);
 }
 
 .seb-chapter-body { flex: 1; min-width: 0; }
@@ -193,31 +220,31 @@
   font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--seb-color, #F97316);
+  color: var(--seb-accent);
   margin: 0 0 2px;
 }
 
 .seb-chapter-title {
   font-size: 13px;
   font-weight: 700;
-  color: var(--c-text-primary, #F4F4F5);
+  color: var(--clay-ink);
   margin: 0 0 4px;
 }
 
 .seb-chapter-scenario {
   font-size: 11px;
-  color: var(--c-text-secondary, #A1A1AA);
+  color: var(--clay-ink-2);
   line-height: 1.5;
   margin: 0 0 6px;
 }
 
 .seb-chapter-hint {
   font-size: 11px;
-  color: var(--c-text-primary, #F4F4F5);
+  color: var(--clay-ink);
   margin: 0 0 8px;
   padding: 6px 8px;
-  background: rgba(255, 255, 255, 0.04);
-  border-radius: 6px;
+  background: var(--clay-face-2);
+  border-radius: var(--clay-radius-tile);
 }
 
 .seb-chapter-rewards {
@@ -227,6 +254,9 @@
   margin-bottom: 8px;
 }
 
+/* Chip thưởng XP — phớt vàng kim, chữ để mực chính cho đọc được ở 10px.
+   ⚠️ Giữ `border: 1px solid transparent`: chip vật phẩm nhận borderColor +
+   color INLINE từ độ hiếm, thiếu chỗ đặt viền là chip nhảy 2px. */
 .seb-chip {
   display: inline-flex;
   align-items: center;
@@ -234,62 +264,64 @@
   padding: 3px 7px;
   font-size: 10px;
   font-weight: 700;
-  color: #A78BFA;
-  background: rgba(124, 58, 237, 0.15);
+  color: var(--clay-ink);
+  background: color-mix(in oklab, var(--mb-gold) var(--clay-tile-mix), var(--clay-face-2));
   border-radius: 6px;
   border: 1px solid transparent;
 }
 
-.seb-chip--item { background: rgba(255, 255, 255, 0.04); }
+.seb-chip--item { background: var(--clay-face-2); }
 
 .seb-chapter-claim {
   display: inline-flex;
   align-items: center;
   gap: 5px;
   padding: 8px 14px;
-  background: linear-gradient(135deg, #F97316, #EAB308);
-  color: white;
+  background: var(--seb-accent);
+  color: var(--clay-face);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--clay-radius-tile);
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
   font-family: inherit;
+  box-shadow: 0 4px 10px -7px color-mix(in oklab, var(--seb-accent) 70%, transparent);
 }
 
 .seb-chapter-pending {
   font-size: 10px;
-  color: var(--c-text-secondary, #A1A1AA);
+  color: var(--clay-ink-2);
   margin: 0;
 }
 
 .seb-chapter-claimed-label {
   font-size: 10px;
-  color: #22C55E;
+  color: var(--mb-moss);
   margin: 0;
   font-weight: 600;
 }
 
 .seb-chapter-locked-label {
   font-size: 10px;
-  color: var(--c-text-secondary, #A1A1AA);
+  color: var(--clay-ink-2);
   margin: 0;
 }
 
 /* ── Final reward ── */
 .seb-final {
   padding: 14px 16px;
-  background: rgba(124, 58, 237, 0.1);
-  border: 1px dashed rgba(124, 58, 237, 0.35);
-  border-radius: 14px;
+  background: var(--clay-face);
+  border: 1px dashed color-mix(in oklab, var(--seb-accent) 32%, transparent);
+  border-radius: var(--clay-radius-card);
   transition: all 0.2s ease;
 }
 
+/* Sẵn sàng nhận: viền liền + lớp rửa mỏng, thay cho quầng sáng cam cũ. */
 .seb-final--ready {
-  background: linear-gradient(135deg, rgba(249, 115, 22, 0.18), rgba(234, 179, 8, 0.1));
-  border-color: var(--seb-color, #F97316);
+  background: var(--seb-wash);
+  border-color: color-mix(in oklab, var(--seb-accent) 48%, transparent);
   border-style: solid;
-  box-shadow: 0 0 24px rgba(249, 115, 22, 0.25);
+  box-shadow: var(--clay-shadow-card);
 }
 
 .seb-final--claimed { opacity: 0.7; }
@@ -302,13 +334,13 @@
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--seb-color, #F97316);
+  color: var(--seb-accent);
   margin-bottom: 8px;
 }
 
 .seb-final-label {
   font-size: 12px;
-  color: var(--c-text-primary, #F4F4F5);
+  color: var(--clay-ink);
   line-height: 1.5;
   margin: 0 0 10px;
 }
@@ -318,10 +350,10 @@
   align-items: center;
   gap: 6px;
   padding: 10px 16px;
-  background: linear-gradient(135deg, var(--seb-color, #F97316), #EAB308);
-  color: white;
+  background: var(--seb-accent);
+  color: var(--clay-face);
   border: none;
-  border-radius: 10px;
+  border-radius: var(--clay-radius-tile);
   font-size: 13px;
   font-weight: 800;
   cursor: pointer;
@@ -329,9 +361,10 @@
   animation: seb-final-pulse 1.8s ease-in-out infinite;
 }
 
+/* Nhịp toả là VÒNG SÁNG mỏng theo sắc mùa, không phải quầng cam đậm. */
 @keyframes seb-final-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.5); }
-  50% { box-shadow: 0 0 0 8px rgba(249, 115, 22, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--seb-accent) 38%, transparent); }
+  50% { box-shadow: 0 0 0 8px color-mix(in oklab, var(--seb-accent) 0%, transparent); }
 }
 
 .seb-final-status {
@@ -339,30 +372,31 @@
   align-items: center;
   gap: 6px;
   font-size: 11px;
-  color: #22C55E;
+  color: var(--mb-moss);
   margin: 0;
 }
 
 .seb-final-status--locked {
-  color: var(--c-text-secondary, #A1A1AA);
+  color: var(--clay-ink-2);
 }
 
 /* ═══ Chapter action button ═══ */
+/* "Đi làm nhiệm vụ" là điều hướng, không phải nhận thưởng → sắc thông tin. */
 .seb-chapter-action {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   padding: 8px 14px;
-  background: linear-gradient(135deg, #7C3AED, #6366F1);
-  color: white;
+  background: var(--mb-info);
+  color: var(--clay-face);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--clay-radius-tile);
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
   font-family: inherit;
   margin-top: 4px;
-  box-shadow: 0 4px 10px rgba(124, 58, 237, 0.3);
+  box-shadow: 0 4px 10px -7px color-mix(in oklab, var(--mb-info) 70%, transparent);
   transition: transform 0.15s ease;
 }
 

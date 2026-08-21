@@ -117,7 +117,10 @@
   min-height: 196px;
   padding: clamp(13px, 3.8vw, 16px);
   border: none;
-  border-radius: var(--clay-radius-panel);
+  /* 20px chứ không phải 26px: ba khối này nằm sát các khối khác trên Tổng quan,
+     lệch vài px ở khối liền kề là loại chênh mắt bắt được mà không gọi tên
+     được. Một số bo duy nhất cho MỌI khối — PO chốt 20/08. */
+  border-radius: var(--clay-radius-card);
   background: var(--clay-face);
   color: var(--clay-ink);
   box-shadow:

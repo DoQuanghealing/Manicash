@@ -595,17 +595,20 @@ img, svg { display: block; max-width: 100%; }
   color: var(--c-text-primary);
 }
 
-/* ═══ LIGHT MODE — Glass Cards ═══ */
+/* ═══ LIGHT MODE — Glass Cards ═══
+ * Nền trang giờ là TRẮNG đặc, nên mặt kính trắng-mờ (--glass-bg) tan vào nền,
+ * khối gần như mất viền. Đổi sang mặt trắng đặc + viền rêu mảnh cho khớp
+ * MoneyBlocks. Chỉ 4 file tsx dùng class này nên đổi ở đây là gọn nhất. */
 [data-theme="light"] .glass-card,
 [data-theme="light"] .glass-card-flat {
-  background: var(--glass-bg);
-  border-color: var(--glass-border);
-  box-shadow: var(--glass-shadow);
+  background: var(--clay-face);
+  border-color: var(--clay-edge);
+  box-shadow: var(--clay-shadow-card);
 }
 
 [data-theme="light"] .glass-card:hover {
-  background: var(--glass-bg-hover);
-  border-color: var(--glass-border-hover);
+  background: var(--clay-face);
+  border-color: rgba(95, 122, 79, 0.3);
 }
 
 /* ═══ LIGHT MODE — Mobile Shell ═══ */
@@ -867,6 +870,63 @@ img, svg { display: block; max-width: 100%; }
     0 -14px 44px -18px rgba(60, 70, 55, 0.22),
     0 -2px 10px -8px rgba(60, 70, 55, 0.16);
   --clay-inset: var(--clay-face-2);
+
+  /* Bóng chuẩn của MỌI khối trên Tổng quan. Nông và trong: khối tách khỏi nền
+     trắng bằng VIỀN MẢNH, bóng chỉ nhấc khối lên một chút. Muốn chỉnh "nặng/
+     nhẹ" toàn trang thì chỉnh đúng biến này, đừng thêm bóng riêng ở từng file. */
+  --clay-shadow-card:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 6px 18px -12px rgba(60, 70, 55, 0.34);
+
+  /* Hai sắc PHÁI SINH cho khối báo/nhắc — KHÔNG phải màu thương hiệu mới.
+     Ba màu chủ đạo chỉ đủ phân biệt ba khối tiền; khối nhắc còn cần tách
+     "thông tin" khỏi "báo động" nên mượn thêm hai sắc cùng họ. */
+  --mb-info:  #4E7A72;   /* rêu ngả xanh đậm — cùng họ với --clay-y4 */
+  --mb-alert: #A8432B;   /* đất nung — CHỈ dùng cho cảnh báo thật */
+
+  /* ⚠️ VÀNG KIM LÀ NGOẠI LỆ VỀ TƯƠNG PHẢN.
+   * Trên nền trắng: rêu 4,8:1 · rêu-xanh 4,8:1 · đất nung 6,0:1 — đủ cho chữ.
+   * Riêng --mb-gold chỉ 2,6:1, KHÔNG đủ. Nên:
+   *   · chữ màu vàng kim  → dùng --mb-gold-ink (5,3:1)
+   *   · nền vàng kim      → chữ phải là --clay-ink (4,6:1), TUYỆT ĐỐI không #fff (2,6:1)
+   * Ba màu kia thì chữ trắng trên nền màu vẫn đạt chuẩn, dùng thẳng được. */
+  --mb-gold-ink: #8A6612;
+
+  /* ─── 4 MỨC TÌNH TRẠNG của khối Số dư khả dụng (SafeToSpendCard) ───
+   *
+   * moneyBrain trả tone theo hệ đèn giao thông (green/blue/amber/red), mà
+   * bảng màu app không có xanh lá tươi, xanh dương hay đỏ. Bản đồ dịch sang
+   * họ rêu–kim–cam, PO chốt 20/08:
+   *   green  (Xuất sắc)   → rêu            + phấn --clay-y2
+   *   blue   (Tốt)        → rêu ngả xanh   + phấn --clay-y4
+   *   amber  (Trung bình) → vàng kim       + phấn --clay-y3
+   *   red    (Cảnh báo)   → cam nung       + phấn --clay-y1
+   *
+   * Cố ý KHÔNG dùng --mb-orange cho mức Cảnh báo: nó là màu khối Chi tiêu
+   * trong MoneyBlocks ngay bên dưới, hai khối cạnh nhau cùng màu thì "cảnh
+   * báo" đọc thành "chi tiêu".
+   *
+   * Mỗi mức có ĐÚNG 3 vai, đừng thêm vai thứ tư:
+   *   -ink  chữ  — lấy đúng biến đã đạt chuẩn tương phản ở khối trên
+   *   -mid  đường kẻ / chấm / viền mảnh
+   *   -pas  lớp RỬA nền — luôn pha loãng với --clay-face khi dùng, không
+   *         bao giờ đổ nguyên sắc phấn làm nền (tô đặc = nặng, PO đã bác).
+   */
+  --sts-exc-ink: var(--mb-moss);
+  --sts-exc-mid: var(--mb-moss);
+  --sts-exc-pas: var(--clay-y2);
+
+  --sts-good-ink: var(--mb-info);
+  --sts-good-mid: var(--mb-info);
+  --sts-good-pas: var(--clay-y4);
+
+  --sts-avg-ink: var(--mb-gold-ink);
+  --sts-avg-mid: var(--mb-gold);
+  --sts-avg-pas: var(--clay-y3);
+
+  --sts-dng-ink: var(--mb-alert);
+  --sts-dng-mid: var(--mb-alert);
+  --sts-dng-pas: var(--clay-y1);
 }
 
 /* Ba khối nhận ba màu chủ đạo — chỉ để phân biệt, không để gây chú ý. */

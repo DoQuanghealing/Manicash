@@ -1,35 +1,47 @@
-/* ═══ SovereignMigrationBanner — báo trước PV-5 ═══ */
+/* ═══ SovereignMigrationBanner — báo trước PV-5 ═══
+ * Cùng khuôn với CoachSuggestionCard / CareCard, chỉ gọn hơn một bậc vì đây
+ * là băng báo chứ không phải khối nội dung. */
 .smb{
   position:relative; display:flex; gap:12px; align-items:flex-start;
-  padding:13px 40px 13px 14px; border-radius:14px; margin-bottom:12px;
-  background:linear-gradient(165deg,#171026,#100b1a);
-  border:1px solid var(--smb-ln,rgba(192,132,252,.28));
+  padding:13px 40px 13px 17px; border-radius:var(--clay-radius-tile);
+  margin-bottom:12px;
+  background:var(--clay-face);
+  border:1px solid var(--clay-edge);
+  box-shadow:var(--clay-shadow-card);
+  overflow:hidden;
 }
 .smb::before{
-  content:""; position:absolute; left:0; top:12px; bottom:12px; width:3px; border-radius:3px;
-  background:var(--smb-acc,#c084fc);
+  content:""; position:absolute; left:0; top:0; bottom:0; width:4px;
+  background:var(--smb-acc,var(--mb-gold));
 }
-.smb-notice{ --smb-acc:#c084fc; --smb-ln:rgba(192,132,252,.3); }
-.smb-trial{ --smb-acc:#22c55e; --smb-ln:rgba(34,197,94,.3); }
-.smb-ended{ --smb-acc:#94a3b8; --smb-ln:rgba(148,163,184,.28); }
+/* Xem ghi chú tương phản ở CoachSuggestionCard.css — cùng công thức 3 biến.
+   Tông mặc định của băng này LÀ vàng kim nên bẫy tương phản dính ngay ở
+   trạng thái hay gặp nhất, đừng bỏ. */
+.smb{ --smb-on:#fff; }
+.smb-notice{
+  --smb-acc:var(--mb-gold); --smb-tint:var(--clay-y3);
+  --smb-on:var(--clay-ink);
+}
+.smb-trial{ --smb-acc:var(--mb-moss); --smb-tint:var(--clay-y2); }
+.smb-ended{ --smb-acc:var(--clay-ink-2); --smb-tint:var(--clay-y5); }
 
 .smb-icon{
   flex-shrink:0; width:34px; height:34px; border-radius:11px; display:grid; place-items:center;
-  font-size:18px; background:color-mix(in srgb,var(--smb-acc) 15%, transparent);
-  border:1px solid var(--smb-ln);
+  font-size:18px;
+  background:color-mix(in srgb,var(--smb-tint,var(--clay-y3)) 55%, #fff);
+  border:1px solid color-mix(in srgb,var(--smb-acc) 26%, transparent);
 }
 .smb-body{ min-width:0; flex:1; }
-.smb-headline{ font:700 13px system-ui,sans-serif; color:#f3f0fb; margin-bottom:3px; }
-.smb-text{ margin:0; font-size:12px; line-height:1.55; color:#c3bcd6; }
+.smb-headline{ font:700 13px system-ui,sans-serif; color:var(--clay-ink); margin-bottom:3px; }
+.smb-text{ margin:0; font-size:12px; line-height:1.55; color:var(--clay-ink-2); }
 .smb-cta{
   margin-top:9px; padding:7px 13px; border-radius:9px; border:none; cursor:pointer;
-  background:linear-gradient(135deg,var(--smb-acc),color-mix(in srgb,var(--smb-acc) 55%, #000));
-  color:#fff; font:700 11.5px system-ui,sans-serif;
+  background:var(--smb-acc); color:var(--smb-on); font:700 11.5px system-ui,sans-serif;
 }
 .smb-cta:hover{ filter:brightness(1.08); }
 .smb-dismiss{
   position:absolute; top:9px; right:9px; width:25px; height:25px; border-radius:50%;
-  display:grid; place-items:center; cursor:pointer; color:#8a83a3;
+  display:grid; place-items:center; cursor:pointer; color:var(--clay-ink-2);
   background:transparent; border:1px solid transparent;
 }
-.smb-dismiss:hover{ color:#f3f0fb; background:rgba(255,255,255,.06); }
+.smb-dismiss:hover{ color:var(--clay-ink); background:var(--clay-face-2); }

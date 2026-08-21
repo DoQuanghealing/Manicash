@@ -19,15 +19,19 @@
 }
 
 /* ── Cột (chi tiêu vs ngưỡng) ── */
+/* Cột chi tiêu dùng CAM — cùng màu khối Chi tiêu bên MoneyBlocks, để mắt nối
+   được biểu đồ với khối sinh ra nó. (Trước đây rơi vào fallback tím #8B5CF6
+   vì `--clay-bar` chưa từng được khai — xem ghi chú đầu SheetContent.css.) */
 .sc-bar {
-  fill: var(--clay-bar, #8B5CF6);
+  fill: var(--mb-orange);
   opacity: 0.5;
 }
 
 .sc-bar.is-current { opacity: 0.85; }
 
-/* Vượt ngưỡng LÀ điểm chính của biểu đồ này — đỏ rõ, không làm dịu. */
-.sc-bar.is-over { fill: #EF4444; opacity: 0.9; }
+/* Vượt ngưỡng LÀ điểm chính của biểu đồ này — không làm dịu. Đất nung thay cho
+   đỏ #EF4444: PO chốt 20/08 là báo động giữ trong hệ màu. Vẫn đạt 6,0:1. */
+.sc-bar.is-over { fill: var(--mb-alert); opacity: 0.9; }
 .sc-bar.is-over.is-current { opacity: 1; }
 
 .sc-threshold {
