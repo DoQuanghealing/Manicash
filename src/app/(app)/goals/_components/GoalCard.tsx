@@ -45,7 +45,11 @@ export default function GoalCard({ goal, onDelete, onCompleteMilestone, onDeposi
                 <Landmark size={11} className="gc-bank-badge" aria-label="Có TK ngân hàng" />
               )}
             </p>
-            <p className="gc-deadline">Mục tiêu {goal.deadline.slice(0, 4)}</p>
+            {/* Mục tiêu không hạn là hợp lệ — nói thẳng "chưa đặt hạn" chứ
+                đừng bịa một cái năm ra cho đủ chỗ. */}
+            <p className="gc-deadline">
+              {goal.deadline ? `Mục tiêu ${goal.deadline.slice(0, 4)}` : 'Chưa đặt hạn'}
+            </p>
           </div>
         </div>
         <div className="gc-header-right">

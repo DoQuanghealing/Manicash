@@ -76,7 +76,13 @@ export interface Goal {
   icon: string;
   targetAmount: number;
   currentAmount: number;
-  deadline: string; // ISO date or year string
+  /** ISO date hoặc chuỗi năm.
+   * ⚠️ TUỲ CHỌN, không phải bắt buộc. Dữ liệu đã persist có mục tiêu KHÔNG có
+   * hạn (schema cũ + đường tạo không qua form), và `calcUrgency`,
+   * `goalMetrics`, `snapshotBuilder` đều đã phòng thủ sẵn cho trường hợp này.
+   * Khai `string` bắt buộc là nói dối kiểu → TS không bắt được chỗ đọc thẳng,
+   * và trang Mục tiêu sập vì `deadline.slice(...)` của undefined. */
+  deadline?: string;
   color: string;
   milestones: Milestone[];
   createdAt: string;
