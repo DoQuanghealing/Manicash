@@ -44,7 +44,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 2px 6px 9px;
+  padding: 0 4px 5px;
   color: var(--clay-ink-2);
 }
 .frame-title span:first-child {
@@ -68,10 +68,10 @@
   isolation: isolate;
   display: flex;
   flex-direction: column;
-  gap: clamp(10px, 3vw, 13px);
+  gap: 8px;
   width: 100%;
   min-width: 0;
-  padding: clamp(10px, 3vw, 13px);
+  padding: 8px;
   border-radius: var(--clay-radius-panel);
   background: var(--clay-bg);
   color: var(--clay-ink);
@@ -112,10 +112,11 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 9px;
+  gap: 7px;
   min-width: 0;
-  min-height: 196px;
-  padding: clamp(13px, 3.8vw, 16px);
+  /* Không ép chiều cao sàn: ba khối cao theo nội dung, ép sàn chính là thứ
+     đẻ ra khoảng trắng thừa (bẫy số 4 của đợt trước). */
+  padding: clamp(10px, 3vw, 12px);
   border: none;
   /* 20px chứ không phải 26px: ba khối này nằm sát các khối khác trên Tổng quan,
      lệch vài px ở khối liền kề là loại chênh mắt bắt được mà không gọi tên
@@ -167,8 +168,8 @@
 .blk-row {
   display: flex;
   align-items: center;
-  gap: 9px;
-  min-height: 30px;
+  gap: 8px;
+  min-height: 24px;
   min-width: 0;
   padding-right: 42px;   /* né .corner / .eye-btn ở góc trên phải */
 }
@@ -377,6 +378,48 @@
   opacity: 0.72;
 }
 
+/* ─────────────────────────────────────────────────────────────
+   1b. VỆT TỈ LỆ + DÒNG CHÚ (mặt khối gọn)
+   Thay cho vành khuyên + chú thích danh mục đã chuyển vào tấm trượt.
+   Hai phần tử này là TOÀN BỘ phần "chứng minh" còn lại trên mặt khối,
+   nên tổng chiều cao của chúng phải ở lại quanh 26px — thêm gì vào đây
+   là ăn thẳng vào ngân sách "4 khối trong 1 màn hình".
+   ───────────────────────────────────────────────────────────── */
+.blk .mini-bar {
+  display: flex;
+  width: 100%;
+  height: 8px;
+  margin-top: 1px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--clay-track);
+  box-shadow: inset 0 2px 3px var(--clay-bevel-bottom);
+}
+.blk .mini-seg {
+  display: block;
+  height: 100%;
+  min-width: 2px;
+  /* .mini-seg nhận `background` INLINE từ dữ liệu (màu danh mục / var(--tint)) */
+  box-shadow: inset 0 2px 2px var(--clay-bevel-top);
+}
+.blk .mini-seg:first-child { border-radius: 999px 0 0 999px; }
+.blk .mini-seg:last-child  { border-radius: 0 999px 999px 0; }
+
+.blk .mini-cap {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--clay-ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.blk .mini-cap b {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--clay-ink);
+}
+
 .blk .chips {
   display: flex;
   flex-wrap: wrap;
@@ -401,13 +444,13 @@
   align-self: flex-start;
   display: inline-flex;
   gap: 3px;
-  padding: 3px;
+  padding: 2px;
   border-radius: 999px;
   background: color-mix(in oklab, var(--clay-y3) var(--clay-tile-mix), var(--clay-face-2));
   box-shadow: inset 0 2px 4px var(--clay-bevel-bottom);
 }
 .blk .view-switch button {
-  padding: 5px 13px;
+  padding: 4px 12px;
   border: none;
   border-radius: 999px;
   background: none;
@@ -482,7 +525,7 @@
 .blk .exp-body {
   display: flex;
   align-items: flex-start;
-  gap: 11px;
+  gap: 10px;
   min-width: 0;
 }
 
@@ -491,17 +534,21 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 5px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
+/* Nhãn và số nằm CÙNG HÀNG: xếp chồng 2 dòng cho mỗi ô là ba ô × một dòng
+   thừa — đúng chỗ khối Chi tiêu phình ra khỏi màn hình. */
 .blk .stat-list li {
   display: flex;
-  flex-direction: column;
-  gap: 1px;
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
   min-width: 0;
-  padding: 8px 10px;
+  padding: 6px 9px;
   border-radius: var(--clay-radius-tile);
   background: color-mix(in oklab, var(--clay-y1) var(--clay-tile-mix), var(--clay-face-2));
   box-shadow: inset 0 1px 2px var(--clay-bevel-top);
@@ -510,10 +557,14 @@
   font-size: 10.5px;
   line-height: 1.5;
   color: var(--clay-ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .blk .sl-val {
+  flex: none;
   font-family: var(--font-display);
-  font-size: 15px;
+  font-size: 13.5px;
   font-weight: 700;
   line-height: 1.4;
   font-variant-numeric: tabular-nums;
@@ -532,7 +583,7 @@
   align-items: center;
 }
 .blk .donut-hold {
-  --size: clamp(100px, 30vw, 118px);
+  --size: clamp(88px, 25vw, 100px);
   --hole: calc(var(--size) * 0.28);
   position: relative;
   width: var(--size);
@@ -540,7 +591,7 @@
   flex: none;
 }
 .blk .donut-hold.donut-sm {
-  --size: clamp(84px, 24vw, 94px);
+  --size: clamp(72px, 20vw, 80px);
   --hole: calc(var(--size) * 0.30);
 }
 .blk .donut {
@@ -588,8 +639,8 @@
 .blk .rest {
   position: relative;
   width: 100%;
-  margin-top: 8px;
-  padding: 6px 7px 7px;
+  margin-top: 6px;
+  padding: 5px 7px 6px;
   border-radius: var(--clay-radius-tile);
   text-align: center;
   line-height: 1.45;
@@ -669,7 +720,7 @@
 /* Dải chân: hôm qua · hôm nay · bill sắp đến hạn */
 .blk .blk-foot {
   display: flex;
-  gap: 7px;
+  gap: 6px;
   margin: 0;
   margin-top: auto;
   padding: 0;
@@ -681,8 +732,8 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 1px;
-  padding: 8px 9px;
+  gap: 0;
+  padding: 5px 8px;
   border-radius: var(--clay-radius-tile);
   background: color-mix(in oklab, var(--clay-y3) var(--clay-tile-mix), var(--clay-face-2));
   box-shadow: inset 0 1px 2px var(--clay-bevel-top);
@@ -715,8 +766,8 @@
 .blk .wave {
   display: block;
   width: 100%;
-  height: 16px;
-  margin: -2px 0 2px;
+  height: 10px;
+  margin: -3px 0 0;
 }
 .blk .wave path {
   fill: color-mix(in oklab, var(--clay-y5) var(--clay-tile-mix), var(--clay-face-2));
@@ -732,7 +783,7 @@
 .blk .goals {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   margin: 0;
   margin-top: auto;
   padding: 0;
@@ -746,9 +797,9 @@
   --tint: var(--clay-y5);
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 9px;
   min-width: 0;
-  padding: 9px 10px;
+  padding: 6px 9px;
   border-radius: var(--clay-radius-card);
   background: color-mix(in oklab, var(--tint) var(--clay-tile-mix), var(--clay-face-2));
   box-shadow:
@@ -761,8 +812,8 @@
 
 /* Ô icon mục tiêu — chứa EMOJI (text), không phải svg */
 .blk .goal-ico {
-  width: 34px;
-  height: 34px;
+  width: 30px;
+  height: 30px;
   flex: none;
   display: grid;
   place-items: center;
@@ -780,7 +831,7 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 .blk .goal-top {
   display: flex;
@@ -813,7 +864,7 @@
 .blk .goal-bar {
   display: block;
   width: 100%;
-  height: 11px;          /* clay: thanh phải DÀY, bo tròn hai đầu */
+  height: 8px;           /* clay: thanh vẫn dày, bo tròn hai đầu */
   border-radius: 999px;
   overflow: hidden;
   background: var(--clay-track);
@@ -895,8 +946,8 @@
 .money-blocks .blk-income .inc-body {
   flex: none;
   align-items: center;
-  gap: 14px;
-  margin-top: 2px;
+  gap: 12px;
+  margin-top: 0;
 }
 
 .money-blocks .blk-income .spark-box { flex: none; }
