@@ -4,7 +4,7 @@
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { getRankByXP } from '@/data/rankDefinitions';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { resolveVibe } from '@/lib/ageGroup';
 import { getCopy } from '@/data/vibedCopy';
 import { isCollectionEnabled } from '@/lib/featureFlags';
@@ -14,6 +14,7 @@ import './AppHeader.css';
 export default function AppHeader() {
   const { user, firebaseUser } = useAuthStore();
   const router = useRouter();
+  const pathname = usePathname();
 
   const displayName =
     user?.displayName || firebaseUser?.displayName || 'Chiến binh';
@@ -35,6 +36,11 @@ export default function AppHeader() {
   if (hour >= 12 && hour < 18) greetKey = 'greeting.afternoon';
   else if (hour >= 18) greetKey = 'greeting.evening';
   const greetVerb = getCopy(greetKey, vibe);
+
+  /* /chat có thanh tiêu đề riêng (pill "Quản gia tài chính") — chồng thêm thanh
+   * chào + rank ở trên chỉ ăn mất chiều cao khung chat. Ẩn hẳn ở route này để
+   * luồng tin nhắn dài hơn; các tab khác giữ nguyên. */
+  if (pathname?.startsWith('/chat')) return null;
 
   return (
     <header className="app-header" id="app-header">

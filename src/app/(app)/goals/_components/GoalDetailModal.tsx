@@ -48,9 +48,12 @@ function formatTime(iso: string): string {
   return `${day}/${month}/${String(d.getFullYear()).slice(-2)}`;
 }
 
-function daysUntil(deadline: string): number {
+/** Trả 0 khi mục tiêu chưa đặt hạn — dùng 0 làm "không tính được", khớp với
+ *  cách hàm này vốn đã xử lý ngày không parse được. */
+function daysUntil(deadline: string | undefined): number {
+  if (!deadline) return 0;
   const target = new Date(deadline).getTime();
-  if (!target) return 0;
+  if (!target || Number.isNaN(target)) return 0;
   const diff = target - Date.now();
   return Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)));
 }
@@ -149,7 +152,10 @@ export default function GoalDetailModal({ goal, isOpen, onClose, onOpenDeposit }
               </div>
               <h2 className="gdt-title">{goal.name}</h2>
               <p className="gdt-deadline">
-                <Calendar size={11} /> Đến {goal.deadline.slice(0, 10)} · còn {days} ngày
+                <Calendar size={11} />{' '}
+                {goal.deadline
+                  ? `Đến ${goal.deadline.slice(0, 10)} · còn ${days} ngày`
+                  : 'Chưa đặt hạn'}
               </p>
               {/* Pet + Streak badges */}
               <div className="gdt-meta-row">

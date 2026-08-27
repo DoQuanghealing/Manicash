@@ -1,146 +1,555 @@
-/* ═══ SafeToSpendCard — Số dư khả dụng (navy chủ đạo) ═══ */
-.sts-card{
-  position:relative; overflow:hidden;
-  background:linear-gradient(168deg,#12213f,#0f1c3e);
-  border:1px solid rgba(120,150,220,.16);
-  border-radius:22px; padding:22px 20px;
-  box-shadow:0 24px 60px -30px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.05);
-  /* accent semantic theo tone (nền vẫn navy) */
-  --sts-acc:#4f7cff; --sts-acc-soft:rgba(79,124,255,.14); --sts-acc-ln:rgba(79,124,255,.3);
-}
-.sts-card::before{
-  content:""; position:absolute; top:0; left:0; right:0; height:3px;
-  background:linear-gradient(90deg,#4f7cff,#7aa0ff);
-}
-.sts-tone-green{ --sts-acc:#22c55e; --sts-acc-soft:rgba(34,197,94,.14); --sts-acc-ln:rgba(34,197,94,.3); }
-.sts-tone-blue{ --sts-acc:#3b82f6; --sts-acc-soft:rgba(59,130,246,.14); --sts-acc-ln:rgba(59,130,246,.3); }
-.sts-tone-amber{ --sts-acc:#f59e0b; --sts-acc-soft:rgba(245,158,11,.14); --sts-acc-ln:rgba(245,158,11,.3); }
-.sts-tone-red{ --sts-acc:#ef4444; --sts-acc-soft:rgba(239,68,68,.14); --sts-acc-ln:rgba(239,68,68,.32); }
+/* ═══════════════════════════════════════════════════════════════════
+   SafeToSpendCard — Số dư khả dụng
+   Phong cách: MẢNG PHẤN DƯỚI CON SỐ — mẫu C, PO chốt 2026-08-20.
 
-.sts-eye{
-  position:absolute; top:16px; right:14px; width:32px; height:32px; border-radius:50%;
-  background:#17284a; border:1px solid rgba(120,150,220,.16); color:#93a3c9;
-  cursor:pointer; display:grid; place-items:center;
-}
-.sts-eye:hover{ color:#eaf1ff; }
+   Viết lại toàn bộ từ bản navy cũ (#12213f, #4f7cff, #22c55e… hardcode
+   0 token, thuộc thời giao diện tối). KHÔNG hardcode màu trong file này.
 
-.sts-lblrow{ display:flex; align-items:center; gap:7px; margin-bottom:10px; }
-.sts-lbl{
-  font:700 12px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-  letter-spacing:.16em; text-transform:uppercase;
-  background:linear-gradient(90deg,#8fb0ff,#c7d8ff);
-  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
-}
-.sts-qmark{
-  width:16px; height:16px; border-radius:50%; border:1.4px solid #63719a; color:#93a3c9;
-  font:700 10px system-ui,sans-serif; display:grid; place-items:center; cursor:pointer; background:none; padding:0;
-}
-.sts-qmark:hover{ border-color:#4f7cff; color:#9fb8ff; }
+   ── Ý đồ của mẫu C, gỡ cái nào là hỏng cái đó ────────────────────
+   1. MẶT KHỐI NGOÀI LUÔN TRẮNG. Khối tách khỏi nền trắng bằng VIỀN
+      MẢNH + bóng nông (--clay-shadow-card), không bằng chênh màu nền.
+      Đổ màu ra cả khối là quay lại đúng cảm giác "nặng nề" PO đã bác.
+   2. Tình trạng chỉ nhuộm ĐÚNG MỘT chỗ: tấm chứa số dư. Cả 4 mức đều
+      là lớp RỬA rất mỏng (sắc phấn pha ~34% vào mặt trắng), không phải
+      nền đặc màu.
+   3. Con số giữ màu mực --clay-ink ở mọi mức. Tone do TẤM nói, không
+      phải do con số nói. Ngoại lệ duy nhất: số ÂM (xem .sts-amount--neg).
 
-/* số dư — nổi bật */
-.sts-amount{
-  font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-  font-weight:800; font-size:44px; line-height:1.02; letter-spacing:-.025em;
-  font-variant-numeric:tabular-nums; margin:0 0 10px;
-  color:#f2f6ff; text-shadow:0 2px 24px rgba(79,124,255,.35);
+   ── ⚠️ TẤM PHẤN ĐƯỢC GHÉP TỪ HAI PHẦN TỬ ────────────────────────
+   Mẫu thử có một <div> bọc riêng cho tấm phấn. DOM thật thì .sts-amount
+   và .sts-statusline là HAI anh em rời, và yêu cầu là giữ nguyên DOM.
+   Nên tấm được ghép lại bằng mắt:
+     · .sts-amount     bo góc trên,  nền rửa, margin-bottom: 0
+     · .sts-statusline bo góc dưới,  CÙNG một nền rửa
+   Ba ràng buộc để mối ghép không lộ:
+     a. Nền phải PHẲNG (--sts-wash), không gradient. Gradient dọc cắt
+        làm đôi sẽ lộ vạch đúng chỗ nối.
+     b. Hai phần tử phải DÍNH nhau — không margin, không gap giữa chúng.
+     c. Viền tóc vẽ bằng inset box-shadow theo từng cạnh ngoài (trên +
+        hai bên cho phần trên, dưới + hai bên cho phần dưới), KHÔNG dùng
+        border, vì border sẽ kẻ luôn cạnh tiếp giáp.
+   Muốn quay về một khối liền thì phải thêm wrapper trong TSX trước.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ─────────────────────────────────────────────────────────────
+   0. KHỐI + BẢN ĐỒ 4 MỨC TÌNH TRẠNG
+   Ba biến --sts-ink / --sts-mid / --sts-pas do 4 class tone bơm vào,
+   giá trị khai ở globals.css. Mọi thứ bên dưới chỉ đọc ba biến này —
+   thêm mức thứ 5 chỉ cần thêm một class ở đây.
+   ───────────────────────────────────────────────────────────── */
+.sts-card {
+  position: relative;
+  border-radius: var(--clay-radius-card);
+  padding: 16px;
+  background: var(--clay-face);
+  border: 1px solid var(--clay-edge);
+  box-shadow: var(--clay-shadow-card);
+  color: var(--clay-ink);
+
+  /* mặc định = mức Tốt, phòng khi thiếu class tone */
+  --sts-ink: var(--sts-good-ink);
+  --sts-mid: var(--sts-good-mid);
+  --sts-pas: var(--sts-good-pas);
 }
-.sts-amount--neg{ color:#ff9aa2; text-shadow:0 2px 24px rgba(239,68,68,.3); }
-.sts-cur{ font-size:20px; font-weight:600; color:#a9bbe6; margin-left:3px; letter-spacing:0; text-shadow:none; }
+
+.sts-tone-green { --sts-ink: var(--sts-exc-ink);  --sts-mid: var(--sts-exc-mid);  --sts-pas: var(--sts-exc-pas); }
+.sts-tone-blue  { --sts-ink: var(--sts-good-ink); --sts-mid: var(--sts-good-mid); --sts-pas: var(--sts-good-pas); }
+.sts-tone-amber { --sts-ink: var(--sts-avg-ink);  --sts-mid: var(--sts-avg-mid);  --sts-pas: var(--sts-avg-pas); }
+.sts-tone-red   { --sts-ink: var(--sts-dng-ink);  --sts-mid: var(--sts-dng-mid);  --sts-pas: var(--sts-dng-pas); }
+
+/* Lớp rửa + viền tóc của tấm phấn — khai một lần, dùng lại 4 chỗ */
+.sts-card {
+  --sts-wash: color-mix(in oklab, var(--sts-pas) 34%, var(--clay-face));
+  --sts-wash-soft: color-mix(in oklab, var(--sts-pas) 22%, var(--clay-face));
+  --sts-hair: color-mix(in oklab, var(--sts-mid) 18%, transparent);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   1. HÀNG ĐẦU — nhãn + dấu hỏi + nút con mắt
+   ───────────────────────────────────────────────────────────── */
+.sts-lblrow {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 28px;
+  margin-bottom: 11px;
+  padding-right: 40px;      /* né .sts-eye ở góc trên phải */
+}
+
+.sts-lbl {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  line-height: 1.5;         /* ≥1.35 cho dấu tiếng Việt */
+  text-transform: uppercase;
+  color: var(--clay-ink-2);
+}
+
+.sts-qmark {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  padding: 0;
+  border-radius: 50%;
+  border: 1.3px solid var(--clay-edge);
+  background: none;
+  color: var(--clay-ink-2);
+  font: 800 9px/1 var(--font-display), system-ui, sans-serif;
+  letter-spacing: 0;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color 160ms ease, color 160ms ease;
+}
+.sts-qmark:hover {
+  border-color: var(--sts-mid);
+  color: var(--sts-ink);
+}
+.sts-qmark:focus-visible {
+  outline: 2px solid var(--sts-mid);
+  outline-offset: 2px;
+}
+
+.sts-eye {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 2;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--clay-edge);
+  background: var(--clay-face);
+  color: var(--clay-ink-2);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 160ms ease, border-color 160ms ease;
+}
+.sts-eye:hover {
+  color: var(--clay-ink);
+  border-color: var(--sts-mid);
+}
+.sts-eye:focus-visible {
+  outline: 2px solid var(--sts-mid);
+  outline-offset: 2px;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   2. TẤM PHẤN — phần trên: con số
+   ───────────────────────────────────────────────────────────── */
+.sts-amount {
+  margin: 0;
+  padding: 14px 15px 4px;
+  border-radius: var(--clay-radius-tile) var(--clay-radius-tile) 0 0;
+  background: var(--sts-wash);
+  box-shadow:
+    inset 0 1px 0 var(--sts-hair),
+    inset 1px 0 0 var(--sts-hair),
+    inset -1px 0 0 var(--sts-hair);
+
+  font-family: var(--font-display), system-ui, sans-serif;
+  font-size: clamp(31px, 9.4vw, 38px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.26;
+  font-variant-numeric: tabular-nums;
+  color: var(--clay-ink);
+  overflow-wrap: anywhere;
+}
+
+/* Số ÂM là ngoại lệ được phép nhuộm: dấu trừ mà vẫn màu mực thì mắt
+   lướt qua mất. Mức Cảnh báo lúc này đang là cam nung nên con số và
+   tấm phấn cùng họ, không chỏi. */
+.sts-amount--neg {
+  color: var(--sts-ink);
+}
+
+.sts-cur {
+  font-size: 0.5em;
+  font-weight: 650;
+  margin-left: 3px;
+  letter-spacing: 0;
+  vertical-align: 0.06em;
+  color: var(--clay-ink-2);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   3. TẤM PHẤN — phần dưới: tình trạng
+   Dính liền phần trên, cùng nền, chỉ bo hai góc dưới.
+   ───────────────────────────────────────────────────────────── */
+.sts-statusline {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  padding: 2px 15px 13px;
+  border-radius: 0 0 var(--clay-radius-tile) var(--clay-radius-tile);
+  background: var(--sts-wash);
+  box-shadow:
+    inset 0 -1px 0 var(--sts-hair),
+    inset 1px 0 0 var(--sts-hair),
+    inset -1px 0 0 var(--sts-hair);
+  font-size: 11.5px;
+  line-height: 1.55;
+}
+
+.sts-status-k {
+  color: var(--clay-ink-2);
+}
+
+/* Trên nền đã rửa màu rồi nên viên KHÔNG có nền riêng — thêm một lớp
+   màu nữa là tấm thành hai tầng màu, nặng ngay. Chỉ chữ đậm + màu. */
+.sts-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.55;
+  color: var(--sts-ink);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   4. NÚT "CÁCH TÍNH SỐ NÀY" — nhỏ, lùi về sau
+   ───────────────────────────────────────────────────────────── */
+.sts-calc {
+  margin-top: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 0;
+  border: none;
+  background: none;
+  color: var(--clay-ink-2);
+  font: 650 11.5px/1.5 var(--font-display), system-ui, sans-serif;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 160ms ease;
+}
+.sts-calc:hover { color: var(--clay-ink); }
+.sts-calc:focus-visible {
+  outline: 2px solid var(--sts-mid);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+.sts-chev { transition: transform 250ms ease; flex: none; }
+.sts-calc.is-open .sts-chev { transform: rotate(180deg); }
+
+.sts-full { overflow: hidden; }
+
+/* ─────────────────────────────────────────────────────────────
+   5. BẢNG BREAKDOWN
+   Phần xổ ra dùng ô lồng --clay-face-2 (xám kem trung tính), KHÔNG
+   rửa màu tone: tấm phấn phải là chỗ duy nhất có màu, nếu không cả
+   khối thành một mảng màu và mất hẳn tiêu điểm.
+   ───────────────────────────────────────────────────────────── */
+.sts-breakdown {
+  margin-top: 12px;
+  border: 1px solid var(--clay-edge);
+  border-radius: var(--clay-radius-tile);
+  overflow: hidden;
+}
+
+.sts-brow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 13px;
+  border: none;
+  border-bottom: 1px solid var(--clay-track);
+  background: var(--clay-face);
+  color: var(--clay-ink);
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 160ms ease;
+}
+.sts-brow-wrap:last-child .sts-brow { border-bottom: none; }
+.sts-brow:hover { background: var(--clay-face-2); }
+.sts-brow:focus-visible {
+  outline: 2px solid var(--sts-mid);
+  outline-offset: -2px;
+}
+
+.sts-brow-l {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--clay-ink-2);
+}
+.sts-brow-cx {
+  flex: none;
+  color: var(--clay-ink-2);
+  opacity: 0.6;
+  transition: transform 200ms ease;
+}
+.sts-brow.is-open .sts-brow-cx { transform: rotate(90deg); }
+
+.sts-brow-v {
+  flex: none;
+  font-family: var(--font-display), system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+  color: var(--clay-ink);
+}
+/* Cộng / trừ trong bảng là NGỮ NGHĨA CỐ ĐỊNH, không phải tone tình
+   trạng — luôn rêu và cam nung, không đổi theo .sts-tone-*. */
+.sts-brow-pos { color: var(--mb-moss); }
+.sts-brow-neg { color: var(--mb-alert); }
+
+.sts-bdetail {
+  padding: 4px 13px 11px 28px;
+  background: var(--clay-face-2);
+  border-bottom: 1px solid var(--clay-track);
+}
+.sts-brow-wrap:last-child .sts-bdetail { border-bottom: none; }
+
+.sts-ditem {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px dashed var(--clay-track);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--clay-ink-2);
+}
+.sts-ditem:last-child { border-bottom: none; }
+.sts-ditem strong { color: var(--clay-ink); font-weight: 650; }
+.sts-dnote { color: var(--mb-gold-ink); }
+.sts-ditem .sts-num {
+  font-family: var(--font-display), system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  color: var(--clay-ink);
+}
+
+.sts-paybtn {
+  margin-top: 9px;
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 11px;
+  background: var(--mb-moss);
+  color: var(--clay-face);
+  font: 700 12.5px/1.5 var(--font-display), system-ui, sans-serif;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: filter 160ms ease;
+}
+.sts-paybtn:hover { filter: brightness(1.06); }
+.sts-paybtn:focus-visible {
+  outline: 2px solid var(--mb-moss);
+  outline-offset: 2px;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   6. LÝ DO + HÀNH ĐỘNG
+   Đây là chỗ DUY NHẤT ngoài tấm phấn được ăn màu tone, và chỉ ở mức
+   rửa nhạt hơn tấm phấn (22% thay vì 34%) để không tranh tiêu điểm.
+   ───────────────────────────────────────────────────────────── */
+.sts-why {
+  margin-top: 12px;
+  padding: 12px 13px;
+  border-radius: var(--clay-radius-tile);
+  background: var(--sts-wash-soft);
+  box-shadow: inset 0 0 0 1px var(--sts-hair);
+}
+.sts-why-h {
+  margin-bottom: 8px;
+  font-size: 12.5px;
+  font-weight: 800;
+  line-height: 1.5;
+  color: var(--sts-ink);
+}
+.sts-why-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sts-why-list li {
+  position: relative;
+  padding-left: 15px;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--clay-ink);
+}
+.sts-why-list li::before {
+  content: "•";
+  position: absolute;
+  left: 2px;
+  color: var(--sts-mid);
+}
+
+.sts-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 11px;
+}
+.sts-act {
+  padding: 9px 13px;
+  border-radius: 11px;
+  border: 1px solid var(--clay-edge);
+  background: var(--clay-face);
+  color: var(--clay-ink);
+  font: 700 12px/1.5 var(--font-display), system-ui, sans-serif;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: filter 160ms ease, border-color 160ms ease;
+}
+.sts-act:hover {
+  border-color: var(--sts-mid);
+  filter: brightness(1.04);
+}
+/* Nút chính dùng RÊU cố định, không dùng --sts-mid: nút hành động ở
+   mức Trung bình sẽ ra nền vàng kim, mà chữ trắng trên vàng kim chỉ
+   2,6:1 — không đọc được (xem ghi chú --mb-gold-ink ở globals.css). */
+.sts-act.is-primary {
+  border-color: transparent;
+  background: var(--mb-moss);
+  color: var(--clay-face);
+}
+.sts-act:focus-visible {
+  outline: 2px solid var(--sts-mid);
+  outline-offset: 2px;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   7. ẨN SỐ DƯ
+   ───────────────────────────────────────────────────────────── */
 .sts-card.is-masked .sts-amount .sts-num,
 .sts-card.is-masked .sts-brow-v .sts-num,
-.sts-card.is-masked .sts-ditem .sts-num{ filter:blur(9px); user-select:none; }
-
-/* tình trạng */
-.sts-statusline{ display:flex; align-items:center; gap:8px; font-size:13px; }
-.sts-status-k{ color:#63719a; }
-.sts-chip{
-  display:inline-flex; align-items:center; gap:6px;
-  font:700 12.5px system-ui,sans-serif; padding:4px 11px; border-radius:999px;
-  background:var(--sts-acc-soft); color:var(--sts-acc);
+.sts-card.is-masked .sts-ditem .sts-num {
+  filter: blur(9px);
+  user-select: none;
 }
 
-/* nút cách tính — nhỏ */
-.sts-calc{
-  margin-top:14px; display:inline-flex; align-items:center; gap:5px; cursor:pointer;
-  background:none; border:none; color:#8fa8de; font:600 11.5px system-ui,sans-serif; padding:2px 0;
+/* ─────────────────────────────────────────────────────────────
+   8. MODAL GIẢI THÍCH
+   ───────────────────────────────────────────────────────────── */
+.sts-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: color-mix(in oklab, var(--clay-ink) 46%, transparent);
+  backdrop-filter: blur(4px);
 }
-.sts-chev{ transition:transform .25s; }
-.sts-calc.is-open .sts-chev{ transform:rotate(180deg); }
-.sts-calc:hover{ color:#b9caf0; }
+.sts-modal-card {
+  width: 100%;
+  max-width: 360px;
+  padding: 20px;
+  border-radius: var(--clay-radius-card);
+  border: 1px solid var(--clay-edge);
+  background: var(--clay-face);
+  color: var(--clay-ink);
+  box-shadow: 0 24px 60px -28px color-mix(in oklab, var(--clay-ink) 42%, transparent);
+}
+.sts-modal-title {
+  margin: 0 0 5px;
+  font-family: var(--font-display), system-ui, sans-serif;
+  font-size: 16.5px;
+  font-weight: 800;
+  line-height: 1.45;
+}
+.sts-modal-sub {
+  margin: 0 0 15px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--clay-ink-2);
+}
+.sts-modal-sub strong { color: var(--clay-ink); font-weight: 700; }
 
-.sts-full{ overflow:hidden; }
+.sts-formula {
+  padding: 13px 14px;
+  border-radius: var(--clay-radius-tile);
+  background: var(--clay-face-2);
+  font-family: var(--font-display), system-ui, sans-serif;
+  font-size: 12.5px;
+  font-weight: 650;
+  line-height: 1.85;
+  color: var(--clay-ink);
+}
+.sts-op {
+  display: inline-block;
+  width: 16px;
+  color: var(--clay-ink-2);
+  font-weight: 800;
+}
+.sts-op--p { color: var(--mb-moss); }
+.sts-op--m { color: var(--mb-alert); }
+.sts-op--e { color: var(--mb-gold-ink); }
+.sts-formula-res { font-weight: 800; color: var(--mb-moss); }
 
-/* breakdown */
-.sts-breakdown{ margin-top:12px; border:1px solid rgba(120,150,220,.16); border-radius:14px; overflow:hidden; }
-.sts-brow{
-  display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 14px;
-  cursor:pointer; border-bottom:1px solid rgba(120,150,220,.16);
-  background:none; width:100%; text-align:left; color:#eaf1ff;
+.sts-modal-note {
+  margin: 13px 0 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--clay-ink-2);
 }
-.sts-brow-wrap:last-child .sts-brow{ border-bottom:none; }
-.sts-brow:hover{ background:rgba(120,150,220,.06); }
-.sts-brow-l{ display:flex; align-items:center; gap:8px; font-size:13px; color:#93a3c9; }
-.sts-brow-cx{ color:#63719a; transition:transform .2s; flex-shrink:0; }
-.sts-brow.is-open .sts-brow-cx{ transform:rotate(90deg); }
-.sts-brow-v{ font:700 13.5px ui-monospace,"SF Mono",Consolas,monospace; font-variant-numeric:tabular-nums; color:#eaf1ff; }
-.sts-brow-pos{ color:#22c55e; }
-.sts-brow-neg{ color:#ff9aa2; }
-.sts-bdetail{ padding:4px 14px 12px 30px; background:rgba(0,0,0,.2); border-bottom:1px solid rgba(120,150,220,.16); }
-.sts-brow-wrap:last-child .sts-bdetail{ border-bottom:none; }
-.sts-ditem{
-  display:flex; justify-content:space-between; gap:10px; padding:7px 0; font-size:12.5px; color:#93a3c9;
-  border-bottom:1px dashed rgba(120,150,220,.16);
-}
-.sts-ditem:last-child{ border-bottom:none; }
-.sts-ditem strong{ color:#eaf1ff; font-weight:600; }
-.sts-dnote{ color:#f59e0b; }
-.sts-ditem .sts-num{ font-family:ui-monospace,Consolas,monospace; font-variant-numeric:tabular-nums; color:#cfdaf5; }
-.sts-paybtn{
-  margin-top:9px; width:100%; padding:9px; border-radius:10px; border:none; cursor:pointer;
-  background:linear-gradient(135deg,#4f7cff,#6a8dff); color:#fff; font:700 12.5px system-ui,sans-serif;
-}
-.sts-paybtn:hover{ filter:brightness(1.06); }
+.sts-modal-note strong { color: var(--clay-ink); font-weight: 700; }
 
-/* lý do + hành động */
-.sts-why{
-  margin-top:12px; border:1px solid var(--sts-acc-ln); background:var(--sts-acc-soft);
-  border-radius:14px; padding:13px 14px;
+.sts-modal-btn {
+  margin-top: 15px;
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 12px;
+  background: var(--mb-moss);
+  color: var(--clay-face);
+  font: 700 14px/1.5 var(--font-display), system-ui, sans-serif;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: filter 160ms ease;
 }
-.sts-why-h{ font:700 13px system-ui,sans-serif; color:var(--sts-acc); margin-bottom:8px; }
-.sts-why-list{ margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:7px; }
-.sts-why-list li{ font-size:12.5px; color:#eaf1ff; line-height:1.45; padding-left:16px; position:relative; }
-.sts-why-list li::before{ content:"•"; position:absolute; left:2px; color:var(--sts-acc); }
-.sts-acts{ display:flex; flex-wrap:wrap; gap:8px; margin-top:11px; }
-.sts-act{
-  font:700 12px system-ui,sans-serif; padding:9px 13px; border-radius:10px; cursor:pointer;
-  border:1px solid rgba(120,150,220,.16); background:#17284a; color:#eaf1ff;
+.sts-modal-btn:hover { filter: brightness(1.06); }
+.sts-modal-btn:focus-visible {
+  outline: 2px solid var(--mb-moss);
+  outline-offset: 2px;
 }
-.sts-act.is-primary{
-  background:linear-gradient(135deg,var(--sts-acc),color-mix(in srgb,var(--sts-acc) 55%, #000));
-  border-color:transparent; color:#fff;
-}
-.sts-act:hover{ filter:brightness(1.08); }
 
-/* modal */
-.sts-modal{
-  position:fixed; inset:0; z-index:1200; display:grid; place-items:center; padding:20px;
-  background:rgba(5,8,18,.72); backdrop-filter:blur(5px);
+/* ─────────────────────────────────────────────────────────────
+   9. MÁY RẤT HẸP (≤ 360px)
+   ───────────────────────────────────────────────────────────── */
+@media (max-width: 360px) {
+  .sts-card { padding: 14px; }
+  .sts-amount { padding: 12px 13px 4px; }
+  .sts-statusline { padding: 2px 13px 12px; flex-wrap: wrap; gap: 5px; }
+  .sts-brow { padding: 10px 11px; }
+  .sts-bdetail { padding-left: 24px; }
+  .sts-act { flex: 1; text-align: center; }
 }
-.sts-modal-card{
-  width:100%; max-width:360px; background:#12213f; border:1px solid rgba(120,150,220,.16);
-  border-radius:20px; padding:22px; color:#eaf1ff;
-}
-.sts-modal-title{ margin:0 0 4px; font-size:17px; }
-.sts-modal-sub{ font-size:12.5px; color:#93a3c9; margin:0 0 16px; line-height:1.5; }
-.sts-formula{
-  background:#17284a; border:1px solid rgba(120,150,220,.16); border-radius:12px; padding:14px;
-  font:600 13px ui-monospace,Consolas,monospace; line-height:1.9;
-}
-.sts-op{ display:inline-block; width:16px; color:#63719a; }
-.sts-op--p{ color:#22c55e; } .sts-op--m{ color:#ff9aa2; } .sts-op--e{ color:#4f7cff; }
-.sts-formula-res{ color:#9fb8ff; font-weight:800; }
-.sts-modal-note{ font-size:12px; color:#93a3c9; margin:14px 0 0; line-height:1.55; }
-.sts-modal-btn{
-  margin-top:16px; width:100%; padding:12px; border:none; border-radius:12px; cursor:pointer;
-  background:linear-gradient(135deg,#4f7cff,#6a8dff); color:#fff; font:700 14px system-ui,sans-serif;
+
+/* ─────────────────────────────────────────────────────────────
+   10. TẮT CHUYỂN ĐỘNG
+   ───────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .sts-qmark,
+  .sts-eye,
+  .sts-calc,
+  .sts-chev,
+  .sts-brow,
+  .sts-brow-cx,
+  .sts-act,
+  .sts-paybtn,
+  .sts-modal-btn {
+    transition: none;
+  }
 }

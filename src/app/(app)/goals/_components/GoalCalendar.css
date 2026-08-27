@@ -70,3 +70,7 @@
 [data-theme="light"] .goal-cal-cell--lv0 { background: rgba(0, 0, 0, 0.06); }
 [data-theme="light"] .goal-cal-cell--today { outline-color: #1A1A2E; }
 [data-theme="light"] .goal-cal-legend { color: rgba(26, 26, 46, 0.6); }
+
+/* ═══ GIAO DIỆN SÁNG — chữ trắng vẽ cho nền tối sẽ mất hút trên nền trắng ═══
+ * Đổi sang thang xám đậm dần tương ứng, giữ nguyên thứ bậc chính/phụ/chú thích. */
+[data-theme="light"] .goal-cal-legend { color: #55556A; }

@@ -74,13 +74,13 @@ export default function DailyQuestCard() {
           </div>
           <div className="dqc-header-progress-circle">
             <svg width="36" height="36" viewBox="0 0 36 36">
-              <circle cx="18" cy="18" r="14" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="3" />
+              <circle cx="18" cy="18" r="14" fill="none" stroke="var(--clay-track)" strokeWidth="3" />
               <circle
                 cx="18"
                 cy="18"
                 r="14"
                 fill="none"
-                stroke="#22C55E"
+                stroke="var(--mb-moss)"
                 strokeWidth="3"
                 strokeDasharray={`${(completedCount / templates.length) * 88} 88`}
                 strokeLinecap="round"

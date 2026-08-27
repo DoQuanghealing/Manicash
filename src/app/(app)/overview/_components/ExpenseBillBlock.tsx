@@ -8,13 +8,12 @@ import { ShoppingBag, CreditCard, X, BarChart3, ArrowDownToLine, ArrowRight, Che
 import { useFinanceStore } from '@/stores/useFinanceStore';
 import { useBudgetStore } from '@/stores/useBudgetStore';
 import { useAccountOverviewSnapshot } from '@/stores/useAccountOverviewStore';
-import { formatCurrency, formatCurrencyShort } from '@/utils/formatCurrency';
-import { getDateKey } from '@/lib/dateHelpers';
+import { formatCurrencyShort } from '@/utils/formatCurrency';
 import ExpenseFundingChartModal from './ExpenseFundingChartModal';
 import SpendingDepositHistory from './SpendingDepositHistory';
+import ExpenseBreakdownPanel from './ExpenseBreakdownPanel';
+import BillBreakdownPanel from './BillBreakdownPanel';
 import './ExpenseBillBlock.css';
-
-const VIETNAMESE_WEEKDAYS = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
 
 export default function ExpenseBillBlock() {
   const router = useRouter();
@@ -51,7 +50,6 @@ export default function ExpenseBillBlock() {
   const isOverBudget = totalExpense > spendingLimit;
 
   const unpaidBills = fixedBills.filter((b) => !b.isPaid);
-  const today = new Date().getDate();
   const paidBills = fixedBills.filter((b) => b.isPaid);
 
   // ── Bill aggregates (paid vs unpaid sums) ──
@@ -60,47 +58,11 @@ export default function ExpenseBillBlock() {
   const totalBillsAmount = fixedBills.reduce((s, b) => s + b.amount, 0);
   const allBillsPaidThisMonth = fixedBills.length > 0 && unpaidBills.length === 0;
 
-  // ── Last 7 days expense breakdown (for week bar chart) ──
-  const weeklyExpenses = useMemo(() => {
-    const days: { dateKey: string; label: string; weekday: string; amount: number }[] = [];
-    const now = new Date();
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(now);
-      d.setDate(d.getDate() - i);
-      const dateKey = getDateKey(d);
-      days.push({
-        dateKey,
-        label: `${d.getDate()}/${d.getMonth() + 1}`,
-        weekday: VIETNAMESE_WEEKDAYS[d.getDay()],
-        amount: 0,
-      });
-    }
-    for (const txn of transactions) {
-      if (txn.type !== 'expense') continue;
-      const slot = days.find((day) => day.dateKey === txn.dateKey);
-      if (slot) slot.amount += txn.amount;
-    }
-    return days;
-  }, [transactions]);
-
-  const weeklyTotalExpense = weeklyExpenses.reduce((s, d) => s + d.amount, 0);
-  const weeklyMaxAmount = Math.max(...weeklyExpenses.map((d) => d.amount), 1);
-
-  // This week's transactions (newest first, only expenses)
-  const weeklyExpenseTxns = useMemo(() => {
-    const allowedKeys = new Set(weeklyExpenses.map((d) => d.dateKey));
-    return transactions
-      .filter((t) => t.type === 'expense' && allowedKeys.has(t.dateKey))
-      .slice(0, 12);
-  }, [transactions, weeklyExpenses]);
-
-  // Bill modal categorization
+  /** Dãy ô trạng thái ở thẻ thu gọn — xếp theo hạn đóng. */
   const billsSortedByDueDay = useMemo(
     () => [...fixedBills].sort((a, b) => a.dueDay - b.dueDay),
     [fixedBills],
   );
-  const paidBillsSorted = billsSortedByDueDay.filter((b) => b.isPaid);
-  const upcomingBillsSorted = billsSortedByDueDay.filter((b) => !b.isPaid);
 
   return (
     <>
@@ -327,61 +289,14 @@ export default function ExpenseBillBlock() {
               <div className="ebb-modal-handle"><div className="ebb-modal-handle-bar" /></div>
 
               <div className="ebb-modal-header">
-                <h3 className="ebb-modal-title">💸 Chi tiêu tuần này</h3>
+                <h3 className="ebb-modal-title">💸 Chi tiêu</h3>
                 <button className="ebb-modal-close" onClick={() => setShowExpenseModal(false)}>
                   <X size={18} />
                 </button>
               </div>
 
-              {/* Tổng tuần + còn lại */}
-              <div className="ebb-modal-safe">
-                <span className="ebb-modal-safe-label">Tổng chi tiêu 7 ngày qua</span>
-                <span className="ebb-modal-safe-val">
-                  {formatCurrency(weeklyTotalExpense)}
-                </span>
-              </div>
-
-              {/* Bar chart 7 ngày */}
-              <div className="ebb-week-chart">
-                <p className="ebb-week-chart-title">Theo từng ngày</p>
-                <div className="ebb-week-bars">
-                  {weeklyExpenses.map((day) => {
-                    const heightPct = (day.amount / weeklyMaxAmount) * 100;
-                    return (
-                      <div key={day.dateKey} className="ebb-week-bar-col">
-                        <span className="ebb-week-bar-amt">
-                          {day.amount > 0 ? formatCurrencyShort(day.amount) : ''}
-                        </span>
-                        <div className="ebb-week-bar-track">
-                          <div
-                            className="ebb-week-bar-fill"
-                            style={{ height: `${Math.max(heightPct, day.amount > 0 ? 4 : 0)}%` }}
-                          />
-                        </div>
-                        <span className="ebb-week-bar-day">{day.weekday}</span>
-                        <span className="ebb-week-bar-date">{day.label}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Transactions in week */}
-              <div className="ebb-modal-list">
-                {weeklyExpenseTxns.length === 0 ? (
-                  <p className="ebb-modal-empty">Tuần này chưa có chi tiêu</p>
-                ) : (
-                  weeklyExpenseTxns.map((txn) => (
-                    <div key={txn.id} className="ebb-txn-item">
-                      <div className="ebb-txn-left">
-                        <span className="ebb-txn-note">{txn.note}</span>
-                        <span className="ebb-txn-time">{txn.dateLabel} • {txn.time}</span>
-                      </div>
-                      <span className="ebb-txn-amount">-{formatCurrencyShort(txn.amount)}</span>
-                    </div>
-                  ))
-                )}
-              </div>
+              {/* Ngày/Tuần/Tháng/Năm + dải cột so sánh + vành khuyên phân bổ. */}
+              <ExpenseBreakdownPanel transactions={transactions} />
 
               <button
                 type="button"
@@ -429,14 +344,6 @@ export default function ExpenseBillBlock() {
                 </button>
               </div>
 
-              {/* Summary header */}
-              <div className="ebb-modal-safe">
-                <span className="ebb-modal-safe-label">Tổng hóa đơn tháng này</span>
-                <span className="ebb-modal-safe-val ebb-modal-safe-val--purple">
-                  {formatCurrency(totalBillsAmount)}
-                </span>
-              </div>
-
               {allBillsPaidThisMonth && (
                 <div className="ebb-bill-complete-banner">
                   <span style={{ fontSize: '20px' }}>🎉</span>
@@ -444,66 +351,10 @@ export default function ExpenseBillBlock() {
                 </div>
               )}
 
-              {/* PAID section */}
-              {paidBillsSorted.length > 0 && (
-                <div className="ebb-bill-section">
-                  <p className="ebb-bill-section-title">
-                    <CheckCircle2 size={13} /> Đã đóng — {formatCurrencyShort(paidBillsTotal)}
-                  </p>
-                  <div className="ebb-modal-list">
-                    {paidBillsSorted.map((bill) => (
-                      <div key={bill.id} className="ebb-bill-item ebb-bill-item--paid">
-                        <div className="ebb-bill-left">
-                          <span className="ebb-bill-icon">{bill.icon}</span>
-                          <div>
-                            <span className="ebb-bill-name">{bill.name}</span>
-                            <span className="ebb-bill-due">✅ Đã đóng — Ngày {bill.dueDay}</span>
-                          </div>
-                        </div>
-                        <span className="ebb-bill-amount ebb-bill-amount--paid">
-                          {formatCurrencyShort(bill.amount)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              {/* Hạn đóng có màu · biểu đồ cột theo năm từng hóa đơn · vành khuyên
+                * cơ cấu + tỷ trọng trên thu nhập · nút sang Sổ sách để sửa số. */}
+              <BillBreakdownPanel onNavigate={() => setShowBillModal(false)} />
 
-              {/* UPCOMING section */}
-              {upcomingBillsSorted.length > 0 && (
-                <div className="ebb-bill-section">
-                  <p className="ebb-bill-section-title">
-                    <Clock size={13} /> Sắp đến hạn / chưa đóng — {formatCurrencyShort(unpaidBillsTotal)}
-                  </p>
-                  <div className="ebb-modal-list">
-                    {upcomingBillsSorted.map((bill) => {
-                      const isOverdue = bill.dueDay < today;
-                      const isSoon = bill.dueDay >= today && bill.dueDay <= today + 3;
-                      return (
-                        <div
-                          key={bill.id}
-                          className={`ebb-bill-item ${isOverdue ? 'ebb-bill-item--urgent' : isSoon ? 'ebb-bill-item--soon' : ''}`}
-                        >
-                          <div className="ebb-bill-left">
-                            <span className="ebb-bill-icon">{bill.icon}</span>
-                            <div>
-                              <span className="ebb-bill-name">{bill.name}</span>
-                              <span className="ebb-bill-due">
-                                {isOverdue
-                                  ? `🔴 Quá hạn — ngày ${bill.dueDay}`
-                                  : isSoon
-                                    ? `🟡 Sắp hạn — ngày ${bill.dueDay}`
-                                    : `Hạn: ngày ${bill.dueDay}`}
-                              </span>
-                            </div>
-                          </div>
-                          <span className="ebb-bill-amount">{formatCurrencyShort(bill.amount)}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
             </motion.div>
           </>
         )}

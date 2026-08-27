@@ -1,0 +1,313 @@
+/* ═══ BillBreakdownPanel — hóa đơn cố định ═══ */
+
+.blb {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.blb-section-title {
+  margin-bottom: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-text-muted);
+}
+
+/* ── Tổng ── */
+.blb-total {
+  padding: 14px 16px;
+  border-radius: var(--radius-lg);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+}
+
+.blb-total-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.blb-total-label {
+  font-size: 12px;
+  color: var(--c-text-secondary);
+}
+
+.blb-total-val {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--c-purple-light, #A78BFA);
+}
+
+.blb-total-sub {
+  font-size: 12px;
+  color: var(--c-text-muted);
+}
+
+/* ── Vành khuyên ── */
+.blb-split-body {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.blb-donut {
+  flex: 0 0 118px;
+  width: 118px;
+  height: 118px;
+}
+
+.blb-donut-track {
+  fill: none;
+  stroke: var(--glass-border);
+  stroke-width: 15;
+}
+
+.blb-donut-center {
+  font-size: 15px;
+  font-weight: 800;
+  fill: var(--c-text-primary);
+}
+
+.blb-donut-sub {
+  font-size: 7.5px;
+  font-weight: 600;
+  fill: var(--c-text-muted);
+}
+
+.blb-legend {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.blb-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.blb-legend-dot {
+  flex: 0 0 auto;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+.blb-legend-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--c-text-secondary);
+}
+
+.blb-legend-pct {
+  flex: 0 0 auto;
+  font-weight: 700;
+  color: var(--c-text-primary);
+}
+
+.blb-legend-amt {
+  flex: 0 0 auto;
+  min-width: 52px;
+  text-align: right;
+  font-weight: 700;
+  color: var(--c-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.blb-note {
+  margin-top: 10px;
+  padding: 9px 11px;
+  border-radius: var(--radius-md);
+  background: rgba(124, 58, 237, 0.1);
+  border: 1px solid rgba(124, 58, 237, 0.22);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--c-text-secondary);
+}
+
+.blb-note strong { color: var(--c-text-primary); }
+
+/* ── Danh sách hóa đơn ── */
+.blb-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.blb-item {
+  border-radius: var(--radius-md);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  overflow: hidden;
+}
+
+.blb-item--open { border-color: rgba(124, 58, 237, 0.35); }
+
+.blb-item-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 12px;
+  text-align: left;
+}
+
+.blb-item-icon { flex: 0 0 auto; font-size: 20px; }
+
+.blb-item-copy {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.blb-item-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--c-text-primary);
+}
+
+/* Màu theo mức gấp — ngưỡng ở billAnalytics.ts */
+.blb-item-due { font-size: 11.5px; font-weight: 700; }
+.blb-due--paid { color: #16A34A; }
+.blb-due--soon { color: #16A34A; }
+.blb-due--urgent { color: #EA580C; }
+.blb-due--overdue { color: #DC2626; }
+.blb-due--later { color: var(--c-text-muted); }
+
+.blb-item-amt {
+  flex: 0 0 auto;
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--c-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.blb-item-caret {
+  flex: 0 0 auto;
+  color: var(--c-text-muted);
+  transition: transform var(--duration-fast);
+}
+
+.blb-item-caret--open { transform: rotate(180deg); }
+
+/* ── Biểu đồ cột theo năm của 1 hóa đơn ── */
+.blb-history {
+  padding: 4px 12px 12px;
+  border-top: 1px dashed var(--glass-border);
+}
+
+.blb-history-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 9px 0 7px;
+}
+
+.blb-history-title {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--c-text-secondary);
+}
+
+.blb-delta {
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+/* Hóa đơn TĂNG là tin xấu → đỏ; giảm là tin tốt → xanh. */
+.blb-delta--up { color: #DC2626; }
+.blb-delta--down { color: #16A34A; }
+
+.blb-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 118px;
+}
+
+.blb-bar-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  height: 100%;
+}
+
+.blb-bar-amt {
+  font-size: 8px;
+  font-weight: 700;
+  color: var(--c-text-muted);
+  white-space: nowrap;
+}
+
+.blb-bar-track {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  border-radius: 4px;
+  background: var(--glass-bg);
+}
+
+.blb-bar-fill {
+  width: 100%;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #C4B5FD, #8B5CF6);
+  transition: height var(--duration-normal) var(--ease-out-expo);
+}
+
+.blb-bar-fill--now { background: linear-gradient(180deg, #A78BFA, #6D28D9); }
+
+.blb-bar-label {
+  font-size: 9.5px;
+  font-weight: 600;
+  color: var(--c-text-muted);
+}
+
+.blb-bar-label--now { color: var(--c-purple-light, #A78BFA); font-weight: 800; }
+
+/* ── Nút điều chỉnh ── */
+.blb-adjust {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(124, 58, 237, 0.35);
+  background: rgba(124, 58, 237, 0.1);
+  color: var(--c-purple-light, #7C3AED);
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.blb-empty {
+  padding: 12px 0;
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--c-text-muted);
+}
+
+[data-theme="light"] .blb-total-val { color: #6D28D9; }
+[data-theme="light"] .blb-bar-label--now { color: #6D28D9; }
+[data-theme="light"] .blb-adjust { color: #6D28D9; }
+
+@media (max-width: 380px) {
+  .blb-split-body { flex-direction: column; align-items: stretch; }
+  .blb-donut { align-self: center; }
+}

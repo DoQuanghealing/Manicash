@@ -1,7 +1,10 @@
+/* ═══ AlertsInbox — thanh gộp cảnh báo ═══
+ * Mặt trắng + viền rêu mảnh cho cùng hệ với MoneyBlocks. */
 .ai-inbox {
-  border-radius: var(--radius-lg);
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
+  border-radius: var(--clay-radius-card);
+  background: var(--clay-face);
+  border: 1px solid var(--clay-edge);
+  box-shadow: var(--clay-shadow-card);
   overflow: hidden;
 }
 
@@ -12,13 +15,13 @@
   gap: var(--space-md);
   padding: 12px 14px;
   text-align: left;
-  color: var(--c-text-primary);
+  color: var(--clay-ink);
 }
 
 .ai-inbox-icon-wrap {
   position: relative;
   display: flex;
-  color: var(--c-purple-light);
+  color: var(--mb-moss);
   flex-shrink: 0;
 }
 
@@ -29,8 +32,9 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--c-warning);
-  border: 1.5px solid var(--c-bg-primary);
+  background: var(--mb-gold);
+  /* Viền cắt phải trùng MẶT KHỐI (trắng), không phải nền trang. */
+  border: 1.5px solid var(--clay-face);
 }
 
 .ai-inbox-text {
@@ -43,20 +47,20 @@
 
 .ai-inbox-title {
   font-size: var(--text-sm);
-  font-weight: 600;
-  color: var(--c-text-primary);
+  font-weight: 700;
+  color: var(--clay-ink);
 }
 
 .ai-inbox-sub {
   font-size: 11.5px;
-  color: var(--c-text-secondary);
+  color: var(--clay-ink-2);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .ai-inbox-bar svg:last-child {
-  color: var(--c-text-muted);
+  color: var(--clay-ink-2);
   flex-shrink: 0;
 }
 

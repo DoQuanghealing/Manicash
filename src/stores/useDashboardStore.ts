@@ -117,55 +117,6 @@ interface DashboardState {
 }
 
 
-// Demo monthly contributions
-const curM = getCurrentMonthKey();
-const SEED_CONTRIBUTIONS: Record<string, FundContribution[]> = {
-  reserve: [
-    { month: curM, amount: 500_000 },
-    { month: curM, amount: 300_000 },
-  ],
-  goals: [
-    { month: curM, amount: 400_000 },
-    { month: curM, amount: 200_000 },
-  ],
-  investment: [
-    { month: curM, amount: 300_000 },
-  ],
-};
-
-// Realistic demo seed data (VND)
-const SEED_ACCOUNTS: DashboardAccounts = {
-  income: {
-    balance: 15_000_000,
-    icon: 'Wallet',
-  },
-  spending: {
-    balance: 7_800_000,
-    limit: 11_000_000,
-    icon: 'ShoppingBag',
-  },
-  fixed_bills: {
-    balance: 3_500_000, // Adjusted for new bill totals
-    pending_count: 3,
-    icon: 'CreditCard',
-  },
-  reserve: {
-    balance: 3_000_000, // Tổng tích lũy mọi tháng
-    is_locked: true,
-    icon: 'Lock',
-  },
-  goals: {
-    balance: 2_500_000,
-    target: 100_000_000,
-    icon: 'Target',
-  },
-  investment: {
-    balance: 1_200_000,
-    growth: '+5.2%',
-    icon: 'TrendingUp',
-  },
-};
-
 const EMPTY_ACCOUNTS: DashboardAccounts = {
   income: { balance: 0, icon: 'Wallet' },
   spending: { balance: 0, limit: 0, icon: 'ShoppingBag' },
@@ -175,14 +126,12 @@ const EMPTY_ACCOUNTS: DashboardAccounts = {
   investment: { balance: 0, growth: '0%', icon: 'TrendingUp' },
 };
 
-const isDemoSeed = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
-
 export const useDashboardStore = create<DashboardState>()(
   persist(
     (set, get) => ({
-  accounts: isDemoSeed ? SEED_ACCOUNTS : EMPTY_ACCOUNTS,
+  accounts: EMPTY_ACCOUNTS,
   auto_split: false,
-  monthlyContributions: isDemoSeed ? SEED_CONTRIBUTIONS : { reserve: [], goals: [], investment: [] },
+  monthlyContributions: { reserve: [], goals: [], investment: [] },
 
   isSpendingOverLimit: () => {
     const { spending } = get().accounts;
@@ -448,7 +397,7 @@ export const useDashboardStore = create<DashboardState>()(
         const p = (persisted ?? {}) as Partial<DashboardState>;
         return {
           ...p,
-          accounts: p.accounts ?? (isDemoSeed ? SEED_ACCOUNTS : EMPTY_ACCOUNTS),
+          accounts: p.accounts ?? EMPTY_ACCOUNTS,
           monthlyContributions:
             p.monthlyContributions ?? { reserve: [], goals: [], investment: [] },
         } as DashboardState;

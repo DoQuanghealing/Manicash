@@ -9,7 +9,7 @@ import { useCategoryStore } from '@/stores/useCategoryStore';
 import { getButlerMessage } from '@/data/butlerMessages';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useAudio } from '@/hooks/useAudio';
-import { useFinanceStore, type TxnType, type WalletType } from '@/stores/useFinanceStore';
+import { useFinanceStore, type TxnType, type WalletType, type PaymentMethod } from '@/stores/useFinanceStore';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { calculateXP } from '@/lib/xpEngine';
 import type { SplitResult } from '@/stores/useDashboardStore';
@@ -36,6 +36,9 @@ export default function TransactionInput() {
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [note, setNote] = useState('');
   const [wallet, setWallet] = useState<WalletType>('main');
+  /* Mặc định chuyển khoản — app khuyến khích CK vì số liệu đối soát được.
+   * Ai quen tiền mặt bấm một cái là đổi, không ép. */
+  const [method, setMethod] = useState<PaymentMethod>('transfer');
   // Ngày mặc định = HÔM NAY theo giờ LOCAL (KHÔNG dùng toISOString = UTC →
   // gần nửa đêm sẽ lệch 1 ngày so với check local trong store → "ngày tương lai").
   const [transactionDate, setTransactionDate] = useState<string>(() => {
@@ -105,6 +108,7 @@ export default function TransactionInput() {
       categoryId: selectedCategory || 'other',
       note: note || categories.find((c) => c.id === selectedCategory)?.name || '',
       wallet,
+      method,
     });
 
     // 2. Calculate XP — calculateXP cho hiển thị ngay trong CelebrationModal.
@@ -132,7 +136,7 @@ export default function TransactionInput() {
     setAmount('');
     setSelectedCategory('');
     setNote('');
-  }, [type, numericAmount, selectedCategory, note, wallet, transactionDate, addTransaction, categories, butlerName]);
+  }, [type, numericAmount, selectedCategory, note, wallet, method, transactionDate, addTransaction, categories, butlerName]);
 
   const handleSubmit = useCallback(() => {
     if (!numericAmount || (type !== 'transfer' && !selectedCategory)) return;
@@ -192,6 +196,26 @@ export default function TransactionInput() {
           id="txn-wallet-emergency"
         >
           🛡️ Quỹ dự phòng
+        </button>
+      </div>
+
+      {/* Tiền mặt hay chuyển khoản — quyết định tiền vào/ra túi nào. */}
+      <div className="txn-method-selector" role="group" aria-label="Hình thức">
+        <button
+          type="button"
+          className={`txn-method-btn ${method === 'transfer' ? 'active' : ''}`}
+          onClick={() => setMethod('transfer')}
+          aria-pressed={method === 'transfer'}
+        >
+          🏦 Chuyển khoản
+        </button>
+        <button
+          type="button"
+          className={`txn-method-btn ${method === 'cash' ? 'active' : ''}`}
+          onClick={() => setMethod('cash')}
+          aria-pressed={method === 'cash'}
+        >
+          💵 Tiền mặt
         </button>
       </div>
 

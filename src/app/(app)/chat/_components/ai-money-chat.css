@@ -485,6 +485,7 @@
 }
 .tg-receipt--income .tg-receipt-amount { color: #4ade80; }
 .tg-receipt--expense .tg-receipt-amount { color: #fb923c; }
+.tg-receipt--saving .tg-receipt-amount { color: #a78bfa; }
 
 .tg-receipt-cat {
   align-self: flex-start;
@@ -594,6 +595,50 @@
 .tg-guardian-item-title { font-size: var(--text-sm); font-weight: 700; color: var(--c-text-primary); }
 .tg-guardian-item-msg { font-size: var(--text-xs); color: var(--c-text-secondary); line-height: 1.4; }
 .tg-guardian-cta { flex: 0 0 auto; color: var(--c-purple-light); font-weight: 800; font-size: 1.1rem; }
+
+/* Lớp bọc để vuốt ngang tắt nhắc nhở. `pan-y` giữ nguyên cuộn dọc của khung
+ * chat — không có nó thì kéo dọc trên thẻ sẽ bị nuốt mất. */
+.tg-guardian-swipe { touch-action: pan-y; cursor: grab; }
+.tg-guardian-swipe:active { cursor: grabbing; }
+.tg-guardian-swipe .tg-guardian-item { width: 100%; }
+
+/* Chuông: dạng thu gọn của Người Gác, nằm nép phải để không che tin nhắn. */
+.tg-guardian-dock {
+  display: flex;
+  justify-content: flex-end;
+  margin: var(--space-sm) var(--space-md) 0;
+}
+.tg-guardian-bell {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 9px;
+  border: 1px solid rgba(124, 58, 237, 0.35);
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.24), rgba(249, 115, 22, 0.14));
+  color: var(--c-purple-light);
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.22);
+  animation: tg-fade-in 0.3s ease both;
+  transition: transform var(--duration-fast) var(--ease-out-expo);
+}
+.tg-guardian-bell:hover { transform: translateY(-1px); }
+.tg-guardian-bell-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--radius-full);
+  background: #EF4444;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+}
 
 /* ── P2: Nút gợi ý inline (dưới câu trả lời) ── */
 .tg-suggest {
@@ -805,6 +850,8 @@
 .tg-amount-value { font-family: var(--font-display); font-size: var(--text-3xl); font-weight: 800; }
 .tg-amount-value.is-income { color: var(--c-green-light); }
 .tg-amount-value.is-expense { color: var(--c-orange-light); }
+/* Tiết kiệm: tiền không mất đi, chỉ đổi chỗ → tông tím trung tính, không đỏ/xanh. */
+.tg-amount-value.is-saving { color: #A78BFA; }
 .tg-amount-cur { color: var(--c-text-muted); font-size: var(--text-sm); font-weight: 700; }
 
 /* Field grids */
@@ -1011,9 +1058,111 @@
 }
 [data-theme="light"] .tg-slash-item:hover { background: rgba(124, 58, 237, 0.08); }
 [data-theme="light"] .tg-guardian-item { background: rgba(0, 0, 0, 0.03); }
+[data-theme="light"] .tg-guardian-bell {
+  background: #ffffff;
+  border-color: rgba(124, 58, 237, 0.45);
+  color: #6D28D9;
+  box-shadow: 0 2px 10px rgba(42, 30, 72, 0.16);
+}
 [data-theme="light"] .tg-guardian-close { background: rgba(0, 0, 0, 0.04); }
 [data-theme="light"] .tg-guardian-close:hover { background: rgba(0, 0, 0, 0.08); }
 [data-theme="light"] .tg-panel-footer { background: var(--glass-bg); }
+
+/* ── Ô nhập trong khung xác nhận ──────────────────────────────────────
+ * Dark dùng nền `rgba(10,10,18,.5)`: trên nền sáng thành mấy hộp ĐEN xấu.
+ * Light: nền trắng, viền đậm rõ để ô nổi lên; focus chuyển cam cho dễ nhắm. */
+[data-theme="light"] .tg-fields input,
+[data-theme="light"] .tg-fields select,
+[data-theme="light"] .tg-reconcile input,
+[data-theme="light"] .tg-subtask-row input {
+  background: #ffffff;
+  border: 1.5px solid rgba(26, 26, 46, 0.45);
+  color: var(--c-text-primary);
+  box-shadow: 0 1px 2px rgba(26, 26, 46, 0.07);
+}
+[data-theme="light"] .tg-fields input:focus,
+[data-theme="light"] .tg-fields select:focus,
+[data-theme="light"] .tg-reconcile input:focus,
+[data-theme="light"] .tg-subtask-row input:focus {
+  border-color: #EA580C;
+  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.16);
+}
+/* Nhãn "Loại / Số tiền / Ngày…" — xám nhạt trên trắng đọc mệt. */
+[data-theme="light"] .tg-fields span,
+[data-theme="light"] .tg-reconcile span { color: var(--c-text-secondary); }
+[data-theme="light"] .tg-amount {
+  background: #ffffff;
+  border-color: rgba(26, 26, 46, 0.14);
+}
+[data-theme="light"] .tg-amount-value.is-income { color: #15803D; }
+[data-theme="light"] .tg-amount-value.is-expense { color: #C2410C; }
+[data-theme="light"] .tg-amount-value.is-saving { color: #6D28D9; }
+
+/* ── Bong bóng hệ thống (phiếu ghi nhận thu/chi) ───────────────────────
+ * Nền xanh 10% trong suốt để hoạ tiết nền xuyên qua → khối chữ mờ tịt.
+ * Light: nền ĐẶC + viền xanh rõ + chữ màu chính. */
+[data-theme="light"] .tg-msg-system .tg-bubble {
+  background: #F2FBF5;
+  border-color: rgba(22, 163, 74, 0.40);
+  color: var(--c-text-primary);
+  box-shadow: 0 2px 8px rgba(42, 30, 72, 0.12);
+}
+[data-theme="light"] .tg-msg-system .tg-bubble--tail::after { background: #F2FBF5; }
+[data-theme="light"] .tg-msg-system .tg-msg-avatar {
+  background: rgba(22, 163, 74, 0.18);
+  color: #15803D;
+}
+[data-theme="light"] .tg-receipt-verb { color: var(--c-text-primary); font-weight: 700; }
+[data-theme="light"] .tg-receipt-desc { color: #4A4A5A; }
+[data-theme="light"] .tg-receipt-today { border-top-color: rgba(26, 26, 46, 0.18); }
+[data-theme="light"] .tg-receipt-today-label { color: #4A4A5A; }
+[data-theme="light"] .tg-receipt--income .tg-receipt-amount { color: #15803D; }
+[data-theme="light"] .tg-receipt--expense .tg-receipt-amount { color: #C2410C; }
+[data-theme="light"] .tg-receipt--saving .tg-receipt-amount { color: #6D28D9; }
+[data-theme="light"] .tg-receipt-pill--in { background: rgba(22, 163, 74, 0.16); color: #15803D; }
+[data-theme="light"] .tg-receipt-pill--out { background: rgba(234, 88, 12, 0.16); color: #C2410C; }
+
+/* ── Chip hành động nhanh ──────────────────────────────────────────────
+ * Màu chữ pastel (#fcd34d, #a5b4fc…) vẽ cho nền tối; đặt lên trắng là mất chữ.
+ * Light: giữ đúng màu nhận diện nhưng đậm hẳn + viền rõ. */
+[data-theme="light"] .tg-chip { color: var(--c-text-secondary); }
+[data-theme="light"] .tg-chip-action {
+  border-color: rgba(124, 58, 237, 0.45);
+  background: rgba(124, 58, 237, 0.10);
+  color: #6D28D9;
+}
+[data-theme="light"] .tg-chip--amber {
+  border-color: rgba(217, 119, 6, 0.55);
+  background: rgba(245, 158, 11, 0.14);
+  color: #B45309;
+}
+[data-theme="light"] .tg-chip--indigo {
+  border-color: rgba(79, 70, 229, 0.55);
+  background: rgba(99, 102, 241, 0.13);
+  color: #4338CA;
+}
+[data-theme="light"] .tg-chip--green {
+  border-color: rgba(22, 163, 74, 0.55);
+  background: rgba(34, 197, 94, 0.14);
+  color: #15803D;
+}
+[data-theme="light"] .tg-chip--purple {
+  border-color: rgba(124, 58, 237, 0.55);
+  background: rgba(168, 85, 247, 0.13);
+  color: #6D28D9;
+}
+[data-theme="light"] .tg-chip--habit {
+  border-color: rgba(22, 163, 74, 0.55);
+  background: rgba(34, 197, 94, 0.14);
+  color: #15803D;
+}
+[data-theme="light"] .tg-chip--example {
+  border-color: rgba(124, 58, 237, 0.45);
+  background: rgba(124, 58, 237, 0.09);
+  color: #5B21B6;
+}
+[data-theme="light"] .tg-chip--example svg { color: #B45309; }
+[data-theme="light"] .tg-chip:disabled { opacity: 0.65; }
 
 @media (prefers-reduced-motion: reduce) {
   .tg-typing-dot { animation: none; }

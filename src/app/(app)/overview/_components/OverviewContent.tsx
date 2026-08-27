@@ -16,7 +16,7 @@ import MonthlyReportModal from './MonthlyReportModal';
 import BankSyncReminder from '@/components/ui/BankSyncReminder';
 import { isSmsWebhookEnabled } from '@/lib/featureFlags';
 
-import MoneyGrid from './MoneyGrid';
+import MoneyBlocks from './MoneyBlocks';
 
 export default function OverviewContent() {
   // NOTE: checkAndRollover đã được gọi ở RolloverGuard (app layout),
@@ -44,7 +44,7 @@ export default function OverviewContent() {
         {isSmsWebhookEnabled() && <BankSyncReminder />}
 
         {/* ═══ BLOCK 2: Lưới "Tiền tháng này" 2×2 (entry-tile → mở route chi tiết) ═══ */}
-        <MoneyGrid />
+        <MoneyBlocks />
 
         {/* ═══ BLOCK 5: Wishlist Popup (auto khi hết cooling) ═══ */}
         <WishlistPopup />
@@ -83,10 +83,10 @@ function WellnessCard() {
     <div className="glass-card" style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-md)' }}>
       <span style={{ fontSize: '1.5rem', marginTop: 2 }}>{icon}</span>
       <div>
-        <p style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--c-green)', marginBottom: 2 }}>
+        <p style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--mb-moss)', marginBottom: 2 }}>
           Chữa lành &amp; Tái tạo
         </p>
-        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--c-text-secondary)', lineHeight: 1.5 }}>
+        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--clay-ink-2)', lineHeight: 1.5 }}>
           {body}
         </p>
       </div>

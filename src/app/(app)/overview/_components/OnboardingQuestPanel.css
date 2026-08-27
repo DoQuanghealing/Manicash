@@ -1,4 +1,9 @@
-/* ═══ OnboardingQuestPanel styles ═══ */
+/* ═══ OnboardingQuestPanel — chuỗi nhiệm vụ nhập môn ═══
+ * Cùng hệ SÁNG với MoneyBlocks/AlertsInbox: mặt khối TRẮNG, tách khỏi nền
+ * bằng viền rêu mảnh + --clay-shadow-card. Màu chỉ là lớp rửa mỏng ở icon,
+ * chấm, thanh tiến độ và nút — mặt khối không bao giờ bị tô.
+ * Đã gỡ toàn bộ di sản hệ tối: gradient tím-cam, các sắc tím, và mọi lớp
+ * rgba trắng mờ dùng làm nền/viền (vô hình trên nền trắng). */
 
 /* ── Trigger card ── */
 .obq-trigger {
@@ -7,31 +12,34 @@
   gap: 12px;
   width: 100%;
   padding: 14px 16px;
-  background: linear-gradient(135deg, rgba(124, 58, 237, 0.12), rgba(34, 197, 94, 0.06));
-  border: 1px solid rgba(124, 58, 237, 0.25);
-  border-radius: 14px;
+  background: var(--clay-face);
+  border: 1px solid var(--clay-edge);
+  box-shadow: var(--clay-shadow-card);
+  border-radius: var(--clay-radius-card);
   cursor: pointer;
-  color: var(--c-text-primary, #F4F4F5);
+  color: var(--clay-ink);
   font-family: inherit;
   transition: all 0.2s ease;
 }
 
 .obq-trigger:hover {
-  border-color: rgba(124, 58, 237, 0.5);
-  background: linear-gradient(135deg, rgba(124, 58, 237, 0.18), rgba(34, 197, 94, 0.1));
+  border-color: color-mix(in oklab, var(--mb-moss) 40%, transparent);
+  background: color-mix(in oklab, var(--mb-moss) 5%, var(--clay-face));
 }
 
+/* Sẵn sàng nhận thưởng: nhấn bằng VIỀN cam + nhịp thở, không đổi màu mặt. */
 .obq-trigger--ready {
-  border-color: rgba(249, 115, 22, 0.55);
-  background: linear-gradient(135deg, rgba(249, 115, 22, 0.15), rgba(234, 179, 8, 0.1));
+  border-color: color-mix(in oklab, var(--mb-orange) 55%, transparent);
+  background: color-mix(in oklab, var(--mb-orange) 7%, var(--clay-face));
   animation: obq-ready-pulse 2.4s ease-in-out infinite;
 }
 
 @keyframes obq-ready-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.5); }
-  50% { box-shadow: 0 0 0 6px rgba(249, 115, 22, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--mb-orange) 42%, transparent); }
+  50% { box-shadow: 0 0 0 6px transparent; }
 }
 
+/* Ô icon: mảng pastel đặc cỡ nhỏ — đúng chỗ được phép tô đặc */
 .obq-trigger-icon {
   position: relative;
   width: 44px;
@@ -39,10 +47,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.06);
-  border-radius: 12px;
+  background: var(--clay-y3);
+  border-radius: var(--clay-radius-tile);
   flex-shrink: 0;
 }
+
+/* Ô icon đi theo tông của thẻ khi ở trạng thái sẵn sàng */
+.obq-trigger--ready .obq-trigger-icon { background: var(--clay-y1); }
 
 .obq-trigger-emoji { font-size: 22px; line-height: 1; }
 
@@ -52,12 +63,12 @@
   right: -4px;
   width: 18px;
   height: 18px;
-  background: #F97316;
+  background: var(--mb-orange);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: #fff;
   animation: obq-spin 1.6s linear infinite;
 }
 
@@ -79,7 +90,7 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--c-purple-light, #A78BFA);
+  color: var(--mb-moss);
 }
 
 .obq-trigger-ready-badge {
@@ -87,14 +98,14 @@
   font-weight: 700;
   padding: 2px 6px;
   border-radius: 6px;
-  background: #F97316;
-  color: white;
+  background: var(--mb-orange);
+  color: #fff;
 }
 
 .obq-trigger-title {
   font-size: 13px;
   font-weight: 600;
-  color: var(--c-text-primary, #F4F4F5);
+  color: var(--clay-ink);
   margin: 0 0 6px;
   white-space: nowrap;
   overflow: hidden;
@@ -104,24 +115,26 @@
 .obq-trigger-progress {
   width: 100%;
   height: 4px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--clay-track);
   border-radius: 4px;
   overflow: hidden;
 }
 
 .obq-trigger-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #7C3AED, #22C55E);
+  background: var(--mb-moss);
   transition: width 0.4s ease;
 }
 
-.obq-trigger-arrow { color: var(--c-text-secondary, #A1A1AA); flex-shrink: 0; }
+.obq-trigger-arrow { color: var(--clay-ink-2); flex-shrink: 0; }
 
-/* ── Modal backdrop ── */
+/* ── Modal backdrop ──
+   Màn che pha từ mực rêu chứ không phải đen: nền trang trắng nên màn đen
+   đặc đọc ra "ứng dụng khác dán đè". */
 .obq-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(10, 10, 18, 0.78);
+  background: color-mix(in oklab, var(--clay-ink) 38%, transparent);
   backdrop-filter: blur(8px);
   z-index: 100;
   display: flex;
@@ -137,14 +150,20 @@
 .obq-panel {
   width: 100%;
   max-width: 480px;
-  background: var(--c-bg-secondary, #14132A);
-  border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--clay-face);
+  border-radius: var(--clay-radius-panel);
+  border: 1px solid var(--clay-edge);
+  /* Bóng nâng riêng cho modal: --clay-shadow-card quá nông để nhấc một tấm
+     nổi khỏi màn che. Vẫn pha từ mực, không dùng bóng đen. */
+  box-shadow:
+    var(--clay-shadow-card),
+    0 24px 60px -28px color-mix(in oklab, var(--clay-ink) 45%, transparent);
   padding: 20px;
   margin: auto;
   position: relative;
   max-height: calc(100dvh - 120px);
   overflow-y: auto;
+  color: var(--clay-ink);
 }
 
 .obq-close {
@@ -154,16 +173,19 @@
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.06);
-  border: none;
-  color: var(--c-text-secondary, #A1A1AA);
+  background: var(--clay-face-2);
+  border: 1px solid var(--clay-edge);
+  color: var(--clay-ink-2);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
 }
 
-.obq-close:hover { background: rgba(255, 255, 255, 0.12); }
+.obq-close:hover {
+  background: color-mix(in oklab, var(--mb-moss) 10%, var(--clay-face-2));
+  color: var(--clay-ink);
+}
 
 .obq-header { margin-bottom: 18px; padding-right: 40px; }
 
@@ -172,38 +194,39 @@
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--c-purple-light, #A78BFA);
+  color: var(--mb-moss);
   margin: 0 0 4px;
 }
 
 .obq-header-title {
   font-size: 17px;
   font-weight: 700;
-  color: var(--c-text-primary, #F4F4F5);
+  color: var(--clay-ink);
   margin: 0 0 10px;
 }
 
 .obq-header-progress {
   height: 6px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--clay-track);
   border-radius: 6px;
   overflow: hidden;
 }
 
 .obq-header-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #7C3AED, #22C55E);
+  background: var(--mb-moss);
   transition: width 0.5s ease;
 }
 
-/* ── Active quest card ── */
+/* ── Active quest card ──
+   Ô LỒNG bên trong tấm trắng → dùng --clay-face-2, không thêm bóng. */
 .obq-active-card {
   display: flex;
   gap: 14px;
   padding: 16px;
-  background: rgba(124, 58, 237, 0.08);
-  border: 1px solid rgba(124, 58, 237, 0.25);
-  border-radius: 14px;
+  background: var(--clay-face-2);
+  border: 1px solid var(--clay-edge);
+  border-radius: var(--clay-radius-card);
   margin-bottom: 16px;
 }
 
@@ -215,8 +238,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
+  background: var(--clay-y3);
+  border-radius: var(--clay-radius-tile);
   flex-shrink: 0;
 }
 
@@ -227,35 +250,41 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--c-purple-light, #A78BFA);
+  color: var(--mb-moss);
   margin: 0 0 2px;
 }
 
 .obq-active-title {
   font-size: 15px;
   font-weight: 700;
-  color: var(--c-text-primary, #F4F4F5);
+  color: var(--clay-ink);
   margin: 0 0 6px;
 }
 
 .obq-active-scenario {
   font-size: 12px;
-  color: var(--c-text-secondary, #A1A1AA);
+  color: var(--clay-ink-2);
   line-height: 1.5;
   margin: 0 0 8px;
 }
 
+/* Nằm trong ô face-2 nên phải trắng lại mới nổi lên được */
 .obq-active-hint {
   font-size: 11px;
-  color: var(--c-text-primary, #F4F4F5);
+  color: var(--clay-ink);
   line-height: 1.5;
   margin: 0 0 12px;
   padding: 8px 10px;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--clay-face);
+  border: 1px solid var(--clay-edge);
   border-radius: 8px;
 }
 
-.obq-hint-label { color: var(--c-orange, #F97316); font-weight: 600; }
+/* Cam nguyên bản quá nhạt cho chữ 11px trên nền trắng → trộn thêm mực */
+.obq-hint-label {
+  color: color-mix(in oklab, var(--mb-orange) 70%, var(--clay-ink));
+  font-weight: 600;
+}
 
 .obq-rewards-preview {
   display: flex;
@@ -272,13 +301,17 @@
   border-radius: 8px;
   font-size: 11px;
   font-weight: 600;
-  background: rgba(124, 58, 237, 0.2);
-  color: #A78BFA;
-  border: 1px solid rgba(124, 58, 237, 0.4);
+  background: color-mix(in oklab, var(--mb-gold) 14%, var(--clay-face));
+  color: color-mix(in oklab, var(--mb-gold) 60%, var(--clay-ink));
+  border: 1px solid color-mix(in oklab, var(--mb-gold) 40%, transparent);
 }
 
+/* Chip vật phẩm: TSX ghi đè color/borderColor inline theo độ hiếm, ở đây
+   chỉ để nền trung tính cho màu độ hiếm đọc rõ. */
 .obq-reward-chip--item {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--clay-face);
+  color: var(--clay-ink);
+  border-color: var(--clay-edge);
 }
 
 .obq-claim-btn {
@@ -286,8 +319,8 @@
   align-items: center;
   gap: 6px;
   padding: 10px 16px;
-  background: linear-gradient(135deg, #F97316, #EAB308);
-  color: white;
+  background: var(--mb-orange);
+  color: #fff;
   border: none;
   border-radius: 10px;
   font-size: 13px;
@@ -302,7 +335,7 @@
 
 .obq-pending {
   font-size: 11px;
-  color: var(--c-text-secondary, #A1A1AA);
+  color: var(--clay-ink-2);
   margin: 0;
 }
 
@@ -312,14 +345,15 @@
   gap: 6px;
 }
 
+/* Nút chính = mảng rêu đặc (rule: đặc chỉ dành cho nút và trạng thái chọn) */
 .obq-action-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
   padding: 10px 14px;
-  background: linear-gradient(135deg, #7C3AED, #6366F1);
-  color: white;
+  background: var(--mb-moss);
+  color: #fff;
   border: none;
   border-radius: 10px;
   font-size: 13px;
@@ -327,12 +361,12 @@
   cursor: pointer;
   font-family: inherit;
   transition: all 0.15s ease;
-  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.35);
+  box-shadow: 0 4px 12px -6px color-mix(in oklab, var(--mb-moss) 70%, transparent);
 }
 
 .obq-action-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(124, 58, 237, 0.45);
+  box-shadow: 0 6px 18px -8px color-mix(in oklab, var(--mb-moss) 80%, transparent);
 }
 
 .obq-action-btn:active { transform: translateY(0); }
@@ -346,7 +380,7 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--c-text-secondary, #A1A1AA);
+  color: var(--clay-ink-2);
   margin: 0 0 8px;
 }
 
@@ -356,19 +390,23 @@
   gap: 10px;
   padding: 8px 10px;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--clay-face-2);
   margin-bottom: 4px;
   opacity: 0.5;
 }
 
 .obq-future-icon { font-size: 16px; }
-.obq-future-title { flex: 1; font-size: 12px; color: var(--c-text-secondary, #A1A1AA); }
-.obq-future-xp { font-size: 11px; color: #7C3AED; font-weight: 600; }
+.obq-future-title { flex: 1; font-size: 12px; color: var(--clay-ink-2); }
+.obq-future-xp {
+  font-size: 11px;
+  color: color-mix(in oklab, var(--mb-gold) 60%, var(--clay-ink));
+  font-weight: 600;
+}
 
 /* ── Done list ── */
 .obq-done-list {
   padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid var(--clay-edge);
 }
 
 .obq-done-item {
@@ -377,7 +415,7 @@
   gap: 8px;
   padding: 6px 10px;
   font-size: 12px;
-  color: #22C55E;
+  color: var(--mb-moss);
 }
 
 /* ── Claim toast ── */
@@ -390,10 +428,10 @@
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  background: linear-gradient(135deg, #F97316, #EAB308);
-  color: white;
+  background: var(--mb-orange);
+  color: #fff;
   border-radius: 12px;
-  box-shadow: 0 10px 24px rgba(249, 115, 22, 0.4);
+  box-shadow: 0 10px 24px -10px color-mix(in oklab, var(--mb-orange) 70%, transparent);
 }
 
 .obq-claim-title { font-size: 13px; font-weight: 700; margin: 0; }

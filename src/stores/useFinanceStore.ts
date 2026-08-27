@@ -11,6 +11,9 @@ import { STORE_KEYS, STORE_VERSIONS, onRehydrateMark } from '@/stores/persistCon
 export type TxnType = 'income' | 'expense' | 'transfer';
 export type WalletType = 'main' | 'emergency' | 'bill-fund';
 
+/** Tiền đi qua đường nào. Không khai (giao dịch cũ) = coi như chuyển khoản. */
+export type PaymentMethod = 'cash' | 'transfer';
+
 /** Cảm xúc lúc chi tiêu — tự khai, không phán xét. Optional, chỉ áp cho expense. */
 export type EmotionTag = 'self_reward' | 'stress' | 'sad' | 'preference' | 'excited' | 'anger' | 'jealousy';
 
@@ -30,6 +33,8 @@ export interface Transaction {
   sourceTransactionId?: string;
   /** Gắn sau khi tạo giao dịch (không chặn lúc nhập) — xem updateTransactionEmotion. */
   emotionTag?: EmotionTag;
+  /** Tiền mặt hay chuyển khoản. Thiếu = giao dịch cũ, mặc định chuyển khoản. */
+  method?: PaymentMethod;
 }
 
 export interface BillSnapshot {
@@ -47,6 +52,20 @@ export interface BillSnapshot {
   }>;
 }
 
+/** Một lần đóng hóa đơn — lưu SỐ TIỀN THỰC ĐÓNG của tháng đó.
+ * Cần bản ghi riêng chứ không suy từ `FixedBill.amount`: tiền điện tháng này
+ * 1.8tr, tháng sau 1.6tr — sửa amount là mất luôn quá khứ. */
+export interface BillPayment {
+  id: string;
+  billId: string;
+  /** Chụp lại tên + icon lúc đóng, để đổi tên hóa đơn không làm hỏng biểu đồ cũ. */
+  billName: string;
+  icon: string;
+  amount: number;
+  month: string;   // 'YYYY-MM'
+  paidAt: string;  // ISO
+}
+
 export interface FixedBill {
   id: string;
   name: string;
@@ -59,10 +78,16 @@ export interface FixedBill {
 interface FinanceState {
   transactions: Transaction[];
   mainBalance: number;
+  /** Phần TIỀN MẶT nằm trong ví chính (tập con của mainBalance, không cộng thêm).
+   * Nhờ vậy "tiền trong túi" và "tiền trong tài khoản" luôn khớp tổng, và mọi
+   * màn hình đang dùng mainBalance không đổi ý nghĩa. */
+  cashBalance: number;
   emergencyBalance: number;
   billFundBalance: number;
   fixedBills: FixedBill[];
   billSnapshots: BillSnapshot[];
+  /** Lịch sử đóng hóa đơn (append-only) — nguồn cho biểu đồ theo tháng/năm. */
+  billPayments: BillPayment[];
 
   addTransaction: (txn: Omit<Transaction, 'id' | 'date' | 'time' | 'dateLabel' | 'dateKey'> & { transactionDate?: Date }) => Transaction;
   addSplitTransaction: (params: { splitBreakdown: { billFund: number; reserve: number; goals: number; investment: number; }; sourceTransactionId?: string; note?: string; occurredAt?: Date; }) => Transaction;
@@ -76,6 +101,8 @@ interface FinanceState {
   getCurrentMonthKey: () => string;
   getTotalFixedBillsAmount: () => number;
   getVirtualBalance: () => number;
+  /** Số dư nằm ở ngân hàng = ví chính − tiền mặt. Không âm. */
+  getBankBalance: () => number;
 
   // Calendar helpers
   getDailySummary: () => Record<string, { income: number; expense: number }>;
@@ -95,92 +122,40 @@ interface FinanceState {
   /** Reset tất cả bill về chưa đóng — gọi khi sang tháng mới (rollover). */
   resetBillsPaid: () => void;
   getTotalBills: () => number;
+  /** Lịch sử đóng của 1 hóa đơn trong 1 năm, cũ → mới. */
+  getBillPaymentsForYear: (billId: string, year: number) => BillPayment[];
   getAccumulatedBillTarget: () => { total: number; accumulated: number; bills: (FixedBill & { runningTotal: number; canPay: boolean; shortage: number })[] };
 }
 
-// Generate historical demo data
-function generateSeedData(): Transaction[] {
+/** Ghi 1 lần đóng cho tháng hiện tại. Idempotent: đóng lại cùng tháng chỉ cập
+ * nhật số tiền, không nhân đôi bản ghi. */
+function appendBillPayment(current: BillPayment[], bill: FixedBill): BillPayment[] {
+  const month = getCurrentMonthKey();
   const now = new Date();
-  const txns: Transaction[] = [];
-  const cats = [
-    { id: 'food', note: 'Ăn uống' },
-    { id: 'coffee', note: 'Cà phê' },
-    { id: 'transport', note: 'Di chuyển' },
-    { id: 'shopping', note: 'Mua sắm' },
-    { id: 'entertainment', note: 'Giải trí' },
-  ];
-
-  // Deterministic PRNG to avoid hydration mismatch
-  function seededRandom(seed: number): number {
-    let t = (seed + 0x6D2B79F5) | 0;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  }
-
-  // Last 14 days of data
-  for (let daysAgo = 0; daysAgo < 14; daysAgo++) {
-    const d = new Date(now);
-    d.setDate(d.getDate() - daysAgo);
-    const dk = getDateKey(d);
-    const dl = getDateLabel(d.toISOString());
-
-    // 1 income on day 0 (today)
-    if (daysAgo === 0) {
-      txns.push({ id: `s-inc-${daysAgo}`, type: 'income', amount: 15000000, categoryId: 'salary', note: 'Lương tháng 3', wallet: 'main', date: d.toISOString(), time: '09:00', dateLabel: dl, dateKey: dk });
-    }
-    // Smaller income every 3 days
-    if (daysAgo % 3 === 0 && daysAgo > 0) {
-      const incAmt = 500000 + Math.floor(seededRandom(daysAgo * 100) * 1000000);
-      txns.push({ id: `s-inc2-${daysAgo}`, type: 'income', amount: incAmt, categoryId: 'freelance', note: 'Thu nhập phụ', wallet: 'main', date: d.toISOString(), time: '18:00', dateLabel: dl, dateKey: dk });
-    }
-
-    // 2-3 expenses per day (deterministic)
-    const expCount = 2 + Math.floor(seededRandom(daysAgo * 200) * 2);
-    for (let e = 0; e < expCount; e++) {
-      const seed = daysAgo * 1000 + e * 137;
-      const catIdx = Math.floor(seededRandom(seed) * cats.length);
-      const cat = cats[catIdx];
-      const amt = 30000 + Math.floor(seededRandom(seed + 7) * 200000);
-      const hour = 7 + Math.floor(seededRandom(seed + 13) * 14);
-      txns.push({
-        id: `s-exp-${daysAgo}-${e}`,
-        type: 'expense',
-        amount: amt,
-        categoryId: cat.id,
-        note: cat.note,
-        wallet: 'main',
-        date: d.toISOString(),
-        time: `${String(hour).padStart(2, '0')}:${String(Math.floor(seededRandom(seed + 19) * 60)).padStart(2, '0')}`,
-        dateLabel: dl,
-        dateKey: dk,
-      });
-    }
-  }
-
-  return txns;
+  const record: BillPayment = {
+    id: `bp-${bill.id}-${month}`,
+    billId: bill.id,
+    billName: bill.name,
+    icon: bill.icon,
+    amount: bill.amount,
+    month,
+    paidAt: now.toISOString(),
+  };
+  const rest = current.filter((p) => !(p.billId === bill.id && p.month === month));
+  return [...rest, record];
 }
-
-const SEED_BILLS: FixedBill[] = [
-  { id: 'bill-rent', name: 'Tiền nhà', icon: '🏠', amount: 2500000, dueDay: 1, isPaid: false },
-  { id: 'bill-tuition', name: 'Tiền học', icon: '📚', amount: 1200000, dueDay: 3, isPaid: false },
-  { id: 'bill-installment', name: 'Trả góp', icon: '💳', amount: 800000, dueDay: 5, isPaid: false },
-  { id: 'bill-electric', name: 'Tiền điện', icon: '⚡', amount: 350000, dueDay: 10, isPaid: true },
-  { id: 'bill-water', name: 'Tiền nước', icon: '💧', amount: 100000, dueDay: 15, isPaid: false },
-  { id: 'bill-internet', name: 'Internet', icon: '📡', amount: 200000, dueDay: 20, isPaid: false },
-];
-
-const isDemoSeed = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
 
 export const useFinanceStore = create<FinanceState>()(
   persist(
     (set, get) => ({
-  transactions: isDemoSeed ? generateSeedData() : [],
-  mainBalance: isDemoSeed ? 15000000 : 0,
-  emergencyBalance: isDemoSeed ? 5000000 : 0,
-  billFundBalance: isDemoSeed ? 8500000 : 0,
-  fixedBills: isDemoSeed ? SEED_BILLS : [],
+  transactions: [],
+  mainBalance: 0,
+  cashBalance: 0,
+  emergencyBalance: 0,
+  billFundBalance: 0,
+  fixedBills: [],
   billSnapshots: [],
+  billPayments: [],
 
   addTransaction: (txnData) => {
     const { transactionDate, ...restTxnData } = txnData;
@@ -217,6 +192,7 @@ export const useFinanceStore = create<FinanceState>()(
       let mainBal = state.mainBalance;
       let emergBal = state.emergencyBalance;
       let billFund = state.billFundBalance;
+      let cash = state.cashBalance;
 
       if (txn.type === 'income') {
         if (txn.wallet === 'main') mainBal += txn.amount;
@@ -227,11 +203,17 @@ export const useFinanceStore = create<FinanceState>()(
         else if (txn.wallet === 'emergency') emergBal -= txn.amount;
       }
 
+      // Tiền mặt chỉ theo dõi ở ví chính — quỹ dự phòng/hóa đơn nằm ở ngân hàng.
+      if (txn.method === 'cash' && txn.wallet === 'main') {
+        cash = txn.type === 'income' ? cash + txn.amount : Math.max(0, cash - txn.amount);
+      }
+
       return {
         transactions: newTxns,
         mainBalance: mainBal,
         emergencyBalance: emergBal,
         billFundBalance: billFund,
+        cashBalance: cash,
       };
     });
 
@@ -324,6 +306,8 @@ export const useFinanceStore = create<FinanceState>()(
   getTotalFixedBillsAmount: () =>
     get().fixedBills.reduce((sum, b) => sum + b.amount, 0),
 
+  getBankBalance: () => Math.max(0, get().mainBalance - get().cashBalance),
+
   getVirtualBalance: () => {
     const state = get();
     const fixedCosts = state.fixedBills.reduce((s, b) => s + b.amount, 0);
@@ -379,7 +363,11 @@ export const useFinanceStore = create<FinanceState>()(
         b.id === billId ? { ...b, isPaid: true } : b
       );
 
-      return { fixedBills: updatedBills, billFundBalance: newFund };
+      return {
+        fixedBills: updatedBills,
+        billFundBalance: newFund,
+        billPayments: appendBillPayment(state.billPayments, bill),
+      };
     });
   },
 
@@ -398,6 +386,13 @@ export const useFinanceStore = create<FinanceState>()(
       return {
         fixedBills: state.fixedBills.map((b) => (b.id === billId ? { ...b, isPaid } : b)),
         billFundBalance,
+        // Undo đánh dấu "chưa đóng" phải xoá luôn bản ghi tháng này, nếu không
+        // biểu đồ năm vẫn tính là đã đóng.
+        billPayments: isPaid
+          ? appendBillPayment(state.billPayments, bill)
+          : state.billPayments.filter(
+              (p) => !(p.billId === billId && p.month === getCurrentMonthKey()),
+            ),
       };
     });
   },
@@ -409,6 +404,7 @@ export const useFinanceStore = create<FinanceState>()(
       let mainBal = state.mainBalance;
       let emergBal = state.emergencyBalance;
       let billFund = state.billFundBalance;
+      let cash = state.cashBalance;
       // Đảo ngược chính xác mutation của addTransaction.
       if (txn.type === 'income') {
         if (txn.wallet === 'main') mainBal -= txn.amount;
@@ -418,11 +414,16 @@ export const useFinanceStore = create<FinanceState>()(
         if (txn.wallet === 'main') mainBal += txn.amount;
         else if (txn.wallet === 'emergency') emergBal += txn.amount;
       }
+      // Đảo ngược đúng phần tiền mặt đã cộng/trừ lúc ghi.
+      if (txn.method === 'cash' && txn.wallet === 'main') {
+        cash = txn.type === 'income' ? Math.max(0, cash - txn.amount) : cash + txn.amount;
+      }
       return {
         transactions: state.transactions.filter((t) => t.id !== transactionId),
         mainBalance: mainBal,
         emergencyBalance: emergBal,
         billFundBalance: billFund,
+        cashBalance: cash,
       };
     });
     return true;
@@ -443,6 +444,11 @@ export const useFinanceStore = create<FinanceState>()(
 
   getTotalBills: () =>
     get().fixedBills.reduce((sum, b) => sum + b.amount, 0),
+
+  getBillPaymentsForYear: (billId, year) =>
+    get()
+      .billPayments.filter((p) => p.billId === billId && p.month.startsWith(String(year)))
+      .sort((a, b) => a.month.localeCompare(b.month)),
 
   getAccumulatedBillTarget: () => {
     const state = get();
@@ -466,10 +472,12 @@ export const useFinanceStore = create<FinanceState>()(
       partialize: (s) => ({
         transactions: s.transactions,
         mainBalance: s.mainBalance,
+        cashBalance: s.cashBalance,
         emergencyBalance: s.emergencyBalance,
         billFundBalance: s.billFundBalance,
         fixedBills: s.fixedBills,
         billSnapshots: s.billSnapshots,
+        billPayments: s.billPayments,
       }),
       migrate: (persisted) => {
         // v1 baseline: đảm bảo field tồn tại, không crash với data cũ.
@@ -479,7 +487,9 @@ export const useFinanceStore = create<FinanceState>()(
           transactions: Array.isArray(p.transactions) ? p.transactions : [],
           fixedBills: Array.isArray(p.fixedBills) ? p.fixedBills : [],
           billSnapshots: Array.isArray(p.billSnapshots) ? p.billSnapshots : [],
+          billPayments: Array.isArray(p.billPayments) ? p.billPayments : [],
           mainBalance: typeof p.mainBalance === 'number' ? p.mainBalance : 0,
+          cashBalance: typeof p.cashBalance === 'number' ? p.cashBalance : 0,
           emergencyBalance: typeof p.emergencyBalance === 'number' ? p.emergencyBalance : 0,
           billFundBalance: typeof p.billFundBalance === 'number' ? p.billFundBalance : 0,
         } as FinanceState;
