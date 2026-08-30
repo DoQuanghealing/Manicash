@@ -342,6 +342,16 @@ img, svg { display: block; max-width: 100%; }
 .stack-md { gap: var(--space-md); }
 .stack-lg { gap: var(--space-lg); }
 
+/* ═══ Tổng quan — dồn cụm khối cho vừa MỘT màn hình ═══
+   .shell-content chừa 16px mỗi bên cho mọi trang. Riêng Tổng quan ăn bớt
+   phần đó bằng margin âm: khối rộng thêm ~20px và khối đầu nằm sát trần,
+   thay vì sửa .shell-content (đụng toàn bộ các trang khác). */
+.overview-stack {
+  gap: var(--space-sm);
+  margin-top: calc(var(--space-xs) - var(--space-lg));
+  margin-inline: calc(6px - var(--space-lg));
+}
+
 .row {
   display: flex;
   align-items: center;

@@ -24,7 +24,10 @@ export default function OverviewContent() {
 
   return (
     <>
-      <div className="stack stack-md">
+      {/* `overview-stack` (globals.css) ăn bớt viền của .shell-content để cụm
+       * khối rộng gần hết bề ngang và khối đầu nằm sát trần — mục tiêu: 4 khối
+       * Số dư · Thu · Chi · Tiết kiệm cùng vào một màn hình. */}
+      <div className="stack overview-stack">
         {/* ═══ Sự kiện theo mùa + teaser holiday: đã gộp vào TasksHub (tab "Sự kiện") ═══ */}
 
         {/* ═══ BLOCK 1: Safe-to-Spend Balance ═══ */}
