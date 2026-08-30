@@ -5,15 +5,23 @@
  * thẻ mục tiêu có icon) → CSS của những phần đó bị cắt vì không ai dùng, và khối
  * ra trơ trụi. Muốn đổi bố cục thì sửa mẫu trước, đừng cắt bớt ở đây.
  *
- * Khác mẫu đúng MỘT chỗ, do PO yêu cầu sau khi xem bản thật:
- *   biểu đồ thu nhập mốc THÁNG là VÀNH KHUYÊN (thấy mảnh ghép thu nhập),
- *   mốc NĂM mới là đường như trong mẫu.
+ * Khác mẫu ở mấy chỗ, đều do PO chốt sau khi xem bản thật:
+ *   · Thu nhập chỉ còn mốc THÁNG, vẽ bằng VÀNH KHUYÊN (mảnh ghép nguồn thu).
+ *     Nút Tháng|Năm và biểu đồ đường theo năm đã BỎ HẲN — đừng thêm lại.
+ *   · Sau số tiền có mũi tên tăng trưởng so với tháng trước (`Trend`).
+ *   · Chú thích nguồn thu tối đa 4 dòng: quá thì 3 nguồn lớn nhất + "Khác".
+ *   · Tên khối (Thu nhập/Chi tiêu/Tiết kiệm) là một THẺ vắt lên viền trên của
+ *     khối (`.blk-tab`), nằm NGOÀI `.blk` — nên nó không bị `.blk-hit` phủ.
+ *     Hàng "TIỀN THÁNG NÀY / Tháng N" phía trên cụm đã bỏ.
+ *   · Hai chip Tiền mặt/Ngân hàng đã BỎ khỏi mặt khối — bấm vào khối là tấm
+ *     trượt hiện đủ hơn (`IncomeSheetContent` có cả số tiền LẪN phần trăm).
+ *     Đừng thêm lại: mặt khối nói cùng một thứ hai lần thì không thêm gì.
  *
  * Mọi phép tính ở src/lib/moneyBlocks.ts + expenseBreakdown.ts — đây chỉ vẽ.
  */
 'use client';
 
-import { useId, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useFinanceStore } from '@/stores/useFinanceStore';
 import { useDashboardStore } from '@/stores/useDashboardStore';
 import { useGoalsStore } from '@/stores/useGoalsStore';
@@ -23,8 +31,9 @@ import { buildCategoryBreakdown } from '@/lib/expenseBreakdown';
 import {
   buildConicGradient,
   buildIncomeBreakdown,
-  buildIncomeSeries,
-  getMethodSplit,
+  buildIncomeMomentum,
+  capIncomeSlices,
+  type IncomeMomentum,
 } from '@/lib/moneyBlocks';
 import { formatCurrency, formatCurrencyShort } from '@/utils/formatCurrency';
 import MoneySheet, { type MoneySheetKind } from './MoneySheet';
@@ -42,9 +51,44 @@ function Money({ value }: { value: number }) {
   );
 }
 
+/**
+ * Mũi tên tăng trưởng so với tháng trước.
+ *
+ * Ẩn hẳn khi `deltaPercent` là null — tháng trước bằng 0 thì không có phần trăm
+ * nào đúng cả (xem `buildIncomeMomentum`). Thà không nói còn hơn nói "+100%" bịa.
+ * Mũi tên là hình vẽ nên `aria-hidden`; phần chữ đã tự đọc được rồi.
+ */
+function Trend({ momentum }: { momentum: IncomeMomentum }) {
+  const { deltaPercent, direction } = momentum;
+  if (deltaPercent === null || direction === 'flat') return null;
+
+  const up = direction === 'up';
+  return (
+    <span
+      className={`trend trend-${direction}`}
+      title={`So với tháng trước (${formatCurrency(momentum.previous)})`}
+    >
+      <svg viewBox="0 0 24 24" aria-hidden>
+        {up ? (
+          <>
+            <path d="M5 17.5 13 9.5l4 4L21 6.5" />
+            <path d="M15.5 6.5H21v5.5" />
+          </>
+        ) : (
+          <>
+            <path d="M5 6.5 13 14.5l4-4L21 17.5" />
+            <path d="M15.5 17.5H21V12" />
+          </>
+        )}
+      </svg>
+      {up ? '+' : ''}
+      {deltaPercent}%
+    </span>
+  );
+}
+
 export default function MoneyBlocks() {
   const [open, setOpen] = useState<MoneySheetKind | null>(null);
-  const [incomeView, setIncomeView] = useState<'month' | 'year'>('month');
 
   const transactions = useFinanceStore((s) => s.transactions);
   const monthlyIncome = useFinanceStore((s) => s.getMonthlyIncome());
@@ -61,18 +105,16 @@ export default function MoneyBlocks() {
   const now = useMemo(() => new Date(), []);
 
   // ── Khối 1 ──────────────────────────────────────────────
-  const incomeSplit = useMemo(
-    () => getMethodSplit(transactions, 'income', 'month', now),
-    [transactions, now],
-  );
   const incomeSlices = useMemo(
     () => buildIncomeBreakdown(transactions, 'month', now),
     [transactions, now],
   );
-  const incomeYear = useMemo(
-    () => buildIncomeSeries(transactions, 'month', now).slice(0, now.getMonth() + 1),
+  const incomeMomentum = useMemo(
+    () => buildIncomeMomentum(transactions, now),
     [transactions, now],
   );
+  /** Tối đa 4 dòng chú thích — quá thì 3 nguồn lớn nhất + "Khác". */
+  const incomeLegend = useMemo(() => capIncomeSlices(incomeSlices, 4), [incomeSlices]);
   const incomeGradient = useMemo(
     () => buildConicGradient(incomeSlices, 'var(--ring-rest)'),
     [incomeSlices],
@@ -139,14 +181,14 @@ export default function MoneyBlocks() {
        * chính trang Tổng quan. Không có lớp bọc thì nền kem của cụm khối đổ lên
        * cả 8 trang đó. Mọi rule trong MoneyBlocks.css neo vào `.money-blocks`. */}
       <div className="money-blocks">
-      <div className="frame-title">
-        <span>TIỀN THÁNG NÀY</span>
-        <span>Tháng {month}</span>
-      </div>
-
       <div className="stack">
         {/* ═══════════════ THU NHẬP ═══════════════ */}
         <div className="slot">
+          <span className="blk-tab blk-tab-income">
+            <span className="coin-wrap"><span className="coin" /></span>
+            <span className="blk-title shine">Thu nhập</span>
+          </span>
+
           <article className="blk blk-income">
             <button
               type="button"
@@ -155,78 +197,40 @@ export default function MoneyBlocks() {
               onClick={() => setOpen('income')}
             />
 
-            <div className="blk-row">
-              <span className="coin-wrap"><span className="coin" /></span>
-              <span className="blk-title shine">Thu nhập</span>
-            </div>
-
-            <span className="amount">
-              {hideBalance ? (
-                <span className="amt-mask">•••••••••</span>
-              ) : (
-                <span className="amt-real"><Money value={monthlyIncome} /></span>
-              )}
-            </span>
-
-            <div className="chips">
-              <span className="chip">
-                Tiền mặt {hideBalance ? '•••' : formatCurrency(incomeSplit.cash)}
+            <div className="amount-row">
+              <span className="amount">
+                {hideBalance ? (
+                  <span className="amt-mask">•••••••••</span>
+                ) : (
+                  <span className="amt-real"><Money value={monthlyIncome} /></span>
+                )}
               </span>
-              <span className="chip">
-                Ngân hàng {hideBalance ? '•••' : formatCurrency(incomeSplit.bank)}
-              </span>
+              {!hideBalance && <Trend momentum={incomeMomentum} />}
             </div>
 
-            {/* PO chốt: mốc THÁNG là vành khuyên mảnh ghép, mốc NĂM là đường. */}
-            <div className="view-switch">
-              <button
-                type="button"
-                className={incomeView === 'month' ? 'is-on' : ''}
-                onClick={() => setIncomeView('month')}
-              >
-                Tháng
-              </button>
-              <button
-                type="button"
-                className={incomeView === 'year' ? 'is-on' : ''}
-                onClick={() => setIncomeView('year')}
-              >
-                Năm
-              </button>
-            </div>
-
-            {incomeView === 'month' ? (
-              incomeSlices.length === 0 ? (
-                <p className="blk-empty">Chưa có khoản thu nào tháng này.</p>
-              ) : (
-                <div className="inc-body">
-                  <div className="donut-hold donut-sm">
-                    <div className="donut" style={{ background: incomeGradient }} />
-                    <div className="donut-mid">
-                      <span className="dm-lbl">THU</span>
-                      <span className="dm-val">
-                        {hideBalance ? '•••' : formatCurrencyShort(monthlyIncome)}
-                      </span>
-                    </div>
-                  </div>
-                  <ul className="legend legend-col">
-                    {incomeSlices.map((s) => (
-                      <li key={s.categoryId}>
-                        <span className="lg-dot" style={{ background: s.color }} />
-                        <span className="lg-name">{s.name}</span>
-                        <b>{hideBalance ? '•••' : formatCurrencyShort(s.amount)}</b>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )
+            {incomeSlices.length === 0 ? (
+              <p className="blk-empty">Chưa có khoản thu nào tháng này.</p>
             ) : (
-              <div className="spark-box">
-                <div className="spark-cap">
-                  <span>Đà thu nhập {incomeYear.length} tháng</span>
-                  <span>{deltaLabel(incomeYear.map((p) => p.total))}</span>
+              <div className="inc-body">
+                <div className="donut-hold donut-sm">
+                  <div className="donut" style={{ background: incomeGradient }} />
+                  <div className="donut-mid">
+                    <span className="dm-lbl">THU</span>
+                    <span className="dm-val">
+                      {hideBalance ? '•••' : formatCurrencyShort(monthlyIncome)}
+                    </span>
+                  </div>
                 </div>
-                <Spark values={incomeYear.map((p) => p.total)} />
+                {/* Tối đa 4 dòng: quá thì 3 nguồn lớn nhất + một dòng "Khác". */}
+                <ul className="legend legend-col">
+                  {incomeLegend.map((s) => (
+                    <li key={s.categoryId}>
+                      <span className="lg-dot" style={{ background: s.color }} />
+                      <span className="lg-name">{s.name}</span>
+                      <b>{hideBalance ? '•••' : formatCurrencyShort(s.amount)}</b>
+                    </li>
+                  ))}
+                </ul>
               </div>
             )}
           </article>
@@ -244,6 +248,16 @@ export default function MoneyBlocks() {
 
         {/* ═══════════════ CHI TIÊU ═══════════════ */}
         <div className="slot">
+          <span className="blk-tab blk-tab-expense">
+            <span className="tile t-exp">
+              <svg viewBox="0 0 24 24" aria-hidden>
+                <path d="M6.5 6.5 17.5 17.5" />
+                <path d="M17.5 9.5v8h-8" />
+              </svg>
+            </span>
+            <span className="blk-title">Chi tiêu</span>
+          </span>
+
           <article className="blk blk-expense">
             <button
               type="button"
@@ -251,16 +265,6 @@ export default function MoneyBlocks() {
               aria-label="Xem chi tiết chi tiêu"
               onClick={() => setOpen('expense')}
             />
-
-            <div className="blk-row">
-              <span className="tile t-exp">
-                <svg viewBox="0 0 24 24" aria-hidden>
-                  <path d="M6.5 6.5 17.5 17.5" />
-                  <path d="M17.5 9.5v8h-8" />
-                </svg>
-              </span>
-              <span className="blk-title">Chi tiêu</span>
-            </div>
 
             <div className="exp-body">
               <ul className="stat-list">
@@ -338,6 +342,17 @@ export default function MoneyBlocks() {
 
         {/* ═══════════════ TIẾT KIỆM ═══════════════ */}
         <div className="slot">
+          <span className="blk-tab blk-tab-save">
+            <span className="tile t-sav">
+              <svg viewBox="0 0 24 24" aria-hidden>
+                <path d="M12 21v-7.2" />
+                <path d="M12 13.8C12 10.4 9.3 7.7 6 7.7c0 3.4 2.7 6.1 6 6.1Z" />
+                <path d="M12 13.8c0-4 3.2-7.2 7.2-7.2 0 4-3.2 7.2-7.2 7.2Z" />
+              </svg>
+            </span>
+            <span className="blk-title">Tiết kiệm</span>
+          </span>
+
           <article className="blk blk-save">
             <button
               type="button"
@@ -345,17 +360,6 @@ export default function MoneyBlocks() {
               aria-label="Xem chi tiết tiết kiệm"
               onClick={() => setOpen('savings')}
             />
-
-            <div className="blk-row">
-              <span className="tile t-sav">
-                <svg viewBox="0 0 24 24" aria-hidden>
-                  <path d="M12 21v-7.2" />
-                  <path d="M12 13.8C12 10.4 9.3 7.7 6 7.7c0 3.4 2.7 6.1 6 6.1Z" />
-                  <path d="M12 13.8c0-4 3.2-7.2 7.2-7.2 0 4-3.2 7.2-7.2 7.2Z" />
-                </svg>
-              </span>
-              <span className="blk-title">Tiết kiệm</span>
-            </div>
 
             <span className="amount">
               {hideBalance ? (
@@ -416,56 +420,5 @@ export default function MoneyBlocks() {
 
       <MoneySheet kind={open} onClose={() => setOpen(null)} />
     </>
-  );
-}
-
-/** "+18% so tháng trước" — so mốc cuối với mốc liền trước CÓ SỐ. */
-function deltaLabel(values: number[]): string {
-  const idx = values.length - 1;
-  if (idx < 1) return '';
-  const cur = values[idx];
-  let prev = 0;
-  for (let i = idx - 1; i >= 0; i--) {
-    if (values[i] > 0) {
-      prev = values[i];
-      break;
-    }
-  }
-  if (prev <= 0 || cur <= 0) return '';
-  const d = Math.round(((cur - prev) / prev) * 100);
-  return `${d >= 0 ? '+' : ''}${d}% so tháng trước`;
-}
-
-/** Đường đà thu nhập — dựng đúng hình dạng svg của mẫu D. */
-function Spark({ values }: { values: number[] }) {
-  // id phải DUY NHẤT: hai svg cùng id gradient thì cái sau ăn nhầm def của cái
-  // trước. Hiện chỉ có một Spark, nhưng đây là loại lỗi chỉ lộ ra khi thêm cái thứ hai.
-  const gradId = useId();
-  if (values.length < 2) return null;
-  const w = 300;
-  const h = 56;
-  const max = Math.max(...values);
-  const min = Math.min(...values);
-  const range = max - min || 1;
-  const pts = values.map((v, i) => ({
-    x: 4 + (i / (values.length - 1)) * (w - 8),
-    y: 5 + (1 - (v - min) / range) * (h - 16),
-  }));
-  const line = pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
-  const area = `M${pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' L')} L${w - 4},${h} L4,${h} Z`;
-  const last = pts[pts.length - 1];
-
-  return (
-    <svg className="spark" viewBox={`0 0 ${w} ${h}`} aria-hidden>
-      <defs>
-        <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="currentColor" stopOpacity=".30" />
-          <stop offset="1" stopColor="currentColor" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <path d={area} fill={`url(#${gradId})`} />
-      <polyline className="spark-line" points={line} />
-      <circle className="spark-dot" cx={last.x} cy={last.y} r="4" />
-    </svg>
   );
 }
