@@ -40,7 +40,7 @@
 .sts-card {
   position: relative;
   border-radius: var(--clay-radius-card);
-  padding: 12px;
+  padding: 16px;
   background: var(--clay-face);
   border: 1px solid var(--clay-edge);
   box-shadow: var(--clay-shadow-card);
@@ -71,8 +71,8 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  min-height: 20px;
-  margin-bottom: 6px;
+  min-height: 28px;
+  margin-bottom: 11px;
   padding-right: 40px;      /* né .sts-eye ở góc trên phải */
 }
 
@@ -143,7 +143,7 @@
    ───────────────────────────────────────────────────────────── */
 .sts-amount {
   margin: 0;
-  padding: 9px 14px 2px;
+  padding: 14px 15px 4px;
   border-radius: var(--clay-radius-tile) var(--clay-radius-tile) 0 0;
   background: var(--sts-wash);
   box-shadow:
@@ -186,7 +186,7 @@
   align-items: center;
   gap: 7px;
   margin: 0;
-  padding: 1px 14px 9px;
+  padding: 2px 15px 13px;
   border-radius: 0 0 var(--clay-radius-tile) var(--clay-radius-tile);
   background: var(--sts-wash);
   box-shadow:
