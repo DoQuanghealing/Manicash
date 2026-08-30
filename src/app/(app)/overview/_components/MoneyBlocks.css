@@ -946,3 +946,29 @@
 
 /* "CHƯA CHI — CÒN LẠI": tiền còn được tiêu, nên đọc như tin tốt. */
 .blk-expense .rest b { color: var(--c-income); }
+
+/* ═══ Ba ô thống kê khối Chi tiêu: mỗi ô một màu ═══
+ *
+ * PO chốt: cam · xanh lá · tím, theo đúng thứ tự ba ô. Trước đây cả ba cùng
+ * dùng `--clay-y1` nên thành một mảng cam liền, ba con số khác nghĩa nhau mà
+ * trông như một.
+ *
+ * Nền lấy sắc phấn nhạt (y1/y2/y5), CON SỐ lấy bản đậm cùng họ
+ * (`--c-expense` / `--c-income` / `--c-purple-dark`) — đúng kiểu thẻ tổng ở
+ * trang Sổ sách: nhãn xám nhỏ, số to ăn màu. Cặp nhạt/đậm này đi theo nhau qua
+ * `--stat-hue` và `--stat-ink` nên đổi thứ tự màu chỉ cần sửa ba dòng nth-child.
+ *
+ * ⚠️ Vẫn theo quy ước của file: khối ghi đè nằm CUỐI. `.blk .sl-val` gốc là
+ * (0,2,0) và đứng trên; đặt khối này lên trước thì màu số bị nó đè về màu mực.
+ */
+.blk .stat-list li {
+  background: color-mix(in oklab, var(--stat-hue) var(--clay-tile-mix), var(--clay-face-2));
+}
+.blk .stat-list li:nth-child(1) { --stat-hue: var(--clay-y1); --stat-ink: var(--c-expense); }
+.blk .stat-list li:nth-child(2) { --stat-hue: var(--clay-y2); --stat-ink: var(--c-income); }
+.blk .stat-list li:nth-child(3) { --stat-hue: var(--clay-y5); --stat-ink: var(--c-purple-dark); }
+
+/* Ô thứ 4 trở đi (nếu sau này thêm) quay vòng lại, không rơi về không màu. */
+.blk .stat-list li:nth-child(4) { --stat-hue: var(--clay-y4); --stat-ink: var(--c-info); }
+
+.blk .stat-list li .sl-val { color: var(--stat-ink); }
