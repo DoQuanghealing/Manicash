@@ -565,10 +565,15 @@
 
   /* ⚠️ Bộ ba biến màu PHẢI khai ở đây, KHÔNG khai ở .sts-card: `.sts-tab` là
      ANH EM của .sts-card chứ không phải con nó, nên biến khai trên .sts-card
-     không xuống tới thẻ tên và thẻ ra trơ không nền. Đã dính đúng lỗi này. */
-  --sts-face: linear-gradient(135deg, #15803D, #047857);
-  --sts-gold: var(--c-champagne);
-  --sts-gold-bright: var(--c-champagne-light);
+     không xuống tới thẻ tên và thẻ ra trơ không nền. Đã dính đúng lỗi này.
+
+     Dải tím→cam lấy thẳng `--gradient-primary` — đúng token đang tô thanh
+     "Money" (money.css:37) mà PO chỉ vào, không pha lại bằng tay.
+     Trên nền đậm và bão hoà thế này thì viền phải là TRẮNG TRONG, không phải
+     một màu đặc: màu đặc nào cũng chỏi với một trong hai đầu dải. */
+  --sts-face: var(--gradient-primary);
+  --sts-edge: rgba(255, 255, 255, 0.30);
+  --sts-on-face: #FFFFFF;
 
   position: relative;
   padding-top: var(--tab-lift);
@@ -590,20 +595,23 @@
   padding: 0 12px;
   border-radius: 999px;
   background: var(--sts-face);
-  border: 1px solid var(--sts-gold);
-  box-shadow: 0 5px 12px -6px color-mix(in oklab, var(--sts-face) 60%, transparent);
+  border: 1px solid var(--sts-edge);
+  /* ⚠️ KHÔNG dùng `color-mix(… var(--sts-face) …)` ở đây: --sts-face là một
+     GRADIENT, mà color-mix chỉ nhận MÀU. Viết vậy là cả dòng box-shadow hỏng
+     im lặng và thẻ mất bóng, không báo lỗi gì. Lấy màu tím đầu dải. */
+  box-shadow: 0 5px 12px -6px color-mix(in oklab, var(--c-purple) 55%, transparent);
 }
 .sts-tab .sts-lbl {
-  color: var(--sts-gold-bright);
+  color: var(--sts-on-face);
   margin: 0;
 }
 .sts-tab .sts-qmark {
-  border-color: color-mix(in oklab, var(--sts-gold) 70%, transparent);
-  color: var(--sts-gold-bright);
+  border-color: color-mix(in oklab, var(--sts-edge) 70%, transparent);
+  color: var(--sts-on-face);
 }
 .sts-tab .sts-qmark:hover {
-  border-color: var(--sts-gold-bright);
-  color: var(--sts-gold-bright);
+  border-color: var(--sts-on-face);
+  color: var(--sts-on-face);
 }
 
 /* Chừa chỗ cho nửa dưới của thẻ tên đang đè vào mặt thẻ. */
@@ -611,20 +619,20 @@
   padding-top: calc(var(--tab-lift, 15px) + 10px);
 }
 
-/* ─── Tấm chứa số: XANH ĐẬM, VIỀN VÀNG, CHỮ VÀNG ĐỒNG SÁNG ───
+/* ─── Tấm chứa số: DẢI TÍM→CAM, CHỮ TRẮNG ───
  *
  * `.sts-amount` (nửa trên, bo 2 góc trên) và `.sts-statusline` (nửa dưới, bo 2
  * góc dưới) là MỘT tấm liền — phải đổi CẢ HAI, đổi một cái là tấm gãy làm đôi.
  *
  * ⚠️ CỐ Ý chỉ tô tấm này, KHÔNG tô cả .sts-card: phần "Cách tính số này" xổ ra
  * bên dưới có `.sts-breakdown` nền TRONG SUỐT và chữ màu xám. Tô nền thẻ thành
- * xanh đậm là toàn bộ phần đó mất đọc — phải sửa thêm ~15 rule nữa mới cứu được.
+ * dải đậm là toàn bộ phần đó mất đọc — phải sửa thêm ~15 rule nữa mới cứu được.
  */
 .sts-amount,
 .sts-statusline {
   background: var(--sts-face);
   box-shadow: none;
-  border: 1px solid var(--sts-gold);
+  border: 1px solid var(--sts-edge);
 }
 /* Hai nửa liền nhau: bỏ viền giữa để không thành hai gạch chồng lên nhau. */
 .sts-amount { border-bottom: none; }
@@ -633,14 +641,14 @@
 .sts-amount,
 .sts-amount .sts-num,
 .sts-amount--neg {
-  color: var(--sts-gold-bright);
+  color: var(--sts-on-face);
 }
-.sts-amount .sts-cur { color: color-mix(in oklab, var(--sts-gold-bright) 82%, transparent); }
+.sts-amount .sts-cur { color: color-mix(in oklab, var(--sts-on-face) 82%, transparent); }
 
-/* Dòng tình trạng nằm trên nền xanh nên phải sáng lên, nếu không là chữ xám
-   trên xanh đậm — đúng loại tương phản hỏng mà mắt bỏ qua lúc lướt. */
+/* Dòng tình trạng nằm trên dải đậm nên phải sáng lên, nếu không là chữ xám
+   trên nền bão hoà — đúng loại tương phản hỏng mà mắt bỏ qua lúc lướt. */
 .sts-statusline .sts-status-k { color: color-mix(in oklab, #FFFFFF 72%, transparent); }
 .sts-statusline .sts-chip {
-  color: var(--sts-gold-bright);
+  color: var(--sts-on-face);
   background: color-mix(in oklab, #FFFFFF 14%, transparent);
 }
