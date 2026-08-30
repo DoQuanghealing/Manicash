@@ -431,3 +431,87 @@ export function getMethodSplit(
     bankPercent: total > 0 ? Math.round((bank / total) * 1000) / 10 : 0,
   };
 }
+
+// ─────────────────────────── Đà thu nhập so với tháng trước ───────────────────────────
+
+export interface IncomeMomentum {
+  current: number;
+  previous: number;
+  /** Phần trăm chênh so với tháng trước, làm tròn 1 chữ số. `null` = không so được. */
+  deltaPercent: number | null;
+  direction: 'up' | 'down' | 'flat';
+}
+
+/**
+ * Thu tháng này so với tháng liền trước — dữ liệu cho mũi tên tăng trưởng.
+ *
+ * ⚠️ KHÔNG dùng `buildIncomeSeries(..., 'month')` để lấy tháng trước: chuỗi đó chỉ
+ * trải 12 tháng của NĂM HIỆN TẠI, nên vào tháng 1 thì "tháng trước" (tháng 12 năm
+ * ngoái) không có ô nào và sẽ đọc ra 0 — tức báo tăng vô lý ngay đầu năm. Ở đây
+ * tính mốc bằng `new Date(y, m - 1, 1)`, JS tự lùi sang tháng 12 năm trước.
+ *
+ * `deltaPercent` là `null` khi tháng trước bằng 0: chia cho 0 không ra số nào có
+ * nghĩa, và "tăng ∞%" thì vô nghĩa với người đọc — giao diện phải ẩn mũi tên,
+ * đừng bịa 100%.
+ */
+export function buildIncomeMomentum(
+  transactions: Transaction[],
+  now: Date = new Date(),
+): IncomeMomentum {
+  const curFrom = new Date(now.getFullYear(), now.getMonth(), 1);
+  const nextFrom = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const prevFrom = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+  let current = 0;
+  let previous = 0;
+  for (const txn of transactions) {
+    if (txn.type !== 'income') continue;
+    const d = new Date(txn.date);
+    if (d >= curFrom && d < nextFrom) current += txn.amount;
+    else if (d >= prevFrom && d < curFrom) previous += txn.amount;
+  }
+
+  if (previous === 0) {
+    return { current, previous, deltaPercent: null, direction: 'flat' };
+  }
+
+  const raw = ((current - previous) / previous) * 100;
+  const deltaPercent = Math.round(raw * 10) / 10;
+  return {
+    current,
+    previous,
+    deltaPercent,
+    direction: deltaPercent > 0 ? 'up' : deltaPercent < 0 ? 'down' : 'flat',
+  };
+}
+
+// ─────────────────────────── Gộp nguồn thu nhỏ thành "Khác" ───────────────────────────
+
+/**
+ * Giữ tối đa `max` dòng chú thích: quá thì lấy `max - 1` nguồn lớn nhất, phần còn
+ * lại gộp thành một dòng "Khác".
+ *
+ * Chỉ gộp khi THỰC SỰ thừa. Đúng `max` nguồn thì hiện đủ cả `max` — gộp lúc đó là
+ * đổi 2 dòng thật lấy 1 dòng "Khác", vừa mất thông tin vừa chẳng tiết kiệm chỗ.
+ *
+ * Đầu vào phải đã sắp giảm dần (`buildIncomeBreakdown` trả về như vậy).
+ * `percent` của dòng gộp cộng thẳng từ các lát bị gộp nên tổng vẫn khớp vành khuyên.
+ */
+export function capIncomeSlices(slices: IncomeSlice[], max = 4): IncomeSlice[] {
+  if (max < 2 || slices.length <= max) return slices;
+
+  const kept = slices.slice(0, max - 1);
+  const rest = slices.slice(max - 1);
+
+  return [
+    ...kept,
+    {
+      categoryId: '__other__',
+      name: 'Khác',
+      icon: '💵',
+      color: 'var(--clay-ink-2)',
+      amount: rest.reduce((s, r) => s + r.amount, 0),
+      percent: Math.round(rest.reduce((s, r) => s + r.percent, 0) * 10) / 10,
+    },
+  ];
+}

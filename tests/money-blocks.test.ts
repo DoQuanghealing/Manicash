@@ -12,7 +12,9 @@ import {
   buildBillMonthTotals,
   buildConicGradient,
   buildIncomeBreakdown,
+  buildIncomeMomentum,
   buildIncomeSeries,
+  capIncomeSlices,
   buildSpendingSeries,
   getBudgetComposition,
   getMethodSplit,
@@ -277,4 +279,109 @@ test('không có giao dịch nào thì % là 0, không phải NaN', () => {
   assert.equal(split.cashPercent, 0);
   assert.equal(split.bankPercent, 0);
   assert.ok(!Number.isNaN(split.cashPercent));
+});
+
+// ─────────────────────────── Đà thu nhập (mũi tên tăng trưởng) ───────────────────────────
+
+test('đà thu nhập: tăng so với tháng trước ra đúng phần trăm và hướng lên', () => {
+  const txns = [
+    txn({ type: 'income', amount: 10_000_000, date: new Date(2026, 6, 5) }), // T7
+    txn({ type: 'income', amount: 11_000_000, date: new Date(2026, 7, 5) }), // T8
+  ];
+  const m = buildIncomeMomentum(txns, NOW);
+  assert.equal(m.previous, 10_000_000);
+  assert.equal(m.current, 11_000_000);
+  assert.equal(m.deltaPercent, 10);
+  assert.equal(m.direction, 'up');
+});
+
+test('đà thu nhập: giảm thì phần trăm âm và hướng xuống', () => {
+  const txns = [
+    txn({ type: 'income', amount: 20_000_000, date: new Date(2026, 6, 5) }),
+    txn({ type: 'income', amount: 19_000_000, date: new Date(2026, 7, 5) }),
+  ];
+  const m = buildIncomeMomentum(txns, NOW);
+  assert.equal(m.deltaPercent, -5);
+  assert.equal(m.direction, 'down');
+});
+
+test('đà thu nhập: tháng trước bằng 0 thì KHÔNG bịa phần trăm', () => {
+  // Chia cho 0 không ra số nào có nghĩa; giao diện phải ẩn mũi tên chứ đừng
+  // hiện "+100%" như thể tháng trước có số để so.
+  const txns = [txn({ type: 'income', amount: 9_000_000, date: new Date(2026, 7, 5) })];
+  const m = buildIncomeMomentum(txns, NOW);
+  assert.equal(m.previous, 0);
+  assert.equal(m.deltaPercent, null);
+  assert.equal(m.direction, 'flat');
+});
+
+test('đà thu nhập: THÁNG 1 phải so với tháng 12 NĂM TRƯỚC, không phải số 0', () => {
+  // Ca này là lý do không dùng buildIncomeSeries('month'): chuỗi đó chỉ trải 12
+  // tháng của năm hiện tại, nên tháng 1 sẽ đọc tháng trước = 0 và báo tăng vô lý.
+  const JAN = new Date(2026, 0, 15, 10, 0, 0);
+  const txns = [
+    txn({ type: 'income', amount: 8_000_000, date: new Date(2025, 11, 20) }), // T12/2025
+    txn({ type: 'income', amount: 12_000_000, date: new Date(2026, 0, 6) }),  // T1/2026
+  ];
+  const m = buildIncomeMomentum(txns, JAN);
+  assert.equal(m.previous, 8_000_000);
+  assert.equal(m.current, 12_000_000);
+  assert.equal(m.deltaPercent, 50);
+});
+
+test('đà thu nhập: khoản CHI không được lọt vào phép so', () => {
+  const txns = [
+    txn({ type: 'income', amount: 10_000_000, date: new Date(2026, 6, 5) }),
+    txn({ type: 'expense', amount: 99_000_000, date: new Date(2026, 6, 6) }),
+    txn({ type: 'income', amount: 10_000_000, date: new Date(2026, 7, 5) }),
+    txn({ type: 'expense', amount: 99_000_000, date: new Date(2026, 7, 6) }),
+  ];
+  const m = buildIncomeMomentum(txns, NOW);
+  assert.equal(m.deltaPercent, 0);
+  assert.equal(m.direction, 'flat');
+});
+
+// ─────────────────────────── Gộp nguồn thu thành "Khác" ───────────────────────────
+
+const slice = (id: string, amount: number, percent: number) => ({
+  categoryId: id,
+  name: id,
+  icon: '💵',
+  color: '#000',
+  amount,
+  percent,
+});
+
+test('4 nguồn trở xuống thì giữ nguyên, KHÔNG đẻ ra dòng "Khác"', () => {
+  // Gộp ở đúng ngưỡng là đổi 2 dòng thật lấy 1 dòng "Khác" — mất thông tin mà
+  // chẳng tiết kiệm được dòng nào.
+  const four = [slice('a', 40, 40), slice('b', 30, 30), slice('c', 20, 20), slice('d', 10, 10)];
+  assert.deepEqual(capIncomeSlices(four, 4), four);
+  assert.equal(capIncomeSlices(four.slice(0, 2), 4).length, 2);
+});
+
+test('quá 4 nguồn thì lấy 3 nguồn lớn nhất + một dòng "Khác" gộp phần còn lại', () => {
+  const six = [
+    slice('a', 50, 50),
+    slice('b', 20, 20),
+    slice('c', 15, 15),
+    slice('d', 8, 8),
+    slice('e', 5, 5),
+    slice('f', 2, 2),
+  ];
+  const out = capIncomeSlices(six, 4);
+  assert.equal(out.length, 4);
+  assert.deepEqual(out.slice(0, 3).map((s) => s.categoryId), ['a', 'b', 'c']);
+
+  const other = out[3];
+  assert.equal(other.name, 'Khác');
+  assert.equal(other.amount, 15); // 8 + 5 + 2
+  assert.equal(other.percent, 15);
+});
+
+test('tổng tiền không đổi sau khi gộp — chú thích phải khớp vành khuyên', () => {
+  const many = Array.from({ length: 9 }, (_, i) => slice(`c${i}`, (9 - i) * 1000, 0));
+  const before = many.reduce((s, x) => s + x.amount, 0);
+  const after = capIncomeSlices(many, 4).reduce((s, x) => s + x.amount, 0);
+  assert.equal(after, before);
 });
