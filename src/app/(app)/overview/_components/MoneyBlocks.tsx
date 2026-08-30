@@ -13,6 +13,9 @@
  *   · Tên khối (Thu nhập/Chi tiêu/Tiết kiệm) là một THẺ vắt lên viền trên của
  *     khối (`.blk-tab`), nằm NGOÀI `.blk` — nên nó không bị `.blk-hit` phủ.
  *     Hàng "TIỀN THÁNG NÀY / Tháng N" phía trên cụm đã bỏ.
+ *   · Hai chip Tiền mặt/Ngân hàng đã BỎ khỏi mặt khối — bấm vào khối là tấm
+ *     trượt hiện đủ hơn (`IncomeSheetContent` có cả số tiền LẪN phần trăm).
+ *     Đừng thêm lại: mặt khối nói cùng một thứ hai lần thì không thêm gì.
  *
  * Mọi phép tính ở src/lib/moneyBlocks.ts + expenseBreakdown.ts — đây chỉ vẽ.
  */
@@ -30,7 +33,6 @@ import {
   buildIncomeBreakdown,
   buildIncomeMomentum,
   capIncomeSlices,
-  getMethodSplit,
   type IncomeMomentum,
 } from '@/lib/moneyBlocks';
 import { formatCurrency, formatCurrencyShort } from '@/utils/formatCurrency';
@@ -103,10 +105,6 @@ export default function MoneyBlocks() {
   const now = useMemo(() => new Date(), []);
 
   // ── Khối 1 ──────────────────────────────────────────────
-  const incomeSplit = useMemo(
-    () => getMethodSplit(transactions, 'income', 'month', now),
-    [transactions, now],
-  );
   const incomeSlices = useMemo(
     () => buildIncomeBreakdown(transactions, 'month', now),
     [transactions, now],
@@ -208,15 +206,6 @@ export default function MoneyBlocks() {
                 )}
               </span>
               {!hideBalance && <Trend momentum={incomeMomentum} />}
-            </div>
-
-            <div className="chips">
-              <span className="chip">
-                Tiền mặt {hideBalance ? '•••' : formatCurrency(incomeSplit.cash)}
-              </span>
-              <span className="chip">
-                Ngân hàng {hideBalance ? '•••' : formatCurrency(incomeSplit.bank)}
-              </span>
             </div>
 
             {incomeSlices.length === 0 ? (
