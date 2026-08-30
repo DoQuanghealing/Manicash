@@ -9,7 +9,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Eye, EyeOff, ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useSafeBalance } from '@/hooks/useSafeBalance';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import type { AccountStatusResult } from '@/lib/moneyBrain/accountStatus';
@@ -32,7 +32,6 @@ export default function SafeToSpendCard() {
   const router = useRouter();
   const { safeToSpend, accountStatus, detail } = useSafeBalance();
   const hideBalance = useSettingsStore((s) => s.hideBalance);
-  const toggleHide = useSettingsStore((s) => s.toggleHideBalance);
 
   const [expanded, setExpanded] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
@@ -50,22 +49,22 @@ export default function SafeToSpendCard() {
   );
 
   return (
-    <motion.div
-      className={`sts-card ${toneClass} ${hideBalance ? 'is-masked' : ''}`}
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-    >
-      <button className="sts-eye" onClick={toggleHide} aria-label={hideBalance ? 'Hiện số dư' : 'Ẩn số dư'}>
-        {hideBalance ? <EyeOff size={15} /> : <Eye size={15} />}
-      </button>
-
-      {/* Label + ? */}
-      <div className="sts-lblrow">
+    <div className="sts-slot">
+      {/* Tên khối vắt lên viền trên, giống .blk-tab của cụm 3 khối tiền. Nằm
+       * NGOÀI .sts-card nên không bị hiệu ứng hiện dần của thẻ kéo theo, và dấu
+       * hỏi vẫn bấm được. Nút con mắt đã bỏ: khối Thu nhập ngay dưới đã có một
+       * nút y hệt, cùng bật/tắt một biến `hideBalance`. */}
+      <span className="sts-tab">
         <span className="sts-lbl">Số dư khả dụng</span>
         <button className="sts-qmark" onClick={() => setShowInfo(true)} aria-label="Số dư khả dụng là gì">?</button>
-      </div>
+      </span>
 
+      <motion.div
+        className={`sts-card ${toneClass} ${hideBalance ? 'is-masked' : ''}`}
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+      >
       {/* Số dư nổi bật */}
       <div className={`sts-amount ${isNegative ? 'sts-amount--neg' : ''}`}>
         {num}
@@ -161,7 +160,8 @@ export default function SafeToSpendCard() {
           </motion.div>
         )}
       </AnimatePresence>
-    </motion.div>
+      </motion.div>
+    </div>
   );
 }
 
