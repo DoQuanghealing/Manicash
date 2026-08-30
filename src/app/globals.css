@@ -809,52 +809,80 @@ img, svg { display: block; max-width: 100%; }
  * Tô đậm lên là quay lại đúng cảm giác nặng nề PO vừa bỏ.
  */
 [data-theme="light"], :root {
-  /* Ba màu chủ đạo */
-  --mb-moss:   #5F7A4F;   /* xanh rêu */
-  --mb-gold:   #C79A2E;   /* vàng kim */
-  --mb-orange: #E07B39;   /* cam      */
+  /* ═══ 2026-08-30 — ĐỔI SANG BẢNG MÀU TRANG SỔ SÁCH (PO chốt) ═══
+   *
+   * Trước đây khối này là bảng "đất nặn": kem/nâu/rêu ấm, bóng đổ ĂN MÀU khối,
+   * gờ nổi bevel để mặt khối trông như nặn tay. PO so với trang Sổ sách và chốt
+   * lấy màu + chữ của trang đó cho TOÀN trang Tổng quan.
+   *
+   * ⚠️ VÌ SAO SỬA Ở ĐÂY MÀ KHÔNG SỬA TỪNG COMPONENT: cả trang Tổng quan (16 file
+   * CSS + 2 thẻ butler) đều đọc `--clay-*`. Đổi đúng khối token này là cả trang
+   * đổi đồng bộ; sửa lẻ từng file là chắc chắn lệch nhau.
+   *
+   * ⚠️ VÀ VÌ SAO TRỎ VÀO `--c-*` THAY VÌ GÕ MÃ MÀU MỚI: trang Sổ sách không dùng
+   * hệ clay, nó dùng hệ token gốc của app (`--c-income`, `--c-expense`,
+   * `--c-purple`, `--c-bg-tertiary`…). Trỏ sang đó thì Tổng quan ăn CÙNG một
+   * nguồn màu với phần còn lại của app — sau này chỉnh một chỗ là cả hai theo.
+   * Gõ mã màu chép tay là tự tạo ra bản sao sẽ trôi khỏi bản gốc.
+   */
 
-  /* Sắc phấn dùng cho ô lồng, chấm danh mục, thanh tiến độ.
-     Cùng độ sáng để không cái nào nhảy ra trước. */
-  --clay-y1: #E9B98F;   /* cam nhạt   */
-  --clay-y2: #BFD1AC;   /* rêu nhạt   */
-  --clay-y3: #EDD79B;   /* kim nhạt   */
-  --clay-y4: #AFC9C0;   /* rêu ngả xanh */
-  --clay-y5: #DCC7A4;   /* cát ấm     */
+  /* Ba màu chủ đạo — tím là màu nhấn của app, xanh/cam là màu ngữ nghĩa */
+  --mb-moss:   #6D28D9;   /* tím (thay xanh rêu) */
+  --mb-gold:   #C79A2E;   /* vàng kim — GIỮ, đồng xu thì phải vàng */
+  --mb-orange: #EA580C;   /* cam      */
 
-  /* Bề mặt — TRẮNG là nền, khối chỉ nhích hơn trắng một chút */
-  --clay-bg: #FFFFFF;
+  /* Sắc phấn cho ô lồng, chấm danh mục, thanh tiến độ.
+     Đây là bản NHẠT của màu ngữ nghĩa: chúng bị trộn ở `--clay-tile-mix` để làm
+     nền, và dùng trực tiếp làm nền ô icon — nên phải nhạt để chữ đen còn đọc
+     được. Số tiền mới là chỗ dùng màu ĐẬM (xem MoneyBlocks.css). */
+  --clay-y1: #FDBA74;   /* cam nhạt  — khối Chi tiêu */
+  --clay-y2: #86EFAC;   /* xanh nhạt — khối Thu nhập */
+  --clay-y3: #DDD6FE;   /* tím rất nhạt — mặc định   */
+  --clay-y4: #93C5FD;   /* xanh dương nhạt — thông tin */
+  --clay-y5: #C4B5FD;   /* tím nhạt  — khối Tiết kiệm */
+
+  /* Bề mặt — thẻ TRẮNG nổi trên nền xám-tím nhạt, đúng kiểu Sổ sách.
+     Trước đây nền và mặt khối cùng trắng, khối chỉ tách bằng bóng. */
+  --clay-bg: var(--c-bg-tertiary);   /* #F0EFF5 */
   --clay-face: #FFFFFF;
-  --clay-face-2: #F6F5F1;   /* ô lồng bên trong khối */
+  --clay-face-2: #F5F4FA;   /* ô lồng — xám ngả tím, không còn kem ấm */
 
-  --clay-ink: #2E3A2A;      /* rêu rất đậm — đọc như đen nhưng vẫn cùng họ màu */
-  --clay-ink-2: #66705E;
-  --clay-on-tint: #2A3325;
+  --clay-ink: var(--c-text-primary);    /* #1A1A2E */
+  --clay-ink-2: var(--c-text-muted);    /* #8E8E9A */
+  --clay-on-tint: var(--c-text-primary);
 
-  /* Gờ nổi: rất nhẹ. Đây là nút chính để chỉnh "nặng/nhẹ". */
-  --clay-bevel-top: rgba(255, 255, 255, 0.9);
-  --clay-bevel-bottom: rgba(95, 122, 79, 0.10);
+  /* Gờ nổi TẮT HẲN: thẻ Sổ sách phẳng, tách khỏi nền bằng viền mảnh + bóng
+     nông. Còn bevel là còn cảm giác đất nặn, tức chưa đổi được phong cách. */
+  --clay-bevel-top: transparent;
+  --clay-bevel-bottom: transparent;
 
-  --clay-sh-tint: 38%;      /* trước 92% — hạ mạnh để bóng không ăn màu đậm */
-  --clay-sh-into: #C9CFC2;
-  --clay-sh-o1: 34%;        /* trước 66% */
-  --clay-sh-o2: 20%;        /* trước 44% */
-  --clay-edge-mix: 26%;     /* nền trắng cần viền mảnh để khối không tan vào nền */
+  /* Bóng TRUNG TÍNH: sh-tint 0% nghĩa là bóng không ăn màu khối nữa.
+     Độ đục hạ sâu để khớp `--glass-shadow` của app (rgba(0,0,0,.06)). */
+  --clay-sh-tint: 0%;
+  --clay-sh-into: #1A1A2E;
+  --clay-sh-o1: 13%;
+  --clay-sh-o2: 7%;
+  /* Viền: đủ thấy để tách thẻ khỏi nền, KHÔNG đủ để đọc ra "thẻ viền màu".
+     Thử 70% thì ba khối thành ba cái khung xanh/cam/tím — sai hẳn tinh thần
+     Sổ sách, nơi thẻ trắng chỉ có sợi viền gần như trung tính. */
+  --clay-edge-mix: 34%;
 
-  --clay-track: #EDEFE9;
-  --clay-grain-opacity: 0.03;
-  --clay-tile-mix: 16%;     /* trước 33% — ô lồng chỉ phớt màu */
+  --clay-track: #EDEBF3;
+  --clay-grain-opacity: 0;  /* Sổ sách không có thớ vải */
+  /* Ô lồng chỉ PHỚT màu. 30% làm ba ô thống kê ngả cam rõ, đọc ra "ô màu" chứ
+     không phải "ô trắng ngả sắc". */
+  --clay-tile-mix: 17%;
 
   --clay-coin-1: #FFF0BE;
-  --clay-coin-2: var(--clay-y3);
+  --clay-coin-2: #EDD79B;
   --clay-coin-3: var(--mb-gold);
   --clay-coin-ink: #5A430C;
 
-  /* Tiêu đề khối: viền bao quanh chữ + vệt sáng quét qua */
-  --mb-title-ink: #2E3A2A;
-  --mb-title-glint: var(--mb-gold);
-  --mb-title-stroke: rgba(46, 58, 42, 0.55);
-  --mb-title-stroke-w: 0.6px;
+  /* Tiêu đề khối: vệt sáng quét qua giờ ánh tím thay vì ánh vàng */
+  --mb-title-ink: var(--c-text-primary);
+  --mb-title-glint: #A78BFA;
+  --mb-title-stroke: transparent;
+  --mb-title-stroke-w: 0;
 
   --clay-shine-1: var(--mb-title-ink);
   --clay-shine-2: var(--mb-title-glint);

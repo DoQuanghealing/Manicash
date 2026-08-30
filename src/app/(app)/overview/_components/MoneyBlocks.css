@@ -922,3 +922,27 @@
 /* Chữ hiệu ứng gương tô bằng gradient nên phần bị cắt vẫn phải nhận nền —
    thiếu dòng này thì dấu ba chấm mất màu. */
 .money-blocks .blk-title.shine { padding-bottom: 1px; }
+
+
+/* ═══ Số tiền mang MÀU NGỮ NGHĨA (kiểu Sổ sách) ═══
+ *
+ * Đây là thứ tạo khác biệt lớn nhất so với bảng đất nặn cũ, nơi MỌI con số đều
+ * chung một màu mực: nhìn lướt là biết ngay đâu tiền vào, đâu tiền ra, không
+ * phải đọc chữ. Lấy thẳng token ngữ nghĩa của app để Tổng quan và Sổ sách không
+ * bao giờ nói hai màu khác nhau cho cùng một khái niệm.
+ *
+ * ⚠️ KHỐI NÀY PHẢI Ở CUỐI FILE. `.blk-save .amount` và `.blk .amount` có ĐỘ ĐẶC
+ * HIỆU BẰNG NHAU (0,2,0) nên cái đứng sau thắng; đặt lên trên là bị rule gốc
+ * `color: var(--clay-ink)` đè và số về lại màu mực. Đã dính đúng lỗi này một
+ * lần — đừng chuyển lên.
+ *
+ * ⚠️ Khối CHI TIÊU không có `.amount`: bố cục giàu hiện số trong lòng vành
+ * khuyên (`.dm-val`, "ĐÃ CHI 7.1 triệu") và ba ô thống kê, chứ không có một số
+ * lớn ở đầu khối như Thu nhập. Nên chỗ tô màu ở đây là `.dm-val`.
+ */
+.blk-income .amount .amt-real { color: var(--c-income); }
+.blk-save   .amount           { color: var(--c-purple-dark); }
+.blk-expense .dm-val          { color: var(--c-expense); }
+
+/* "CHƯA CHI — CÒN LẠI": tiền còn được tiêu, nên đọc như tin tốt. */
+.blk-expense .rest b { color: var(--c-income); }
