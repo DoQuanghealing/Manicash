@@ -116,7 +116,18 @@
 }
 
 @media (min-width: 768px) {
-  .tfm-panel { max-width: 430px; left: 50%; transform: translateX(-50%); }
+  /* ⚠️ CANH GIỮA KHÔNG ĐƯỢC DÙNG transform Ở ĐÂY.
+     .tfm-panel là một `motion.div` chạy `animate={{ y: 0 }}`, mà Framer Motion
+     ghi transform thành INLINE STYLE — inline luôn thắng stylesheet, nên
+     `transform: translateX(-50%)` bị xoá sạch. Panel neo ở left:50% mà không
+     được kéo ngược lại ⇒ lệch sang phải đúng NỬA BỀ RỘNG của nó (215px) và
+     lòi ra ngoài màn hình.
+     Dùng margin-inline:auto: canh giữa bằng hộp, không đụng transform, nên
+     Framer muốn animate kiểu gì cũng không phá được. */
+  .tfm-panel {
+    max-width: 430px;
+    margin-inline: auto;
+  }
 }
 
 /* ═══ LIGHT MODE ═══ */
