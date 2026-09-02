@@ -2,6 +2,7 @@
 'use client';
 
 import { useState } from 'react';
+import { formatAmountInput } from '@/utils/formatCurrency';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Plus } from 'lucide-react';
 import './GoalFormModal.css';
@@ -69,7 +70,14 @@ export default function GoalFormModal({ isOpen, onClose, onSubmit }: GoalFormMod
 
             <div className="gfm-field">
               <label className="gfm-label">Số tiền mục tiêu (VNĐ)</label>
-              <input className="input" placeholder="VD: 6000000000" type="number" value={target} onChange={(e) => setTarget(e.target.value)} />
+              <input
+                className="input"
+                placeholder="VD: 6.000.000.000"
+                type="text"
+                inputMode="numeric"
+                value={target}
+                onChange={(e) => setTarget(formatAmountInput(e.target.value))}
+              />
             </div>
 
             <div className="gfm-field">

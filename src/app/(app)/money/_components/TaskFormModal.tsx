@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { formatAmountInput } from '@/utils/formatCurrency';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Plus, Trash2 } from 'lucide-react';
 import { calculateTaskXP } from '@/types/task';
@@ -30,7 +31,9 @@ export default function TaskFormModal({ isOpen, onClose, onSubmit, editTask, onU
   useEffect(() => {
     if (editTask) {
       setName(editTask.name);
-      setAmount(String(editTask.expectedAmount));
+      // Nạp qua formatAmountInput để mở form SỬA cũng thấy dấu chấm, không
+      // phải chỉ lúc gõ tay.
+      setAmount(formatAmountInput(String(editTask.expectedAmount)));
       setStartDate(editTask.startDate.slice(0, 10));
       setEndDate(editTask.endDate.slice(0, 10));
       setSubTasks(editTask.subTasks.map((st) => st.name));
@@ -101,7 +104,14 @@ export default function TaskFormModal({ isOpen, onClose, onSubmit, editTask, onU
 
             <div className="tfm-field">
               <label className="tfm-label">Tiền kỳ vọng (VNĐ)</label>
-              <input className="input" placeholder="VD: 3000000" type="number" value={amount} onChange={(e) => setAmount(e.target.value)} />
+              <input
+                className="input"
+                placeholder="VD: 3.000.000"
+                type="text"
+                inputMode="numeric"
+                value={amount}
+                onChange={(e) => setAmount(formatAmountInput(e.target.value))}
+              />
             </div>
 
             <div className="tfm-row">

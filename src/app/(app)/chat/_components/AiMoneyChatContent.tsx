@@ -76,7 +76,7 @@ import { useDashboardStore, type SavingsFund } from '@/stores/useDashboardStore'
 import { useTaskStore } from '@/stores/useTaskStore';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
-import { butlerInitials } from '@/utils/butlerNameUtils';
+import { butlerInitials, replaceButlerName } from '@/utils/butlerNameUtils';
 import './ai-money-chat.css';
 
 interface AiMoneyChatContentProps {
@@ -1376,6 +1376,13 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
             const showSuggestions = isLast && message.suggestions && message.suggestions.length > 0;
             const lay = layout[index];
             const clock = formatClock(message.createdAt);
+            /* Đổi danh xưng NGAY TRƯỚC KHI VẼ, một lần cho mọi nhánh bên dưới.
+             * Cần cả hai nguồn: chuỗi tĩnh trong lib (prismVoice, handleCFOReport,
+             * handleFollowUp, guardian…) và chữ do LLM sinh — prompt hệ thống vẫn
+             * tự xưng "Lord Diamond" nên model hay nhắc lại tên mặc định.
+             * Làm ở đây thay vì sửa từng chuỗi: chuỗi mới thêm sau này tự được
+             * đổi theo, không ai phải nhớ. */
+            const shownText = replaceButlerName(message.text, butlerName);
             return (
               <Fragment key={message.id}>
                 {lay.daySeparator && <div className="tg-day">{lay.daySeparator}</div>}
@@ -1396,20 +1403,20 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
                     )}
                     {message.survey ? (
                       <>
-                        <p>{message.text}</p>
+                        <p>{shownText}</p>
                         <CapacitySurveyCard initial={surveyAnswers} onSave={handleSaveSurvey} />
                       </>
                     ) : message.capacity ? (
                       <>
-                        {message.markdown ? <FormattedText text={message.text} /> : <p>{message.text}</p>}
+                        {message.markdown ? <FormattedText text={shownText} /> : <p>{shownText}</p>}
                         <CapacityCard result={message.capacity} />
                       </>
                     ) : message.receipt ? (
                       <TransactionReceipt receipt={message.receipt} />
                     ) : message.markdown ? (
-                      <FormattedText text={message.text} />
+                      <FormattedText text={shownText} />
                     ) : (
-                      <p>{message.text}</p>
+                      <p>{shownText}</p>
                     )}
                     {clock && (
                       <span className="tg-bubble-meta">

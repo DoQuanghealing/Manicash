@@ -20,6 +20,8 @@ import { useBudgetStore } from '@/stores/useBudgetStore';
 import { useGoalsStore } from '@/stores/useGoalsStore';
 import { useCategoryStore } from '@/stores/useCategoryStore';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { useSettingsStore } from '@/stores/useSettingsStore';
+import { butlerInitials, replaceButlerName } from '@/utils/butlerNameUtils';
 import { formatCurrency } from '@/utils/formatCurrency';
 import HealthScoreGauge from '@/app/(app)/money/_components/HealthScoreGauge';
 import { buildLocalCfoNarration, type CfoNarrationInput } from '@/lib/aiMoneyChat/cfoNarration';
@@ -48,6 +50,10 @@ function getCurrentMonthKey(): string {
 }
 
 export default function CfoReportContent() {
+  // Danh xưng quản gia do người dùng tự đặt. MỌI chỗ hiện tên hoặc chữ do
+  // quản gia "nói" đều phải đi qua đây — kể cả chữ AI sinh ra, vì prompt hệ
+  // thống vẫn tự xưng "Lord Diamond" nên câu trả lời có thể mang tên mặc định.
+  const butlerName = useSettingsStore((st) => st.butlerName);
   const transactions = useFinanceStore((s) => s.transactions);
   const getMonthlyIncome = useFinanceStore((s) => s.getMonthlyIncome);
   const getMonthlyExpense = useFinanceStore((s) => s.getMonthlyExpense);
@@ -302,18 +308,18 @@ export default function CfoReportContent() {
         <p className="cfo-summary-text">{tierSummary}</p>
       </section>
 
-      {/* Lord Diamond narration (Phase 13) */}
+      {/* Lời quản gia (Phase 13) */}
       <section className="cfo-section cfo-narration">
         <div className="cfo-narration-head">
-          <div className="cfo-narration-avatar" aria-hidden="true">LD</div>
+          <div className="cfo-narration-avatar" aria-hidden="true">{butlerInitials(butlerName)}</div>
           <div className="cfo-narration-meta">
-            <span className="cfo-narration-name">Lord Diamond</span>
+            <span className="cfo-narration-name">{butlerName}</span>
             <span className={`cfo-narration-tag cfo-narration-tag-${narrationSource}`}>
               {narrationSource === 'ai' ? 'AI Pro' : 'Bản local'}
             </span>
           </div>
         </div>
-        <p className="cfo-narration-text">{narration}</p>
+        <p className="cfo-narration-text">{replaceButlerName(narration, butlerName)}</p>
         <div className="cfo-narration-actions">
           <button
             type="button"
@@ -322,7 +328,7 @@ export default function CfoReportContent() {
             disabled={narrationLoading || !reportQuota.allowed}
           >
             {narrationLoading ? <Loader2 size={15} className="cfo-spin" /> : <Sparkles size={15} />}
-            {narrationLoading ? 'Lord Diamond đang viết...' : 'Hỏi Lord Diamond (AI)'}
+            {narrationLoading ? `${butlerName} đang viết...` : `Hỏi ${butlerName} (AI)`}
           </button>
           <span className={`cfo-narration-quota ${reportQuota.allowed ? '' : 'is-exhausted'}`}>
             {narrationSource === 'ai' && narrationCached

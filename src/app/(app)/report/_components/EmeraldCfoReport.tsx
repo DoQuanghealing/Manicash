@@ -62,6 +62,8 @@ export default function EmeraldCfoReport() {
   const splitFunds = useDashboardStore((s) => s.splitFunds);
   const setCategoryBudget = useBudgetStore((s) => s.setCategoryBudget);
   const { dailyReminderEnabled, toggleDailyReminder, setDailyReminderEnabled } = useSettingsStore();
+  // Danh xưng do người dùng đặt — không hiện tên mặc định ở đây nữa.
+  const butlerName = useSettingsStore((st) => st.butlerName);
 
   // ── CTA states ──
   const [splitResult, setSplitResult] = useState<SplitResult | null>(null);
@@ -216,7 +218,7 @@ export default function EmeraldCfoReport() {
             {/* Card header */}
             <div className="ec-ch">
               <span className="ec-gem sm"><Gem size={14} /></span>
-              <div className="ec-ch-name"><b>Lord Diamond</b><i>{active.sub}</i></div>
+              <div className="ec-ch-name"><b>{butlerName}</b><i>{active.sub}</i></div>
               <div className="ec-dots">
                 {tabs.map((t) => <i key={t.id} className={t.id === tab ? 'on' : ''} />)}
               </div>
