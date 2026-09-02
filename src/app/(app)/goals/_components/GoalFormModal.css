@@ -88,7 +88,24 @@
 .gfm-submit:disabled { opacity: 0.4; }
 
 @media (min-width: 768px) {
-  .gfm-panel { max-width: 430px; left: 50%; transform: translateX(-50%); }
+  /* ⚠️ CANH GIỮA KHÔNG ĐƯỢC DÙNG transform Ở ĐÂY — và cũng không được để
+     left:50% đi kèm right:0.
+
+     Hai lỗi chồng nhau ở bản cũ `left:50%; transform:translateX(-50%)`:
+     1. HẸP: left:50% mà vẫn giữ right:0 (khai ở rule gốc) thì bề rộng hộp
+        chỉ còn ĐÚNG MỘT NỬA khung chứa; max-width:430px không bao giờ chạm
+        tới nên vô nghĩa.
+     2. LỆCH: `.gfm-panel` là `motion.div` chạy `animate={{ y: 0 }}`, mà
+        Framer Motion ghi transform thành INLINE STYLE — inline thắng
+        stylesheet nên translateX(-50%) bị xoá sạch, hộp nằm nguyên ở
+        left:50% không được kéo ngược lại.
+
+     margin-inline:auto chữa cả hai: giữ left/right:0 nên hộp rộng đủ tới
+     max-width, và canh giữa bằng lề chứ không đụng transform. */
+  .gfm-panel {
+    max-width: 430px;
+    margin-inline: auto;
+  }
 }
 
 /* ═══ LIGHT MODE ═══ */
