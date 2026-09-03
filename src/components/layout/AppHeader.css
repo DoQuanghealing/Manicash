@@ -151,3 +151,48 @@
 [data-theme="light"] .header-user-avatar {
   border-color: rgba(0, 0, 0, 0.1);
 }
+
+/* ═══ Huy hiệu admin ở góc avatar ═══
+ * Chỉ render khi email nằm trong allowlist (xem AppHeader.tsx). Đây là lối vào
+ * cho tiện, KHÔNG phải lớp bảo mật — server vẫn verify Custom Claim.
+ */
+.header-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+  /* Huy hiệu tràn ra ngoài mép avatar nên KHÔNG được cắt. */
+  overflow: visible;
+  line-height: 0;
+}
+
+.header-admin-badge {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  width: 17px;
+  height: 17px;
+  padding: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  /* Viền cùng màu nền header để huy hiệu trông như khoét lỗ trên avatar,
+     không phải một chấm dán đè lên. */
+  border: 2px solid var(--c-bg-primary, #fff);
+  background: linear-gradient(135deg, var(--c-purple), var(--c-orange));
+  color: #fff;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 140ms ease;
+}
+
+.header-admin-badge svg {
+  width: 9px;
+  height: 9px;
+  fill: currentColor;
+  stroke: none;
+}
+
+.header-admin-badge:active { transform: scale(0.9); }
+.header-admin-badge:focus-visible {
+  outline: 2px solid var(--c-purple);
+  outline-offset: 2px;
+}

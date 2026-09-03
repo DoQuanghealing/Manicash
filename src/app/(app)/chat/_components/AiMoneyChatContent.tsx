@@ -75,6 +75,13 @@ import { useGoalsStore } from '@/stores/useGoalsStore';
 import { useDashboardStore, type SavingsFund } from '@/stores/useDashboardStore';
 import { useTaskStore } from '@/stores/useTaskStore';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { isAdminEmail } from '@/lib/adminEmails';
+
+/* Lệnh và mã mở trang quản trị. Để hằng số ở đây cho dễ đổi; KHÔNG coi đây là
+ * bí mật — mã nằm trong bundle client, ai xem mã nguồn trang cũng thấy.
+ * Xem chú thích ở `adminGateOpen` để biết vì sao vẫn an toàn. */
+const ADMIN_GATE_COMMAND = 'adminquangkun';
+const ADMIN_GATE_CODE = '000000';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { butlerInitials, replaceButlerName } from '@/utils/butlerNameUtils';
 import './ai-money-chat.css';
@@ -336,6 +343,19 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
   const addMemoryCorrection = useAiMoneyMemoryStore((s) => s.addCorrection);
   const goals = useGoalsStore((s) => s.goals);
   const userProfile = useAuthStore((s) => s.user);
+  const firebaseUser = useAuthStore((s) => s.firebaseUser);
+  /* Lối tắt mở trang quản trị bằng lệnh chat.
+   *
+   * ⚠️ ĐÂY KHÔNG PHẢI XÁC THỰC. Mật khẩu nằm ở client nên ai mở DevTools cũng
+   * đọc được, và /admin gọi thẳng URL vẫn tới. Cổng thật là Firebase Custom
+   * Claim + allowlist verify Ở SERVER — người lạ gõ đúng lệnh lẫn mật khẩu vẫn
+   * bị chặn ở đó. Cái này chỉ để chủ máy đỡ phải đi vòng qua Hồ sơ.
+   *
+   * Với người KHÔNG phải admin, lệnh được thả trôi như tin nhắn thường —
+   * không báo sai mật khẩu, không gợi ý gì. Trả lời khác đi là tự xác nhận
+   * "có tồn tại một lệnh ẩn", tức chỉ đường cho người dò.
+   */
+  const [adminGateOpen, setAdminGateOpen] = useState(false);
   const transactions = useFinanceStore((s) => s.transactions);
   const fixedBills = useFinanceStore((s) => s.fixedBills);
   const billFundBalance = useFinanceStore((s) => s.billFundBalance);
@@ -716,6 +736,38 @@ export default function AiMoneyChatContent({ enabled }: AiMoneyChatContentProps)
   function parseInput(rawText: string) {
     let text = rawText.trim();
     if (!text) return;
+
+    // ── Lối tắt quản trị (xem chú thích ở khai báo adminGateOpen) ──
+    const isOwner = isAdminEmail(userProfile?.email ?? firebaseUser?.email);
+
+    if (adminGateOpen) {
+      setAdminGateOpen(false);
+      setInput('');
+      if (!isOwner) return;
+      // KHÔNG ghi mật khẩu vào lịch sử chat — che lại trước khi lưu.
+      appendMessages([{ id: makeMessageId('user'), role: 'user', text: '••••••' }]);
+      if (text === ADMIN_GATE_CODE) {
+        appendMessages([
+          { id: makeMessageId('system'), role: 'system', text: 'Mở chế độ nhà phát triển…' },
+        ]);
+        router.push('/admin');
+      } else {
+        appendMessages([
+          { id: makeMessageId('system'), role: 'system', text: 'Mã không đúng.' },
+        ]);
+      }
+      return;
+    }
+
+    if (isOwner && text.toLowerCase() === ADMIN_GATE_COMMAND) {
+      setAdminGateOpen(true);
+      setInput('');
+      appendMessages([
+        { id: makeMessageId('user'), role: 'user', text },
+        { id: makeMessageId('system'), role: 'system', text: 'Nhập mã nhà phát triển:' },
+      ]);
+      return;
+    }
 
     // P2/P5 — lệnh "/": lệnh đặc biệt (đo năng lực) xử lý riêng tại client;
     // còn lại ánh xạ sang câu hỏi tự nhiên rồi xử lý như bình thường.

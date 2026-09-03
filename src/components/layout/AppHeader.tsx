@@ -8,6 +8,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { resolveVibe } from '@/lib/ageGroup';
 import { getCopy } from '@/data/vibedCopy';
 import { isCollectionEnabled } from '@/lib/featureFlags';
+import { isAdminEmail } from '@/lib/adminEmails';
 import ZodiacRunner from './ZodiacRunner';
 import './AppHeader.css';
 
@@ -46,17 +47,40 @@ export default function AppHeader() {
     <header className="app-header" id="app-header">
       {/* Left: Avatar + Greeting */}
       <div className="header-left">
-        <button 
-          className="header-user-avatar"
-          onClick={() => router.push('/profile')}
-          aria-label="Xem hồ sơ"
-        >
-          {photoURL ? (
-            <img src={photoURL} alt="Avatar" />
-          ) : (
-            <span>{initials}</span>
+        {/* Avatar + huy hiệu admin.
+         * Huy hiệu phải là ANH EM của nút avatar, không nằm trong nó: lồng
+         * <button> trong <button> là HTML không hợp lệ — trình duyệt tự tháo
+         * lồng và nút con mất tác dụng.
+         * Chỉ hiện với email trong allowlist. Đây chỉ là ẨN/HIỆN cho gọn mắt;
+         * chặn thật nằm ở server (Custom Claim + verify), nên người khác gõ
+         * thẳng /admin vẫn không vào được. */}
+        <div className="header-avatar-wrap">
+          <button
+            className="header-user-avatar"
+            onClick={() => router.push('/profile')}
+            aria-label="Xem hồ sơ"
+          >
+            {photoURL ? (
+              <img src={photoURL} alt="Avatar" />
+            ) : (
+              <span>{initials}</span>
+            )}
+          </button>
+
+          {isAdminEmail(user?.email ?? firebaseUser?.email) && (
+            <button
+              type="button"
+              className="header-admin-badge"
+              onClick={() => router.push('/admin')}
+              aria-label="Vào trang quản trị"
+              title="Trang quản trị"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden>
+                <path d="M12 3 5 6v5.5c0 4.2 2.9 8.1 7 9.3 4.1-1.2 7-5.1 7-9.3V6l-7-3Z" />
+              </svg>
+            </button>
           )}
-        </button>
+        </div>
 
         <div className="header-greeting-block">
           <p className="header-greeting-text">
