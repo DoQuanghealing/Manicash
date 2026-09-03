@@ -81,7 +81,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <GateScreen
         icon="⛔"
         title="Không có quyền"
-        subtitle="Tài khoản này không có quyền admin. Nếu vừa được cấp quyền, hãy đăng xuất rồi đăng nhập lại để làm mới token."
+        subtitle="Email đang đăng nhập không nằm trong danh sách admin. Đăng nhập bằng tài khoản admin rồi mở lại trang này."
+      />
+    );
+  }
+  // Email ĐÚNG nhưng thiếu Custom Claim — nói rõ phải làm gì, đừng để phải mò.
+  if (state === 'no-claim') {
+    return (
+      <GateScreen
+        icon="🔑"
+        title="Chưa cấp quyền cho tài khoản này"
+        subtitle="Email nằm trong danh sách admin nhưng tài khoản chưa có Custom Claim. Chạy: node scripts/grant-admin.mjs <email> — rồi ĐĂNG XUẤT và ĐĂNG NHẬP LẠI để token mang cờ mới."
       />
     );
   }
