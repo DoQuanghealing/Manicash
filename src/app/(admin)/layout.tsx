@@ -36,7 +36,7 @@ const NAV: NavItem[] = [
   { href: '/admin/users', label: 'Người dùng', code: 'M2', icon: Users, ready: true },
   { href: '/admin/support', label: 'Chat & Hỗ trợ', code: 'M3', icon: MessageSquare, ready: false },
   { href: '/admin/research', label: 'R&D người tốt lên', code: 'M4', icon: FlaskConical, ready: false },
-  { href: '/admin/crm', label: 'Cổng CRM', code: 'M5', icon: Link2, ready: false },
+  { href: '/admin/crm', label: 'CRM hành vi', code: 'M5', icon: Link2, ready: true },
   { href: '/admin/wellbeing', label: 'Chữa lành', code: 'M6', icon: HeartPulse, ready: false },
   { href: '/admin/audit', label: 'Nhật ký', code: 'M8', icon: ScrollText, ready: true },
   { href: '/admin/security', label: 'Bảo mật', code: 'S', icon: ShieldCheck, ready: true },
