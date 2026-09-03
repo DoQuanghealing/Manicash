@@ -115,6 +115,16 @@ export default function OverviewContent() {
             <span className="adm-ov-card-title">Người dùng</span>
             <span className="adm-ov-card-desc">Danh bạ, Customer 360, cấp/thu Pro, yêu cầu xóa.</span>
           </Link>
+          <Link href="/admin/crm" className="adm-ov-card">
+            <span className="adm-ov-emoji">🔗</span>
+            <span className="adm-ov-card-title">CRM hành vi</span>
+            <span className="adm-ov-card-desc">Thói quen ghi chép, ai đang trôi, gợi ý cho quản gia.</span>
+          </Link>
+          <Link href="/admin/health" className="adm-ov-card">
+            <span className="adm-ov-emoji">🩺</span>
+            <span className="adm-ov-card-title">Quản lý app</span>
+            <span className="adm-ov-card-desc">Lỗi app, sự kiện lạm dụng, danh sách chặn.</span>
+          </Link>
           <Link href="/admin/audit" className="adm-ov-card">
             <span className="adm-ov-emoji">📜</span>
             <span className="adm-ov-card-title">Nhật ký</span>
