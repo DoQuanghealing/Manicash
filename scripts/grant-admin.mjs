@@ -20,7 +20,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 // Đồng bộ với src/lib/adminEmails.ts — chỉ cấp quyền cho email trong allowlist.
 // Server (requireAdmin) cũng chặn theo allowlist này nên cấp cho email ngoài list
 // là vô nghĩa; guard ở đây để tránh cấp nhầm.
-const ADMIN_EMAILS = ['doduongquang8686@gmail.com'];
+const ADMIN_EMAILS = ['doduongquang8686@gmail.com', 'freshlife1381@gmail.com'];
 
 // ── Đọc .env.local (parser tối giản, không cần gói dotenv) ──────────────────
 function loadEnv() {

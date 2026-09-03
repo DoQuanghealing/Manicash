@@ -10,7 +10,13 @@ import { onAuthStateChanged, type User } from 'firebase/auth';
 import { getFirebaseAuth } from '@/lib/firebase/config';
 import { isAdminEmail } from '@/lib/adminEmails';
 
-export type AdminAuthState = 'checking' | 'anon' | 'forbidden' | 'admin';
+/* 'no-claim' tách riêng khỏi 'forbidden' CÓ CHỦ ĐÍCH.
+ * Hai thứ này hỏng vì lý do khác hẳn nhau và cách chữa cũng khác:
+ *   forbidden = email KHÔNG nằm trong allowlist → phải sửa mã nguồn
+ *   no-claim  = email đúng nhưng CHƯA có Custom Claim → chạy scripts/grant-admin.mjs
+ * Gộp làm một thì người bị chặn đọc "không có quyền" mà không biết phải làm gì —
+ * đúng chỗ PO đã mất thời gian mò. */
+export type AdminAuthState = 'checking' | 'anon' | 'forbidden' | 'no-claim' | 'admin';
 
 /** ID token của user đang đăng nhập (tự refresh khi gần hết hạn). */
 export async function getIdToken(): Promise<string | null> {
@@ -42,8 +48,11 @@ export function useAdminGate(): AdminAuthState {
       }
       try {
         const result = await user.getIdTokenResult(true); // force refresh để đọc claim mới nhất
-        const ok = result.claims.admin === true && isAdminEmail(user.email);
-        setState(ok ? 'admin' : 'forbidden');
+        if (!isAdminEmail(user.email)) {
+          setState('forbidden');
+          return;
+        }
+        setState(result.claims.admin === true ? 'admin' : 'no-claim');
       } catch {
         setState('forbidden');
       }
