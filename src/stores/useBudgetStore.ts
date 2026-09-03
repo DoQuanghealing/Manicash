@@ -2,6 +2,7 @@
 'use client';
 
 import { create } from 'zustand';
+import { simulationAwareStorage } from '@/stores/simulationStorage';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { CategoryBudget, MonthlySnapshot } from '@/types/budget';
 import { useAuthStore } from '@/stores/useAuthStore';
@@ -375,7 +376,7 @@ export const useBudgetStore = create<BudgetState>()(
     {
       name: STORE_KEYS.budget,
       version: STORE_VERSIONS.budget,
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => simulationAwareStorage),
       partialize: (s) => ({
         carryOver: s.carryOver,
         currentMonth: s.currentMonth,

@@ -5,6 +5,7 @@
 'use client';
 
 import { create } from 'zustand';
+import { simulationAwareStorage } from '@/stores/simulationStorage';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import type {
   MoneyActionAuditRecord,
@@ -148,7 +149,7 @@ export const useActionAuditStore = create<ActionAuditState>()(
     }),
     {
       name: STORE_KEYS.audit,
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => simulationAwareStorage),
       version: STORE_VERSIONS.audit,
       partialize: (s) => ({ records: s.records }),
     },

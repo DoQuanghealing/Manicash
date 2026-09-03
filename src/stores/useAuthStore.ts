@@ -5,6 +5,7 @@
 'use client';
 
 import { create } from 'zustand';
+import { simulationAwareStorage } from '@/stores/simulationStorage';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { UserProfile, FirebaseUserMinimal, UserRank } from '@/types/user';
 import type { XPAction } from '@/types/gamification';
@@ -316,7 +317,7 @@ export const useAuthStore = create<AuthStore>()(
     {
       name: STORE_KEYS.auth,
       version: STORE_VERSIONS.auth,
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => simulationAwareStorage),
       // Chỉ persist app-level profile (XP/rank/streak/premium...). KHÔNG persist
       // firebaseUser/token, isLoading, isAuthenticated (transient/nhạy cảm).
       partialize: (s) => ({ user: s.user }),

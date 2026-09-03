@@ -2,6 +2,7 @@
 'use client';
 
 import { create } from 'zustand';
+import { simulationAwareStorage } from '@/stores/simulationStorage';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useBudgetStore } from '@/stores/useBudgetStore';
@@ -467,7 +468,7 @@ export const useFinanceStore = create<FinanceState>()(
     {
       name: STORE_KEYS.finance,
       version: STORE_VERSIONS.finance,
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => simulationAwareStorage),
       // Chỉ persist dữ liệu nghiệp vụ; KHÔNG persist function.
       partialize: (s) => ({
         transactions: s.transactions,

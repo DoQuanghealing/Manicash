@@ -5,6 +5,7 @@
 'use client';
 
 import { create } from 'zustand';
+import { simulationAwareStorage } from '@/stores/simulationStorage';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import {
   EMPTY_SURVEY,
@@ -36,7 +37,7 @@ export const useCapacitySurveyStore = create<CapacitySurveyState>()(
     }),
     {
       name: CAPACITY_SURVEY_STORAGE_KEY,
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => simulationAwareStorage),
       version: 1,
     },
   ),

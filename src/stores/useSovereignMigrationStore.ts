@@ -5,6 +5,7 @@
 'use client';
 
 import { create } from 'zustand';
+import { simulationAwareStorage } from '@/stores/simulationStorage';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
 export const SOVEREIGN_MIGRATION_STORAGE_KEY = 'manicash.sovereign.migration.v1';
@@ -34,7 +35,7 @@ export const useSovereignMigrationStore = create<SovereignMigrationState>()(
     }),
     {
       name: SOVEREIGN_MIGRATION_STORAGE_KEY,
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => simulationAwareStorage),
       version: 1,
     },
   ),

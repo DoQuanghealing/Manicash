@@ -6,6 +6,7 @@
 'use client';
 
 import { create } from 'zustand';
+import { simulationAwareStorage } from '@/stores/simulationStorage';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
 /** Default reminder cadence: nudge user every 7 days. */
@@ -78,7 +79,7 @@ export const useBankSyncStore = create<BankSyncState>()(
     }),
     {
       name: 'manicash-bank-sync',
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => simulationAwareStorage),
     },
   ),
 );

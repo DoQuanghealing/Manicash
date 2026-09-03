@@ -1,6 +1,7 @@
 'use client';
 
 import { create } from 'zustand';
+import { simulationAwareStorage } from '@/stores/simulationStorage';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { normalizeMoneyTextForMemory } from '@/lib/aiMoneyChat/parser';
 import type { ParsedMoneyIntent } from '@/lib/aiMoneyChat/types';
@@ -194,7 +195,7 @@ export const useAiMoneyMemoryStore = create<AiMoneyMemoryState>()(
     }),
     {
       name: 'manicash-ai-money-memory',
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => simulationAwareStorage),
       version: 1,
     },
   ),

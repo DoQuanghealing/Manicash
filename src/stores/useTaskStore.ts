@@ -2,6 +2,7 @@
 'use client';
 
 import { create } from 'zustand';
+import { simulationAwareStorage } from '@/stores/simulationStorage';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { EarningTask, SubTask, TaskStatus, XPPenalty, OverdueReason, TaskAiEval } from '@/types/task';
 import { useAuthStore } from '@/stores/useAuthStore';
@@ -202,7 +203,7 @@ export const useTaskStore = create<TaskState>()(
     {
       name: STORE_KEYS.tasks,
       version: STORE_VERSIONS.tasks,
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => simulationAwareStorage),
       partialize: (s) => ({ tasks: s.tasks, xpPenalties: s.xpPenalties }),
       migrate: (persisted) => {
         const p = (persisted ?? {}) as Partial<TaskState>;

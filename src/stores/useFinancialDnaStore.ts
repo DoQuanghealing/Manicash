@@ -6,6 +6,7 @@
 'use client';
 
 import { create } from 'zustand';
+import { simulationAwareStorage } from '@/stores/simulationStorage';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import type { DnaAnswer } from '@/lib/aiMoneyChat/prism/dna/dnaQuestions';
 import { sanitizeDnaAnswers } from '@/lib/aiMoneyChat/prism/dna/dnaQuestions';
@@ -47,7 +48,7 @@ export const useFinancialDnaStore = create<FinancialDnaState>()(
     }),
     {
       name: FINANCIAL_DNA_STORAGE_KEY,
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => simulationAwareStorage),
       version: 1,
     },
   ),
