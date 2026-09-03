@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logAppError } from '@/lib/appErrorLog';
 import { getVerifiedRequestUid } from '@/lib/requestAuth';
 import { getAdminDb } from '@/lib/firebaseAdmin';
 import { getPayos, isPayosConfigured } from '@/lib/monetization/payosClient';
@@ -45,6 +46,7 @@ export async function GET(req: NextRequest) {
     link = await getPayos().paymentRequests.get(orderCode);
   } catch (error) {
     console.error('[payos/status] get error:', error);
+    void logAppError('payos/status', error);
     return NextResponse.json({ paid: false, status: 'unknown' });
   }
 
@@ -60,6 +62,7 @@ export async function GET(req: NextRequest) {
     return paidResponse();
   } catch (error) {
     console.error('[payos/status] PAID nhưng grant FAIL (cần xử lý tay) orderCode=', orderCode, error);
+    void logAppError('payos/status', error);
     return NextResponse.json({ paid: false, status: 'grant_failed' }, { status: 500 });
   }
 }

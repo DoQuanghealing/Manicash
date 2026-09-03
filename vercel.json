@@ -3,6 +3,10 @@
     {
       "path": "/api/account/deletion/cron",
       "schedule": "0 20 * * *"
+    },
+    {
+      "path": "/api/cron/purge",
+      "schedule": "30 3 * * *"
     }
   ]
 }

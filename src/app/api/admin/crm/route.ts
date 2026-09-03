@@ -2,6 +2,7 @@
  * GET → danh sách hồ sơ hành vi (bản ghi mới nhất mỗi user), kèm email.
  */
 import { NextRequest, NextResponse } from 'next/server';
+import { logAppError } from '@/lib/appErrorLog';
 import { requireAdmin } from '@/lib/requireAdmin';
 import { getAdminAuth } from '@/lib/firebaseAdmin';
 import { listBehaviorRows } from '@/lib/admin/crm';
@@ -32,6 +33,7 @@ export async function GET(req: NextRequest) {
     });
   } catch (error) {
     console.error('[admin/crm] error:', error);
+    void logAppError('admin/crm', error);
     return NextResponse.json({ error: 'Lỗi đọc dữ liệu hành vi.' }, { status: 500 });
   }
 }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logAppError } from '@/lib/appErrorLog';
 import { getVerifiedRequestUid } from '@/lib/requestAuth';
 import { getAdminAuth } from '@/lib/firebaseAdmin';
 import { grantTrialAtomic, TrialDeniedError, type TrialDenyReason } from '@/lib/monetization/grantTrial';
@@ -56,6 +57,7 @@ export async function POST(req: NextRequest) {
       );
     }
     console.error('[billing/trial] error:', error);
+    void logAppError('billing/trial', error);
     return NextResponse.json({ source: 'error', reason: 'Kích hoạt dùng thử thất bại.' }, { status: 500 });
   }
 }

@@ -1,5 +1,6 @@
 /* ═══ Admin M8 — API nhật ký (đọc admin_audit) ═══ */
 import { NextRequest, NextResponse } from 'next/server';
+import { logAppError } from '@/lib/appErrorLog';
 import { requireAdmin } from '@/lib/requireAdmin';
 import { listAudit } from '@/lib/admin/audit';
 
@@ -17,6 +18,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(result);
   } catch (error) {
     console.error('[admin/audit] error:', error);
+    void logAppError('admin/audit', error);
     return NextResponse.json({ error: 'Lỗi đọc dữ liệu.' }, { status: 500 });
   }
 }

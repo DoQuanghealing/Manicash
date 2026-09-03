@@ -16,8 +16,7 @@ import {
   Link2,
   HeartPulse,
   ScrollText,
-  ShieldCheck,
-} from 'lucide-react';
+  ShieldCheck, Activity, } from 'lucide-react';
 import { useAdminGate } from '@/lib/adminClient';
 import './admin-shell.css';
 
@@ -38,6 +37,7 @@ const NAV: NavItem[] = [
   { href: '/admin/research', label: 'R&D người tốt lên', code: 'M4', icon: FlaskConical, ready: false },
   { href: '/admin/crm', label: 'CRM hành vi', code: 'M5', icon: Link2, ready: true },
   { href: '/admin/wellbeing', label: 'Chữa lành', code: 'M6', icon: HeartPulse, ready: false },
+  { href: '/admin/health', label: 'Quản lý app', code: 'M7', icon: Activity, ready: true },
   { href: '/admin/audit', label: 'Nhật ký', code: 'M8', icon: ScrollText, ready: true },
   { href: '/admin/security', label: 'Bảo mật', code: 'S', icon: ShieldCheck, ready: true },
 ];

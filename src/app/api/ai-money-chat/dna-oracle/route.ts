@@ -10,6 +10,7 @@
  * users/{uid} tự phủ subcollection này; DELETE dưới đây là nút xoá riêng.
  */
 import { NextRequest, NextResponse } from 'next/server';
+import { logAppError } from '@/lib/appErrorLog';
 import { getVerifiedRequestUid } from '@/lib/requestAuth';
 import { getAdminDb } from '@/lib/firebaseAdmin';
 import {
@@ -234,6 +235,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     // KHÔNG trả error.message ra client (có thể lộ chi tiết DB/nội bộ — redteam LOW).
     console.error('[dna-oracle] POST failed:', error);
+    void logAppError('dna-oracle', error);
     return jsonResult('error', 'Quản gia gặp trục trặc khi luận giải. Thử lại sau nhé.');
   }
 }

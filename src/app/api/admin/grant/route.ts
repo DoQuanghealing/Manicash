@@ -5,6 +5,7 @@
  * Mọi hành động ghi admin_audit.
  */
 import { NextRequest, NextResponse } from 'next/server';
+import { logAppError } from '@/lib/appErrorLog';
 import { requireAdmin } from '@/lib/requireAdmin';
 import { logAdminAction } from '@/lib/adminAudit';
 import { verifyAndGrantOrder, grantProManual } from '@/lib/monetization/reconcile';
@@ -33,6 +34,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(result);
     } catch (error) {
       console.error('[admin/grant] reconcile error:', error);
+      void logAppError('admin/grant', error);
       await logAdminAction(admin, 'grant.reconcile.error', { orderCode });
       return NextResponse.json({ ok: false, reason: 'server_error' }, { status: 500 });
     }
@@ -53,6 +55,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(result);
     } catch (error) {
       console.error('[admin/grant] manual error:', error);
+      void logAppError('admin/grant', error);
       await logAdminAction(admin, 'grant.manual.error', { uid, periodDays, tier });
       return NextResponse.json({ ok: false, reason: 'server_error' }, { status: 500 });
     }
