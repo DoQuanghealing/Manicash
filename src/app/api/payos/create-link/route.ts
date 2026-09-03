@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logAppError } from '@/lib/appErrorLog';
+import { guardRequest } from '@/lib/abuse/guard';
 import crypto from 'crypto';
 import { getVerifiedRequestUid } from '@/lib/requestAuth';
 import { getAdminDb, getAdminAuth } from '@/lib/firebaseAdmin';
@@ -12,6 +14,10 @@ function clientIp(req: NextRequest): string {
 }
 
 export async function POST(req: NextRequest) {
+  // Chặn spam tạo đơn thanh toán — luật 'auth' (chặt), xem lib/abuse/policy.
+  const guarded = await guardRequest(req, 'auth');
+  if (guarded) return guarded;
+
   try {
     if (!isPayosConfigured()) {
       return NextResponse.json({ error: 'PayOS chưa được cấu hình.' }, { status: 503 });
@@ -84,10 +90,12 @@ export async function POST(req: NextRequest) {
     } catch (error) {
       await db.doc(`payment_intents/${orderCode}`).set({ status: 'create_failed' }, { merge: true }).catch(() => {});
       console.error('[payos/create-link] error:', error);
+      void logAppError('payos/create-link', error);
       return NextResponse.json({ error: 'Không tạo được link thanh toán.' }, { status: 502 });
     }
   } catch (fatal) {
     console.error('[payos/create-link] fatal:', fatal);
+    void logAppError('payos/create-link', fatal);
     return NextResponse.json({ error: 'Lỗi hệ thống, thử lại sau.' }, { status: 500 });
   }
 }

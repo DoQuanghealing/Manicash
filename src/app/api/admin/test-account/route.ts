@@ -5,6 +5,7 @@
  * Gác bằng Firebase Custom Claims (requireAdmin) — không còn key tĩnh.
  */
 import { NextResponse } from 'next/server';
+import { logAppError } from '@/lib/appErrorLog';
 import { FieldValue } from 'firebase-admin/firestore';
 import { getAdminAuth, getAdminDb } from '@/lib/firebaseAdmin';
 import { isValidUsername, normalizeUsername, usernameToEmail } from '@/lib/auth/usernameEmail';
@@ -67,6 +68,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Username đã tồn tại.' }, { status: 409 });
     }
     console.error('[admin/test-account] create error:', error);
+    void logAppError('admin/test-account', error);
     return NextResponse.json({ error: 'Không tạo được tài khoản.' }, { status: 500 });
   }
 }
@@ -88,6 +90,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ accounts });
   } catch (error) {
     console.error('[admin/test-account] list error:', error);
+    void logAppError('admin/test-account', error);
     return NextResponse.json({ error: 'Không đọc được danh sách.' }, { status: 500 });
   }
 }
@@ -120,6 +123,7 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error('[admin/test-account] delete error:', error);
+    void logAppError('admin/test-account', error);
     return NextResponse.json({ error: 'Không xóa được tài khoản.' }, { status: 500 });
   }
 }

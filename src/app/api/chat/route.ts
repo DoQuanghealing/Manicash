@@ -12,6 +12,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { logAppError } from '@/lib/appErrorLog';
+import { guardRequest } from '@/lib/abuse/guard';
 import { getVerifiedRequestUid } from '@/lib/requestAuth';
 import { checkRateLimit, rulesFromEnv, type RateLimitRule } from '@/lib/rateLimit';
 import { routeIntent } from '@/lib/aiMoneyChat/intent/intentRouter';
@@ -206,6 +208,12 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // 1c) Lớp chặn BỀN (Redis + Firestore). Lớp 1b ở trên chỉ sống trong bộ nhớ
+  // một tiến trình nên mất khi cold start; lớp này sống sót và hiện lên màn
+  // Quản lý app để còn biết ai đang đánh. Đặt TRƯỚC khi chạm tới LLM.
+  const guarded = await guardRequest(req, 'ai', uid);
+  if (guarded) return guarded;
+
   // 2) Parse body.
   let body: unknown;
   try {
@@ -254,6 +262,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ sessionId, intent, reply });
   } catch (error) {
     console.error('[api/chat] handler error:', error);
+    void logAppError('api/chat', error);
     return NextResponse.json(
       {
         error: 'handler_failed',

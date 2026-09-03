@@ -15,6 +15,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { logAppError } from '@/lib/appErrorLog';
 import { Timestamp } from 'firebase-admin/firestore';
 import { getAdminDb } from '@/lib/firebaseAdmin';
 import { parseSms } from '@/lib/sms/parsers';
@@ -87,6 +88,7 @@ export async function POST(req: NextRequest) {
     userId = await findUserByToken(payload.token);
   } catch (e) {
     console.error('[sms-webhook] findUserByToken failed:', e);
+    void logAppError('sms-webhook', e);
     return err('Lỗi server', 'server_error', 500);
   }
   if (!userId) {
@@ -152,6 +154,7 @@ export async function POST(req: NextRequest) {
     await pendingRef.set(pending);
   } catch (e) {
     console.error('[sms-webhook] write pending failed:', e);
+    void logAppError('sms-webhook', e);
     return err('Lỗi server khi lưu giao dịch', 'server_error', 500);
   }
 
@@ -173,6 +176,7 @@ export async function POST(req: NextRequest) {
     } catch (e) {
       // Dedupe record fail không fail toàn bộ — tx đã captured.
       console.error('[sms-webhook] dedupe write failed (non-fatal):', e);
+      void logAppError('sms-webhook', e);
     }
   }
 

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logAppError } from '@/lib/appErrorLog';
 import type { Webhook } from '@payos/node';
 import { getAdminDb } from '@/lib/firebaseAdmin';
 import { getPayos } from '@/lib/monetization/payosClient';
@@ -58,6 +59,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     // Lỗi tạm thời → 5xx để PayOS retry (KHÔNG nuốt → tránh mất đơn đã trả tiền).
     console.error('[payos/webhook] processing error:', error);
+    void logAppError('payos/webhook', error);
     return NextResponse.json({ ok: false, reason: 'processing_error' }, { status: 500 });
   }
 }

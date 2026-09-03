@@ -4,6 +4,7 @@
  * POST { uid, action } → revoke_pro | set_test | unset_test | ban | unban
  */
 import { NextRequest, NextResponse } from 'next/server';
+import { logAppError } from '@/lib/appErrorLog';
 import { requireAdmin } from '@/lib/requireAdmin';
 import { logAdminAction } from '@/lib/adminAudit';
 import { listUsers, getCustomerProfile, revokePro, setTestFlag } from '@/lib/admin/directory';
@@ -33,6 +34,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(result);
   } catch (error) {
     console.error('[admin/users] error:', error);
+    void logAppError('admin/users', error);
     return NextResponse.json({ error: 'Lỗi đọc dữ liệu.' }, { status: 500 });
   }
 }
@@ -76,6 +78,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error('[admin/users] action error:', error);
+    void logAppError('admin/users', error);
     await logAdminAction(admin, `user.${action}.error`, { uid });
     return NextResponse.json({ ok: false, error: 'Lỗi xử lý.' }, { status: 500 });
   }

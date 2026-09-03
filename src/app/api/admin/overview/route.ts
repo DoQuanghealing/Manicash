@@ -1,5 +1,6 @@
 /* ═══ Admin M0 — API tổng quan (KPI + hàng đợi) ═══ */
 import { NextRequest, NextResponse } from 'next/server';
+import { logAppError } from '@/lib/appErrorLog';
 import { requireAdmin } from '@/lib/requireAdmin';
 import { getOverviewKpis, listDeletionRequests } from '@/lib/admin/overview';
 
@@ -17,6 +18,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(kpis);
   } catch (error) {
     console.error('[admin/overview] error:', error);
+    void logAppError('admin/overview', error);
     return NextResponse.json({ error: 'Lỗi đọc dữ liệu.' }, { status: 500 });
   }
 }

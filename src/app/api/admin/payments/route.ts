@@ -4,6 +4,7 @@
  * Gác bằng requireAdmin (Custom Claim + allowlist email).
  */
 import { NextRequest, NextResponse } from 'next/server';
+import { logAppError } from '@/lib/appErrorLog';
 import { requireAdmin } from '@/lib/requireAdmin';
 import { listOrders, getReconciliation, getRevenueSeries } from '@/lib/monetization/reconcile';
 
@@ -35,6 +36,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(result);
   } catch (error) {
     console.error('[admin/payments] error:', error);
+    void logAppError('admin/payments', error);
     return NextResponse.json({ error: 'Lỗi đọc dữ liệu.' }, { status: 500 });
   }
 }

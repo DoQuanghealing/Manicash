@@ -6,6 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { logAppError } from '@/lib/appErrorLog';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp, getAdminDb } from '@/lib/firebaseAdmin';
 import { generateToken } from '@/lib/sms/tokenGenerator';
@@ -20,6 +21,7 @@ async function verifyUserId(req: NextRequest): Promise<string | null> {
     return decoded.uid;
   } catch (e) {
     console.error('[webhook-token] verifyIdToken failed:', e);
+    void logAppError('webhook-token', e);
     return null;
   }
 }
@@ -42,6 +44,7 @@ export async function POST(req: NextRequest) {
     }
   } catch (e) {
     console.error('[webhook-token] read existing failed:', e);
+    void logAppError('webhook-token', e);
     return NextResponse.json({ error: 'Loi server' }, { status: 500 });
   }
 
@@ -53,6 +56,7 @@ export async function POST(req: NextRequest) {
     await docRef.set(doc);
   } catch (e) {
     console.error('[webhook-token] write failed:', e);
+    void logAppError('webhook-token', e);
     return NextResponse.json({ error: 'Loi server' }, { status: 500 });
   }
 
@@ -69,6 +73,7 @@ export async function DELETE(req: NextRequest) {
     await getAdminDb().collection('webhook_tokens').doc(userId).delete();
   } catch (e) {
     console.error('[webhook-token] delete failed:', e);
+    void logAppError('webhook-token', e);
     return NextResponse.json({ error: 'Loi server' }, { status: 500 });
   }
 
