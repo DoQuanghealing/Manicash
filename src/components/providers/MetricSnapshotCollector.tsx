@@ -1,6 +1,7 @@
 /* ═══ R&D — Thu bản ghi chỉ số theo NGÀY (client → /api/telemetry/snapshot) ═══
  * "Chụp" ở đây = LƯU MỘT HÀNG SỐ LIỆU/ngày (không phải ảnh): Health Score + hành vi
- * (rank/xp/streak) + số dư 3 quỹ — toàn bộ là số app đã có sẵn, KHÔNG đụng đời tư.
+ * (rank/xp/streak + thói quen dùng app) + điểm thành phần sức khoẻ tài chính.
+ * KHÔNG còn gửi số dư — xem chú thích ở `scalars`.
  * An toàn: chỉ gửi 1 lần/ngày (giờ địa phương); server tự BỎ nếu user chưa đồng ý
  * (analyticsConsent) hoặc là tài khoản test. Không gửi gì "sâu trong máy".
  */
@@ -11,6 +12,10 @@ import { useMoneySnapshotV1 } from '@/hooks/useMoneySnapshotV1';
 import { getFinancialHealthScore } from '@/lib/moneyBrain';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useFinanceStore } from '@/stores/useFinanceStore';
+import { useGoalsStore } from '@/stores/useGoalsStore';
+import { useTaskStore } from '@/stores/useTaskStore';
+import { useChatHistoryStore } from '@/stores/useChatHistoryStore';
+import { buildUsageBehavior } from '@/lib/behavior/usageMetrics';
 import { apiUrl } from '@/lib/apiBase';
 import { getFirebaseAuth } from '@/lib/firebase/config';
 
@@ -46,7 +51,20 @@ export default function MetricSnapshotCollector() {
         const token = await fbUser.getIdToken();
 
         const health = getFinancialHealthScore(snapshot);
-        const { mainBalance, emergencyBalance, billFundBalance } = useFinanceStore.getState();
+        const fin = useFinanceStore.getState();
+
+        /* Hành vi DÙNG APP — ghi chép đều không, ghi ngay hay dồn, dùng nông hay
+         * sâu. Toàn bộ suy từ id + ngày của giao dịch, KHÔNG đụng số tiền.
+         * Xem src/lib/behavior/usageMetrics.ts. */
+        const usage = buildUsageBehavior({
+          transactions: fin.transactions.map((t) => ({ id: t.id, dateKey: t.dateKey, date: t.date })),
+          features: {
+            goals: useGoalsStore.getState().goals.length > 0,
+            chat: useChatHistoryStore.getState().messages.length > 0,
+            tasks: useTaskStore.getState().tasks.length > 0,
+            bills: fin.fixedBills.length > 0,
+          },
+        });
 
         const payload = {
           dateLocal: today,
@@ -56,16 +74,20 @@ export default function MetricSnapshotCollector() {
             xp: user.xp,
             streak: user.streak,
             resistCount: user.resistCount ?? 0,
+            usage,
           },
+          /* ⚠️ ĐÃ BỎ mainBalance / emergencyBalance / billFundBalance.
+           * PO chốt 03/09: CRM quản hành vi, KHÔNG lấy số liệu tiền. Ba trường
+           * còn lại là ĐIỂM THÀNH PHẦN của health score (0|12|25 · 0|8|15 ·
+           * 0|10|20), không phải số dư — nên giữ được.
+           * Thêm lại số dư vào đây là biến tệp hành vi thành tệp tài chính, khác
+           * hẳn mức nhạy cảm và khác cả thứ người dùng đã đồng ý. */
           scalars: {
-            mainBalance,
-            emergencyBalance,
-            billFundBalance,
             cashflow: health.cashflow,
             budgetDiscipline: health.budgetDiscipline,
             emergencyRunway: health.emergencyRunway,
           },
-          schemaVersion: '1',
+          schemaVersion: '2',
           appVersion: '1.0',
         };
 

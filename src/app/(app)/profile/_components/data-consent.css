@@ -1,0 +1,124 @@
+/* ═══ Thẻ đóng góp dữ liệu ═══ */
+
+.dcc-card { margin-top: var(--space-lg, 16px); }
+
+.dcc-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  border-radius: var(--clay-radius-card, 20px);
+  background: var(--c-bg-card, #fff);
+  border: 1px solid var(--c-border, rgba(0, 0, 0, 0.06));
+}
+
+.dcc-icon {
+  width: 34px;
+  height: 34px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  background: color-mix(in oklab, var(--c-purple) 12%, transparent);
+  color: var(--c-purple);
+}
+
+.dcc-text { flex: 1; min-width: 0; }
+
+.dcc-title {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.45;
+  color: var(--c-text-primary);
+}
+
+.dcc-desc {
+  margin: 4px 0 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--c-text-secondary);
+}
+
+.dcc-list {
+  margin: 9px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.dcc-list li {
+  position: relative;
+  padding-left: 18px;
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--c-text-secondary);
+}
+/* Dấu ✓ / ✕ vẽ bằng ::before để không phụ thuộc emoji của từng máy. */
+.dcc-list li::before {
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-weight: 800;
+}
+.dcc-yes::before { content: "✓"; color: var(--c-income, #16A34A); }
+.dcc-no::before  { content: "✕"; color: var(--c-expense, #EA580C); }
+
+.dcc-note {
+  margin: 9px 0 0;
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--c-text-tertiary, var(--c-text-secondary));
+}
+
+.dcc-error {
+  margin: 7px 0 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--c-expense, #EA580C);
+}
+
+/* ── Công tắc ── */
+.dcc-switch {
+  flex: none;
+  width: 44px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  background: var(--c-border, rgba(0, 0, 0, 0.12));
+  transition: background 180ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.dcc-switch.is-on {
+  justify-content: flex-end;
+  background: linear-gradient(135deg, var(--c-purple), var(--c-orange));
+}
+.dcc-switch:disabled { opacity: 0.55; cursor: default; }
+.dcc-switch:focus-visible { outline: 2px solid var(--c-purple); outline-offset: 2px; }
+
+.dcc-knob {
+  width: 20px;
+  height: 20px;
+  margin: 0 3px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+.dcc-spin {
+  margin: 0 auto;
+  color: var(--c-text-secondary);
+  animation: dcc-rotate 900ms linear infinite;
+}
+@keyframes dcc-rotate { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .dcc-switch { transition: none; }
+  .dcc-spin { animation: none; }
+}

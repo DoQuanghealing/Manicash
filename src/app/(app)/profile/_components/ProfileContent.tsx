@@ -18,6 +18,7 @@ import BatTuCard from '@/components/ui/BatTuCard';
 import WipeDataConfirm from '@/components/ui/WipeDataConfirm';
 import AccountDeletionDialog from '@/components/ui/AccountDeletionDialog';
 import ButlerSettingsCard from './ButlerSettingsCard';
+import DataConsentCard from './DataConsentCard';
 import FinancialDnaPanel from '@/components/butler/FinancialDnaPanel';
 import EcosystemSection from './EcosystemSection';
 import { resolveAvatar } from '@/data/avatarIcons';
@@ -250,6 +251,9 @@ export default function ProfileContent() {
 
       {/* ═══ Quản gia (tên + cấp độ, đổi cấp độ = consent) ═══ */}
       <ButlerSettingsCard />
+
+      {/* ═══ Đóng góp dữ liệu hành vi — mặc định TẮT (Nghị định 13/2023) ═══ */}
+      <DataConsentCard />
 
       {/* ═══ La Bàn Tài Chính Nội Tâm (PV-3) — teaser cho Free, đầy đủ cho Phú Vương ═══ */}
       <FinancialDnaPanel />
