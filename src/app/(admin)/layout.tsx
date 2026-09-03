@@ -38,6 +38,7 @@ const NAV: NavItem[] = [
   { href: '/admin/crm', label: 'CRM hành vi', code: 'M5', icon: Link2, ready: true },
   { href: '/admin/wellbeing', label: 'Chữa lành', code: 'M6', icon: HeartPulse, ready: false },
   { href: '/admin/health', label: 'Quản lý app', code: 'M7', icon: Activity, ready: true },
+  { href: '/admin/simulate', label: 'Chế độ giả lập', code: 'M9', icon: FlaskConical, ready: true },
   { href: '/admin/audit', label: 'Nhật ký', code: 'M8', icon: ScrollText, ready: true },
   { href: '/admin/security', label: 'Bảo mật', code: 'S', icon: ShieldCheck, ready: true },
 ];

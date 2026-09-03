@@ -7,6 +7,7 @@
 'use client';
 
 import { create } from 'zustand';
+import { simulationAwareStorage } from '@/stores/simulationStorage';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { ChatMessage } from '@/types/chat';
 import { localDateKey, pruneMessages, type StoredChatMessage } from '@/lib/chatRetention';
@@ -60,7 +61,7 @@ export const useChatHistoryStore = create<ChatHistoryState>()(
     }),
     {
       name: CHAT_HISTORY_STORAGE_KEY,
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => simulationAwareStorage),
       version: 1,
       partialize: (s) => ({ messages: s.messages, lastCleaned: s.lastCleaned }),
     },

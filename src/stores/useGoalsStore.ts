@@ -2,6 +2,7 @@
 'use client';
 
 import { create } from 'zustand';
+import { simulationAwareStorage } from '@/stores/simulationStorage';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { Goal, Milestone, GoalDeposit, GoalDepositSource, GoalBankInfo } from '@/types/budget';
 import { useAuthStore } from '@/stores/useAuthStore';
@@ -201,7 +202,7 @@ export const useGoalsStore = create<GoalsState>()(
     {
       name: STORE_KEYS.goals,
       version: STORE_VERSIONS.goals,
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => simulationAwareStorage),
       partialize: (s) => ({ goals: s.goals }),
       migrate: (persisted) => {
         const p = (persisted ?? {}) as Partial<GoalsState>;

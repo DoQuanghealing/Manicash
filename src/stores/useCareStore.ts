@@ -6,6 +6,7 @@
 'use client';
 
 import { create } from 'zustand';
+import { simulationAwareStorage } from '@/stores/simulationStorage';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
 export const CARE_STORAGE_KEY = 'manicash.care.companion.v1';
@@ -37,7 +38,7 @@ export const useCareStore = create<CareState>()(
     }),
     {
       name: CARE_STORAGE_KEY,
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => simulationAwareStorage),
       version: 1,
     },
   ),

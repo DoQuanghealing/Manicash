@@ -2,6 +2,7 @@
 'use client';
 
 import { create } from 'zustand';
+import { simulationAwareStorage } from '@/stores/simulationStorage';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { STORE_KEYS, STORE_VERSIONS } from '@/stores/persistConfig';
 
@@ -131,7 +132,7 @@ export const useWalletBankStore = create<WalletBankState>()(
     {
       name: STORE_KEYS.walletBank,
       version: STORE_VERSIONS.walletBank,
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => simulationAwareStorage),
       partialize: (s) => ({ wallets: s.wallets }),
       migrate: (persisted) => {
         const p = (persisted ?? {}) as Partial<WalletBankState>;

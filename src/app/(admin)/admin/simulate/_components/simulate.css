@@ -1,0 +1,99 @@
+/* ═══ Admin — Chế độ giả lập ═══ */
+
+.sim-wrap { display: flex; flex-direction: column; gap: 16px; max-width: 760px; }
+
+.sim-sub {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--c-text-secondary);
+}
+
+.sim-card {
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid var(--glass-border);
+  background: var(--c-bg-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  align-items: flex-start;
+}
+
+.sim-h2 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--c-text-secondary);
+}
+
+.sim-bad  { border-color: color-mix(in oklab, var(--c-danger) 45%, transparent); }
+.sim-warn { border-color: color-mix(in oklab, var(--c-warning) 45%, transparent); }
+
+.sim-list { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 5px; }
+.sim-list li { font-size: 12.5px; line-height: 1.6; color: var(--c-text-secondary); }
+.sim-bad .sim-list li { color: var(--c-danger); }
+.sim-warn .sim-list li { color: var(--c-warning); }
+
+.sim-dim { margin: 0; font-size: 12px; color: var(--c-text-secondary); }
+
+.sim-link {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--c-purple);
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.sim-check { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; }
+.sim-check input { margin-top: 3px; flex: none; }
+.sim-check span { display: flex; flex-direction: column; gap: 3px; }
+.sim-check strong { font-size: 13px; }
+.sim-check em {
+  font-style: normal;
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--c-text-secondary);
+}
+
+/* ── Đang giả lập ── */
+.sim-live {
+  padding: 18px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in oklab, var(--c-warning) 55%, transparent);
+  background: color-mix(in oklab, var(--c-warning) 8%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+}
+.sim-live p { margin: 0; font-size: 13px; line-height: 1.7; color: var(--c-text-secondary); }
+
+.sim-live-badge {
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--c-warning);
+  color: #1a1a1a;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.sim-stats {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  font-size: 12.5px;
+  color: var(--c-text-secondary);
+}
+.sim-stats b { font-weight: 800; color: var(--c-text-primary); }
+
+.sim-actions { display: flex; flex-wrap: wrap; gap: 9px; }

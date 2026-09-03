@@ -5,6 +5,7 @@
 'use client';
 
 import { create } from 'zustand';
+import { simulationAwareStorage } from '@/stores/simulationStorage';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
 export const COACH_SUGGESTION_STORAGE_KEY = 'manicash.coach.suggestions.v1';
@@ -29,7 +30,7 @@ export const useCoachSuggestionStore = create<CoachSuggestionState>()(
     }),
     {
       name: COACH_SUGGESTION_STORAGE_KEY,
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => simulationAwareStorage),
       version: 1,
     },
   ),

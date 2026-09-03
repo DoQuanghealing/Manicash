@@ -5,6 +5,7 @@
 'use client';
 
 import { create } from 'zustand';
+import { simulationAwareStorage } from '@/stores/simulationStorage';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import {
   recordHabit,
@@ -36,7 +37,7 @@ export const useTransactionHabitStore = create<TransactionHabitState>()(
     }),
     {
       name: TRANSACTION_HABIT_STORAGE_KEY,
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => simulationAwareStorage),
       version: 1,
     },
   ),

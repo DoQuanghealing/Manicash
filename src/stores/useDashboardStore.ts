@@ -2,6 +2,7 @@
 'use client';
 
 import { create } from 'zustand';
+import { simulationAwareStorage } from '@/stores/simulationStorage';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { STORE_KEYS, STORE_VERSIONS } from '@/stores/persistConfig';
 import { useAuthStore } from '@/stores/useAuthStore';
@@ -386,7 +387,7 @@ export const useDashboardStore = create<DashboardState>()(
     {
       name: STORE_KEYS.dashboard,
       version: STORE_VERSIONS.dashboard,
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => simulationAwareStorage),
       // Chỉ persist state dữ liệu (không persist các hàm computed).
       partialize: (s) => ({
         accounts: s.accounts,

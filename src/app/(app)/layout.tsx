@@ -17,13 +17,16 @@ import ProActivatedCelebration from '@/components/ui/ProActivatedCelebration';
 import PricingModal from '@/components/pricing/PricingModal';
 import { AuthGuard } from '@/components/providers/AuthGuard';
 import MetricSnapshotCollector from '@/components/providers/MetricSnapshotCollector';
+import SimulationBanner from '@/components/providers/SimulationBanner';
 import ButlerOnboarding from '@/components/butler/ButlerOnboarding';
 import SovereignInvite from '@/components/butler/SovereignInvite';
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
     <AuthGuard>
-    <AccountDeletionGate>
+      {/* Dải băng giả lập: đặt NGOÀI mọi lớp gác để luôn thấy được. */}
+      <SimulationBanner />
+      <AccountDeletionGate>
       <div className="desktop-wrapper">
         <div className="mobile-shell">
           {/* Header: absolute top inside shell */}
