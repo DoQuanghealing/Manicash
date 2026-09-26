@@ -1,0 +1,68 @@
+/* ═══ Thông báo cập nhật — xin đồng ý dữ liệu. Khung dùng lại .bo-* của onboarding. ═══ */
+
+.cun-badge {
+  align-self: center;
+  padding: 4px 11px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #c79a3e;
+  background: rgba(199, 154, 62, 0.14);
+}
+
+.cun-icon {
+  align-self: center;
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 15px;
+  color: #e2bd63;
+  background: rgba(226, 189, 99, 0.12);
+}
+
+.cun-list {
+  margin: 0;
+  padding: 12px 14px;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  border-radius: 14px;
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
+}
+.cun-list li {
+  position: relative;
+  padding-left: 20px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--c-text-secondary, #d8cfbb);
+}
+/* Dấu vẽ bằng ::before để không phụ thuộc emoji từng máy. */
+.cun-list li::before {
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-weight: 800;
+}
+.cun-yes::before { content: "✓"; color: var(--c-income, #16A34A); }
+.cun-no::before  { content: "✕"; color: var(--c-expense, #EA580C); }
+.cun-use::before { content: "◆"; color: #c79a3e; font-size: 10px; top: 3px; }
+
+.cun-error {
+  margin: 0;
+  text-align: center;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--c-expense, #EA580C);
+}
+
+.cun-spin { animation: cun-rotate 900ms linear infinite; vertical-align: middle; }
+@keyframes cun-rotate { to { transform: rotate(360deg); } }
+
+.bo-btn-ghost:disabled { opacity: 0.5; cursor: default; }
+
+@media (prefers-reduced-motion: reduce) {
+  .cun-spin { animation: none; }
+}

@@ -14,6 +14,7 @@ import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useButlerWizardStore } from '@/stores/useButlerWizardStore';
 import { apiUrl } from '@/lib/apiBase';
 import { getFirebaseAuth } from '@/lib/firebase/config';
+import { requestSnapshotNow } from '@/lib/telemetry/snapshotNow';
 import './butler-onboarding.css';
 
 type Step = 'intro' | 'hello' | 'honorific' | 'name' | 'tier' | 'guide';
@@ -27,11 +28,12 @@ async function setConsent(granted: boolean) {
     const u = getFirebaseAuth().currentUser;
     if (!u) return;
     const token = await u.getIdToken();
-    await fetch(apiUrl('/api/telemetry/consent'), {
+    const res = await fetch(apiUrl('/api/telemetry/consent'), {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ granted }),
     });
+    if (res.ok && granted) requestSnapshotNow();
   } catch {
     /* im lặng */
   }

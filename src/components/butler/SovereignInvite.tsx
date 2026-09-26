@@ -16,6 +16,7 @@ import { useCapacitySurveyStore } from '@/stores/useCapacitySurveyStore';
 import { archetypeFromSkills, type SovereignArchetype } from '@/lib/butler/sovereignArchetype';
 import { apiUrl } from '@/lib/apiBase';
 import { getFirebaseAuth } from '@/lib/firebase/config';
+import { requestSnapshotNow } from '@/lib/telemetry/snapshotNow';
 import CapacitySurveyCard from '@/app/(app)/chat/_components/CapacitySurveyCard';
 import '@/components/butler/butler-onboarding.css';
 import './sovereign-invite.css';
@@ -32,11 +33,12 @@ async function setSovereignConsent(granted: boolean) {
     const u = getFirebaseAuth().currentUser;
     if (!u) return;
     const token = await u.getIdToken();
-    await fetch(apiUrl('/api/telemetry/consent'), {
+    const res = await fetch(apiUrl('/api/telemetry/consent'), {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ granted, scope: 'sovereign' }),
     });
+    if (res.ok && granted) requestSnapshotNow();
   } catch {
     /* im lặng */
   }

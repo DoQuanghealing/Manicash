@@ -278,9 +278,12 @@
 /* ═══ Desktop constraint — keep popup within phone frame ═══ */
 @media (min-width: 768px) {
   .input-popup-panel {
+    /* Canh giữa bằng margin, KHÔNG dùng transform: Framer ghi transform inline
+       (y/scale) nên translateX(-50%) bị xoá sạch → panel lệch nửa bề rộng. */
     max-width: 430px;
-    left: 50%;
-    transform: translateX(-50%);
+    left: 0;
+    right: 0;
+    margin-inline: auto;
   }
 
   .input-fab {
