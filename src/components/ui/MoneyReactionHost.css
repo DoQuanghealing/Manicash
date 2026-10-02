@@ -61,8 +61,12 @@
 .mrx-nag {
   position: absolute;
   top: 64px;
-  left: 50%;
-  transform: translateX(-50%);
+  /* Canh giữa bằng margin, KHÔNG dùng transform: Framer ghi transform inline
+     (y/scale) nên translateX(-50%) bị xoá sạch → toast lệch nửa bề rộng. */
+  left: 0;
+  right: 0;
+  width: fit-content;
+  margin-inline: auto;
   z-index: 300;
   display: flex;
   align-items: center;

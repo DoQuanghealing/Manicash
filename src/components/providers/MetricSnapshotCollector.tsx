@@ -18,8 +18,8 @@ import { useChatHistoryStore } from '@/stores/useChatHistoryStore';
 import { buildUsageBehavior } from '@/lib/behavior/usageMetrics';
 import { apiUrl } from '@/lib/apiBase';
 import { getFirebaseAuth } from '@/lib/firebase/config';
-
-const SENT_KEY = 'manicash-snapshot-sent-date';
+import { isSimulationActive } from '@/stores/simulationStorage';
+import { SNAPSHOT_NOW_EVENT, SNAPSHOT_SENT_KEY as SENT_KEY } from '@/lib/telemetry/snapshotNow';
 
 /** YYYY-MM-DD theo giờ máy (KHÔNG UTC). */
 function todayLocal(): string {
@@ -30,87 +30,106 @@ export default function MetricSnapshotCollector() {
   const snapshot = useMoneySnapshotV1();
   const user = useAuthStore((s) => s.user);
   const sending = useRef(false);
+  // Đọc số MỚI NHẤT lúc gửi — lượt gửi có thể đến từ sự kiện, không phải lúc render.
+  const snapshotRef = useRef(snapshot);
+  const userRef = useRef(user);
+  useEffect(() => {
+    snapshotRef.current = snapshot;
+    userRef.current = user;
+  });
 
   useEffect(() => {
-    if (!user || sending.current) return;
+    if (!user) return;
 
-    const today = todayLocal();
-    let lastSent: string | null = null;
-    try {
-      lastSent = localStorage.getItem(SENT_KEY);
-    } catch {
-      /* ignore */
-    }
-    if (lastSent === today) return; // đã gửi hôm nay
+    const send = () => {
+      const user = userRef.current;
+      if (!user || sending.current) return;
+      // Đang giả lập thì toàn bộ store là số ảo → gửi lên là làm bẩn CRM.
+      if (isSimulationActive()) return;
 
-    sending.current = true;
-    (async () => {
+      const today = todayLocal();
+      let lastSent: string | null = null;
       try {
-        const fbUser = getFirebaseAuth().currentUser;
-        if (!fbUser) return;
-        const token = await fbUser.getIdToken();
-
-        const health = getFinancialHealthScore(snapshot);
-        const fin = useFinanceStore.getState();
-
-        /* Hành vi DÙNG APP — ghi chép đều không, ghi ngay hay dồn, dùng nông hay
-         * sâu. Toàn bộ suy từ id + ngày của giao dịch, KHÔNG đụng số tiền.
-         * Xem src/lib/behavior/usageMetrics.ts. */
-        const usage = buildUsageBehavior({
-          transactions: fin.transactions.map((t) => ({ id: t.id, dateKey: t.dateKey, date: t.date })),
-          features: {
-            goals: useGoalsStore.getState().goals.length > 0,
-            chat: useChatHistoryStore.getState().messages.length > 0,
-            tasks: useTaskStore.getState().tasks.length > 0,
-            bills: fin.fixedBills.length > 0,
-          },
-        });
-
-        const payload = {
-          dateLocal: today,
-          healthScore: health.total,
-          behavior: {
-            rank: user.rank,
-            xp: user.xp,
-            streak: user.streak,
-            resistCount: user.resistCount ?? 0,
-            usage,
-          },
-          /* ⚠️ ĐÃ BỎ mainBalance / emergencyBalance / billFundBalance.
-           * PO chốt 03/09: CRM quản hành vi, KHÔNG lấy số liệu tiền. Ba trường
-           * còn lại là ĐIỂM THÀNH PHẦN của health score (0|12|25 · 0|8|15 ·
-           * 0|10|20), không phải số dư — nên giữ được.
-           * Thêm lại số dư vào đây là biến tệp hành vi thành tệp tài chính, khác
-           * hẳn mức nhạy cảm và khác cả thứ người dùng đã đồng ý. */
-          scalars: {
-            cashflow: health.cashflow,
-            budgetDiscipline: health.budgetDiscipline,
-            emergencyRunway: health.emergencyRunway,
-          },
-          schemaVersion: '2',
-          appVersion: '1.0',
-        };
-
-        const res = await fetch(apiUrl('/api/telemetry/snapshot'), {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-        // Ghi guard kể cả khi server "skip" (chưa consent) → không spam trong ngày.
-        if (res.ok) {
-          try {
-            localStorage.setItem(SENT_KEY, today);
-          } catch {
-            /* ignore */
-          }
-        }
+        lastSent = localStorage.getItem(SENT_KEY);
       } catch {
-        /* im lặng — thử lại lần mở app sau */
-      } finally {
-        sending.current = false;
+        /* ignore */
       }
-    })();
-    // Chạy khi user sẵn sàng; snapshot đọc tại thời điểm gửi.
+      if (lastSent === today) return; // đã gửi hôm nay
+
+      sending.current = true;
+      (async () => {
+        try {
+          const fbUser = getFirebaseAuth().currentUser;
+          if (!fbUser) return;
+          const token = await fbUser.getIdToken();
+
+          const health = getFinancialHealthScore(snapshotRef.current);
+          const fin = useFinanceStore.getState();
+
+          /* Hành vi DÙNG APP — ghi chép đều không, ghi ngay hay dồn, dùng nông hay
+           * sâu. Toàn bộ suy từ id + ngày của giao dịch, KHÔNG đụng số tiền.
+           * Xem src/lib/behavior/usageMetrics.ts. */
+          const usage = buildUsageBehavior({
+            transactions: fin.transactions.map((t) => ({ id: t.id, dateKey: t.dateKey, date: t.date })),
+            features: {
+              goals: useGoalsStore.getState().goals.length > 0,
+              chat: useChatHistoryStore.getState().messages.length > 0,
+              tasks: useTaskStore.getState().tasks.length > 0,
+              bills: fin.fixedBills.length > 0,
+            },
+          });
+
+          const payload = {
+            dateLocal: today,
+            healthScore: health.total,
+            behavior: {
+              rank: user.rank,
+              xp: user.xp,
+              streak: user.streak,
+              resistCount: user.resistCount ?? 0,
+              usage,
+            },
+            /* ⚠️ ĐÃ BỎ mainBalance / emergencyBalance / billFundBalance.
+             * PO chốt 03/09: CRM quản hành vi, KHÔNG lấy số liệu tiền. Ba trường
+             * còn lại là ĐIỂM THÀNH PHẦN của health score (0|12|25 · 0|8|15 ·
+             * 0|10|20), không phải số dư — nên giữ được.
+             * Thêm lại số dư vào đây là biến tệp hành vi thành tệp tài chính, khác
+             * hẳn mức nhạy cảm và khác cả thứ người dùng đã đồng ý. */
+            scalars: {
+              cashflow: health.cashflow,
+              budgetDiscipline: health.budgetDiscipline,
+              emergencyRunway: health.emergencyRunway,
+            },
+            schemaVersion: '2',
+            appVersion: '1.0',
+          };
+
+          const res = await fetch(apiUrl('/api/telemetry/snapshot'), {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+          // Ghi guard kể cả khi server "skip" (chưa consent) → không spam trong ngày.
+          if (res.ok) {
+            try {
+              localStorage.setItem(SENT_KEY, today);
+            } catch {
+              /* ignore */
+            }
+          }
+        } catch {
+          /* im lặng — thử lại lần mở app sau */
+        } finally {
+          sending.current = false;
+        }
+      })();
+    };
+
+    send();
+    // requestSnapshotNow() — người dùng vừa bật đồng ý, gửi luôn khỏi đợi sang ngày.
+    window.addEventListener(SNAPSHOT_NOW_EVENT, send);
+    return () => window.removeEventListener(SNAPSHOT_NOW_EVENT, send);
+    // Chạy khi user sẵn sàng; snapshot/user đọc qua ref tại thời điểm gửi.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.uid]);
 

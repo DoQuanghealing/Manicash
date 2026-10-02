@@ -20,6 +20,7 @@ import MetricSnapshotCollector from '@/components/providers/MetricSnapshotCollec
 import SimulationBanner from '@/components/providers/SimulationBanner';
 import ButlerOnboarding from '@/components/butler/ButlerOnboarding';
 import SovereignInvite from '@/components/butler/SovereignInvite';
+import ConsentUpdateNotice from '@/components/butler/ConsentUpdateNotice';
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
@@ -84,6 +85,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
           {/* Mời nâng cấp Phú Vương — tự mở khi tier Thông thái + streak ≥ 14 */}
           <SovereignInvite />
+
+          {/* Bản cập nhật: xin đồng ý đóng góp dữ liệu (NĐ 13) — 1 lần, "Để sau" hỏi lại sau 14 ngày */}
+          <ConsentUpdateNotice />
         </div>
       </div>
     </AccountDeletionGate>

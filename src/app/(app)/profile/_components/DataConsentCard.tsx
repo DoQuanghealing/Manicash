@@ -17,6 +17,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ShieldCheck, Loader2 } from 'lucide-react';
 import { apiUrl } from '@/lib/apiBase';
 import { getFirebaseAuth } from '@/lib/firebase/config';
+import { requestSnapshotNow } from '@/lib/telemetry/snapshotNow';
 import './data-consent.css';
 
 async function authHeaders(): Promise<Record<string, string> | null> {
@@ -38,7 +39,9 @@ export default function DataConsentCard() {
       const res = await fetch(apiUrl('/api/telemetry/consent'), { headers: h });
       if (!res.ok) throw new Error('read failed');
       const data = await res.json();
-      setGranted(data?.analyticsConsent === true);
+      // GET trả `granted` (xem api/telemetry/consent). Đọc nhầm `analyticsConsent` thì
+      // công tắc luôn hiện TẮT sau mỗi lần tải lại dù server đang BẬT.
+      setGranted(data?.granted === true);
     } catch {
       // Đọc hỏng thì coi như CHƯA đồng ý — mặc định phải nghiêng về phía không thu.
       setGranted(false);
@@ -62,6 +65,7 @@ export default function DataConsentCard() {
       });
       if (!res.ok) throw new Error('write failed');
       setGranted(next);
+      if (next) requestSnapshotNow();
     } catch {
       // KHÔNG đổi công tắc khi ghi hỏng: hiện "đã bật" mà server chưa ghi là nói dối
       // người dùng về một thứ thuộc quyền riêng tư của họ.
