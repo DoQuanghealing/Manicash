@@ -115,6 +115,7 @@ export function buildClientSnapshot(params: BuildClientSnapshotParams): ClientSn
       endDate: t.endDate,
       completedAt: t.completedAt,
       deletedAt: t.deletedAt,
+      stage: t.stage,
       subTasks: t.subTasks.map((s) => ({ isCompleted: s.isCompleted })),
     })),
     transactions,

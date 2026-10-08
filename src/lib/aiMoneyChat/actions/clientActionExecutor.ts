@@ -13,6 +13,7 @@ import { useWishlistStore, type CoolingHours } from '@/stores/useWishlistStore';
 import { useAuthStore, type UserProgressSnapshot } from '@/stores/useAuthStore';
 import { formatVND } from '../response/formatMoney';
 import { emitMoneyRecorded } from '@/lib/moneyEvents';
+import { receiveTaskPayment } from '@/lib/tasks/receiveTaskPayment';
 import { BREATH_GATE_THRESHOLD, type MoneyActionRequest } from './actionTypes';
 import type { MoneyActionUndoSnapshot } from './actionAuditTypes';
 
@@ -180,26 +181,28 @@ export async function executeMoneyActionOnClient(
 
     case 'COMPLETE_EARNING_TASK': {
       const { taskId, taskName, expectedAmount, actualAmount } = request.payload;
-      const task = useTaskStore.getState().tasks.find((t) => t.id === taskId);
-      if (!task) return { ok: false, message: 'Không tìm thấy nhiệm vụ (dữ liệu đã thay đổi).' };
-      if (task.completedAt) return { ok: false, message: `Nhiệm vụ ${task.name} đã hoàn thành trước đó rồi.` };
-      if (task.deletedAt) return { ok: false, message: 'Nhiệm vụ này đã bị xóa.' };
-      // Phase 6A: chụp chính xác state trước (subTasks, actualAmount, penalties, XP).
-      const taskBefore = {
-        actualAmount: task.actualAmount,
-        subTasks: task.subTasks.map((s) => ({ ...s })),
-      };
-      const penaltiesBefore = useTaskStore.getState().xpPenalties.map((p) => ({ ...p }));
-      const userBefore = captureUserProgress();
-      useTaskStore.getState().completeTask(taskId, actualAmount ?? expectedAmount ?? 0);
+      // Đợt 1: đi CÙNG đường với UI — tạo giao dịch thu thật + XP 1 lần + popup thu nhập.
+      // receiveTaskPayment tự chụp trạng thái trước (subTasks, penalties, XP, stage) để undo exact.
+      const res = receiveTaskPayment({ taskId, amount: actualAmount ?? expectedAmount ?? 0 });
+      if (!res.ok) return { ok: false, message: res.message };
+      const { undo } = res;
       return {
         ok: true,
-        message: `Đã đánh dấu nhiệm vụ ${taskName} là hoàn thành.`,
+        message: res.transaction
+          ? `Đã ghi nhận nhiệm vụ ${taskName}: +${res.transaction.amount.toLocaleString('vi-VN')}đ vào ví.`
+          : `Đã đánh dấu nhiệm vụ ${taskName} là hoàn thành.`,
         undoable: true,
         undoSnapshot: {
           action: 'COMPLETE_EARNING_TASK',
-          before: { taskId, ...taskBefore, xpPenalties: penaltiesBefore, userProgress: userBefore },
-          after: { taskId },
+          before: {
+            taskId,
+            actualAmount: undo.actualAmount,
+            subTasks: undo.subTasks,
+            xpPenalties: undo.xpPenalties,
+            stage: undo.stage,
+            userProgress: undo.userProgress,
+          },
+          after: { taskId, transactionId: undo.transactionId },
         },
       };
     }

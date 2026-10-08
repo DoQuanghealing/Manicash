@@ -180,6 +180,8 @@ export interface ClientSnapshotInput {
     endDate?: string;
     completedAt?: string;
     deletedAt?: string;
+    /** Đợt 1: giai đoạn việc → tiền. Thiếu = client cũ. */
+    stage?: string;
     subTasks?: Array<{ isCompleted?: boolean }>;
   }>;
   /** Giao dịch tháng hiện tại — để tính cashflow + chi theo danh mục.

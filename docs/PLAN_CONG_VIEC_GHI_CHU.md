@@ -4,8 +4,25 @@
 > Tạo 2026-10-08. Cập nhật mục "Trạng thái" mỗi khi xong một bước.
 
 ## Trạng thái hiện tại
-- [ ] Bước 0 — chưa bắt đầu
-- Nhánh: chưa tạo. `main` = `0b0e19a` (PR #38 đã lên prod).
+- [~] Bước 0 — ĐANG LÀM (2026-10-08)
+  - [x] 0.1 PO kiểm Vercel: Money Sync prod **TẮT** (2026-10-08).
+  - [x] 0.2 PO quyết: **làm Đợt 1 trước**, bật sync là việc riêng làm sau (thiết kế v2 sẵn cho sync) ·
+        ghi chú bản đầu **chỉ trên máy** (+ nút xuất file; cấu trúc sẵn để thêm mây sau).
+  - [x] 0.3 Spec Đợt 1 `docs/SPEC_DOT_1_THU_VIEN_MAU.md` — **PO DUYỆT 2026-10-08**. Q1–Q4 PO chưa trả lời → dùng mặc định:
+        Q1 giữ giá · Q2 tiền vào ví, chưa góp mục tiêu · Q3 đổi tên "Tài sản nhàn rỗi" · Q4 chat "khách chưa trả" để Đợt 2.
+        Phát hiện: bấm "Xong" hiện KHÔNG tạo giao dịch thu + ghi actual = expected; task thiếu `updatedAt` (lỗi gộp sync).
+  - [~] 0.4 4 mẫu thử decor (landing-decorator) → đang dựng ở `docs/design-probes/thu-vien-mau/` → PO chọn.
+- [~] **Đợt 1 — ĐANG LÀM**, nhánh `feat/earning-tasks-dot1` (tách từ `docs/tasks-notes-plan`, chưa push).
+  - [x] Tầng dữ liệu + logic (chưa đụng UI): `EarningTask` v2 (stage/updatedAt/khách/hẹn trả/incomeTxnId/templateId,
+        trường optional + `getTaskStage` suy từ completedAt) · store v2 + `migrateTasksState` · `markWorkDone`/`undoMarkWorkDone` ·
+        `completeTask` chặn lần 2 · `src/lib/tasks/receiveTaskPayment.ts` (giao dịch thu + XP + popup + undo exact,
+        tổng khách nợ, số ngày trễ hẹn) · chat COMPLETE_EARNING_TASK đi chung đường + undo gỡ giao dịch ·
+        CFO không tính "Chờ thanh toán" là trễ · `src/data/earningTemplates.ts` 34 mẫu + xếp theo La bàn.
+        Test `npm run test:earning-tasks` 20/20 (đã gắn vào `test:ai-all`). ai-all/ai-money/money-sync/moneybrain xanh;
+        `test:ai-persistence` còn 1 FAIL **có sẵn từ trước** ("finance rehydrate", fail cả trên code gốc).
+  - [ ] UI (chờ PO chọn mẫu thử 0.4): sheet thư viện mẫu · form 3 trường + "Thêm chi tiết" · thẻ theo giai đoạn ·
+        hộp "Nhận được bao nhiêu?" · dòng "Khách còn nợ". ⚠️ Tới lúc đó nút "Xong" ở `MoneyContent.tsx` VẪN đi đường cũ.
+- `main` = `0b0e19a` (PR #38 đã lên prod).
 
 ## Mục tiêu
 Làm tab **Money → Nhiệm vụ kiếm tiền** sinh động hơn bằng công việc + ghi chú, lấy cảm hứng

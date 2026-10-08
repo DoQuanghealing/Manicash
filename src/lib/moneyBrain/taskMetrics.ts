@@ -23,6 +23,8 @@ export function getTaskStatus(
 ): MoneyTaskStatus {
   if (task.completedAt) return 'completed';
   if (task.deletedAt) return 'deleted';
+  // Xong việc, chờ khách trả → không phải việc trễ của người dùng.
+  if (task.stage === 'awaiting_payment') return 'active';
   const todayKey = getTodayKey(snapshot.clientNow, snapshot.timezone);
   const endKey = task.endDate ? task.endDate.slice(0, 10) : '';
   if (endKey && endKey < todayKey) return 'overdue';

@@ -78,6 +78,8 @@ export interface MoneyTaskSnapshot {
   endDate: string;
   completedAt?: string;
   deletedAt?: string;
+  /** Đợt 1: 'awaiting_payment' = xong việc, chờ khách trả → KHÔNG tính trễ hạn. */
+  stage?: 'doing' | 'awaiting_payment' | 'paid';
   subTasks?: Array<{
     id: string;
     name?: string;

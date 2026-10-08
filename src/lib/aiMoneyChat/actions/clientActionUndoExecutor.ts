@@ -11,6 +11,7 @@ import { useTaskStore } from '@/stores/useTaskStore';
 import { useWishlistStore } from '@/stores/useWishlistStore';
 import { useAuthStore, type UserProgressSnapshot } from '@/stores/useAuthStore';
 import type { SubTask, XPPenalty } from '@/types/task';
+import { undoReceiveTaskPayment } from '@/lib/tasks/receiveTaskPayment';
 import type { MoneyActionAuditRecord } from './actionAuditTypes';
 
 export type UndoActionResult = { ok: true; message: string } | { ok: false; message: string };
@@ -91,15 +92,17 @@ export async function undoMoneyActionOnClient(record: MoneyActionAuditRecord): P
     }
 
     case 'COMPLETE_EARNING_TASK': {
-      const taskId = String(before.taskId ?? '');
-      const ok = useTaskStore.getState().undoCompleteTask(taskId, {
+      const ok = undoReceiveTaskPayment({
+        taskId: String(before.taskId ?? ''),
+        transactionId: typeof after.transactionId === 'string' ? after.transactionId : undefined,
+        stage: before.stage === 'awaiting_payment' ? 'awaiting_payment' : 'doing',
         actualAmount: typeof before.actualAmount === 'number' ? before.actualAmount : undefined,
         subTasks: Array.isArray(before.subTasks) ? (before.subTasks as SubTask[]) : undefined,
         xpPenalties: Array.isArray(before.xpPenalties) ? (before.xpPenalties as XPPenalty[]) : undefined,
+        userProgress: (before.userProgress as UserProgressSnapshot | null | undefined) ?? null,
       });
       if (!ok) return { ok: false, message: STALE };
-      restoreUserProgress(before); // đảo XP TASK_COMPLETE chính xác
-      return { ok: true, message: 'Đã hoàn tác: nhiệm vụ trở lại chưa hoàn thành.' };
+      return { ok: true, message: 'Đã hoàn tác: nhiệm vụ trở lại chưa nhận tiền, giao dịch thu đã gỡ.' };
     }
 
     case 'ADD_WISHLIST_ITEM': {

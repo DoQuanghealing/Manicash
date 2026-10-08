@@ -4,7 +4,8 @@
 import { create } from 'zustand';
 import { simulationAwareStorage } from '@/stores/simulationStorage';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import type { EarningTask, SubTask, TaskStatus, XPPenalty, OverdueReason, TaskAiEval } from '@/types/task';
+import type { EarningTask, SubTask, TaskStage, TaskStatus, XPPenalty, OverdueReason, TaskAiEval } from '@/types/task';
+import { getTaskStage, PAYER_NAME_MAX } from '@/types/task';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { STORE_KEYS, STORE_VERSIONS, onRehydrateMark } from '@/stores/persistConfig';
 
@@ -12,9 +13,21 @@ function genId(prefix = 'task') {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 }
 
+function nowIso() {
+  return new Date().toISOString();
+}
+
+function cleanPayer(name: string | undefined): string | undefined {
+  const v = (name ?? '').trim().slice(0, PAYER_NAME_MAX);
+  return v || undefined;
+}
+
 function getTaskStatus(task: EarningTask): TaskStatus {
   if (task.completedAt) return 'completed';
   if (task.deletedAt) return 'completed';
+  // Xong việc, chờ khách trả: hạn làm việc không còn ý nghĩa → không bao giờ "trễ"
+  // (khách trễ hẹn là lỗi của khách, không phạt người dùng).
+  if (getTaskStage(task) === 'awaiting_payment') return 'active';
   const now = new Date();
   const start = new Date(task.startDate);
   const end = new Date(task.endDate);
@@ -23,21 +36,52 @@ function getTaskStatus(task: EarningTask): TaskStatus {
   return 'active';
 }
 
+/** v1 → v2: thêm `stage` + `updatedAt`. KHÔNG tạo bù giao dịch thu cho task đã xong —
+ * người dùng có thể đã tự ghi tay, tạo bù là đếm đôi. Idempotent. */
+export function migrateTasksState(persisted: unknown): { tasks: EarningTask[]; xpPenalties: XPPenalty[] } {
+  const p = (persisted && typeof persisted === 'object' ? persisted : {}) as Record<string, unknown>;
+  const rawTasks = Array.isArray(p.tasks) ? (p.tasks as EarningTask[]) : [];
+  const tasks = rawTasks
+    .filter((t) => t && typeof t === 'object' && typeof t.id === 'string')
+    .map((t) => ({
+      ...t,
+      subTasks: Array.isArray(t.subTasks) ? t.subTasks : [],
+      stage: getTaskStage(t),
+      updatedAt: t.updatedAt ?? t.completedAt ?? t.deletedAt ?? t.createdAt,
+    }));
+  return {
+    tasks,
+    xpPenalties: Array.isArray(p.xpPenalties) ? (p.xpPenalties as XPPenalty[]) : [],
+  };
+}
+
+type NewTaskInput = Pick<EarningTask, 'name' | 'expectedAmount' | 'startDate' | 'endDate'>
+  & Partial<Pick<EarningTask, 'payerName' | 'paymentDueDate' | 'templateId'>>
+  & { subTasks?: Omit<SubTask, 'id' | 'isCompleted'>[] };
+
 interface TaskState {
   tasks: EarningTask[];
   xpPenalties: XPPenalty[];
 
-  addTask: (data: Pick<EarningTask, 'name' | 'expectedAmount' | 'startDate' | 'endDate'> & { subTasks?: Omit<SubTask, 'id' | 'isCompleted'>[] }) => EarningTask;
-  updateTask: (id: string, data: Partial<Pick<EarningTask, 'name' | 'expectedAmount' | 'startDate' | 'endDate'>>) => void;
+  addTask: (data: NewTaskInput) => EarningTask;
+  updateTask: (id: string, data: Partial<Pick<EarningTask, 'name' | 'expectedAmount' | 'startDate' | 'endDate' | 'payerName' | 'paymentDueDate'>>) => void;
   /** T5: cache kết quả AI thẩm định NGAY trên task (đổi task → hash đổi → gọi lại). */
   setTaskAiEval: (id: string, aiEval: TaskAiEval) => void;
-  completeTask: (id: string, actualAmount: number) => void;
+  /** v2: xong việc nhưng khách chưa trả → "Chờ thanh toán". Không cộng XP (XP chỉ khi nhận tiền).
+   * Trả false nếu task không tồn tại / đã xoá / đã nhận tiền / đang chờ rồi. */
+  markWorkDone: (id: string, opts?: { payerName?: string; paymentDueDate?: string }) => boolean;
+  /** v2 (undo): đưa task "Chờ thanh toán" về "Đang làm", khôi phục checklist cũ. */
+  undoMarkWorkDone: (id: string, before?: { subTasks?: SubTask[] }) => boolean;
+  /** Đánh dấu ĐÃ NHẬN TIỀN + cộng XP TASK_COMPLETE. Chỉ ghi task — giao dịch thu do
+   * `receiveTaskPayment` tạo rồi truyền `incomeTxnId` vào. Gọi lần 2 trên cùng task → false,
+   * không cộng XP lần nữa. */
+  completeTask: (id: string, actualAmount: number, opts?: { incomeTxnId?: string }) => boolean;
   deleteOverdueTask: (id: string, reason: OverdueReason) => void;
   /** Phase 5 (undo): xóa hẳn 1 task (dùng cho undo task vừa tạo). Trả false nếu không thấy. */
   removeTask: (id: string) => boolean;
   /** Phase 5/6A (undo): bỏ trạng thái hoàn thành. Nếu có `before`, khôi phục CHÍNH XÁC
-   * actualAmount + subTasks + xpPenalties (penalty đã bị completeTask tiêu hao). XP do caller restore. */
-  undoCompleteTask: (id: string, before?: { actualAmount?: number; subTasks?: SubTask[]; xpPenalties?: XPPenalty[] }) => boolean;
+   * actualAmount + subTasks + xpPenalties + stage (penalty đã bị completeTask tiêu hao). XP do caller restore. */
+  undoCompleteTask: (id: string, before?: { actualAmount?: number; subTasks?: SubTask[]; xpPenalties?: XPPenalty[]; stage?: TaskStage }) => boolean;
   toggleSubTask: (taskId: string, subTaskId: string) => void;
 
   getStatus: (task: EarningTask) => TaskStatus;
@@ -54,11 +98,16 @@ export const useTaskStore = create<TaskState>()(
   xpPenalties: [],
 
   addTask: (data) => {
+    const { subTasks, payerName, ...rest } = data;
+    const now = nowIso();
     const task: EarningTask = {
-      ...data,
+      ...rest,
+      payerName: cleanPayer(payerName),
       id: genId(),
-      createdAt: new Date().toISOString(),
-      subTasks: (data.subTasks || []).map((st) => ({ ...st, id: genId('st'), isCompleted: false })),
+      createdAt: now,
+      updatedAt: now,
+      stage: 'doing',
+      subTasks: (subTasks || []).map((st) => ({ ...st, id: genId('st'), isCompleted: false })),
     };
     set((s) => ({ tasks: [...s.tasks, task] }));
     return task;
@@ -67,6 +116,41 @@ export const useTaskStore = create<TaskState>()(
   removeTask: (id) => {
     if (!get().tasks.some((t) => t.id === id)) return false;
     set((s) => ({ tasks: s.tasks.filter((t) => t.id !== id) }));
+    return true;
+  },
+
+  markWorkDone: (id, opts) => {
+    const task = get().tasks.find((t) => t.id === id);
+    if (!task || task.deletedAt || getTaskStage(task) !== 'doing') return false;
+    const now = nowIso();
+    set((s) => ({
+      tasks: s.tasks.map((t) =>
+        t.id === id
+          ? {
+              ...t,
+              stage: 'awaiting_payment' as const,
+              workDoneAt: now,
+              updatedAt: now,
+              payerName: opts?.payerName !== undefined ? cleanPayer(opts.payerName) : t.payerName,
+              paymentDueDate: opts?.paymentDueDate ?? t.paymentDueDate,
+              subTasks: t.subTasks.map((st) => (st.isCompleted ? st : { ...st, isCompleted: true, completedAt: now })),
+            }
+          : t
+      ),
+    }));
+    return true;
+  },
+
+  undoMarkWorkDone: (id, before) => {
+    const task = get().tasks.find((t) => t.id === id);
+    if (!task || getTaskStage(task) !== 'awaiting_payment') return false;
+    set((s) => ({
+      tasks: s.tasks.map((t) =>
+        t.id === id
+          ? { ...t, stage: 'doing' as const, workDoneAt: undefined, updatedAt: nowIso(), subTasks: before?.subTasks ?? t.subTasks }
+          : t
+      ),
+    }));
     return true;
   },
 
@@ -79,6 +163,9 @@ export const useTaskStore = create<TaskState>()(
           ? {
               ...t,
               completedAt: undefined,
+              incomeTxnId: undefined,
+              stage: before?.stage && before.stage !== 'paid' ? before.stage : 'doing',
+              updatedAt: nowIso(),
               actualAmount: before?.actualAmount,
               // Phase 6A: khôi phục chính xác sub-task nếu có snapshot; nếu không, giữ nguyên.
               subTasks: before?.subTasks ?? t.subTasks,
@@ -94,24 +181,29 @@ export const useTaskStore = create<TaskState>()(
 
   updateTask: (id, data) =>
     set((s) => ({
-      tasks: s.tasks.map((t) => t.id === id ? { ...t, ...data } : t),
+      tasks: s.tasks.map((t) => {
+        if (t.id !== id) return t;
+        const next = { ...t, ...data, updatedAt: nowIso() };
+        if ('payerName' in data) next.payerName = cleanPayer(data.payerName);
+        return next;
+      }),
     })),
 
   setTaskAiEval: (id, aiEval) =>
     set((s) => ({
-      tasks: s.tasks.map((t) => t.id === id ? { ...t, aiEval } : t),
+      tasks: s.tasks.map((t) => t.id === id ? { ...t, aiEval, updatedAt: nowIso() } : t),
     })),
 
-  completeTask: (id, actualAmount) => {
+  completeTask: (id, actualAmount, opts) => {
     // Tính daysEarly TRƯỚC khi mutate state — cần raw task để đọc endDate.
     const task = get().tasks.find((t) => t.id === id);
+    // Chặn hoàn thành 2 lần (bấm đúp / chat + UI) → không cộng XP 2 lần.
+    if (!task || task.completedAt || task.deletedAt) return false;
     const completedAt = new Date();
-    let daysEarly = 0;
-    if (task) {
-      const end = new Date(task.endDate);
-      const diffMs = end.getTime() - completedAt.getTime();
-      daysEarly = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
-    }
+    // Đã xong việc từ trước (Chờ thanh toán) → tính sớm/trễ theo lúc xong việc, không phải lúc khách trả.
+    const doneAt = task.workDoneAt ? new Date(task.workDoneAt) : completedAt;
+    const end = new Date(task.endDate);
+    const daysEarly = Math.max(0, Math.floor((end.getTime() - doneAt.getTime()) / (1000 * 60 * 60 * 24)));
 
     set((s) => {
       const newPenalties = s.xpPenalties.map((p) =>
@@ -121,7 +213,9 @@ export const useTaskStore = create<TaskState>()(
       return {
         tasks: s.tasks.map((t) =>
           t.id === id
-            ? { ...t, completedAt: completedAt.toISOString(), actualAmount,
+            ? { ...t, completedAt: completedAt.toISOString(), updatedAt: completedAt.toISOString(), actualAmount,
+                stage: 'paid' as const,
+                incomeTxnId: opts?.incomeTxnId,
                 subTasks: t.subTasks.map((st) => ({ ...st, isCompleted: true })) }
             : t
         ),
@@ -136,12 +230,13 @@ export const useTaskStore = create<TaskState>()(
       earnedAmount: actualAmount,
       daysEarly,
     });
+    return true;
   },
 
   deleteOverdueTask: (id, reason) => {
     set((s) => ({
       tasks: s.tasks.map((t) =>
-        t.id === id ? { ...t, deletedAt: new Date().toISOString(), deleteReason: reason } : t
+        t.id === id ? { ...t, deletedAt: nowIso(), updatedAt: nowIso(), deleteReason: reason } : t
       ),
       xpPenalties: [
         ...s.xpPenalties,
@@ -160,6 +255,7 @@ export const useTaskStore = create<TaskState>()(
         t.id === taskId
           ? {
               ...t,
+              updatedAt: nowIso(),
               subTasks: t.subTasks.map((st) => {
                 if (st.id !== subTaskId) return st;
                 const nextCompleted = !st.isCompleted;
@@ -167,7 +263,7 @@ export const useTaskStore = create<TaskState>()(
                   ...st,
                   isCompleted: nextCompleted,
                   // Set timestamp khi chuyển false → true; xóa khi un-tick
-                  completedAt: nextCompleted ? new Date().toISOString() : undefined,
+                  completedAt: nextCompleted ? nowIso() : undefined,
                 };
               }),
             }
@@ -205,14 +301,7 @@ export const useTaskStore = create<TaskState>()(
       version: STORE_VERSIONS.tasks,
       storage: createJSONStorage(() => simulationAwareStorage),
       partialize: (s) => ({ tasks: s.tasks, xpPenalties: s.xpPenalties }),
-      migrate: (persisted) => {
-        const p = (persisted ?? {}) as Partial<TaskState>;
-        return {
-          ...p,
-          tasks: Array.isArray(p.tasks) ? p.tasks : [],
-          xpPenalties: Array.isArray(p.xpPenalties) ? p.xpPenalties : [],
-        } as TaskState;
-      },
+      migrate: (persisted) => migrateTasksState(persisted) as unknown as TaskState,
       onRehydrateStorage: onRehydrateMark('tasks'),
     },
   ),

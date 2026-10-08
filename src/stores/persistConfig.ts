@@ -10,7 +10,8 @@ export const STORE_VERSIONS = {
   finance: 1,
   budget: 1,
   goals: 1,
-  tasks: 1,
+  // v2 (2026-10): stage + updatedAt + khách/hẹn trả + incomeTxnId — xem migrateTasksState.
+  tasks: 2,
   auth: 1,
   audit: 1,
   dashboard: 1,

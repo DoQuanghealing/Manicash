@@ -89,6 +89,7 @@ export function toMoneySnapshotV1(input: ClientSnapshotInput): MoneySnapshotV1 {
       endDate: t.endDate ?? '',
       completedAt: t.completedAt,
       deletedAt: t.deletedAt,
+      stage: t.stage === 'awaiting_payment' || t.stage === 'paid' || t.stage === 'doing' ? t.stage : undefined,
       subTasks: (t.subTasks ?? []).map((s, j) => ({
         id: `st-${i}-${j}`,
         isCompleted: s.isCompleted === true,

@@ -57,11 +57,11 @@ async function main() {
   });
 
   // ── version ──
-  await it('version = 1 cho mọi store', () => {
+  await it('version đúng cho mọi store (tasks = 2 từ Đợt 1)', () => {
     eq(useFinanceStore.persist.getOptions().version, 1);
     eq(useBudgetStore.persist.getOptions().version, 1);
     eq(useGoalsStore.persist.getOptions().version, 1);
-    eq(useTaskStore.persist.getOptions().version, 1);
+    eq(useTaskStore.persist.getOptions().version, 2);
     eq(useAuthStore.persist.getOptions().version, 1);
   });
 
