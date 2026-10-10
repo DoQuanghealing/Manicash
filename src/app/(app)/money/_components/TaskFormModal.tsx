@@ -187,7 +187,7 @@ function FormBody({ onClose, onSubmit, editTask, draft, onUpdate }: TaskFormModa
             <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
               <div className="tfm-field">
                 <label className="tfm-label" htmlFor="tfm-name">Tên việc</label>
-                <input id="tfm-name" className="input" placeholder="VD: Thiết kế banner cho shop" value={name} onChange={(e) => setName(e.target.value)} maxLength={120} />
+                <input id="tfm-name" autoFocus className="input" placeholder="VD: Thiết kế banner cho shop" value={name} onChange={(e) => setName(e.target.value)} maxLength={120} />
               </div>
 
               <div className="tfm-row">

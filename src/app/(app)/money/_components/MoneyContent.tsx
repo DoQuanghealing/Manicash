@@ -117,6 +117,7 @@ export default function MoneyContent() {
   const dismissToast = useCallback(() => setToast(null), []);
 
   const openIdeas = useCallback((themeId?: EarningThemeId) => {
+    setToast(null);
     setIdeasTheme(themeId);
     setIdeasOpen(true);
   }, []);
@@ -128,9 +129,14 @@ export default function MoneyContent() {
     setShowForm(true);
   }, []);
 
-  const handleWorkDone = useCallback((id: string) => setSettle({ taskId: id, mode: 'done' }), []);
-  const handleOpenReceive = useCallback((id: string) => setSettle({ taskId: id, mode: 'receive' }), []);
-  const handleOpenReschedule = useCallback((id: string) => setSettle({ taskId: id, mode: 'reschedule' }), []);
+  // Mở sheet thì ẩn toast: toast nằm trên sheet (z 320) và che đúng nút đáy → chạm nhầm "Hoàn tác" khoản thu trước.
+  const openSettle = useCallback((taskId: string, mode: SettleMode) => {
+    setToast(null);
+    setSettle({ taskId, mode });
+  }, []);
+  const handleWorkDone = useCallback((id: string) => openSettle(id, 'done'), [openSettle]);
+  const handleOpenReceive = useCallback((id: string) => openSettle(id, 'receive'), [openSettle]);
+  const handleOpenReschedule = useCallback((id: string) => openSettle(id, 'reschedule'), [openSettle]);
   const closeSettle = useCallback(() => setSettle(null), []);
 
   // Nhận tiền: MỘT đường duy nhất receiveTaskPayment (giao dịch thu + XP 1 lần + popup thu nhập).
@@ -159,7 +165,9 @@ export default function MoneyContent() {
       note,
       onUndo: () => {
         const ok = undoReceiveTaskPayment(undo);
-        if (!ok) setTimeout(() => showToast({ message: 'Không hoàn tác được — dữ liệu đã thay đổi.' }), 0);
+        setTimeout(() => showToast({
+          message: ok ? `Đã hoàn tác — gỡ khoản thu của “${task.name}”` : 'Không hoàn tác được — dữ liệu đã thay đổi.',
+        }), 0);
       },
     });
     return null;
@@ -177,9 +185,9 @@ export default function MoneyContent() {
       message: 'Đã chuyển sang Chờ thanh toán',
       note: c.payerName ? `Khách: ${c.payerName}` : undefined,
       onUndo: () => {
-        if (undoMarkWorkDone(task.id, { subTasks: before.subTasks })) {
-          updateTask(task.id, { payerName: before.payerName, paymentDueDate: before.paymentDueDate });
-        }
+        const ok = undoMarkWorkDone(task.id, { subTasks: before.subTasks });
+        if (ok) updateTask(task.id, { payerName: before.payerName, paymentDueDate: before.paymentDueDate });
+        setTimeout(() => showToast({ message: ok ? 'Đã hoàn tác — việc trở lại Đang làm' : 'Không hoàn tác được — dữ liệu đã thay đổi.' }), 0);
       },
     });
   }, [markWorkDone, undoMarkWorkDone, updateTask, showToast]);
@@ -203,7 +211,7 @@ export default function MoneyContent() {
 
   const handleEdit = useCallback((id: string) => {
     const task = tasks.find((t) => t.id === id);
-    if (task) { setDraft(null); setEditingTask(task); setShowForm(true); }
+    if (task) { setToast(null); setDraft(null); setEditingTask(task); setShowForm(true); }
   }, [tasks]);
 
   const handleCloseForm = useCallback(() => {
@@ -331,7 +339,7 @@ export default function MoneyContent() {
                 <button
                   type="button"
                   className="money-add-btn"
-                  onClick={() => { setDraft(null); setEditingTask(null); setShowForm(true); }}
+                  onClick={() => { setToast(null); setDraft(null); setEditingTask(null); setShowForm(true); }}
                   aria-label="Tự thêm nhiệm vụ kiếm tiền"
                 >
                   <Plus size={18} aria-hidden="true" /> <span>Tự thêm</span>

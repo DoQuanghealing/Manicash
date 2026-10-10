@@ -46,6 +46,8 @@ function SheetBody({ onClose, onPick, initialThemeId }: Omit<Props, 'isOpen'>) {
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  // Chọn mẫu → form mở ngay sau, đừng kéo focus về nút "Gợi ý…" nằm dưới form.
+  const skipRestore = useRef(false);
 
   const templates = useMemo(() => templatesForTheme(themeId, skills), [themeId, skills]);
 
@@ -58,7 +60,7 @@ function SheetBody({ onClose, onPick, initialThemeId }: Omit<Props, 'isOpen'>) {
     window.addEventListener('keydown', onKey);
     return () => {
       window.removeEventListener('keydown', onKey);
-      if (opener?.isConnected) opener.focus({ preventScroll: true });
+      if (!skipRestore.current && opener?.isConnected) opener.focus({ preventScroll: true });
     };
   }, [onClose]);
 
@@ -152,7 +154,7 @@ function SheetBody({ onClose, onPick, initialThemeId }: Omit<Props, 'isOpen'>) {
                 <button
                   type="button"
                   className="eis-item-btn"
-                  onClick={() => onPick(tpl)}
+                  onClick={() => { skipRestore.current = true; onPick(tpl); }}
                   aria-label={`Thêm việc: ${tpl.name}, ${formatPriceRange(tpl.priceRange)}, khoảng ${tpl.typicalDays} ngày`}
                 >
                   <span className="eis-emo" aria-hidden="true">{tpl.emoji}</span>

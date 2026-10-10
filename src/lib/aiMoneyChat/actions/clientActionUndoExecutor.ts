@@ -17,6 +17,7 @@ import type { MoneyActionAuditRecord } from './actionAuditTypes';
 export type UndoActionResult = { ok: true; message: string } | { ok: false; message: string };
 
 const STALE = 'Dữ liệu đã thay đổi, không thể undo an toàn.';
+const COMPLETE_TASK_UNDO_WINDOW_MS = 15 * 60 * 1000;
 
 /** Restore XP/streak chính xác từ snapshot (nếu có). */
 function restoreUserProgress(before: Record<string, unknown>): void {
@@ -92,6 +93,12 @@ export async function undoMoneyActionOnClient(record: MoneyActionAuditRecord): P
     }
 
     case 'COMPLETE_EARNING_TASK': {
+      // Hoàn tác khôi phục XP/penalty theo ẢNH CHỤP lúc nhận tiền → để muộn sẽ xoá XP kiếm sau đó.
+      // Giới hạn cửa sổ để không phá tiến trình; quá hạn thì người dùng tự xoá giao dịch ở Sổ sách.
+      const createdMs = Date.parse(record.createdAt);
+      if (!Number.isNaN(createdMs) && Date.now() - createdMs > COMPLETE_TASK_UNDO_WINDOW_MS) {
+        return { ok: false, message: 'Đã quá 15 phút, không hoàn tác được. Bạn có thể xoá khoản thu ở Sổ sách.' };
+      }
       const ok = undoReceiveTaskPayment({
         taskId: String(before.taskId ?? ''),
         transactionId: typeof after.transactionId === 'string' ? after.transactionId : undefined,

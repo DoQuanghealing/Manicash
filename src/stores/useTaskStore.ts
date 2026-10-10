@@ -186,9 +186,13 @@ export const useTaskStore = create<TaskState>()(
     if (!task || task.completedAt || task.deletedAt) return false;
     const now = new Date();
     // completedAt = NGÀY NHẬN TIỀN (có thể lùi theo giao dịch) để khớp Sổ sách; updatedAt luôn là bây giờ.
-    const completedAt = opts?.receivedAt && !Number.isNaN(opts.receivedAt.getTime()) ? opts.receivedAt : now;
+    let completedAt = opts?.receivedAt && !Number.isNaN(opts.receivedAt.getTime()) ? opts.receivedAt : now;
+    // Không để "Nhận ngày" sớm hơn ngày tạo việc (vd. ghi một việc đã xong từ trước rồi chọn ngày nhận cũ hơn).
+    const created = Date.parse(task.createdAt);
+    if (!Number.isNaN(created) && completedAt.getTime() < created) completedAt = new Date(created);
     // Đã xong việc từ trước (Chờ thanh toán) → tính sớm/trễ theo lúc xong việc, không phải lúc khách trả.
-    const doneAt = task.workDoneAt ? new Date(task.workDoneAt) : completedAt;
+    // Thưởng "xong sớm" tính theo lúc xong việc THẬT (workDoneAt hoặc bây giờ) — ngày nhận lùi không được cộng XP.
+    const doneAt = task.workDoneAt ? new Date(task.workDoneAt) : now;
     const end = new Date(task.endDate);
     const daysEarly = Math.max(0, Math.floor((end.getTime() - doneAt.getTime()) / (1000 * 60 * 60 * 24)));
 

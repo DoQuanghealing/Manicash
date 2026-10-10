@@ -409,6 +409,27 @@ async function main() {
     eq(suggestedAmount(getEarningTemplate('weekend-cleaning')!), 300_000, '3 giờ × 100k');
   });
 
+  await it('N2 ngày nhận lùi KHÔNG cộng thêm XP "xong sớm" và không sớm hơn ngày tạo việc', () => {
+    seed([task({ createdAt: new Date(Date.now() - 2 * 86_400_000).toISOString(), endDate: dayKey(10) })], 1000);
+    const back = new Date(); back.setDate(back.getDate() - 25);
+    const xpBackdated = (() => { receiveTaskPayment({ taskId: 't1', amount: 0, receivedAt: back }); return useAuthStore.getState().user!.xp - 1000; })();
+    const t = useTaskStore.getState().tasks[0];
+    ok(Date.parse(t.completedAt!) >= Date.parse(t.createdAt), 'completedAt ≥ createdAt');
+    seed([task({ createdAt: new Date(Date.now() - 2 * 86_400_000).toISOString(), endDate: dayKey(10) })], 1000);
+    receiveTaskPayment({ taskId: 't1', amount: 0 });
+    eq(xpBackdated, useAuthStore.getState().user!.xp - 1000, 'XP như khi nhận hôm nay');
+  });
+
+  await it('#4 chat: hoàn tác "hoàn thành nhiệm vụ" quá 15 phút bị chặn', async () => {
+    seed([task()], 2000);
+    const r = req('COMPLETE_EARNING_TASK', { taskId: 't1', taskName: 'x', expectedAmount: 300_000, actualAmount: 300_000 });
+    const res = await executeMoneyActionOnClient(r);
+    const rec = { ...recordFrom(r, res), createdAt: new Date(Date.now() - 16 * 60_000).toISOString() };
+    const undo = await undoMoneyActionOnClient(rec);
+    eq(undo.ok, false);
+    eq(useFinanceStore.getState().transactions.length, 1, 'giao dịch còn nguyên');
+  });
+
   console.log('');
 }
 
