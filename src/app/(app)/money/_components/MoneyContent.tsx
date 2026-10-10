@@ -9,20 +9,27 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { useChartData } from '@/hooks/useChartData';
 import { useCFOSnapshot } from '@/hooks/useCFOSnapshot';
 import { useCFOReport } from '@/hooks/useCFOReport';
-import { useIncomeCelebration } from '@/hooks/useIncomeCelebration';
 import type { OverdueReason, EarningTask } from '@/types/task';
+import { getTaskStage } from '@/types/task';
+import { receiveTaskPayment, undoReceiveTaskPayment, getOutstandingSummary } from '@/lib/tasks/receiveTaskPayment';
+import { EARNING_THEMES, taskDraftFromTemplate, type EarningTemplate, type EarningThemeId } from '@/data/earningTemplates';
+import { formatCurrency } from '@/utils/formatCurrency';
 import HallOfFame from './HallOfFame';
 import TaskCard from './TaskCard';
-import TaskFormModal from './TaskFormModal';
+import TaskFormModal, { type TaskDraft } from './TaskFormModal';
+import EarningIdeasSheet from './EarningIdeasSheet';
+import TaskSettleSheet, { type SettleMode, type ReceiveChoice, type AwaitChoice } from './TaskSettleSheet';
+import TaskUndoToast, { type UndoToastData } from './TaskUndoToast';
 import TaskOverdueDialog from './TaskOverdueDialog';
 import CFOInsightCard from './CFOInsightCard';
 import StackedBarChart from './StackedBarChart';
 import SavingsLineChart from './SavingsLineChart';
 import HealthScoreGauge from './HealthScoreGauge';
 import Link from 'next/link';
-import { Plus, ChevronRight, BarChart2, MessageCircle } from 'lucide-react';
+import { Plus, ChevronRight, BarChart2, MessageCircle, Sparkles } from 'lucide-react';
 import { isAiMoneyChatEnabled } from '@/lib/aiMoneyChat/featureFlag';
 import { isSmsWebhookEnabled } from '@/lib/featureFlags';
+import './earningTheme.css';
 import './money.css';
 
 type MoneyTab = 'money' | 'cfo';
@@ -50,7 +57,8 @@ export default function MoneyContent() {
   const tasks = useTaskStore((s) => s.tasks);
   const addTask = useTaskStore((s) => s.addTask);
   const updateTask = useTaskStore((s) => s.updateTask);
-  const completeTask = useTaskStore((s) => s.completeTask);
+  const markWorkDone = useTaskStore((s) => s.markWorkDone);
+  const undoMarkWorkDone = useTaskStore((s) => s.undoMarkWorkDone);
   const deleteOverdueTask = useTaskStore((s) => s.deleteOverdueTask);
   const getStatus = useTaskStore((s) => s.getStatus);
 
@@ -58,7 +66,6 @@ export default function MoneyContent() {
   const currentXP = useAuthStore((s) => s.user?.xp ?? 0);
 
   const { weeklyComparison, savingsGrowth } = useChartData();
-  const { fireConfetti } = useIncomeCelebration();
 
   // === CFO state — lifted lên đây để share giữa CFOInsightCard + HealthScoreGauge ===
   // Phase 3: gửi MoneySnapshotV1 -> /api/cfo dùng CFO Context Pack (số do engine tính).
@@ -83,20 +90,107 @@ export default function MoneyContent() {
   const [showForm, setShowForm] = useState(false);
   const [editingTask, setEditingTask] = useState<EarningTask | null>(null);
   const [overdueTarget, setOverdueTarget] = useState<string | null>(null);
+  // Đợt 1 — thư viện mẫu, xong việc/nhận tiền, toast hoàn tác, lọc "khách còn nợ".
+  const [ideasOpen, setIdeasOpen] = useState(false);
+  const [ideasTheme, setIdeasTheme] = useState<EarningThemeId | undefined>(undefined);
+  const [draft, setDraft] = useState<TaskDraft | null>(null);
+  const [settle, setSettle] = useState<{ taskId: string; mode: SettleMode } | null>(null);
+  const [toast, setToast] = useState<UndoToastData | null>(null);
+  const [owedOnly, setOwedOnly] = useState(false);
 
   const activeTasks = tasks.filter((t) => !t.deletedAt && !t.completedAt);
+  const owed = getOutstandingSummary(tasks);
+  const visibleTasks = owedOnly && owed.count > 0
+    ? activeTasks.filter((t) => getTaskStage(t) === 'awaiting_payment')
+    : activeTasks;
+  const settleTask = settle ? tasks.find((t) => t.id === settle.taskId) ?? null : null;
   const completedTasks = tasks.filter((t) => t.completedAt);
   const overdueTaskName = overdueTarget
     ? tasks.find((t) => t.id === overdueTarget)?.name || ''
     : '';
 
-  const handleComplete = useCallback((id: string) => {
-    const task = tasks.find((t) => t.id === id);
-    if (task) {
-      completeTask(id, task.expectedAmount);
-      fireConfetti();
-    }
-  }, [tasks, completeTask, fireConfetti]);
+  const showToast = useCallback((t: Omit<UndoToastData, 'id'>) => {
+    setToast({ ...t, id: Date.now() });
+  }, []);
+  const dismissToast = useCallback(() => setToast(null), []);
+
+  const openIdeas = useCallback((themeId?: EarningThemeId) => {
+    setIdeasTheme(themeId);
+    setIdeasOpen(true);
+  }, []);
+
+  const handlePickTemplate = useCallback((tpl: EarningTemplate) => {
+    setIdeasOpen(false);
+    setEditingTask(null);
+    setDraft(taskDraftFromTemplate(tpl));
+    setShowForm(true);
+  }, []);
+
+  const handleWorkDone = useCallback((id: string) => setSettle({ taskId: id, mode: 'done' }), []);
+  const handleOpenReceive = useCallback((id: string) => setSettle({ taskId: id, mode: 'receive' }), []);
+  const handleOpenReschedule = useCallback((id: string) => setSettle({ taskId: id, mode: 'reschedule' }), []);
+  const closeSettle = useCallback(() => setSettle(null), []);
+
+  // Nhận tiền: MỘT đường duy nhất receiveTaskPayment (giao dịch thu + XP 1 lần + popup thu nhập).
+  const handleReceive = useCallback((task: EarningTask, c: ReceiveChoice): string | null => {
+    const res = receiveTaskPayment({
+      taskId: task.id,
+      amount: c.amount,
+      wallet: 'main',
+      method: c.method,
+      categoryId: c.categoryId,
+      receivedAt: c.receivedAt,
+    });
+    if (!res.ok) return res.message;
+    setSettle(null);
+    const where = c.method === 'cash' ? 'tiền mặt' : 'ví chính';
+    const expected = task.expectedAmount || 0;
+    const gap = expected > 0 && c.amount > 0 ? (c.amount - expected) / expected : 0;
+    const note = gap <= -0.2
+      ? 'Quản gia: Lần sau báo giá cao hơn chút nhé.'
+      : gap >= 0.2
+        ? 'Quản gia: Khách trả hơn mong đợi, tuyệt vời 👏'
+        : 'Quản gia: Tiền về rồi, làm tốt lắm!';
+    const undo = res.undo;
+    showToast({
+      message: res.transaction ? `Đã ghi +${formatCurrency(res.transaction.amount)} vào ${where}` : `Đã khép việc “${task.name}”`,
+      note,
+      onUndo: () => {
+        const ok = undoReceiveTaskPayment(undo);
+        if (!ok) setTimeout(() => showToast({ message: 'Không hoàn tác được — dữ liệu đã thay đổi.' }), 0);
+      },
+    });
+    return null;
+  }, [showToast]);
+
+  const handleAwait = useCallback((task: EarningTask, c: AwaitChoice) => {
+    const before = {
+      subTasks: task.subTasks.map((st) => ({ ...st })),
+      payerName: task.payerName,
+      paymentDueDate: task.paymentDueDate,
+    };
+    setSettle(null);
+    if (!markWorkDone(task.id, { payerName: c.payerName, paymentDueDate: c.paymentDueDate })) return;
+    showToast({
+      message: 'Đã chuyển sang Chờ thanh toán',
+      note: c.payerName ? `Khách: ${c.payerName}` : undefined,
+      onUndo: () => {
+        if (undoMarkWorkDone(task.id, { subTasks: before.subTasks })) {
+          updateTask(task.id, { payerName: before.payerName, paymentDueDate: before.paymentDueDate });
+        }
+      },
+    });
+  }, [markWorkDone, undoMarkWorkDone, updateTask, showToast]);
+
+  const handleReschedule = useCallback((task: EarningTask, c: AwaitChoice) => {
+    updateTask(task.id, { payerName: c.payerName || undefined, paymentDueDate: c.paymentDueDate });
+    setSettle(null);
+    showToast({
+      message: c.paymentDueDate
+        ? `Đã hẹn lại ngày ${new Date(`${c.paymentDueDate}T12:00:00`).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })}`
+        : 'Đã bỏ ngày hẹn trả',
+    });
+  }, [updateTask, showToast]);
 
   const handleOverdueReason = useCallback((reason: OverdueReason) => {
     if (overdueTarget) {
@@ -107,12 +201,13 @@ export default function MoneyContent() {
 
   const handleEdit = useCallback((id: string) => {
     const task = tasks.find((t) => t.id === id);
-    if (task) { setEditingTask(task); setShowForm(true); }
+    if (task) { setDraft(null); setEditingTask(task); setShowForm(true); }
   }, [tasks]);
 
   const handleCloseForm = useCallback(() => {
     setShowForm(false);
     setEditingTask(null);
+    setDraft(null);
   }, []);
 
   const switchTab = (tab: MoneyTab) => {
@@ -182,31 +277,73 @@ export default function MoneyContent() {
                 </div>
               </div>
 
+              {/* Đợt 1 — Khách còn nợ: bấm để lọc chỉ việc Chờ thanh toán */}
+              {owed.count > 0 && (
+                <button
+                  type="button"
+                  className={`money-owed${owedOnly ? ' is-on' : ''}`}
+                  onClick={() => setOwedOnly(!owedOnly)}
+                  aria-pressed={owedOnly}
+                >
+                  <span className="money-owed-text">
+                    Khách còn nợ <b>{formatCurrency(owed.amount)}</b> từ {owed.count} việc
+                  </span>
+                  <span className="money-owed-act">{owedOnly ? 'Xem tất cả' : 'Lọc'}</span>
+                </button>
+              )}
+
               {/* Active Task List */}
-              {activeTasks.map((task) => (
+              {visibleTasks.map((task) => (
                 <TaskCard
                   key={task.id}
                   task={task}
                   status={getStatus(task)}
-                  onComplete={handleComplete}
+                  onWorkDone={handleWorkDone}
+                  onReceive={handleOpenReceive}
+                  onReschedule={handleOpenReschedule}
                   onOverdueAction={setOverdueTarget}
                   onEdit={handleEdit}
                 />
               ))}
 
-              {/* Add Task button */}
-              <button className="btn btn-primary btn-full btn-lg" onClick={() => setShowForm(true)} style={{ marginTop: 'var(--space-sm)' }}>
-                <Plus size={18} /> <span>Thêm nhiệm vụ kiếm tiền</span>
-              </button>
+              {/* Rỗng: mời chọn ý tưởng ngay */}
+              {activeTasks.length === 0 && (
+                <div className="money-empty">
+                  <p className="money-empty-text">Chưa có việc nào. Chọn một ý tưởng bên dưới, 30 giây là bắt đầu.</p>
+                  <div className="money-empty-themes">
+                    {EARNING_THEMES.map((t) => (
+                      <button key={t.id} type="button" data-tid={t.id} className="money-empty-theme" onClick={() => openIdeas(t.id)}>
+                        <span aria-hidden="true">{t.emoji}</span>
+                        <small>{t.name}</small>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Gợi ý từ thư viện mẫu + tự thêm */}
+              <div className="money-add-row">
+                <button type="button" className="btn btn-primary btn-lg money-ideas-btn" onClick={() => openIdeas()}>
+                  <Sparkles size={18} aria-hidden="true" /> <span>Gợi ý việc kiếm tiền</span>
+                </button>
+                <button
+                  type="button"
+                  className="money-add-btn"
+                  onClick={() => { setDraft(null); setEditingTask(null); setShowForm(true); }}
+                  aria-label="Tự thêm nhiệm vụ kiếm tiền"
+                >
+                  <Plus size={18} aria-hidden="true" /> <span>Tự thêm</span>
+                </button>
+              </div>
 
               {/* Completed Tasks — History */}
               {completedTasks.length > 0 && (
                 <div style={{ marginTop: 'var(--space-lg)' }}>
                   <p style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--c-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-sm)' }}>
-                    ✅ Lịch sử hoàn thành ({completedTasks.length})
+                    ✅ Đã nhận tiền ({completedTasks.length})
                   </p>
                   {completedTasks.slice(0, 3).map((task) => (
-                    <TaskCard key={task.id} task={task} status="completed" onComplete={() => {}} onOverdueAction={() => {}} />
+                    <TaskCard key={task.id} task={task} status="completed" />
                   ))}
                 </div>
               )}
@@ -306,8 +443,24 @@ export default function MoneyContent() {
         onClose={handleCloseForm}
         onSubmit={addTask}
         editTask={editingTask}
+        draft={draft}
         onUpdate={updateTask}
       />
+      <EarningIdeasSheet
+        isOpen={ideasOpen}
+        initialThemeId={ideasTheme}
+        onClose={() => setIdeasOpen(false)}
+        onPick={handlePickTemplate}
+      />
+      <TaskSettleSheet
+        task={settleTask}
+        mode={settle?.mode ?? 'done'}
+        onClose={closeSettle}
+        onReceive={handleReceive}
+        onAwait={handleAwait}
+        onReschedule={handleReschedule}
+      />
+      <TaskUndoToast toast={toast} onDismiss={dismissToast} />
       <TaskOverdueDialog
         isOpen={!!overdueTarget}
         taskName={overdueTaskName}

@@ -11,7 +11,7 @@
   - [x] 0.3 Spec Đợt 1 `docs/SPEC_DOT_1_THU_VIEN_MAU.md` — **PO DUYỆT 2026-10-08**. Q1–Q4 PO chưa trả lời → dùng mặc định:
         Q1 giữ giá · Q2 tiền vào ví, chưa góp mục tiêu · Q3 đổi tên "Tài sản nhàn rỗi" · Q4 chat "khách chưa trả" để Đợt 2.
         Phát hiện: bấm "Xong" hiện KHÔNG tạo giao dịch thu + ghi actual = expected; task thiếu `updatedAt` (lỗi gộp sync).
-  - [~] 0.4 4 mẫu thử decor (landing-decorator) → đang dựng ở `docs/design-probes/thu-vien-mau/` → PO chọn.
+  - [~] 0.4 4 mẫu thử ĐÃ XONG `docs/design-probes/thu-vien-mau/so-sanh-4-mau.html` (A Sổ sách gọn · B Kính đêm · C Biên lai khoét · D Thẻ màu một tiêu điểm) — **chờ PO chọn**.
 - [~] **Đợt 1 — ĐANG LÀM**, nhánh `feat/earning-tasks-dot1` (tách từ `docs/tasks-notes-plan`, chưa push).
   - [x] Tầng dữ liệu + logic (chưa đụng UI): `EarningTask` v2 (stage/updatedAt/khách/hẹn trả/incomeTxnId/templateId,
         trường optional + `getTaskStage` suy từ completedAt) · store v2 + `migrateTasksState` · `markWorkDone`/`undoMarkWorkDone` ·
@@ -20,8 +20,12 @@
         CFO không tính "Chờ thanh toán" là trễ · `src/data/earningTemplates.ts` 34 mẫu + xếp theo La bàn.
         Test `npm run test:earning-tasks` 20/20 (đã gắn vào `test:ai-all`). ai-all/ai-money/money-sync/moneybrain xanh;
         `test:ai-persistence` còn 1 FAIL **có sẵn từ trước** ("finance rehydrate", fail cả trên code gốc).
-  - [ ] UI (chờ PO chọn mẫu thử 0.4): sheet thư viện mẫu · form 3 trường + "Thêm chi tiết" · thẻ theo giai đoạn ·
-        hộp "Nhận được bao nhiêu?" · dòng "Khách còn nợ". ⚠️ Tới lúc đó nút "Xong" ở `MoneyContent.tsx` VẪN đi đường cũ.
+  - [~] UI — **PO chọn mẫu D (2026-10-09)**, đã dựng (chưa commit): `EarningIdeasSheet` · `TaskSettleSheet`
+        (Xong việc → nhận luôn / chờ thanh toán / hẹn lại) · `TaskUndoToast` · `TaskCard` mẫu D theo giai đoạn ·
+        form 3 trường + "Thêm chi tiết" · dòng "Khách còn nợ" (bấm để lọc) · trạng thái rỗng 6 chủ đề.
+        Nút "Xong" giờ đi `receiveTaskPayment`. Đang chạy 2 vòng redteam (code + giao diện) → sửa tới khi ĐẠT.
+        Trang xem thử tạm `src/app/(public)/zz-dot1-preview/` (chế độ giả lập, chỉ dev) — **KHÔNG commit, xoá khi xong**.
+        ⚠️ Bộ chống spam IP trong RAM của dev server có thể chặn localhost khi tải trang dev nhiều → khởi động lại server.
 - `main` = `0b0e19a` (PR #38 đã lên prod).
 
 ## Mục tiêu

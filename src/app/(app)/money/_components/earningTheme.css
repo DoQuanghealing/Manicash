@@ -1,0 +1,11 @@
+/* ═══ Màu nhấn 6 chủ đề kiếm tiền (mẫu D) ═══
+ * Gắn `data-tid="<themeId>"` lên phần tử → có biến `--acc`. Chỉ dùng token --c-* có thật.
+ * Vàng (--c-warning) DÀNH RIÊNG cho trạng thái "Chờ thanh toán", không cấp cho chủ đề nào.
+ */
+[data-tid] { --acc: var(--c-purple); }
+[data-tid="sell-online"] { --acc: var(--c-orange); }
+[data-tid="freelance"] { --acc: var(--c-purple); }
+[data-tid="tutoring"] { --acc: var(--c-info); }
+[data-tid="declutter"] { --acc: var(--c-emerald); }
+[data-tid="weekend"] { --acc: color-mix(in oklch, var(--c-info) 55%, var(--c-emerald)); }
+[data-tid="idle-assets"] { --acc: color-mix(in oklch, var(--c-ruby) 55%, var(--c-purple)); }

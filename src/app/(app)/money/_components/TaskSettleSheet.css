@@ -1,0 +1,186 @@
+/* ═══ TaskSettleSheet — mẫu D (hộp "Nhận được bao nhiêu?") ═══
+ * ⚠️ .tss-sheet là motion.div → canh giữa bằng margin-inline, KHÔNG transform.
+ */
+.tss-backdrop {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+}
+
+.tss-sheet {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 201;
+  max-height: 90dvh; overflow-y: auto; overscroll-behavior: contain;
+  padding: 8px 18px calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 18px);
+  border-radius: 32px 32px 0 0;
+  background:
+    radial-gradient(70% 140px at 50% 0, color-mix(in srgb, var(--acc) 14%, transparent), transparent 100%),
+    var(--c-bg-elevated);
+  color: var(--c-text-primary);
+  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.18);
+  outline: none;
+  scrollbar-width: none;
+}
+.tss-sheet::-webkit-scrollbar { display: none; }
+
+@media (min-width: 768px) {
+  .tss-sheet { max-width: 430px; margin-inline: auto; }
+}
+
+.tss-grab {
+  display: block; width: 40px; height: 4px; margin: 0 auto 10px;
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--acc) 40%, transparent);
+}
+
+.tss-x {
+  position: absolute; right: 16px; top: 14px;
+  display: grid; place-items: center;
+  width: 36px; height: 36px;
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--c-text-primary) 6%, transparent);
+  color: var(--c-text-secondary);
+}
+
+.tss-task { position: relative; padding: 8px 76px 0 2px; min-height: 56px; }
+.tss-emo {
+  position: absolute; right: 44px; top: -2px;
+  font-size: 46px; line-height: 1;
+  transform: rotate(8deg);
+  pointer-events: none;
+  filter: drop-shadow(0 8px 7px color-mix(in srgb, var(--acc) 45%, transparent));
+}
+.tss-task-name {
+  margin: 0;
+  font: 700 0.95rem/1.35 var(--font-display);
+  overflow-wrap: anywhere;
+}
+.tss-task-sub { margin: 2px 0 0; font-size: 0.78rem; line-height: 1.4; color: var(--c-text-muted); }
+
+.tss-title {
+  margin: 16px 0 14px;
+  font: 800 1.3rem/1.3 var(--font-display);
+  letter-spacing: -0.01em;
+  text-align: center;
+}
+
+/* ── Hỏi: khách trả chưa ── */
+.tss-choices { display: flex; flex-direction: column; gap: 10px; }
+.tss-choice {
+  display: flex; align-items: center; gap: 14px;
+  width: 100%; min-height: 68px;
+  padding: 14px 16px;
+  border-radius: 22px;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.12s;
+}
+.tss-choice:active { transform: scale(0.985); }
+.tss-choice > span { display: flex; flex-direction: column; gap: 2px; }
+.tss-choice b { font-size: 0.95rem; font-weight: 700; line-height: 1.35; }
+.tss-choice small { font-size: 0.75rem; line-height: 1.4; opacity: 0.8; }
+.tss-choice svg { flex: none; }
+.tss-choice--paid {
+  background: color-mix(in srgb, var(--c-income) 12%, var(--c-bg-elevated));
+  border: 1.5px solid color-mix(in srgb, var(--c-income) 35%, transparent);
+  color: var(--c-text-primary);
+}
+.tss-choice--paid svg { color: var(--c-income); }
+.tss-choice--wait {
+  background: color-mix(in srgb, var(--c-warning) 12%, var(--c-bg-elevated));
+  border: 1.5px solid color-mix(in srgb, var(--c-warning) 35%, transparent);
+  color: var(--c-text-primary);
+}
+.tss-choice--wait svg { color: var(--c-warning); }
+
+/* ── Nhận tiền ── */
+.tss-recv, .tss-await { display: flex; flex-direction: column; gap: 14px; }
+
+.tss-money {
+  display: flex; justify-content: center; align-items: baseline; gap: 6px;
+  padding: 10px 12px;
+  border-radius: 24px;
+  background: color-mix(in srgb, var(--c-purple) 6%, var(--c-bg-elevated));
+}
+.tss-money input {
+  width: 100%; min-width: 0; max-width: 11ch;
+  border: 0; outline: 0; background: transparent;
+  text-align: center;
+  font: 800 2.1rem/1.25 var(--font-display);
+  color: var(--c-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.tss-money span { font: 800 1.35rem/1.3 var(--font-display); color: var(--c-text-muted); }
+.tss-money:focus-within { box-shadow: 0 0 0 2.5px color-mix(in srgb, var(--c-purple) 45%, transparent); }
+
+.tss-gap, .tss-hint, .tss-error {
+  margin: -4px 4px 0;
+  font-size: 0.78rem; line-height: 1.45; text-align: center;
+}
+.tss-gap { color: var(--c-text-secondary); font-weight: 600; }
+.tss-hint { color: var(--c-text-muted); }
+.tss-error { color: var(--c-danger); font-weight: 600; }
+
+.tss-row { display: grid; grid-template-columns: auto 1fr 1fr; align-items: center; gap: 8px; }
+.tss-row-label {
+  font-size: 0.8rem; line-height: 1.35; color: var(--c-text-muted);
+  padding-right: 2px;
+}
+.tss-row-label em { font-style: normal; opacity: 0.75; }
+
+.tss-seg {
+  min-height: 44px; padding: 10px;
+  border-radius: 18px;
+  background: var(--c-bg-elevated);
+  border: 1.5px solid color-mix(in srgb, var(--c-text-primary) 10%, transparent);
+  font-size: 0.85rem; font-weight: 600; line-height: 1.35;
+  color: var(--c-text-secondary);
+}
+.tss-seg.is-on, .tss-cat.is-on {
+  border-color: var(--c-purple);
+  color: var(--c-text-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-purple) 15%, transparent);
+}
+
+.tss-field { display: flex; flex-direction: column; gap: 6px; }
+
+.tss-cats { display: flex; flex-wrap: wrap; gap: 6px; }
+.tss-cat {
+  min-height: 36px; padding: 6px 12px;
+  border-radius: var(--radius-full);
+  background: var(--c-bg-elevated);
+  border: 1.5px solid color-mix(in srgb, var(--c-text-primary) 10%, transparent);
+  font-size: 0.78rem; font-weight: 600; line-height: 1.3;
+  color: var(--c-text-secondary);
+}
+
+.tss-main {
+  width: 100%; min-height: 50px; padding: 0 20px;
+  border-radius: var(--radius-full);
+  background: var(--gradient-primary);
+  color: #fff;
+  font-size: 0.95rem; font-weight: 700; line-height: 1.35;
+  box-shadow: 0 12px 22px -12px var(--c-purple);
+}
+.tss-main:disabled { opacity: 0.55; }
+.tss-main--wait {
+  background: color-mix(in srgb, var(--c-warning) 68%, #000);
+  box-shadow: 0 12px 22px -12px var(--c-warning);
+}
+
+.tss-back {
+  align-self: center;
+  min-height: 40px; padding: 0 14px;
+  background: none;
+  color: var(--c-text-muted);
+  font-size: 0.85rem; font-weight: 600;
+}
+
+.tss-money input:focus-visible { outline: none; } /* viền focus nằm ở khung .tss-money */
+.tss-sheet button:focus-visible, .tss-sheet input:not(.tss-money input):focus-visible {
+  outline: 2.5px solid var(--c-purple);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tss-choice { transition: none; }
+}

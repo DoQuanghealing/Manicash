@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mẫu B — Kính đêm · Thư viện ý tưởng kiếm tiền</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap">
+<style>
+/* Token chép NGUYÊN từ src/app/globals.css — mẫu này dùng nhánh TỐI (:root) */
+*{box-sizing:border-box}
+:root,.theme-dark{
+  --c-purple:#7C3AED;--c-purple-light:#A78BFA;--c-purple-dark:#5B21B6;
+  --c-orange:#F97316;--c-orange-light:#FDBA74;
+  --c-green:#22C55E;--c-green-light:#86EFAC;--c-green-dark:#16A34A;
+  --c-bg-primary:#0A0A12;--c-bg-secondary:#13111D;--c-bg-tertiary:#1C1930;--c-bg-elevated:#231F38;
+  --c-text-primary:#F4F4F5;--c-text-secondary:#A1A1AA;--c-text-muted:#71717A;--c-text-faint:#52525B;
+  --c-text-accent:var(--c-purple-light);
+  --c-success:#22C55E;--c-warning:#F59E0B;--c-danger:#EF4444;--c-info:#3B82F6;--c-income:#22C55E;
+  --c-emerald:#10B981;--c-ruby:#EF4444;
+  --glass-bg:rgba(255,255,255,.035);--glass-bg-hover:rgba(255,255,255,.06);--glass-bg-active:rgba(255,255,255,.10);
+  --glass-border:rgba(255,255,255,.07);--glass-border-hover:rgba(255,255,255,.12);
+  --radius-sm:8px;--radius-md:12px;--radius-lg:16px;--radius-xl:20px;--radius-2xl:24px;--radius-full:9999px;
+  --font-sans:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --font-display:"Outfit",var(--font-sans);
+}
+.t1{--acc:var(--c-orange)}.t2{--acc:var(--c-purple)}.t3{--acc:var(--c-info)}.t4{--acc:var(--c-emerald)}
+.t5{--acc:color-mix(in oklch,var(--c-info) 55%,var(--c-emerald))}
+.t6{--acc:color-mix(in oklch,var(--c-ruby) 55%,var(--c-purple))}
+
+html{background:var(--c-bg-tertiary)}
+body{margin:0;font-family:var(--font-sans);line-height:1.45;color:var(--c-text-primary);-webkit-font-smoothing:antialiased}
+button{font-family:inherit;cursor:pointer}
+.rd{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+.doc{max-width:520px;margin:0 auto;padding:24px 16px 48px}
+.doc-head{margin:0 0 20px;font-size:13px;line-height:1.55;color:var(--c-text-secondary)}
+.doc-head h1{margin:0 0 4px;font:800 21px/1.3 var(--font-display);color:var(--c-text-primary)}
+.cols{display:flex;justify-content:center}
+.col{flex:0 0 390px;width:390px}
+.col-h{margin:0 0 2px;font:800 18px/1.35 var(--font-display)}
+.col-m{margin:0 0 12px;font-size:12px;line-height:1.45;color:var(--c-text-muted)}
+.phone,.panel{width:390px;border-radius:28px;overflow:hidden;border:1px solid color-mix(in srgb,var(--c-text-primary) 10%,transparent)}
+.panel{margin-top:12px}
+.strip-label{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;line-height:1.4;opacity:.55}
+.fit{margin:12px 2px 0;font-size:12.5px;line-height:1.55;color:var(--c-text-secondary)}
+.fit b{color:var(--c-text-primary)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* ════════ B — KÍNH ĐÊM ════════ */
+.b-phone,.b-panel{color:var(--c-text-primary);background:
+  radial-gradient(80% 45% at 0% 0%,color-mix(in srgb,var(--c-purple) 26%,transparent),transparent 70%),
+  radial-gradient(70% 40% at 100% 45%,color-mix(in srgb,var(--c-orange) 12%,transparent),transparent 70%),
+  var(--c-bg-primary)}
+.b-sheet{margin-top:28px;border-radius:28px 28px 0 0;padding:8px 16px 20px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--c-bg-elevated) 88%,transparent),color-mix(in srgb,var(--c-bg-secondary) 94%,transparent) 40%);
+  box-shadow:inset 0 1px 0 var(--glass-border-hover),0 -20px 40px -20px color-mix(in srgb,var(--c-purple) 40%,transparent)}
+.b-grab{display:block;width:36px;height:4px;border-radius:var(--radius-full);background:var(--c-text-faint);margin:0 auto 14px}
+.b-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.b-title{margin:0;font:700 20px/1.35 var(--font-display)}
+.b-x{width:34px;height:34px;border-radius:var(--radius-full);background:var(--glass-bg-hover);border:1px solid var(--glass-border-hover);color:var(--c-text-secondary);font-size:20px;line-height:1}
+.b-chips{display:flex;gap:8px;overflow-x:auto;margin:0 -16px 6px;padding:14px 16px;scrollbar-width:none}
+.b-chips::-webkit-scrollbar{display:none}
+.b-chips label{flex:0 0 auto;position:relative;display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:var(--radius-full);background:linear-gradient(180deg,var(--glass-bg-active),var(--glass-bg));border:1px solid var(--glass-border-hover);font-size:13px;line-height:1.35;color:var(--c-text-secondary);white-space:nowrap;cursor:pointer;transition:box-shadow .2s,border-color .2s}
+.b-chips em{position:absolute;top:-10px;right:10px;font-style:normal;font-size:9.5px;font-weight:700;line-height:1.35;padding:1px 7px;border-radius:var(--radius-full);background:var(--acc);color:var(--c-text-primary);box-shadow:0 0 12px -2px var(--acc)}
+#b1:checked~.b-chips [for=b1],#b2:checked~.b-chips [for=b2],#b3:checked~.b-chips [for=b3],
+#b4:checked~.b-chips [for=b4],#b5:checked~.b-chips [for=b5],#b6:checked~.b-chips [for=b6]{
+  color:var(--c-text-primary);font-weight:600;border-color:color-mix(in srgb,var(--acc) 60%,transparent);
+  background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 34%,transparent),color-mix(in srgb,var(--acc) 12%,transparent));
+  box-shadow:0 0 24px -6px color-mix(in srgb,var(--acc) 80%,transparent)}
+.b-list{display:none;grid-template-columns:1fr 1fr;gap:10px;margin:0;padding:0;list-style:none}
+#b1:checked~.b-lists .t1,#b2:checked~.b-lists .t2,#b3:checked~.b-lists .t3,
+#b4:checked~.b-lists .t4,#b5:checked~.b-lists .t5,#b6:checked~.b-lists .t6{display:grid}
+.b-list li{position:relative;display:flex;flex-direction:column;gap:8px;min-height:160px;padding:14px 12px 12px;border-radius:var(--radius-xl);
+  background:radial-gradient(90% 55% at 15% 0%,color-mix(in srgb,var(--acc) 24%,transparent),transparent 72%),linear-gradient(180deg,var(--glass-bg-active),var(--glass-bg));
+  box-shadow:0 18px 30px -18px var(--c-bg-primary)}
+.b-list li::before,.b-g3::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:linear-gradient(115deg,color-mix(in srgb,var(--c-text-primary) 16%,transparent) 0%,color-mix(in srgb,var(--c-text-primary) 4%,transparent) 38%,transparent 39%)}
+.b-list li::after,.b-g3::after{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;pointer-events:none;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--c-text-primary) 34%,transparent),color-mix(in srgb,var(--c-text-primary) 6%,transparent) 45%,color-mix(in srgb,var(--acc,var(--c-purple)) 45%,transparent));
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
+.b-list li>*{position:relative;z-index:1}
+.b-list li>.b-add{position:absolute;top:12px;right:12px;z-index:2}
+.b-emo,.b-temo{display:grid;place-items:center;width:46px;height:46px;border-radius:50%;font-size:28px;line-height:1;background:radial-gradient(closest-side,color-mix(in srgb,var(--acc) 45%,transparent),transparent)}
+.b-txt{flex:1;display:flex;flex-direction:column;gap:6px}
+.b-txt b{font-size:13.5px;font-weight:600;line-height:1.38}
+.b-txt small{margin-top:auto;font-size:11.5px;line-height:1.4;color:var(--c-text-muted)}
+.b-txt small i{font-style:normal;font-weight:700;font-size:12.5px;color:color-mix(in oklch,var(--acc) 50%,var(--c-text-primary))}
+.b-add{width:30px;height:30px;border-radius:var(--radius-full);border:1px solid color-mix(in srgb,var(--acc) 55%,transparent);background:color-mix(in srgb,var(--acc) 18%,transparent);color:var(--c-text-primary);font-size:18px;line-height:1}
+.b-note{margin:12px 2px 0;font-size:12px;line-height:1.4;color:var(--c-text-muted)}
+.b-panel{padding:18px 16px 20px;display:flex;flex-direction:column;gap:14px}
+.b-owe{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:var(--radius-full);background:linear-gradient(180deg,var(--glass-bg-active),var(--glass-bg));border:1px solid color-mix(in srgb,var(--c-warning) 35%,transparent);font-size:13.5px;line-height:1.4;color:var(--c-text-secondary)}
+.b-owe::before{content:"";flex:none;width:8px;height:8px;border-radius:50%;background:var(--c-warning);box-shadow:0 0 10px var(--c-warning)}
+.b-owe b{color:var(--c-text-primary)}
+.b-owe span+span{margin-left:auto;color:var(--c-text-muted)}
+.b-g3{position:relative;border-radius:var(--radius-xl);padding:16px;background:linear-gradient(180deg,var(--glass-bg-active),var(--glass-bg));
+  box-shadow:0 12px 0 -4px var(--glass-bg-hover),0 22px 0 -8px var(--glass-bg),0 28px 50px -18px var(--c-bg-primary)}
+.b-g3>*{position:relative;z-index:1}
+.b-task{margin-bottom:16px}
+.b-trow{display:grid;grid-template-columns:46px 1fr;gap:12px;align-items:center}
+.b-ttxt{display:flex;flex-direction:column;gap:3px}
+.b-ttxt b{font-size:14.5px;font-weight:600;line-height:1.38}
+.b-ttxt small{font-size:12.5px;line-height:1.38;color:var(--c-text-secondary)}
+.b-mid{display:flex;justify-content:space-between;align-items:center;margin:14px 0}
+.b-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:var(--radius-full);font-size:12px;font-weight:600;line-height:1.35;color:var(--c-warning);background:color-mix(in srgb,var(--c-warning) 14%,transparent);border:1px solid color-mix(in srgb,var(--c-warning) 35%,transparent)}
+.b-badge::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--c-warning);box-shadow:0 0 8px var(--c-warning)}
+.b-amt{font:700 18px/1.35 var(--font-display);font-variant-numeric:tabular-nums}
+.b-actions{display:grid;grid-template-columns:1fr auto;gap:8px}
+.b-btn{height:44px;padding:0 16px;border:0;border-radius:var(--radius-md);font-size:14px;font-weight:600;line-height:1.35;color:var(--c-text-primary)}
+.b-pri{background:linear-gradient(180deg,var(--c-green-light),var(--c-income));color:var(--c-bg-primary);box-shadow:0 0 0 1px color-mix(in srgb,var(--c-income) 40%,transparent),0 0 26px -4px color-mix(in srgb,var(--c-income) 65%,transparent)}
+.b-ghost{background:var(--glass-bg-hover);border:1px solid var(--glass-border-hover);color:var(--c-text-secondary)}
+.b-recv{display:flex;flex-direction:column;gap:14px}
+.b-recv h4{margin:0;font:700 17px/1.35 var(--font-display)}
+.b-money{display:flex;align-items:baseline;gap:6px;padding:11px 16px;border-radius:var(--radius-lg);background:color-mix(in srgb,var(--c-bg-primary) 55%,transparent);border:1px solid color-mix(in srgb,var(--c-purple-light) 45%,transparent);box-shadow:0 0 22px -8px color-mix(in srgb,var(--c-purple) 70%,transparent)}
+.b-money input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:var(--c-text-primary);font:700 24px/1.35 var(--font-display);font-variant-numeric:tabular-nums}
+.b-money span{color:var(--c-text-muted);font-weight:600}
+.b-wallet{display:flex;align-items:center;gap:4px;padding:4px;border-radius:var(--radius-full);background:var(--glass-bg);border:1px solid var(--glass-border)}
+.b-wl{font-size:12.5px;line-height:1.35;color:var(--c-text-muted);padding:0 8px 0 10px}
+.b-wallet label{flex:1;text-align:center;padding:7px 10px;border-radius:var(--radius-full);font-size:13px;line-height:1.35;color:var(--c-text-secondary);cursor:pointer}
+.b-wallet input:checked+label{background:linear-gradient(180deg,color-mix(in srgb,var(--c-purple) 50%,transparent),color-mix(in srgb,var(--c-purple) 25%,transparent));color:var(--c-text-primary);font-weight:600;box-shadow:0 0 16px -4px color-mix(in srgb,var(--c-purple) 80%,transparent)}
+.b-main{width:100%;background:linear-gradient(180deg,color-mix(in srgb,var(--c-purple) 75%,var(--c-purple-light)),var(--c-purple-dark));box-shadow:0 0 0 1px color-mix(in srgb,var(--c-purple-light) 40%,transparent),0 0 30px -4px color-mix(in srgb,var(--c-purple) 70%,transparent)}
+</style>
+</head>
+<body>
+<div class="doc">
+<header class="doc-head">
+  <h1>Mẫu B — Kính đêm</h1>
+  <div>ManiCash · Thư viện ý tưởng kiếm tiền · mẫu thử, chưa áp vào code. Token <code>--c-*</code> và <code>--glass-*</code> nhánh tối từ <code>globals.css</code>. Bấm chip để đổi chủ đề, bấm ví để đổi ví.</div>
+</header>
+<div class="cols">
+<section class="col">
+<h2 class="col-h">B — Kính đêm</h2>
+<p class="col-m">§8 kính 3D nền tối (vệt sáng + viền bắt sáng + quầng màu chủ đề) · §0 · bo mềm · lưới 2 cột</p>
+<div class="phone b-phone theme-dark">
+<div class="b-sheet">
+<input class="rd" type="radio" name="tb" id="b1" checked><input class="rd" type="radio" name="tb" id="b2"><input class="rd" type="radio" name="tb" id="b3"><input class="rd" type="radio" name="tb" id="b4"><input class="rd" type="radio" name="tb" id="b5"><input class="rd" type="radio" name="tb" id="b6">
+<span class="b-grab" aria-hidden="true"></span>
+<div class="b-head"><h3 class="b-title">Hôm nay kiếm thêm bằng gì?</h3><button class="b-x" aria-label="Đóng">×</button></div>
+<div class="b-chips">
+<label for="b1" class="t1"><span>🛍️</span>Bán hàng online<em>Hợp với bạn</em></label>
+<label for="b2" class="t2"><span>💻</span>Nhận việc tự do</label>
+<label for="b3" class="t3"><span>📚</span>Dạy kèm</label>
+<label for="b4" class="t4"><span>♻️</span>Thanh lý đồ cũ</label>
+<label for="b5" class="t5"><span>⏰</span>Làm thêm cuối tuần</label>
+<label for="b6" class="t6"><span>🔑</span>Tài sản nhàn rỗi</label>
+</div>
+<div class="b-lists">
+<ul class="b-list t1">
+<li><span class="b-emo" aria-hidden="true">🍪</span><span class="b-txt"><b>Bán đồ ăn vặt nhận đặt trước</b><small><i>300k–1,5tr/đợt</i> · ~3 ngày</small></span><button class="b-add" aria-label="Thêm">+</button></li>
+<li><span class="b-emo" aria-hidden="true">🌹</span><span class="b-txt"><b>Bán hàng theo dịp (20/10, Trung thu, Tết)</b><small><i>500k–3tr/đợt</i> · ~10 ngày</small></span><button class="b-add" aria-label="Thêm">+</button></li>
+<li><span class="b-emo" aria-hidden="true">🧶</span><span class="b-txt"><b>Bán đồ handmade</b><small><i>200k–1tr/đợt</i> · ~7 ngày</small></span><button class="b-add" aria-label="Thêm">+</button></li>
+<li><span class="b-emo" aria-hidden="true">📦</span><span class="b-txt"><b>Nhận đặt hàng hộ từ nguồn quen</b><small><i>300k–2tr/đợt</i> · ~7 ngày</small></span><button class="b-add" aria-label="Thêm">+</button></li>
+</ul>
+<ul class="b-list t2">
+<li><span class="b-emo" aria-hidden="true">🎨</span><span class="b-txt"><b>Thiết kế bài đăng / banner cho shop nhỏ</b><small><i>150k–500k/bộ</i> · ~2 ngày</small></span><button class="b-add" aria-label="Thêm">+</button></li>
+<li><span class="b-emo" aria-hidden="true">✍️</span><span class="b-txt"><b>Viết gói 10 caption bán hàng</b><small><i>300k–1tr/bộ</i> · ~3 ngày</small></span><button class="b-add" aria-label="Thêm">+</button></li>
+<li><span class="b-emo" aria-hidden="true">🎬</span><span class="b-txt"><b>Dựng video ngắn cho quán</b><small><i>200k–700k/lượt</i> · ~2 ngày</small></span><button class="b-add" aria-label="Thêm">+</button></li>
+<li><span class="b-emo" aria-hidden="true">📸</span><span class="b-txt"><b>Chụp ảnh sản phẩm cho shop</b><small><i>300k–1,5tr/buổi</i> · ~1 ngày</small></span><button class="b-add" aria-label="Thêm">+</button></li>
+</ul>
+<ul class="b-list t3">
+<li><span class="b-emo" aria-hidden="true">✏️</span><span class="b-txt"><b>Gia sư Toán/Văn cấp 1–2</b><small><i>1,2–2tr/tháng</i> · ~30 ngày</small></span><button class="b-add" aria-label="Thêm">+</button></li>
+<li><span class="b-emo" aria-hidden="true">🗣️</span><span class="b-txt"><b>Kèm tiếng Anh giao tiếp online 1-1</b><small><i>1,5–3tr/tháng</i> · ~30 ngày</small></span><button class="b-add" aria-label="Thêm">+</button></li>
+<li><span class="b-emo" aria-hidden="true">🎸</span><span class="b-txt"><b>Dạy guitar/ukulele/piano cơ bản</b><small><i>1,2–2,5tr/tháng</i> · ~30 ngày</small></span><button class="b-add" aria-label="Thêm">+</button></li>
+<li><span class="b-emo" aria-hidden="true">💻</span><span class="b-txt"><b>Dạy tin học văn phòng cho người lớn</b><small><i>500k–1,5tr/khoá</i> · ~14 ngày</small></span><button class="b-add" aria-label="Thêm">+</button></li>
+</ul>
+<ul class="b-list t4">
+<li><span class="b-emo" aria-hidden="true">👕</span><span class="b-txt"><b>Thanh lý quần áo không mặc</b><small><i>200k–1tr/đợt</i> · ~7 ngày</small></span><button class="b-add" aria-label="Thêm">+</button></li>
+<li><span class="b-emo" aria-hidden="true">📱</span><span class="b-txt"><b>Bán lại điện thoại/laptop cũ</b><small><i>1–8tr/lượt</i> · ~7 ngày</small></span><button class="b-add" aria-label="Thêm">+</button></li>
+<li><span class="b-emo" aria-hidden="true">📖</span><span class="b-txt"><b>Pass sách / giáo trình cũ</b><small><i>100k–500k/đợt</i> · ~7 ngày</small></span><button class="b-add" aria-label="Thêm">+</button></li>
+<li><span class="b-emo" aria-hidden="true">🗞️</span><span class="b-txt"><b>Bán ve chai, giấy, lon</b><small><i>50k–200k/lượt</i> · ~1 ngày</small></span><button class="b-add" aria-label="Thêm">+</button></li>
+</ul>
+<ul class="b-list t5">
+<li><span class="b-emo" aria-hidden="true">🎉</span><span class="b-txt"><b>Phục vụ tiệc cưới / sự kiện</b><small><i>200k–400k/ca</i> · ~2 ngày</small></span><button class="b-add" aria-label="Thêm">+</button></li>
+<li><span class="b-emo" aria-hidden="true">🛵</span><span class="b-txt"><b>Chạy giao hàng / xe công nghệ cuối tuần</b><small><i>300k–700k/ngày</i> · ~2 ngày</small></span><button class="b-add" aria-label="Thêm">+</button></li>
+<li><span class="b-emo" aria-hidden="true">🐶</span><span class="b-txt"><b>Trông trẻ / trông nhà / chăm thú cưng hộ</b><small><i>150k–400k/ngày</i> · ~2 ngày</small></span><button class="b-add" aria-label="Thêm">+</button></li>
+<li><span class="b-emo" aria-hidden="true">🧹</span><span class="b-txt"><b>Dọn nhà theo giờ</b><small><i>80k–120k/giờ</i> · ~1 ngày</small></span><button class="b-add" aria-label="Thêm">+</button></li>
+</ul>
+<ul class="b-list t6">
+<li><span class="b-emo" aria-hidden="true">🛏️</span><span class="b-txt"><b>Cho thuê phòng trống / ở ghép</b><small><i>1,5–4tr/tháng</i> · ~14 ngày</small></span><button class="b-add" aria-label="Thêm">+</button></li>
+<li><span class="b-emo" aria-hidden="true">📷</span><span class="b-txt"><b>Cho thuê đồ ít dùng (máy ảnh, lều, váy dạ hội)</b><small><i>100k–500k/lượt</i> · ~3 ngày</small></span><button class="b-add" aria-label="Thêm">+</button></li>
+<li><span class="b-emo" aria-hidden="true">🏍️</span><span class="b-txt"><b>Cho thuê chỗ để xe / kho nhỏ</b><small><i>200k–600k/tháng</i> · ~7 ngày</small></span><button class="b-add" aria-label="Thêm">+</button></li>
+<li><span class="b-emo" aria-hidden="true">🗂️</span><span class="b-txt"><b>Bán file mẫu làm một lần bán nhiều lần (Canva, Excel)</b><small><i>50k–1tr/tháng</i> · ~14 ngày</small></span><button class="b-add" aria-label="Thêm">+</button></li>
+</ul>
+</div>
+<p class="b-note">Giá tham khảo, tuỳ khu vực và tay nghề</p>
+</div>
+</div>
+<div class="panel b-panel theme-dark">
+<div class="strip-label">Dải phụ · tab Money</div>
+<div class="b-owe"><span>Khách còn nợ <b>1.250.000đ</b> từ 3 việc</span><span aria-hidden="true">›</span></div>
+<article class="b-g3 b-task t2">
+<div class="b-trow"><span class="b-temo" aria-hidden="true">🎨</span><div class="b-ttxt"><b>Thiết kế bài đăng / banner cho shop nhỏ</b><small>Khách: Chị Lan · hẹn 15/10</small></div></div>
+<div class="b-mid"><span class="b-badge">Chờ thanh toán</span><span class="b-amt">350.000đ</span></div>
+<div class="b-actions"><button class="b-btn b-pri">Đã nhận tiền</button><button class="b-btn b-ghost">Nhắc lại sau</button></div>
+</article>
+<div class="b-g3 b-recv">
+<h4>Nhận được bao nhiêu?</h4>
+<label class="b-money"><input value="350.000" inputmode="numeric" aria-label="Số tiền nhận"><span>đ</span></label>
+<div class="b-wallet"><span class="b-wl">Vào ví</span><input class="rd" type="radio" name="wb" id="wb1" checked><label for="wb1">Ví chính</label><input class="rd" type="radio" name="wb" id="wb2"><label for="wb2">Tiền mặt</label></div>
+<button class="b-btn b-main">Ghi nhận</button>
+</div>
+</div>
+<p class="fit"><b>Hợp khi</b> muốn thư viện giống "kho bí kíp" cao cấp, ăn với chế độ tối và với màu tím–cam sẵn có. <b>Rủi ro</b>: app mặc định nền SÁNG, sheet tối sẽ đứt mạch với trang Sổ sách, nên phải làm thêm bản sáng; lưới 2 cột làm tên dài (vd "Cho thuê đồ ít dùng…") xuống 3 dòng.</p>
+</section>
+</div>
+</div>
+</body>
+</html>

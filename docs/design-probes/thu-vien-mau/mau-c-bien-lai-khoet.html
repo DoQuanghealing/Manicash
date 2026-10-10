@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="vi" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mẫu C — Biên lai khoét · Thư viện ý tưởng kiếm tiền</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap">
+<style>
+/* Token chép NGUYÊN từ src/app/globals.css (:root = tối, [data-theme="light"] = sáng — mặc định của app) */
+*{box-sizing:border-box}
+:root{
+  --c-purple:#7C3AED;--c-purple-light:#A78BFA;--c-purple-dark:#5B21B6;
+  --c-orange:#F97316;--c-orange-light:#FDBA74;
+  --c-green:#22C55E;--c-green-light:#86EFAC;--c-green-dark:#16A34A;
+  --c-bg-primary:#0A0A12;--c-bg-secondary:#13111D;--c-bg-tertiary:#1C1930;--c-bg-elevated:#231F38;
+  --c-text-primary:#F4F4F5;--c-text-secondary:#A1A1AA;--c-text-muted:#71717A;--c-text-faint:#52525B;
+  --c-text-accent:var(--c-purple-light);
+  --c-success:#22C55E;--c-warning:#F59E0B;--c-danger:#EF4444;--c-info:#3B82F6;--c-income:#22C55E;
+  --c-emerald:#10B981;--c-ruby:#EF4444;
+  --radius-sm:8px;--radius-md:12px;--radius-lg:16px;--radius-xl:20px;--radius-2xl:24px;--radius-full:9999px;
+  --font-sans:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --font-display:"Outfit",var(--font-sans);
+  --mono:ui-monospace,"SF Mono","Cascadia Mono",Consolas,monospace;
+}
+[data-theme="light"]{
+  --c-bg-primary:#FFFFFF;--c-bg-secondary:#FFFFFF;--c-bg-tertiary:#F0EFF5;--c-bg-elevated:#FFFFFF;
+  --c-text-primary:#1A1A2E;--c-text-secondary:#4A4A5A;--c-text-muted:#8E8E9A;--c-text-accent:#6D28D9;--c-text-tertiary:#5C5C6E;
+  --c-success:#16A34A;--c-warning:#D97706;--c-danger:#DC2626;--c-info:#2563EB;--c-income:#16A34A;
+  --c-emerald:#059669;--c-ruby:#DC2626;
+  --c-orange:#EA580C;--c-orange-light:#F97316;
+  --c-green:#16A34A;--c-green-light:#22C55E;--c-green-dark:#15803D;
+  --c-purple-dark:#6D28D9;
+}
+.t1{--acc:var(--c-orange)}.t2{--acc:var(--c-purple)}.t3{--acc:var(--c-info)}.t4{--acc:var(--c-emerald)}
+.t5{--acc:color-mix(in oklch,var(--c-info) 55%,var(--c-emerald))}
+.t6{--acc:color-mix(in oklch,var(--c-ruby) 55%,var(--c-purple))}
+
+html{background:var(--c-bg-tertiary)}
+body{margin:0;font-family:var(--font-sans);line-height:1.45;color:var(--c-text-primary);-webkit-font-smoothing:antialiased}
+button{font-family:inherit;cursor:pointer}
+.rd{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+.doc{max-width:520px;margin:0 auto;padding:24px 16px 48px}
+.doc-head{margin:0 0 20px;font-size:13px;line-height:1.55;color:var(--c-text-secondary)}
+.doc-head h1{margin:0 0 4px;font:800 21px/1.3 var(--font-display);color:var(--c-text-primary)}
+.cols{display:flex;justify-content:center}
+.col{flex:0 0 390px;width:390px}
+.col-h{margin:0 0 2px;font:800 18px/1.35 var(--font-display)}
+.col-m{margin:0 0 12px;font-size:12px;line-height:1.45;color:var(--c-text-muted)}
+.phone,.panel{width:390px;border-radius:28px;overflow:hidden;border:1px solid color-mix(in srgb,var(--c-text-primary) 10%,transparent)}
+.panel{margin-top:12px}
+.strip-label{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;line-height:1.4;opacity:.55}
+.fit{margin:12px 2px 0;font-size:12.5px;line-height:1.55;color:var(--c-text-secondary)}
+.fit b{color:var(--c-text-primary)}
+
+/* ════════ C — BIÊN LAI KHOÉT ════════ */
+.c-phone{background:color-mix(in srgb,var(--c-text-primary) 22%,var(--c-bg-tertiary));color:var(--c-text-primary)}
+.c-panel{background:var(--c-bg-tertiary);color:var(--c-text-primary)}
+.c-sheet{margin-top:28px;background:var(--c-bg-tertiary);border-radius:var(--radius-sm) var(--radius-sm) 0 0;padding:8px 16px 18px}
+.c-grab{display:block;width:36px;height:4px;border-radius:2px;background:color-mix(in srgb,var(--c-text-primary) 25%,transparent);margin:0 auto 14px}
+.c-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding-bottom:12px;border-bottom:1.5px dashed color-mix(in srgb,var(--c-text-primary) 22%,transparent)}
+.c-title{margin:0;font:800 20px/1.35 var(--font-display);letter-spacing:-.01em}
+.c-x{width:32px;height:32px;border-radius:4px;border:1.5px solid color-mix(in srgb,var(--c-text-primary) 20%,transparent);background:transparent;color:var(--c-text-secondary);font-size:18px;line-height:1}
+.c-chips{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding-top:16px;margin-bottom:14px}
+.c-chips label{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:64px;padding:9px 6px 8px;border-radius:4px;background:var(--c-bg-elevated);box-shadow:inset 0 3px 0 var(--acc),0 1px 0 color-mix(in srgb,var(--c-text-primary) 10%,transparent);font-size:12px;font-weight:500;line-height:1.35;text-align:center;color:var(--c-text-secondary);cursor:pointer}
+.c-chips label span{font-size:19px;line-height:1.2}
+.c-chips em{position:absolute;top:-10px;right:-3px;transform:rotate(5deg);font-style:normal;font-size:10px;font-weight:700;line-height:1.35;padding:1px 6px;border:1.5px solid currentColor;border-radius:3px;background:var(--c-bg-elevated);color:color-mix(in oklch,var(--acc) 80%,var(--c-text-primary))}
+#c1:checked~.c-chips [for=c1],#c2:checked~.c-chips [for=c2],#c3:checked~.c-chips [for=c3],
+#c4:checked~.c-chips [for=c4],#c5:checked~.c-chips [for=c5],#c6:checked~.c-chips [for=c6]{
+  background:var(--acc);color:var(--c-bg-elevated);font-weight:700;box-shadow:0 3px 0 color-mix(in oklch,var(--acc) 65%,var(--c-text-primary))}
+/* §17 — vé khoét 2 nửa vòng tròn ở đường xé; bóng đặt ở cha bằng drop-shadow để ôm theo vết khoét */
+.c-list{display:none;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none;
+  filter:drop-shadow(0 1px 0 color-mix(in srgb,var(--c-text-primary) 12%,transparent)) drop-shadow(0 6px 10px color-mix(in srgb,var(--c-text-primary) 6%,transparent))}
+#c1:checked~.c-lists .t1,#c2:checked~.c-lists .t2,#c3:checked~.c-lists .t3,
+#c4:checked~.c-lists .t4,#c5:checked~.c-lists .t5,#c6:checked~.c-lists .t6{display:flex}
+.c-list li{--n:56px;display:grid;grid-template-columns:var(--n) 1fr 46px;align-items:stretch;min-height:66px;border-radius:4px;background:var(--c-bg-elevated);
+  -webkit-mask:radial-gradient(circle 7px at var(--n) 0,#0000 98%,#000) top/100% 51% no-repeat,radial-gradient(circle 7px at var(--n) 100%,#0000 98%,#000) bottom/100% 51% no-repeat;
+          mask:radial-gradient(circle 7px at var(--n) 0,#0000 98%,#000) top/100% 51% no-repeat,radial-gradient(circle 7px at var(--n) 100%,#0000 98%,#000) bottom/100% 51% no-repeat}
+.c-emo{display:grid;place-items:center;background:color-mix(in srgb,var(--acc) 14%,var(--c-bg-elevated));font-size:24px;line-height:1}
+.c-txt{display:flex;flex-direction:column;justify-content:center;gap:3px;padding:10px 4px 10px 12px;border-left:2px dashed color-mix(in srgb,var(--c-text-primary) 16%,transparent)}
+.c-txt b{font-size:14px;font-weight:600;line-height:1.38}
+.c-txt small{font-size:12px;line-height:1.4;color:var(--c-text-muted)}
+.c-txt small i{font:700 11.5px/1.4 var(--mono);font-style:normal;color:var(--c-text-primary)}
+.c-add{align-self:center;justify-self:center;width:30px;height:30px;border-radius:4px;border:1.5px solid var(--acc);background:transparent;color:color-mix(in oklch,var(--acc) 80%,var(--c-text-primary));font-size:18px;line-height:1}
+.c-note{margin:12px 0 0;font-size:12px;line-height:1.4;color:var(--c-text-muted)}
+.c-panel{padding:18px 16px 22px;display:flex;flex-direction:column;gap:14px}
+.c-owe{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 12px;border-radius:4px;background:var(--c-bg-elevated);border:1.5px dashed color-mix(in srgb,var(--c-warning) 70%,transparent);font-size:13.5px;line-height:1.4;color:var(--c-text-secondary)}
+.c-owe b{font-family:var(--mono);color:var(--c-text-primary)}
+/* §1d — mép dưới răng cưa như biên lai xé */
+.c-task{padding:16px 16px 30px;background:var(--c-bg-elevated);border-radius:4px 4px 0 0;
+  -webkit-mask:conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) bottom/16px 8px repeat-x,linear-gradient(#000 0 0) top/100% calc(100% - 8px) no-repeat;
+          mask:conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) bottom/16px 8px repeat-x,linear-gradient(#000 0 0) top/100% calc(100% - 8px) no-repeat}
+.c-trow{display:grid;grid-template-columns:44px 1fr;gap:12px;align-items:center}
+.c-temo{display:grid;place-items:center;width:44px;height:44px;border-radius:4px;background:color-mix(in srgb,var(--acc) 14%,var(--c-bg-elevated));font-size:24px;line-height:1}
+.c-ttxt b{display:block;font-size:14.5px;font-weight:700;line-height:1.38}
+.c-ttxt small{display:block;margin-top:2px;font-size:12.5px;line-height:1.4;color:var(--c-text-secondary)}
+.c-mid{display:flex;justify-content:space-between;align-items:center;margin:14px 0;padding-top:12px;border-top:1.5px dashed color-mix(in srgb,var(--c-text-primary) 18%,transparent)}
+.c-badge{display:inline-block;transform:rotate(-3deg);padding:2px 8px;border:1.5px solid var(--c-warning);border-radius:3px;font-size:12px;font-weight:700;line-height:1.35;color:color-mix(in oklch,var(--c-warning) 75%,var(--c-text-primary))}
+.c-amt{font:700 19px/1.35 var(--mono);font-variant-numeric:tabular-nums}
+.c-actions{display:grid;grid-template-columns:1fr auto;gap:8px}
+.c-btn{height:44px;padding:0 16px;border:0;border-radius:4px;font-size:14px;font-weight:700;line-height:1.35}
+.c-pri{background:var(--c-text-primary);color:var(--c-bg-elevated)}
+.c-ghost{background:transparent;border:1.5px solid color-mix(in srgb,var(--c-text-primary) 22%,transparent);color:var(--c-text-secondary)}
+/* §17 — tấm séc khoét hai bên hông */
+.c-recv{display:flex;flex-direction:column;gap:14px;padding:16px 22px 18px;background:var(--c-bg-elevated);border-radius:4px;
+  -webkit-mask:radial-gradient(circle 9px at 0 50%,#0000 98%,#000) left/51% 100% no-repeat,radial-gradient(circle 9px at 100% 50%,#0000 98%,#000) right/51% 100% no-repeat;
+          mask:radial-gradient(circle 9px at 0 50%,#0000 98%,#000) left/51% 100% no-repeat,radial-gradient(circle 9px at 100% 50%,#0000 98%,#000) right/51% 100% no-repeat}
+.c-recv h4{margin:0;font:800 16px/1.35 var(--font-display)}
+.c-money{display:flex;align-items:baseline;gap:6px;padding:2px 2px 8px;border-bottom:2px solid var(--c-text-primary)}
+.c-money input{flex:1;min-width:0;border:0;outline:0;background:transparent;font:700 26px/1.35 var(--mono);color:var(--c-text-primary);font-variant-numeric:tabular-nums}
+.c-money span{font:700 18px/1.35 var(--mono);color:var(--c-text-muted)}
+.c-wallet{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.c-wl{font-size:13px;line-height:1.35;color:var(--c-text-muted)}
+.c-wallet label{display:inline-flex;align-items:center;gap:7px;font-size:13.5px;line-height:1.35;color:var(--c-text-secondary);cursor:pointer}
+.c-wallet label::before{content:"";width:16px;height:16px;border-radius:3px;border:1.5px solid color-mix(in srgb,var(--c-text-primary) 35%,transparent);background:var(--c-bg-elevated)}
+.c-wallet input:checked+label{color:var(--c-text-primary);font-weight:700}
+.c-wallet input:checked+label::before{background:var(--c-text-primary);border-color:var(--c-text-primary);box-shadow:inset 0 0 0 3px var(--c-bg-elevated)}
+.c-main{width:100%;background:var(--c-text-primary);color:var(--c-bg-elevated)}
+</style>
+</head>
+<body>
+<div class="doc">
+<header class="doc-head">
+  <h1>Mẫu C — Biên lai khoét</h1>
+  <div>ManiCash · Thư viện ý tưởng kiếm tiền · mẫu thử, chưa áp vào code. Token <code>--c-*</code> nhánh sáng từ <code>globals.css</code>. Bấm ô chủ đề để đổi, bấm ví để đổi ví.</div>
+</header>
+<div class="cols">
+<section class="col">
+<h2 class="col-h">C — Biên lai khoét</h2>
+<p class="col-m">§17 góc khoét (vé · séc) · §1d mép răng cưa · §0 · vuông vức sắc · số kiểu máy in hoá đơn</p>
+<div class="phone c-phone">
+<div class="c-sheet">
+<input class="rd" type="radio" name="tc" id="c1" checked><input class="rd" type="radio" name="tc" id="c2"><input class="rd" type="radio" name="tc" id="c3"><input class="rd" type="radio" name="tc" id="c4"><input class="rd" type="radio" name="tc" id="c5"><input class="rd" type="radio" name="tc" id="c6">
+<span class="c-grab" aria-hidden="true"></span>
+<div class="c-head"><h3 class="c-title">Hôm nay kiếm thêm bằng gì?</h3><button class="c-x" aria-label="Đóng">×</button></div>
+<div class="c-chips">
+<label for="c1" class="t1"><span>🛍️</span>Bán hàng online<em>Hợp với bạn</em></label>
+<label for="c2" class="t2"><span>💻</span>Nhận việc tự do</label>
+<label for="c3" class="t3"><span>📚</span>Dạy kèm</label>
+<label for="c4" class="t4"><span>♻️</span>Thanh lý đồ cũ</label>
+<label for="c5" class="t5"><span>⏰</span>Làm thêm cuối tuần</label>
+<label for="c6" class="t6"><span>🔑</span>Tài sản nhàn rỗi</label>
+</div>
+<div class="c-lists">
+<ul class="c-list t1">
+<li><span class="c-emo" aria-hidden="true">🍪</span><span class="c-txt"><b>Bán đồ ăn vặt nhận đặt trước</b><small><i>300k–1,5tr/đợt</i> · ~3 ngày</small></span><button class="c-add" aria-label="Thêm">+</button></li>
+<li><span class="c-emo" aria-hidden="true">🌹</span><span class="c-txt"><b>Bán hàng theo dịp (20/10, Trung thu, Tết)</b><small><i>500k–3tr/đợt</i> · ~10 ngày</small></span><button class="c-add" aria-label="Thêm">+</button></li>
+<li><span class="c-emo" aria-hidden="true">🧶</span><span class="c-txt"><b>Bán đồ handmade</b><small><i>200k–1tr/đợt</i> · ~7 ngày</small></span><button class="c-add" aria-label="Thêm">+</button></li>
+<li><span class="c-emo" aria-hidden="true">📦</span><span class="c-txt"><b>Nhận đặt hàng hộ từ nguồn quen</b><small><i>300k–2tr/đợt</i> · ~7 ngày</small></span><button class="c-add" aria-label="Thêm">+</button></li>
+</ul>
+<ul class="c-list t2">
+<li><span class="c-emo" aria-hidden="true">🎨</span><span class="c-txt"><b>Thiết kế bài đăng / banner cho shop nhỏ</b><small><i>150k–500k/bộ</i> · ~2 ngày</small></span><button class="c-add" aria-label="Thêm">+</button></li>
+<li><span class="c-emo" aria-hidden="true">✍️</span><span class="c-txt"><b>Viết gói 10 caption bán hàng</b><small><i>300k–1tr/bộ</i> · ~3 ngày</small></span><button class="c-add" aria-label="Thêm">+</button></li>
+<li><span class="c-emo" aria-hidden="true">🎬</span><span class="c-txt"><b>Dựng video ngắn cho quán</b><small><i>200k–700k/lượt</i> · ~2 ngày</small></span><button class="c-add" aria-label="Thêm">+</button></li>
+<li><span class="c-emo" aria-hidden="true">📸</span><span class="c-txt"><b>Chụp ảnh sản phẩm cho shop</b><small><i>300k–1,5tr/buổi</i> · ~1 ngày</small></span><button class="c-add" aria-label="Thêm">+</button></li>
+</ul>
+<ul class="c-list t3">
+<li><span class="c-emo" aria-hidden="true">✏️</span><span class="c-txt"><b>Gia sư Toán/Văn cấp 1–2</b><small><i>1,2–2tr/tháng</i> · ~30 ngày</small></span><button class="c-add" aria-label="Thêm">+</button></li>
+<li><span class="c-emo" aria-hidden="true">🗣️</span><span class="c-txt"><b>Kèm tiếng Anh giao tiếp online 1-1</b><small><i>1,5–3tr/tháng</i> · ~30 ngày</small></span><button class="c-add" aria-label="Thêm">+</button></li>
+<li><span class="c-emo" aria-hidden="true">🎸</span><span class="c-txt"><b>Dạy guitar/ukulele/piano cơ bản</b><small><i>1,2–2,5tr/tháng</i> · ~30 ngày</small></span><button class="c-add" aria-label="Thêm">+</button></li>
+<li><span class="c-emo" aria-hidden="true">💻</span><span class="c-txt"><b>Dạy tin học văn phòng cho người lớn</b><small><i>500k–1,5tr/khoá</i> · ~14 ngày</small></span><button class="c-add" aria-label="Thêm">+</button></li>
+</ul>
+<ul class="c-list t4">
+<li><span class="c-emo" aria-hidden="true">👕</span><span class="c-txt"><b>Thanh lý quần áo không mặc</b><small><i>200k–1tr/đợt</i> · ~7 ngày</small></span><button class="c-add" aria-label="Thêm">+</button></li>
+<li><span class="c-emo" aria-hidden="true">📱</span><span class="c-txt"><b>Bán lại điện thoại/laptop cũ</b><small><i>1–8tr/lượt</i> · ~7 ngày</small></span><button class="c-add" aria-label="Thêm">+</button></li>
+<li><span class="c-emo" aria-hidden="true">📖</span><span class="c-txt"><b>Pass sách / giáo trình cũ</b><small><i>100k–500k/đợt</i> · ~7 ngày</small></span><button class="c-add" aria-label="Thêm">+</button></li>
+<li><span class="c-emo" aria-hidden="true">🗞️</span><span class="c-txt"><b>Bán ve chai, giấy, lon</b><small><i>50k–200k/lượt</i> · ~1 ngày</small></span><button class="c-add" aria-label="Thêm">+</button></li>
+</ul>
+<ul class="c-list t5">
+<li><span class="c-emo" aria-hidden="true">🎉</span><span class="c-txt"><b>Phục vụ tiệc cưới / sự kiện</b><small><i>200k–400k/ca</i> · ~2 ngày</small></span><button class="c-add" aria-label="Thêm">+</button></li>
+<li><span class="c-emo" aria-hidden="true">🛵</span><span class="c-txt"><b>Chạy giao hàng / xe công nghệ cuối tuần</b><small><i>300k–700k/ngày</i> · ~2 ngày</small></span><button class="c-add" aria-label="Thêm">+</button></li>
+<li><span class="c-emo" aria-hidden="true">🐶</span><span class="c-txt"><b>Trông trẻ / trông nhà / chăm thú cưng hộ</b><small><i>150k–400k/ngày</i> · ~2 ngày</small></span><button class="c-add" aria-label="Thêm">+</button></li>
+<li><span class="c-emo" aria-hidden="true">🧹</span><span class="c-txt"><b>Dọn nhà theo giờ</b><small><i>80k–120k/giờ</i> · ~1 ngày</small></span><button class="c-add" aria-label="Thêm">+</button></li>
+</ul>
+<ul class="c-list t6">
+<li><span class="c-emo" aria-hidden="true">🛏️</span><span class="c-txt"><b>Cho thuê phòng trống / ở ghép</b><small><i>1,5–4tr/tháng</i> · ~14 ngày</small></span><button class="c-add" aria-label="Thêm">+</button></li>
+<li><span class="c-emo" aria-hidden="true">📷</span><span class="c-txt"><b>Cho thuê đồ ít dùng (máy ảnh, lều, váy dạ hội)</b><small><i>100k–500k/lượt</i> · ~3 ngày</small></span><button class="c-add" aria-label="Thêm">+</button></li>
+<li><span class="c-emo" aria-hidden="true">🏍️</span><span class="c-txt"><b>Cho thuê chỗ để xe / kho nhỏ</b><small><i>200k–600k/tháng</i> · ~7 ngày</small></span><button class="c-add" aria-label="Thêm">+</button></li>
+<li><span class="c-emo" aria-hidden="true">🗂️</span><span class="c-txt"><b>Bán file mẫu làm một lần bán nhiều lần (Canva, Excel)</b><small><i>50k–1tr/tháng</i> · ~14 ngày</small></span><button class="c-add" aria-label="Thêm">+</button></li>
+</ul>
+</div>
+<p class="c-note">Giá tham khảo, tuỳ khu vực và tay nghề</p>
+</div>
+</div>
+<div class="panel c-panel">
+<div class="strip-label">Dải phụ · tab Money</div>
+<div class="c-owe"><span>Khách còn nợ <b>1.250.000đ</b> từ 3 việc</span><span aria-hidden="true">›</span></div>
+<article class="c-task t2">
+<div class="c-trow"><span class="c-temo" aria-hidden="true">🎨</span><div class="c-ttxt"><b>Thiết kế bài đăng / banner cho shop nhỏ</b><small>Khách: Chị Lan · hẹn 15/10</small></div></div>
+<div class="c-mid"><span class="c-badge">Chờ thanh toán</span><span class="c-amt">350.000đ</span></div>
+<div class="c-actions"><button class="c-btn c-pri">Đã nhận tiền</button><button class="c-btn c-ghost">Nhắc lại sau</button></div>
+</article>
+<div class="c-recv">
+<h4>Nhận được bao nhiêu?</h4>
+<label class="c-money"><input value="350.000" inputmode="numeric" aria-label="Số tiền nhận"><span>đ</span></label>
+<div class="c-wallet"><span class="c-wl">Vào ví</span><input class="rd" type="radio" name="wc" id="wc1" checked><label for="wc1">Ví chính</label><input class="rd" type="radio" name="wc" id="wc2"><label for="wc2">Tiền mặt</label></div>
+<button class="c-btn c-main">Ghi nhận</button>
+</div>
+</div>
+<p class="fit"><b>Hợp khi</b> muốn cả luồng nói chung một ngôn ngữ "tiền vào tay": ý tưởng là tấm vé, việc chờ trả là biên lai, nhận tiền là tấm séc. 6 chủ đề nằm gọn lưới 3×2. <b>Rủi ro</b>: góc khoét dùng <code>mask</code>, WebView Android rất cũ sẽ mất khoét (vẫn thành thẻ vuông dùng được); nút đen sẫm cứng hơn phần còn lại của app.</p>
+</section>
+</div>
+</div>
+</body>
+</html>

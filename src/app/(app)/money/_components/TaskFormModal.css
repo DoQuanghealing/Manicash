@@ -154,3 +154,41 @@
   background: linear-gradient(135deg, rgba(124, 58, 237, 0.05), rgba(6, 182, 212, 0.03));
   border-color: rgba(124, 58, 237, 0.08);
 }
+
+/* ═══ Đợt 1 — điền sẵn từ mẫu + "Thêm chi tiết" (mẫu D) ═══ */
+.tfm-tpl-note {
+  margin: -12px 0 16px;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--acc) 10%, transparent);
+  color: color-mix(in oklch, var(--acc) 70%, var(--c-text-primary));
+  font-size: 0.78rem; line-height: 1.45;
+}
+
+.tfm-error {
+  margin: -10px 0 12px;
+  font-size: 0.78rem; font-weight: 600; line-height: 1.4;
+  color: var(--c-danger);
+}
+
+.tfm-more {
+  display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px;
+  width: 100%; min-height: 44px; margin-bottom: var(--space-lg);
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--c-text-primary) 4%, transparent);
+  border: 1px dashed color-mix(in srgb, var(--c-text-primary) 14%, transparent);
+  color: var(--c-text-secondary);
+  text-align: left;
+}
+.tfm-more span { font-size: 0.85rem; font-weight: 700; color: var(--c-text-primary); }
+.tfm-more small { font-size: 0.72rem; color: var(--c-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tfm-more-ico { transition: transform 0.2s; }
+.tfm-more-ico.is-open { transform: rotate(180deg); }
+
+.tfm-more-body { margin-top: calc(var(--space-lg) * -0.5); }
+
+.tfm-panel button:focus-visible, .tfm-panel input:focus-visible {
+  outline: 2.5px solid var(--c-purple);
+  outline-offset: 2px;
+}

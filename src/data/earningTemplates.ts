@@ -226,3 +226,26 @@ export function taskDraftFromTemplate(tpl: EarningTemplate, today: Date = new Da
     subTasks: tpl.steps.map((name) => ({ name })),
   };
 }
+
+/** "300k", "1,5tr", "2tr" — gọn cho thẻ mẫu. */
+export function formatPriceShort(n: number): string {
+  if (n >= 1_000_000) {
+    const v = Math.round((n / 1_000_000) * 10) / 10;
+    return `${String(v).replace('.', ',')}tr`;
+  }
+  return `${Math.round(n / 1_000)}k`;
+}
+
+/** "300k–1,5tr/đợt" · "1,2–2tr/tháng" (cùng đơn vị triệu thì bỏ "tr" ở số đầu). */
+export function formatPriceRange(r: EarningTemplate['priceRange']): string {
+  const max = formatPriceShort(r.max);
+  let min = formatPriceShort(r.min);
+  if (r.min >= 1_000_000 && r.max >= 1_000_000) min = min.replace(/tr$/, '');
+  return `${min}–${max}/${r.unit}`;
+}
+
+/** Emoji + chủ đề cho một task (mẫu gốc nếu có). */
+export function templateVisualForTask(templateId: string | undefined): { emoji: string; themeId?: EarningThemeId } {
+  const tpl = templateId ? getEarningTemplate(templateId) : undefined;
+  return tpl ? { emoji: tpl.emoji, themeId: tpl.themeId } : { emoji: '💼' };
+}

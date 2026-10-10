@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="vi" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mẫu A — Sổ sách gọn · Thư viện ý tưởng kiếm tiền</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap">
+<style>
+/* Token chép NGUYÊN từ src/app/globals.css (:root = tối, [data-theme="light"] = sáng — mặc định của app) */
+*{box-sizing:border-box}
+:root{
+  --c-purple:#7C3AED;--c-purple-light:#A78BFA;--c-purple-dark:#5B21B6;
+  --c-orange:#F97316;--c-orange-light:#FDBA74;
+  --c-green:#22C55E;--c-green-light:#86EFAC;--c-green-dark:#16A34A;
+  --c-bg-primary:#0A0A12;--c-bg-secondary:#13111D;--c-bg-tertiary:#1C1930;--c-bg-elevated:#231F38;
+  --c-text-primary:#F4F4F5;--c-text-secondary:#A1A1AA;--c-text-muted:#71717A;--c-text-faint:#52525B;
+  --c-text-accent:var(--c-purple-light);
+  --c-success:#22C55E;--c-warning:#F59E0B;--c-danger:#EF4444;--c-info:#3B82F6;--c-income:#22C55E;
+  --c-emerald:#10B981;--c-ruby:#EF4444;
+  --radius-sm:8px;--radius-md:12px;--radius-lg:16px;--radius-xl:20px;--radius-2xl:24px;--radius-full:9999px;
+  --font-sans:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --font-display:"Outfit",var(--font-sans);
+}
+[data-theme="light"]{
+  --c-bg-primary:#FFFFFF;--c-bg-secondary:#FFFFFF;--c-bg-tertiary:#F0EFF5;--c-bg-elevated:#FFFFFF;
+  --c-text-primary:#1A1A2E;--c-text-secondary:#4A4A5A;--c-text-muted:#8E8E9A;--c-text-accent:#6D28D9;--c-text-tertiary:#5C5C6E;
+  --c-success:#16A34A;--c-warning:#D97706;--c-danger:#DC2626;--c-info:#2563EB;--c-income:#16A34A;
+  --c-emerald:#059669;--c-ruby:#DC2626;
+  --c-orange:#EA580C;--c-orange-light:#F97316;
+  --c-green:#16A34A;--c-green-light:#22C55E;--c-green-dark:#15803D;
+  --c-purple-dark:#6D28D9;
+}
+.t1{--acc:var(--c-orange)}.t2{--acc:var(--c-purple)}.t3{--acc:var(--c-info)}.t4{--acc:var(--c-emerald)}
+.t5{--acc:color-mix(in oklch,var(--c-info) 55%,var(--c-emerald))}
+.t6{--acc:color-mix(in oklch,var(--c-ruby) 55%,var(--c-purple))}
+
+html{background:var(--c-bg-tertiary)}
+body{margin:0;font-family:var(--font-sans);line-height:1.45;color:var(--c-text-primary);-webkit-font-smoothing:antialiased}
+button{font-family:inherit;cursor:pointer}
+.rd{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+.doc{max-width:520px;margin:0 auto;padding:24px 16px 48px}
+.doc-head{margin:0 0 20px;font-size:13px;line-height:1.55;color:var(--c-text-secondary)}
+.doc-head h1{margin:0 0 4px;font:800 21px/1.3 var(--font-display);color:var(--c-text-primary)}
+.cols{display:flex;justify-content:center}
+.col{flex:0 0 390px;width:390px}
+.col-h{margin:0 0 2px;font:800 18px/1.35 var(--font-display)}
+.col-m{margin:0 0 12px;font-size:12px;line-height:1.45;color:var(--c-text-muted)}
+.phone,.panel{width:390px;border-radius:28px;overflow:hidden;border:1px solid color-mix(in srgb,var(--c-text-primary) 10%,transparent)}
+.panel{margin-top:12px}
+.strip-label{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;line-height:1.4;opacity:.55}
+.fit{margin:12px 2px 0;font-size:12.5px;line-height:1.55;color:var(--c-text-secondary)}
+.fit b{color:var(--c-text-primary)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* ════════ A — SỔ SÁCH GỌN ════════ */
+.a-phone,.a-panel{background:var(--c-bg-tertiary);color:var(--c-text-primary)}
+.a-sheet{margin-top:28px;background:var(--c-bg-elevated);border-radius:var(--radius-2xl) var(--radius-2xl) 0 0;padding:8px 16px 18px;box-shadow:0 -6px 24px color-mix(in srgb,var(--c-text-primary) 8%,transparent)}
+.a-grab{display:block;width:36px;height:4px;border-radius:var(--radius-full);background:color-mix(in srgb,var(--c-text-muted) 45%,transparent);margin:0 auto 14px}
+.a-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.a-title{margin:0;font:700 19px/1.35 var(--font-display);letter-spacing:-.01em}
+.a-x{width:32px;height:32px;border:0;border-radius:var(--radius-full);background:var(--c-bg-tertiary);color:var(--c-text-secondary);font-size:20px;line-height:1}
+.a-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.a-chips label{display:inline-flex;align-items:center;gap:5px;padding:6px 11px;border-radius:var(--radius-full);border:1px solid color-mix(in srgb,var(--c-text-primary) 12%,transparent);background:var(--c-bg-elevated);font-size:13px;line-height:1.35;color:var(--c-text-secondary);white-space:nowrap;cursor:pointer;transition:background .15s,border-color .15s}
+.a-chips em{font-style:normal;font-size:10.5px;font-weight:700;line-height:1.35;padding:1px 6px;border-radius:var(--radius-full);background:color-mix(in srgb,var(--acc) 14%,transparent);color:color-mix(in oklch,var(--acc) 80%,var(--c-text-primary))}
+#a1:checked~.a-chips [for=a1],#a2:checked~.a-chips [for=a2],#a3:checked~.a-chips [for=a3],
+#a4:checked~.a-chips [for=a4],#a5:checked~.a-chips [for=a5],#a6:checked~.a-chips [for=a6]{
+  background:color-mix(in srgb,var(--acc) 11%,var(--c-bg-elevated));border-color:color-mix(in srgb,var(--acc) 45%,transparent);
+  color:color-mix(in oklch,var(--acc) 78%,var(--c-text-primary));font-weight:600}
+#a1:checked~.a-chips [for=a1] em{background:var(--acc);color:var(--c-bg-elevated)}
+.a-list{display:none;margin:0;padding:0;list-style:none;border:1px solid color-mix(in srgb,var(--c-text-primary) 9%,transparent);border-radius:var(--radius-lg);overflow:hidden}
+#a1:checked~.a-lists .t1,#a2:checked~.a-lists .t2,#a3:checked~.a-lists .t3,
+#a4:checked~.a-lists .t4,#a5:checked~.a-lists .t5,#a6:checked~.a-lists .t6{display:block}
+.a-list li{display:grid;grid-template-columns:40px 1fr 32px;align-items:center;gap:12px;padding:10px 12px;background:var(--c-bg-elevated)}
+.a-list li+li{border-top:1px solid color-mix(in srgb,var(--c-text-primary) 7%,transparent)}
+.a-emo,.a-temo{display:grid;place-items:center;width:40px;height:40px;border-radius:var(--radius-md);background:color-mix(in srgb,var(--acc) 12%,var(--c-bg-elevated));font-size:21px;line-height:1}
+.a-txt{min-width:0;display:flex;flex-direction:column;gap:2px}
+.a-txt b{font-size:14px;font-weight:600;line-height:1.38}
+.a-txt small{font-size:12.5px;line-height:1.38;color:var(--c-text-muted)}
+.a-txt small i{font-style:normal;font-weight:600;color:var(--c-text-secondary)}
+.a-add{width:32px;height:32px;border-radius:var(--radius-sm);border:1px solid color-mix(in srgb,var(--acc) 40%,transparent);background:transparent;color:color-mix(in oklch,var(--acc) 85%,var(--c-text-primary));font-size:20px;line-height:1}
+.a-note{margin:10px 2px 0;font-size:12px;line-height:1.4;color:var(--c-text-muted)}
+.a-panel{padding:16px;display:flex;flex-direction:column;gap:12px}
+.a-owe{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 14px;border-radius:var(--radius-md);background:color-mix(in srgb,var(--c-warning) 10%,var(--c-bg-elevated));border:1px solid color-mix(in srgb,var(--c-warning) 28%,transparent);font-size:13.5px;line-height:1.4;color:var(--c-text-secondary)}
+.a-owe b{color:var(--c-text-primary)}
+.a-task{background:var(--c-bg-elevated);border-radius:var(--radius-lg);padding:14px 14px 14px 17px;box-shadow:inset 3px 0 0 var(--c-warning),0 1px 2px color-mix(in srgb,var(--c-text-primary) 6%,transparent)}
+.a-trow{display:grid;grid-template-columns:40px 1fr;gap:12px;align-items:center}
+.a-ttxt{display:flex;flex-direction:column;gap:2px}
+.a-ttxt b{font-size:14px;font-weight:600;line-height:1.38}
+.a-ttxt small{font-size:12.5px;line-height:1.38;color:var(--c-text-secondary)}
+.a-mid{display:flex;justify-content:space-between;align-items:center;margin:12px 0}
+.a-badge{display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:var(--radius-full);font-size:12px;font-weight:600;line-height:1.35;background:color-mix(in srgb,var(--c-warning) 14%,transparent);color:color-mix(in oklch,var(--c-warning) 70%,var(--c-text-primary))}
+.a-badge::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--c-warning)}
+.a-amt{font:700 16px/1.35 var(--font-display);font-variant-numeric:tabular-nums}
+.a-actions{display:grid;grid-template-columns:1fr auto;gap:8px}
+.a-btn{height:42px;padding:0 16px;border:0;border-radius:var(--radius-md);font-size:14px;font-weight:600;line-height:1.35}
+.a-pri{background:var(--c-income);color:var(--c-bg-elevated)}
+.a-ghost{background:var(--c-bg-tertiary);color:var(--c-text-secondary)}
+.a-recv{background:var(--c-bg-elevated);border-radius:var(--radius-lg);padding:14px;display:flex;flex-direction:column;gap:12px}
+.a-recv h4{margin:0;font:700 16px/1.35 var(--font-display)}
+.a-money{display:flex;align-items:baseline;gap:4px;padding:9px 14px;border-radius:var(--radius-md);border:1.5px solid color-mix(in srgb,var(--c-purple) 50%,transparent)}
+.a-money input{flex:1;min-width:0;border:0;outline:0;background:transparent;font:700 22px/1.35 var(--font-display);font-variant-numeric:tabular-nums;color:var(--c-text-primary)}
+.a-money span{font-size:16px;font-weight:600;color:var(--c-text-muted)}
+.a-wallet{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.a-wl{font-size:13px;line-height:1.35;color:var(--c-text-muted);margin-right:4px}
+.a-wallet label{padding:6px 12px;border-radius:var(--radius-full);border:1px solid color-mix(in srgb,var(--c-text-primary) 12%,transparent);font-size:13px;line-height:1.35;color:var(--c-text-secondary);cursor:pointer}
+.a-wallet input:checked+label{border-color:color-mix(in srgb,var(--c-purple) 50%,transparent);background:color-mix(in srgb,var(--c-purple) 10%,var(--c-bg-elevated));color:var(--c-text-accent);font-weight:600}
+.a-main{width:100%;background:var(--c-purple);color:var(--c-bg-elevated)}
+</style>
+</head>
+<body>
+<div class="doc">
+<header class="doc-head">
+  <h1>Mẫu A — Sổ sách gọn</h1>
+  <div>ManiCash · Thư viện ý tưởng kiếm tiền · mẫu thử, chưa áp vào code. Token <code>--c-*</code> nhánh sáng từ <code>globals.css</code>. Bấm chip để đổi chủ đề, bấm ví để đổi ví.</div>
+</header>
+<div class="cols">
+<section class="col">
+<h2 class="col-h">A — Sổ sách gọn</h2>
+<p class="col-m">§0 thang tông theo chủ đề · nền sáng phẳng · bo mềm · dày thông tin, danh sách 1 cột</p>
+<div class="phone a-phone">
+<div class="a-sheet">
+<input class="rd" type="radio" name="ta" id="a1" checked><input class="rd" type="radio" name="ta" id="a2"><input class="rd" type="radio" name="ta" id="a3"><input class="rd" type="radio" name="ta" id="a4"><input class="rd" type="radio" name="ta" id="a5"><input class="rd" type="radio" name="ta" id="a6">
+<span class="a-grab" aria-hidden="true"></span>
+<div class="a-head"><h3 class="a-title">Hôm nay kiếm thêm bằng gì?</h3><button class="a-x" aria-label="Đóng">×</button></div>
+<div class="a-chips">
+<label for="a1" class="t1"><span>🛍️</span>Bán hàng online<em>Hợp với bạn</em></label>
+<label for="a2" class="t2"><span>💻</span>Nhận việc tự do</label>
+<label for="a3" class="t3"><span>📚</span>Dạy kèm</label>
+<label for="a4" class="t4"><span>♻️</span>Thanh lý đồ cũ</label>
+<label for="a5" class="t5"><span>⏰</span>Làm thêm cuối tuần</label>
+<label for="a6" class="t6"><span>🔑</span>Tài sản nhàn rỗi</label>
+</div>
+<div class="a-lists">
+<ul class="a-list t1">
+<li><span class="a-emo" aria-hidden="true">🍪</span><span class="a-txt"><b>Bán đồ ăn vặt nhận đặt trước</b><small><i>300k–1,5tr/đợt</i> · ~3 ngày</small></span><button class="a-add" aria-label="Thêm">+</button></li>
+<li><span class="a-emo" aria-hidden="true">🌹</span><span class="a-txt"><b>Bán hàng theo dịp (20/10, Trung thu, Tết)</b><small><i>500k–3tr/đợt</i> · ~10 ngày</small></span><button class="a-add" aria-label="Thêm">+</button></li>
+<li><span class="a-emo" aria-hidden="true">🧶</span><span class="a-txt"><b>Bán đồ handmade</b><small><i>200k–1tr/đợt</i> · ~7 ngày</small></span><button class="a-add" aria-label="Thêm">+</button></li>
+<li><span class="a-emo" aria-hidden="true">📦</span><span class="a-txt"><b>Nhận đặt hàng hộ từ nguồn quen</b><small><i>300k–2tr/đợt</i> · ~7 ngày</small></span><button class="a-add" aria-label="Thêm">+</button></li>
+</ul>
+<ul class="a-list t2">
+<li><span class="a-emo" aria-hidden="true">🎨</span><span class="a-txt"><b>Thiết kế bài đăng / banner cho shop nhỏ</b><small><i>150k–500k/bộ</i> · ~2 ngày</small></span><button class="a-add" aria-label="Thêm">+</button></li>
+<li><span class="a-emo" aria-hidden="true">✍️</span><span class="a-txt"><b>Viết gói 10 caption bán hàng</b><small><i>300k–1tr/bộ</i> · ~3 ngày</small></span><button class="a-add" aria-label="Thêm">+</button></li>
+<li><span class="a-emo" aria-hidden="true">🎬</span><span class="a-txt"><b>Dựng video ngắn cho quán</b><small><i>200k–700k/lượt</i> · ~2 ngày</small></span><button class="a-add" aria-label="Thêm">+</button></li>
+<li><span class="a-emo" aria-hidden="true">📸</span><span class="a-txt"><b>Chụp ảnh sản phẩm cho shop</b><small><i>300k–1,5tr/buổi</i> · ~1 ngày</small></span><button class="a-add" aria-label="Thêm">+</button></li>
+</ul>
+<ul class="a-list t3">
+<li><span class="a-emo" aria-hidden="true">✏️</span><span class="a-txt"><b>Gia sư Toán/Văn cấp 1–2</b><small><i>1,2–2tr/tháng</i> · ~30 ngày</small></span><button class="a-add" aria-label="Thêm">+</button></li>
+<li><span class="a-emo" aria-hidden="true">🗣️</span><span class="a-txt"><b>Kèm tiếng Anh giao tiếp online 1-1</b><small><i>1,5–3tr/tháng</i> · ~30 ngày</small></span><button class="a-add" aria-label="Thêm">+</button></li>
+<li><span class="a-emo" aria-hidden="true">🎸</span><span class="a-txt"><b>Dạy guitar/ukulele/piano cơ bản</b><small><i>1,2–2,5tr/tháng</i> · ~30 ngày</small></span><button class="a-add" aria-label="Thêm">+</button></li>
+<li><span class="a-emo" aria-hidden="true">💻</span><span class="a-txt"><b>Dạy tin học văn phòng cho người lớn</b><small><i>500k–1,5tr/khoá</i> · ~14 ngày</small></span><button class="a-add" aria-label="Thêm">+</button></li>
+</ul>
+<ul class="a-list t4">
+<li><span class="a-emo" aria-hidden="true">👕</span><span class="a-txt"><b>Thanh lý quần áo không mặc</b><small><i>200k–1tr/đợt</i> · ~7 ngày</small></span><button class="a-add" aria-label="Thêm">+</button></li>
+<li><span class="a-emo" aria-hidden="true">📱</span><span class="a-txt"><b>Bán lại điện thoại/laptop cũ</b><small><i>1–8tr/lượt</i> · ~7 ngày</small></span><button class="a-add" aria-label="Thêm">+</button></li>
+<li><span class="a-emo" aria-hidden="true">📖</span><span class="a-txt"><b>Pass sách / giáo trình cũ</b><small><i>100k–500k/đợt</i> · ~7 ngày</small></span><button class="a-add" aria-label="Thêm">+</button></li>
+<li><span class="a-emo" aria-hidden="true">🗞️</span><span class="a-txt"><b>Bán ve chai, giấy, lon</b><small><i>50k–200k/lượt</i> · ~1 ngày</small></span><button class="a-add" aria-label="Thêm">+</button></li>
+</ul>
+<ul class="a-list t5">
+<li><span class="a-emo" aria-hidden="true">🎉</span><span class="a-txt"><b>Phục vụ tiệc cưới / sự kiện</b><small><i>200k–400k/ca</i> · ~2 ngày</small></span><button class="a-add" aria-label="Thêm">+</button></li>
+<li><span class="a-emo" aria-hidden="true">🛵</span><span class="a-txt"><b>Chạy giao hàng / xe công nghệ cuối tuần</b><small><i>300k–700k/ngày</i> · ~2 ngày</small></span><button class="a-add" aria-label="Thêm">+</button></li>
+<li><span class="a-emo" aria-hidden="true">🐶</span><span class="a-txt"><b>Trông trẻ / trông nhà / chăm thú cưng hộ</b><small><i>150k–400k/ngày</i> · ~2 ngày</small></span><button class="a-add" aria-label="Thêm">+</button></li>
+<li><span class="a-emo" aria-hidden="true">🧹</span><span class="a-txt"><b>Dọn nhà theo giờ</b><small><i>80k–120k/giờ</i> · ~1 ngày</small></span><button class="a-add" aria-label="Thêm">+</button></li>
+</ul>
+<ul class="a-list t6">
+<li><span class="a-emo" aria-hidden="true">🛏️</span><span class="a-txt"><b>Cho thuê phòng trống / ở ghép</b><small><i>1,5–4tr/tháng</i> · ~14 ngày</small></span><button class="a-add" aria-label="Thêm">+</button></li>
+<li><span class="a-emo" aria-hidden="true">📷</span><span class="a-txt"><b>Cho thuê đồ ít dùng (máy ảnh, lều, váy dạ hội)</b><small><i>100k–500k/lượt</i> · ~3 ngày</small></span><button class="a-add" aria-label="Thêm">+</button></li>
+<li><span class="a-emo" aria-hidden="true">🏍️</span><span class="a-txt"><b>Cho thuê chỗ để xe / kho nhỏ</b><small><i>200k–600k/tháng</i> · ~7 ngày</small></span><button class="a-add" aria-label="Thêm">+</button></li>
+<li><span class="a-emo" aria-hidden="true">🗂️</span><span class="a-txt"><b>Bán file mẫu làm một lần bán nhiều lần (Canva, Excel)</b><small><i>50k–1tr/tháng</i> · ~14 ngày</small></span><button class="a-add" aria-label="Thêm">+</button></li>
+</ul>
+</div>
+<p class="a-note">Giá tham khảo, tuỳ khu vực và tay nghề</p>
+</div>
+</div>
+<div class="panel a-panel">
+<div class="strip-label">Dải phụ · tab Money</div>
+<div class="a-owe"><span>Khách còn nợ <b>1.250.000đ</b> từ 3 việc</span><span aria-hidden="true">›</span></div>
+<article class="a-task t2">
+<div class="a-trow"><span class="a-temo" aria-hidden="true">🎨</span><div class="a-ttxt"><b>Thiết kế bài đăng / banner cho shop nhỏ</b><small>Khách: Chị Lan · hẹn 15/10</small></div></div>
+<div class="a-mid"><span class="a-badge">Chờ thanh toán</span><span class="a-amt">350.000đ</span></div>
+<div class="a-actions"><button class="a-btn a-pri">Đã nhận tiền</button><button class="a-btn a-ghost">Nhắc lại sau</button></div>
+</article>
+<div class="a-recv">
+<h4>Nhận được bao nhiêu?</h4>
+<label class="a-money"><input value="350.000" inputmode="numeric" aria-label="Số tiền nhận"><span>đ</span></label>
+<div class="a-wallet"><span class="a-wl">Vào ví</span><input class="rd" type="radio" name="wa" id="wa1" checked><label for="wa1">Ví chính</label><input class="rd" type="radio" name="wa" id="wa2"><label for="wa2">Tiền mặt</label></div>
+<button class="a-btn a-main">Ghi nhận</button>
+</div>
+</div>
+<p class="fit"><b>Hợp khi</b> muốn thư viện trông như một phần sẵn có của trang Sổ sách: đọc nhanh, so giá dễ, 6 chủ đề thấy hết không phải cuộn ngang. <b>Rủi ro</b>: an toàn tới mức nhạt, khó gợi cảm giác "có cơ hội kiếm tiền".</p>
+</section>
+</div>
+</div>
+</body>
+</html>
