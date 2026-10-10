@@ -4,7 +4,8 @@
  */
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { useDialogFocus } from '@/hooks/useDialogFocus';
 import { formatAmountInput } from '@/utils/formatCurrency';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Plus, Trash2, ChevronDown } from 'lucide-react';
@@ -118,6 +119,9 @@ function FormBody({ onClose, onSubmit, editTask, draft, onUpdate }: TaskFormModa
 
   const isEditMode = !!editTask;
   const tpl = !isEditMode && draft?.templateId ? getEarningTemplate(draft.templateId) : undefined;
+  const panelRef = useRef<HTMLDivElement>(null);
+  // Escape đóng · focus ô đầu tiên · bẫy Tab trong form · đóng xong trả focus.
+  useDialogFocus(panelRef, onClose, { initialFocus: 'first-input' });
 
   // Live XP calculation
   const parsedAmount = Number(amount.replace(/\D/g, '')) || 0;
@@ -125,6 +129,11 @@ function FormBody({ onClose, onSubmit, editTask, draft, onUpdate }: TaskFormModa
   const effectiveStart = startDate || todayKey();
   const dateError = endDate && endDate < effectiveStart ? 'Hạn xong phải sau ngày bắt đầu.' : null;
   const canSubmit = !!name.trim() && parsedAmount > 0 && !!endDate && !dateError;
+  const missing = [
+    !name.trim() && 'Tên việc',
+    parsedAmount <= 0 && 'Kỳ vọng',
+    !endDate && 'Hạn xong',
+  ].filter(Boolean) as string[];
 
   const addSubTask = () => {
     if (!newSub.trim()) return;
@@ -163,6 +172,7 @@ function FormBody({ onClose, onSubmit, editTask, draft, onUpdate }: TaskFormModa
         <>
           <motion.div className="tfm-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} />
           <motion.div
+            ref={panelRef}
             className="tfm-panel"
             data-tid={tpl?.themeId ?? 'freelance'}
             role="dialog"
@@ -186,15 +196,16 @@ function FormBody({ onClose, onSubmit, editTask, draft, onUpdate }: TaskFormModa
 
             <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
               <div className="tfm-field">
-                <label className="tfm-label" htmlFor="tfm-name">Tên việc</label>
-                <input id="tfm-name" autoFocus className="input" placeholder="VD: Thiết kế banner cho shop" value={name} onChange={(e) => setName(e.target.value)} maxLength={120} />
+                <label className="tfm-label" htmlFor="tfm-name">Tên việc <span className="tfm-req" aria-hidden="true">*</span></label>
+                <input id="tfm-name" aria-required="true" className="input" placeholder="VD: Thiết kế banner cho shop" value={name} onChange={(e) => setName(e.target.value)} maxLength={120} />
               </div>
 
               <div className="tfm-row">
                 <div className="tfm-field tfm-field--half">
-                  <label className="tfm-label" htmlFor="tfm-amount">Kỳ vọng nhận (đ)</label>
+                  <label className="tfm-label" htmlFor="tfm-amount">Kỳ vọng (đ) <span className="tfm-req" aria-hidden="true">*</span></label>
                   <input
                     id="tfm-amount"
+                    aria-required="true"
                     className="input"
                     placeholder="VD: 300.000"
                     type="text"
@@ -204,8 +215,8 @@ function FormBody({ onClose, onSubmit, editTask, draft, onUpdate }: TaskFormModa
                   />
                 </div>
                 <div className="tfm-field tfm-field--half">
-                  <label className="tfm-label" htmlFor="tfm-end">Hạn xong</label>
-                  <input id="tfm-end" className="input" type="date" value={endDate} min={effectiveStart} onChange={(e) => setEndDate(e.target.value)} />
+                  <label className="tfm-label" htmlFor="tfm-end">Hạn xong <span className="tfm-req" aria-hidden="true">*</span></label>
+                  <input id="tfm-end" aria-required="true" className="input" type="date" value={endDate} min={effectiveStart} onChange={(e) => setEndDate(e.target.value)} />
                 </div>
               </div>
               {dateError && <p className="tfm-error" role="alert">{dateError}</p>}
@@ -275,6 +286,10 @@ function FormBody({ onClose, onSubmit, editTask, draft, onUpdate }: TaskFormModa
                 <span className="tfm-xp-label">⚡ Ước tính XP:</span>
                 <span className="tfm-xp-value">{estimatedXP} XP</span>
               </div>
+
+              {!canSubmit && !dateError && missing.length > 0 && (
+                <p className="tfm-missing" role="status">Còn thiếu: {missing.join(' · ')}</p>
+              )}
 
               <button type="submit" className="tfm-submit" disabled={!canSubmit}>
                 <Plus size={16} /> <span>{isEditMode ? 'Cập nhật' : 'Tạo nhiệm vụ'}</span>

@@ -49,9 +49,9 @@
 }
 
 .eis-x {
-  position: absolute; right: 16px; top: 0;
+  position: absolute; right: 12px; top: -2px;
   display: grid; place-items: center;
-  width: 36px; height: 36px;
+  width: 40px; height: 40px;
   border-radius: var(--radius-full);
   background: color-mix(in srgb, var(--c-bg-elevated) 70%, transparent);
   color: var(--c-text-secondary);
@@ -60,7 +60,7 @@
 .eis-chips {
   display: flex; gap: 2px;
   overflow-x: auto;
-  padding: 20px 12px 8px;
+  padding: 20px 16px 8px;
   scrollbar-width: none;
   scroll-snap-type: x proximity;
 }
@@ -125,7 +125,7 @@
 .eis-blurb {
   margin: 0 4px 12px;
   font-size: var(--text-xs); line-height: 1.45;
-  color: var(--c-text-muted);
+  color: var(--c-text-secondary);
   text-align: center;
 }
 
@@ -159,7 +159,8 @@
 
 .eis-txt { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .eis-txt b { font-size: 0.9rem; font-weight: 600; line-height: 1.38; color: var(--c-text-primary); }
-.eis-txt small { font-size: 0.78rem; line-height: 1.4; color: var(--c-text-muted); }
+.eis-txt small { font-size: 0.78rem; line-height: 1.4; color: var(--c-text-secondary); }
+.eis-nw { white-space: nowrap; }
 .eis-txt i {
   font-style: normal; font-weight: 700;
   color: color-mix(in oklch, var(--acc) 75%, var(--c-text-primary));
@@ -198,14 +199,14 @@
   justify-self: start;
   width: 46px; height: 46px;
   background: var(--acc);
-  color: var(--c-bg-elevated);
+  color: #fff;
   box-shadow: 0 8px 16px -8px var(--acc);
 }
 
 .eis-note {
   margin: 14px 4px 0;
-  font-size: 0.72rem; line-height: 1.4;
-  color: var(--c-text-muted);
+  font-size: 0.75rem; line-height: 1.4;
+  color: var(--c-text-secondary);
   text-align: center;
 }
 
@@ -218,6 +219,12 @@
   background: transparent;
   color: color-mix(in oklch, var(--acc) 80%, var(--c-text-primary));
   font-size: var(--text-xs); font-weight: 700;
+}
+
+/* Sheet rộng 430px trên tablet/desktop: 6 chip chia đều, không phải cuộn ngang bằng chuột. */
+@media (min-width: 768px) {
+  .eis-chips { padding-inline: 10px; gap: 0; }
+  .eis-chip { flex: 1 1 0; min-width: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {

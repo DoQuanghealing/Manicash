@@ -37,7 +37,7 @@ export default function TaskUndoToast({ toast, onDismiss }: Props) {
 
   if (!mounted) return null;
   return createPortal(
-    <div className="tut-wrap" aria-live="polite">
+    <div className="tut-wrap">
       <AnimatePresence>
         {toast && (
           <motion.div

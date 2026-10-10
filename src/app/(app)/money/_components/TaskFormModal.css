@@ -28,14 +28,16 @@
 }
 
 .tfm-close {
-  width: 32px; height: 32px; border-radius: 50%;
+  width: 40px; height: 40px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   background: rgba(255,255,255,0.06); color: var(--c-text-muted);
 }
 
 .tfm-field { margin-bottom: var(--space-lg); }
 
-.tfm-field--half { flex: 1; }
+/* input[type=date] có bề rộng nội tại lớn → phải cho co (min-width:0) kẻo tràn mép sheet ở màn hẹp. */
+.tfm-field--half { flex: 1 1 0; min-width: 0; }
+.tfm-field--half .input { width: 100%; min-width: 0; box-sizing: border-box; }
 
 .tfm-label {
   display: block; font-size: 0.65rem; font-weight: 600;
@@ -78,7 +80,7 @@
 }
 
 .tfm-sub-remove {
-  width: 24px; height: 24px; border-radius: 50%;
+  width: 36px; height: 36px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   background: rgba(239,68,68,0.08); color: #EF4444;
   flex-shrink: 0;
@@ -191,4 +193,11 @@
 .tfm-panel button:focus-visible, .tfm-panel input:focus-visible {
   outline: 2.5px solid var(--c-purple);
   outline-offset: 2px;
+}
+
+.tfm-req { color: var(--c-danger); font-weight: 800; }
+.tfm-missing {
+  margin: 0 0 10px;
+  font-size: 0.78rem; line-height: 1.4; text-align: center;
+  color: var(--c-text-secondary);
 }

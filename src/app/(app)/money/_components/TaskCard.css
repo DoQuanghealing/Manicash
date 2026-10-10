@@ -57,13 +57,15 @@
 /* Nhãn được xuống dòng; số tiền + nút mở rộng luôn giữ nguyên hàng. */
 .tc-tags { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; flex: 1 1 auto; }
 
+/* Nhãn + nút theo GIAI ĐOẠN dùng tím trung tính — KHÔNG lấy màu chủ đề: chủ đề cam/hồng sẽ trông như
+ * "trễ hạn". Màu chủ đề (--acc) chỉ dành cho emoji. Đỏ/cam để riêng cho trễ. */
 .tc-badge {
   padding: 4px 10px;
   border-radius: var(--radius-full);
   font-size: 0.72rem; font-weight: 700; line-height: 1.35;
   white-space: nowrap;
-  background: color-mix(in srgb, var(--acc) 14%, var(--c-bg-elevated));
-  color: color-mix(in oklch, var(--acc) 80%, var(--c-text-primary));
+  background: color-mix(in srgb, var(--c-purple) 12%, var(--c-bg-elevated));
+  color: var(--c-text-accent);
 }
 .tc-card--awaiting .tc-badge {
   background: color-mix(in srgb, var(--c-warning) 20%, var(--c-bg-elevated));
@@ -79,7 +81,7 @@
 }
 .tc-card--paid .tc-badge {
   background: color-mix(in srgb, var(--c-income) 14%, var(--c-bg-elevated));
-  color: var(--c-income);
+  color: color-mix(in oklch, var(--c-income) 62%, var(--c-text-primary));
 }
 
 .tc-xp-badge {
@@ -102,7 +104,7 @@
 .tc-chevron-btn {
   flex: none;
   display: grid; place-items: center;
-  width: 32px; height: 32px;
+  width: 40px; height: 40px;
   border-radius: 50%;
   background: color-mix(in srgb, var(--c-text-primary) 5%, transparent);
   color: var(--c-text-muted);
@@ -121,10 +123,10 @@
 .tc-st-fill {
   height: 100%;
   border-radius: var(--radius-full);
-  background: var(--acc);
+  background: var(--c-purple);
   transition: width 0.4s ease;
 }
-.tc-st-label { font-size: 0.7rem; font-weight: 600; color: var(--c-text-muted); white-space: nowrap; }
+.tc-st-label { font-size: 0.72rem; font-weight: 600; color: var(--c-text-secondary); white-space: nowrap; }
 
 /* Chi tiết mở rộng */
 .tc-expand {
@@ -196,13 +198,13 @@
 }
 .tc-btn:active { transform: scale(0.98); }
 .tc-btn:focus-visible, .tc-header:focus-visible, .tc-chevron-btn:focus-visible {
-  outline: 2.5px solid var(--acc);
+  outline: 2.5px solid var(--c-purple);
   outline-offset: 2px;
 }
 .tc-btn--pri {
-  background: color-mix(in srgb, var(--acc) 14%, var(--c-bg-elevated));
-  color: color-mix(in oklch, var(--acc) 82%, var(--c-text-primary));
-  border: 1.5px solid color-mix(in srgb, var(--acc) 30%, transparent);
+  background: color-mix(in srgb, var(--c-purple) 10%, var(--c-bg-elevated));
+  color: var(--c-text-accent);
+  border: 1.5px solid color-mix(in srgb, var(--c-purple) 28%, transparent);
 }
 .tc-btn--income {
   /* Làm tối màu thu để chữ trắng đủ tương phản (≥4.5:1) ở cả nền sáng lẫn tối. */

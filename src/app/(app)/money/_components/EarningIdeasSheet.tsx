@@ -15,6 +15,7 @@ import {
   type EarningTemplate, type EarningThemeId,
 } from '@/data/earningTemplates';
 import { useCapacitySurveyStore } from '@/stores/useCapacitySurveyStore';
+import { useDialogFocus } from '@/hooks/useDialogFocus';
 import CapacitySurveyCard from '@/app/(app)/chat/_components/CapacitySurveyCard';
 import './earningTheme.css';
 import './EarningIdeasSheet.css';
@@ -47,22 +48,16 @@ function SheetBody({ onClose, onPick, initialThemeId }: Omit<Props, 'isOpen'>) {
   const panelRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   // Chọn mẫu → form mở ngay sau, đừng kéo focus về nút "Gợi ý…" nằm dưới form.
-  const skipRestore = useRef(false);
 
   const templates = useMemo(() => templatesForTheme(themeId, skills), [themeId, skills]);
 
-  // Escape đóng sheet + đưa focus vào sheet khi mở (bàn phím / trình đọc màn hình).
+  // Escape · bẫy focus · trả focus. Chọn mẫu thì skipRestore (form mở ngay sau, đừng kéo focus về nền).
+  const { skipRestore } = useDialogFocus(panelRef, onClose);
+
+  // Chip đang chọn luôn nằm trong tầm nhìn (mở thẳng chủ đề cuối, đổi chủ đề sau khảo sát…).
   useEffect(() => {
-    // Nhớ nút đã mở sheet để đóng xong trả focus về đó (bàn phím / trình đọc màn hình).
-    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    panelRef.current?.focus({ preventScroll: true });
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', onKey);
-    return () => {
-      window.removeEventListener('keydown', onKey);
-      if (!skipRestore.current && opener?.isConnected) opener.focus({ preventScroll: true });
-    };
-  }, [onClose]);
+    document.getElementById(`eis-tab-${themeId}`)?.scrollIntoView({ inline: 'nearest', block: 'nearest' });
+  }, [themeId]);
 
   const pickTheme = (id: EarningThemeId) => {
     setThemeId(id);
@@ -72,13 +67,18 @@ function SheetBody({ onClose, onPick, initialThemeId }: Omit<Props, 'isOpen'>) {
   const handleSurveySaved = (input: { skills: string[]; freeTimeHoursPerWeek: number }) => {
     saveSurvey(input);
     setShowSurvey(false);
-    setThemeId(rankThemesBySkills(input.skills).themes[0].id);
+    pickTheme(rankThemesBySkills(input.skills).themes[0].id);
   };
 
   const onTabKey = (e: React.KeyboardEvent, idx: number) => {
-    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    let nextIdx: number;
+    if (e.key === 'ArrowRight') nextIdx = (idx + 1) % themes.length;
+    else if (e.key === 'ArrowLeft') nextIdx = (idx + themes.length - 1) % themes.length;
+    else if (e.key === 'Home') nextIdx = 0;
+    else if (e.key === 'End') nextIdx = themes.length - 1;
+    else return;
     e.preventDefault();
-    const next = themes[(idx + (e.key === 'ArrowRight' ? 1 : themes.length - 1)) % themes.length];
+    const next = themes[nextIdx];
     pickTheme(next.id);
     document.getElementById(`eis-tab-${next.id}`)?.focus();
   };
@@ -160,7 +160,7 @@ function SheetBody({ onClose, onPick, initialThemeId }: Omit<Props, 'isOpen'>) {
                   <span className="eis-emo" aria-hidden="true">{tpl.emoji}</span>
                   <span className="eis-txt">
                     <b>{tpl.name}</b>
-                    <small><i>{formatPriceRange(tpl.priceRange)}</i> · ~{tpl.typicalDays} ngày</small>
+                    <small><i>{formatPriceRange(tpl.priceRange)}</i> · <span className="eis-nw">~{tpl.typicalDays} ngày</span></small>
                   </span>
                   <span className="eis-add" aria-hidden="true"><Plus size={i === 0 ? 22 : 18} strokeWidth={2.6} /></span>
                 </button>

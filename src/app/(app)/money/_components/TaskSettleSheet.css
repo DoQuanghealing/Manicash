@@ -33,18 +33,19 @@
 }
 
 .tss-x {
-  position: absolute; right: 16px; top: 14px;
+  position: absolute; right: 12px; top: 12px;
   display: grid; place-items: center;
-  width: 36px; height: 36px;
+  width: 40px; height: 40px;
   border-radius: var(--radius-full);
   background: color-mix(in srgb, var(--c-text-primary) 6%, transparent);
   color: var(--c-text-secondary);
 }
 
-.tss-task { position: relative; padding: 8px 76px 0 2px; min-height: 56px; }
+/* Chừa đủ chỗ cho emoji + nút đóng để emoji không đè lên tên việc dài. */
+.tss-task { position: relative; padding: 8px 118px 0 2px; min-height: 56px; }
 .tss-emo {
-  position: absolute; right: 44px; top: -2px;
-  font-size: 46px; line-height: 1;
+  position: absolute; right: 54px; top: 0;
+  font-size: 42px; line-height: 1;
   transform: rotate(8deg);
   pointer-events: none;
   filter: drop-shadow(0 8px 7px color-mix(in srgb, var(--acc) 45%, transparent));
@@ -146,7 +147,7 @@
 
 .tss-cats { display: flex; flex-wrap: wrap; gap: 6px; }
 .tss-cat {
-  min-height: 36px; padding: 6px 12px;
+  min-height: 40px; padding: 6px 12px;
   border-radius: var(--radius-full);
   background: var(--c-bg-elevated);
   border: 1.5px solid color-mix(in srgb, var(--c-text-primary) 10%, transparent);

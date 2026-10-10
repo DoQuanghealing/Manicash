@@ -360,3 +360,13 @@
   outline: 2.5px solid var(--c-purple);
   outline-offset: 2px;
 }
+
+.money-more {
+  display: block; width: 100%; min-height: 44px; margin-top: 10px;
+  border-radius: var(--radius-full);
+  background: transparent;
+  border: 1px dashed color-mix(in srgb, var(--c-text-primary) 16%, transparent);
+  color: var(--c-text-secondary);
+  font-size: 0.85rem; font-weight: 600;
+}
+.money-more:focus-visible { outline: 2.5px solid var(--c-purple); outline-offset: 2px; }

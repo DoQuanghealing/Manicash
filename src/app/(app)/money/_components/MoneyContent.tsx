@@ -97,6 +97,7 @@ export default function MoneyContent() {
   const [settle, setSettle] = useState<{ taskId: string; mode: SettleMode } | null>(null);
   const [toast, setToast] = useState<UndoToastData | null>(null);
   const [owedOnly, setOwedOnly] = useState(false);
+  const [showAllDone, setShowAllDone] = useState(false);
 
   const activeTasks = tasks.filter((t) => !t.deletedAt && !t.completedAt);
   const owed = getOutstandingSummary(tasks);
@@ -106,7 +107,10 @@ export default function MoneyContent() {
     ? activeTasks.filter((t) => getTaskStage(t) === 'awaiting_payment')
     : activeTasks;
   const settleTask = settle ? tasks.find((t) => t.id === settle.taskId) ?? null : null;
-  const completedTasks = tasks.filter((t) => t.completedAt);
+  // Mới nhận trước — việc vừa Ghi nhận phải hiện ngay đầu mục "Đã nhận tiền".
+  const completedTasks = tasks
+    .filter((t) => t.completedAt)
+    .sort((a, b) => Date.parse(b.completedAt!) - Date.parse(a.completedAt!) || Date.parse(b.updatedAt ?? '') - Date.parse(a.updatedAt ?? ''));
   const overdueTaskName = overdueTarget
     ? tasks.find((t) => t.id === overdueTarget)?.name || ''
     : '';
@@ -197,7 +201,7 @@ export default function MoneyContent() {
     setSettle(null);
     showToast({
       message: c.paymentDueDate
-        ? `Đã hẹn lại ngày ${new Date(`${c.paymentDueDate}T12:00:00`).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })}`
+        ? `Đã hẹn lại ngày ${c.paymentDueDate.slice(8, 10)}/${c.paymentDueDate.slice(5, 7)}`
         : 'Đã bỏ ngày hẹn trả',
     });
   }, [updateTask, showToast]);
@@ -347,14 +351,19 @@ export default function MoneyContent() {
               </div>
 
               {/* Completed Tasks — History */}
-              {completedTasks.length > 0 && (
+              {completedTasks.length > 0 && !owedOnly && (
                 <div style={{ marginTop: 'var(--space-lg)' }}>
                   <p style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--c-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-sm)' }}>
                     ✅ Đã nhận tiền ({completedTasks.length})
                   </p>
-                  {completedTasks.slice(0, 3).map((task) => (
+                  {(showAllDone ? completedTasks : completedTasks.slice(0, 3)).map((task) => (
                     <TaskCard key={task.id} task={task} status="completed" />
                   ))}
+                  {completedTasks.length > 3 && (
+                    <button type="button" className="money-more" onClick={() => setShowAllDone(!showAllDone)} aria-expanded={showAllDone}>
+                      {showAllDone ? 'Thu gọn' : `Xem tất cả (${completedTasks.length})`}
+                    </button>
+                  )}
                 </div>
               )}
 

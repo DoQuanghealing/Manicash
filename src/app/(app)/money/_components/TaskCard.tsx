@@ -43,7 +43,7 @@ interface TaskCardProps {
 
 function formatDate(iso: string) {
   const d = parseLocalDate(iso);
-  return d ? d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }) : '';
+  return d ? `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}` : '';
 }
 
 function cardState(task: EarningTask, status: TaskStatus): CardState {

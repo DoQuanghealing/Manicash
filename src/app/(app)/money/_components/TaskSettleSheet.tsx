@@ -18,6 +18,7 @@ import { INCOME_CATEGORIES } from '@/data/categories';
 import { templateVisualForTask } from '@/data/earningTemplates';
 import { incomeCategoryForTask } from '@/lib/tasks/receiveTaskPayment';
 import { formatAmountInput, formatCurrency } from '@/utils/formatCurrency';
+import { useDialogFocus } from '@/hooks/useDialogFocus';
 import './earningTheme.css';
 import './TaskSettleSheet.css';
 
@@ -110,17 +111,8 @@ function SettleBody({ task, mode, onClose, onReceive, onAwait, onReschedule }: P
       : `Hơn kỳ vọng ${Math.round(gap * 100)}%. Khách trả hơn mong đợi 👏`
     : null;
 
-  useEffect(() => {
-    // Nhớ nút đã mở sheet để đóng xong trả focus về đó (bàn phím / trình đọc màn hình).
-    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    panelRef.current?.focus({ preventScroll: true });
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', onKey);
-    return () => {
-      window.removeEventListener('keydown', onKey);
-      if (opener?.isConnected) opener.focus({ preventScroll: true });
-    };
-  }, [onClose]);
+  // Escape · bẫy focus · trả focus về nút đã mở.
+  useDialogFocus(panelRef, onClose);
 
   useEffect(() => {
     if (step === 'receive') amountRef.current?.select();
@@ -290,11 +282,14 @@ function SettleBody({ task, mode, onClose, onReceive, onAwait, onReschedule }: P
                 onChange={(e) => setDueKey(e.target.value)}
               />
               <span className="tss-quick">
-                {[1, 3, 7].map((n) => (
-                  <button key={n} type="button" className="tss-cat" onClick={() => setDueKey(localKey(addDays(today, n)))}>
-                    +{n} ngày
-                  </button>
-                ))}
+                {[1, 3, 7].map((n) => {
+                  const k = localKey(addDays(today, n));
+                  return (
+                    <button key={n} type="button" aria-pressed={dueKey === k} className={`tss-cat${dueKey === k ? ' is-on' : ''}`} onClick={() => setDueKey(k)}>
+                      +{n} ngày
+                    </button>
+                  );
+                })}
                 {dueKey && (
                   <button type="button" className="tss-cat" onClick={() => setDueKey('')}>Bỏ hẹn</button>
                 )}
