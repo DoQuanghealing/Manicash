@@ -26,13 +26,34 @@
         Nút "Xong" giờ đi `receiveTaskPayment`. Commit `ffc0a3b`.
   - [x] Redteam CODE: vòng 1 CHƯA ĐẠT (2 HIGH: CFO/chat đếm "Chờ thanh toán" là trễ) → sửa `27d8f30`;
         vòng 2 **ĐẠT** → sửa nốt MEDIUM/LOW `21c3d6f`. 31/31 test Đợt 1. Đã push.
-  - [~] Redteam GIAO DIỆN: đang chạy (dev server cổng 54596).
+  - [~] Redteam GIAO DIỆN: vòng 1 CHƯA ĐẠT (2 HIGH: ô ngày tràn ở 320px; thẻ chủ đề cam trông như trễ hạn) →
+        sửa hết 16 mục trừ #15 ("ngài" trong CapacitySurveyCard — giữ, dùng chung với chat) ở `9e571c0`, đã push.
+        **Vòng 2 BỊ DỪNG khi phiên tắt — CHƯA có kết luận. Việc đầu tiên phiên sau: chạy lại redteam giao diện vòng 2.**
   - ⚠️ TRƯỚC KHI BẬT MONEY SYNC: gộp giao dịch chưa có "bia mộ" → giao dịch đã Hoàn tác có thể sống lại
         từ cloud → nhận lại thành thu 2 lần. Cần `deletedTxnIds` đồng bộ theo (lỗi cũ, Đợt 1 làm lộ rõ).
   - Còn để lại: bẫy focus trong sheet (mới có trả focus).
         Trang xem thử tạm `src/app/(public)/zz-dot1-preview/` (chế độ giả lập, chỉ dev) — **KHÔNG commit, xoá khi xong**.
         ⚠️ Bộ chống spam IP trong RAM của dev server có thể chặn localhost khi tải trang dev nhiều → khởi động lại server.
 - `main` = `0b0e19a` (PR #38 đã lên prod).
+
+## Bàn giao phiên 2026-10-10 (đọc trước khi làm tiếp)
+- Nhánh `feat/earning-tasks-dot1`, HEAD = `9e571c0`, **đã push, CHƯA mở PR, CHƯA merge**. Cây làm việc sạch.
+- Commit theo thứ tự: `6d76352` logic · `ffc0a3b` UI mẫu D · `27d8f30` + `21c3d6f` sửa redteam code (vòng 2 ĐẠT) ·
+  `9e571c0` sửa redteam giao diện vòng 1.
+- Test: `npm run test:earning-tasks` 31/31; `test:ai-all` xanh; `test:ai-persistence` có 1 FAIL cũ "finance rehydrate" (không do Đợt 1).
+- **Việc tiếp theo, theo thứ tự:**
+  1. Chạy lại redteam GIAO DIỆN vòng 2 (xác nhận 16 bản sửa + tìm lỗi mới) → sửa tới khi ĐẠT.
+  2. Chụp ảnh các màn (sáng/tối, 375px) gửi PO duyệt — luật: đổi UI trông thấy được phải cho PO xem ảnh TRƯỚC khi merge.
+  3. PO duyệt → mở PR vào `main` (main tự deploy prod). Không merge khi PO chưa đồng ý.
+  4. Xoá thư mục tạm `src/app/(public)/zz-dot1-preview/` (chưa bao giờ commit).
+- **Cách xem UI không cần đăng nhập:** `npm run dev` (hoặc preview `manicash-dev`) → `/zz-dot1-preview` (`?s=empty` = trạng thái rỗng).
+  Trang tự bật chế độ giả lập (sessionStorage) rồi tải lại 1 lần; dữ liệu giả chỉ trong RAM, localStorage không bị chạm.
+- **Bẫy khi kiểm UI:**
+  - Khung Browser ẨN → `document.hidden` → Framer không chạy hiệu ứng thoát → sheet/form đã đóng vẫn nằm trong DOM.
+    Kiểm mở/đóng bằng props React: từ `.tfm-panel` đi `__reactFiber…`.return, lấy memoizedProps NGOÀI CÙNG có `isOpen`+`onSubmit`.
+  - Dev server chống spam IP trong RAM (`src/lib/security.ts`) → tải trang nhiều bị "IP bị chặn vĩnh viễn" (chỉ ở máy local) → restart server.
+- **Còn để lại có chủ ý:** undo chat "hoàn thành nhiệm vụ" chỉ trong 15 phút (khôi phục XP theo ảnh chụp, cùng khuôn các undo chat khác).
+- **Bắt buộc trước khi bật Money Sync:** giao dịch cần "bia mộ" (`deletedTxnIds`) — nếu không, khoản thu đã Hoàn tác sống lại từ cloud → thu 2 lần.
 
 ## Mục tiêu
 Làm tab **Money → Nhiệm vụ kiếm tiền** sinh động hơn bằng công việc + ghi chú, lấy cảm hứng
