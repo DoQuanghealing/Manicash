@@ -118,6 +118,8 @@ export function useMoneySnapshotV1(): MoneySnapshotV1 {
         endDate:        t.endDate,
         completedAt:    t.completedAt,
         deletedAt:      t.deletedAt,
+        // Đợt 1: thiếu stage thì CFO đếm việc "Chờ thanh toán" là trễ hạn.
+        stage:          t.stage,
         subTasks:       (t.subTasks ?? []).map((s) => ({
           id:          s.id,
           isCompleted: s.isCompleted,

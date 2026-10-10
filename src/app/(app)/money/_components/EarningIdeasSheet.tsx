@@ -51,10 +51,15 @@ function SheetBody({ onClose, onPick, initialThemeId }: Omit<Props, 'isOpen'>) {
 
   // Escape đóng sheet + đưa focus vào sheet khi mở (bàn phím / trình đọc màn hình).
   useEffect(() => {
+    // Nhớ nút đã mở sheet để đóng xong trả focus về đó (bàn phím / trình đọc màn hình).
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     panelRef.current?.focus({ preventScroll: true });
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      if (opener?.isConnected) opener.focus({ preventScroll: true });
+    };
   }, [onClose]);
 
   const pickTheme = (id: EarningThemeId) => {

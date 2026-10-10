@@ -38,6 +38,8 @@ export interface EarningTemplate {
   priceRange: { min: number; max: number; unit: EarningPriceUnit };
   /** Số ngày thường mất → hạn = hôm nay + typicalDays. */
   typicalDays: number;
+  /** Số đơn vị một việc thường gồm (vd. 10 trang, 3 giờ). Mặc định 1. Kỳ vọng = giữa khung × số này. */
+  typicalUnits?: number;
   /** 3–5 bước → checklist (subTasks). */
   steps: string[];
   incomeCategory: EarningIncomeCategory;
@@ -91,7 +93,7 @@ export const EARNING_TEMPLATES: EarningTemplate[] = [
     priceRange: { min: 200 * k, max: 800 * k, unit: 'lượt' }, typicalDays: 2, incomeCategory: 'freelance', skills: ['finance', 'ops', 'coding'],
     steps: ['Chốt mẫu đầu ra', 'Làm 10% gửi khách duyệt', 'Làm hết', 'Kiểm lỗi', 'Thu tiền'] },
   { id: 'free-translate', themeId: 'freelance', emoji: '🌐', name: 'Dịch tài liệu Anh–Việt',
-    priceRange: { min: 80 * k, max: 150 * k, unit: 'trang' }, typicalDays: 3, incomeCategory: 'freelance', skills: ['language', 'writing'],
+    priceRange: { min: 80 * k, max: 150 * k, unit: 'trang' }, typicalDays: 3, typicalUnits: 10, incomeCategory: 'freelance', skills: ['language', 'writing'],
     steps: ['Báo giá theo trang', 'Thu cọc', 'Dịch', 'Soát lại 1 lượt', 'Giao & thu nốt'] },
   { id: 'free-product-photo', themeId: 'freelance', emoji: '📸', name: 'Chụp ảnh sản phẩm cho shop',
     priceRange: { min: 300 * k, max: 1.5 * tr, unit: 'buổi' }, typicalDays: 1, incomeCategory: 'freelance', skills: ['design', 'video'],
@@ -139,13 +141,13 @@ export const EARNING_TEMPLATES: EarningTemplate[] = [
     priceRange: { min: 200 * k, max: 400 * k, unit: 'ca' }, typicalDays: 2, incomeCategory: 'freelance', skills: ['ops'],
     steps: ['Vào nhóm tuyển ca', 'Đăng ký ca', 'Chuẩn bị đồng phục', 'Làm ca', 'Nhận tiền cuối ca'] },
   { id: 'weekend-delivery', themeId: 'weekend', emoji: '🛵', name: 'Chạy giao hàng / xe công nghệ cuối tuần',
-    priceRange: { min: 300 * k, max: 700 * k, unit: 'ngày' }, typicalDays: 2, incomeCategory: 'freelance', skills: ['ops'],
+    priceRange: { min: 300 * k, max: 700 * k, unit: 'ngày' }, typicalDays: 2, typicalUnits: 2, incomeCategory: 'freelance', skills: ['ops'],
     steps: ['Kiểm tra xe + giấy tờ', 'Chọn khung giờ cao điểm', 'Chạy', 'Ghi thu sau khi trừ xăng & phí app'] },
   { id: 'weekend-sitting', themeId: 'weekend', emoji: '🐶', name: 'Trông trẻ / trông nhà / chăm thú cưng hộ',
     priceRange: { min: 150 * k, max: 400 * k, unit: 'ngày' }, typicalDays: 2, incomeCategory: 'freelance', skills: ['counsel'],
     steps: ['Chốt việc cụ thể + giờ', 'Lưu số người nhà', 'Làm', 'Gửi ảnh cập nhật', 'Nhận tiền'] },
   { id: 'weekend-cleaning', themeId: 'weekend', emoji: '🧹', name: 'Dọn nhà theo giờ',
-    priceRange: { min: 80 * k, max: 120 * k, unit: 'giờ' }, typicalDays: 1, incomeCategory: 'freelance', skills: ['ops'],
+    priceRange: { min: 80 * k, max: 120 * k, unit: 'giờ' }, typicalDays: 1, typicalUnits: 3, incomeCategory: 'freelance', skills: ['ops'],
     steps: ['Chốt số giờ + việc', 'Mang dụng cụ cần', 'Làm', 'Khách kiểm', 'Nhận tiền'] },
   { id: 'weekend-sampling', themeId: 'weekend', emoji: '🛒', name: 'PG/PB, phát mẫu thử ở siêu thị',
     priceRange: { min: 250 * k, max: 500 * k, unit: 'ca' }, typicalDays: 2, incomeCategory: 'freelance', skills: ['sales'],
@@ -178,9 +180,10 @@ export function getEarningTemplate(id: string): EarningTemplate | undefined {
   return TEMPLATE_BY_ID.get(id);
 }
 
-/** Tiền kỳ vọng điền sẵn = giữa khung giá, làm tròn nghìn. */
+/** Tiền kỳ vọng điền sẵn = giữa khung giá × số đơn vị điển hình, làm tròn nghìn. */
 export function suggestedAmount(tpl: EarningTemplate): number {
-  return Math.round((tpl.priceRange.min + tpl.priceRange.max) / 2 / 1_000) * 1_000;
+  const units = Math.max(1, tpl.typicalUnits ?? 1);
+  return Math.round(((tpl.priceRange.min + tpl.priceRange.max) / 2) * units / 1_000) * 1_000;
 }
 
 function overlap(a: string[], b: Set<string>): number {

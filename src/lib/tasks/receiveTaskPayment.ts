@@ -97,7 +97,11 @@ export function receiveTaskPayment(input: ReceiveTaskPaymentInput): ReceiveTaskP
     undo.transactionId = transaction.id;
   }
 
-  const done = useTaskStore.getState().completeTask(task.id, amount, { incomeTxnId: transaction?.id });
+  const done = useTaskStore.getState().completeTask(task.id, amount, {
+    incomeTxnId: transaction?.id,
+    // Ngày nhận do người dùng chọn (có thể lùi) — để thẻ/CFO khớp ngày của giao dịch ở Sổ sách.
+    receivedAt: transaction ? new Date(transaction.date) : input.receivedAt,
+  });
   if (!done) {
     // Không thể xảy ra sau các kiểm tra trên, nhưng nếu có thì đừng để giao dịch mồ côi.
     if (transaction) useFinanceStore.getState().removeTransaction(transaction.id);
@@ -117,6 +121,9 @@ export function receiveTaskPayment(input: ReceiveTaskPaymentInput): ReceiveTaskP
 export function undoReceiveTaskPayment(undo: ReceiveTaskPaymentUndo): boolean {
   const task = useTaskStore.getState().tasks.find((t) => t.id === undo.taskId);
   if (!task || !task.completedAt) return false;
+  // Task đã được nhận tiền lại bằng giao dịch KHÁC (nhiều tab / sync) → undo cũ không còn đúng,
+  // làm tiếp sẽ để mồ côi giao dịch mới và lần nhận sau thành thu 2 lần.
+  if ((task.incomeTxnId ?? undefined) !== (undo.transactionId ?? undefined)) return false;
   if (undo.transactionId) useFinanceStore.getState().removeTransaction(undo.transactionId);
   useTaskStore.getState().undoCompleteTask(undo.taskId, {
     actualAmount: undo.actualAmount,
@@ -140,11 +147,19 @@ export function getOutstandingSummary(tasks: EarningTask[]): { amount: number; c
   return { amount, count };
 }
 
+/** "YYYY-MM-DD" → ngày theo giờ MÁY (new Date("YYYY-MM-DD") là UTC → lệch 1 ngày ở múi giờ âm).
+ * Chuỗi ISO đầy đủ thì parse bình thường. */
+export function parseLocalDate(value: string): Date | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  const d = m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
 /** Số ngày khách trễ hẹn trả (0 nếu chưa trễ / không hẹn). So theo ngày lịch địa phương. */
 export function getPaymentLateDays(task: Pick<EarningTask, 'stage' | 'completedAt' | 'paymentDueDate'>, now: Date = new Date()): number {
   if (getTaskStage(task) !== 'awaiting_payment' || !task.paymentDueDate) return 0;
-  const due = new Date(task.paymentDueDate);
-  if (Number.isNaN(due.getTime())) return 0;
+  const due = parseLocalDate(task.paymentDueDate);
+  if (!due) return 0;
   const dueDay = new Date(due.getFullYear(), due.getMonth(), due.getDate()).getTime();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
   return Math.max(0, Math.round((today - dueDay) / 86_400_000));

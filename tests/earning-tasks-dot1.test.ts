@@ -19,6 +19,13 @@ import type { MoneyActionAuditRecord } from '@/lib/aiMoneyChat/actions/actionAud
 import type { MoneySnapshotV1 } from '@/lib/moneyBrain/types';
 import { getTaskStatus as brainTaskStatus } from '@/lib/moneyBrain/taskMetrics';
 import type { EarningTask } from '@/types/task';
+import { toMoneySnapshotV1 } from '@/lib/moneyBrain/snapshot';
+import { buildCFOContextPack } from '@/lib/moneyBrain/cfoContextPack';
+import { validateClientSnapshot, getFinanceSnapshot, __clearSnapshotCacheForTest } from '@/lib/aiMoneyChat/aggregation/snapshotBuilder';
+import { mergeCloudAndLocal } from '@/lib/moneySync/merge';
+import { deserializeCloudMoneyDocument } from '@/lib/moneySync/serialize';
+import type { CloudMoneyDocumentV1 } from '@/lib/moneySync/cloudTypes';
+import { useBudgetStore } from '@/stores/useBudgetStore';
 import type { UserProfile } from '@/types/user';
 
 type Fn = () => void | Promise<void>;
@@ -291,6 +298,115 @@ async function main() {
     eq(d.startDate, '2026-10-08'); eq(d.endDate, '2026-10-10'); eq(d.templateId, 'free-social-design');
     eq(d.subTasks.length, tpl.steps.length);
     eq(taskDraftFromTemplate(tpl, new Date(2026, 11, 31)).endDate, '2027-01-02', 'qua năm');
+  });
+
+
+  console.log('\nĐợt 1 — hồi quy redteam vòng 1');
+
+  await it('#1 CFO: việc Chờ thanh toán quá hạn làm KHÔNG bị đếm trễ (đi qua toMoneySnapshotV1 → buildCFOContextPack)', () => {
+    const tasks = [
+      { id: 'a', name: 'chờ', expectedAmount: 500_000, startDate: dayKey(-10), endDate: dayKey(-3), stage: 'awaiting_payment', subTasks: [] },
+      { id: 'b', name: 'trễ thật', expectedAmount: 300_000, startDate: dayKey(-10), endDate: dayKey(-3), stage: 'doing', subTasks: [] },
+    ];
+    const snap = toMoneySnapshotV1({ clientNow: new Date().toISOString(), timezone: 'Asia/Ho_Chi_Minh', tasks } as never);
+    eq(snap.tasks.find((t) => t.id === 'a')?.stage, 'awaiting_payment', 'stage đi qua snapshot');
+    const pack = buildCFOContextPack(snap) as unknown as { earningTasks: { overdueCount: number } };
+    eq(pack.earningTasks.overdueCount, 1, 'chỉ đếm việc trễ thật');
+  });
+
+  await it('#2 chat: validateClientSnapshot giữ stage + getFinanceSnapshot không gắn "quá hạn" cho việc chờ trả', async () => {
+    __clearSnapshotCacheForTest();
+    const raw = { tasks: [
+      { id: 'a', name: 'chờ', expectedAmount: 500_000, startDate: dayKey(-10), endDate: dayKey(-3), stage: 'awaiting_payment', subTasks: [] },
+      { id: 'x', name: 'lạ', expectedAmount: 1, stage: 'hack' },
+    ] };
+    const v = validateClientSnapshot(raw);
+    eq(v?.tasks?.[0].stage, 'awaiting_payment');
+    eq(v?.tasks?.[1].stage, undefined, 'stage lạ bị bỏ');
+    const fs = await getFinanceSnapshot('u-test', { clientSnapshot: raw });
+    const item = fs.tasks.items.find((t) => t.id === 'a');
+    eq(item?.status, 'active', 'không phải overdue');
+  });
+
+  function doc(tasks: EarningTask[], updatedAt: string): CloudMoneyDocumentV1 {
+    return {
+      version: 'cloud_money_v1', uid: 'u', updatedAt,
+      finance: { transactions: [], mainBalance: 0, emergencyBalance: 0, billFundBalance: 0, fixedBills: [], billSnapshots: [] },
+      budget: { carryOver: 0, currentMonth: '2026-10', categoryBudgets: [], flaggedCategories: [], flaggedTransactionIds: [], monthlySnapshots: [], unviewedReportMonth: null, xpAtMonthStart: 0 },
+      goals: { goals: [] },
+      tasks: { tasks, xpPenalties: [] },
+      authProgress: { uid: 'u', displayName: 'T', email: '', photoURL: null, rank: 'iron', xp: 0, streak: 0, lastActiveDate: '2026-10-01', resistCount: 0, totalResistSaved: 0, isPremium: false, plan: 'free', premiumExpiresAt: null, createdAt: '2026-01-01T00:00:00Z', updatedAt },
+      audit: { records: [] },
+      syncMeta: { schemaVersion: 1 },
+    } as unknown as CloudMoneyDocumentV1;
+  }
+
+  await it('#3 sync: máy v1 hoàn thành (không bump updatedAt) vẫn thắng sửa đổi CŨ hơn trên máy v2', () => {
+    const base = task({ updatedAt: '2026-10-01T00:00:00.000Z', createdAt: '2026-10-01T00:00:00.000Z' });
+    const localV2 = { ...base, updatedAt: '2026-10-03T00:00:00.000Z' };            // tick checklist T3
+    const cloudV1 = { ...base, completedAt: '2026-10-05T00:00:00.000Z', actualAmount: 300_000 }; // hoàn thành T5, updatedAt cũ
+    const r = mergeCloudAndLocal({ local: doc([localV2], '2026-10-03T00:00:00Z'), cloud: doc([cloudV1], '2026-10-05T00:00:00Z'), now: '2026-10-06T00:00:00Z', deviceId: 'd' });
+    eq(r.merged.tasks.tasks[0].completedAt, '2026-10-05T00:00:00.000Z', 'bản hoàn thành thắng');
+  });
+
+  await it('#3 sync: đọc cloud chuẩn hoá task v1 → v2 (stage + updatedAt)', () => {
+    const patch = deserializeCloudMoneyDocument(doc([task({ id: 'v1', completedAt: '2026-10-05T00:00:00.000Z' })], '2026-10-05T00:00:00Z'));
+    const t = patch.tasks?.tasks?.[0];
+    eq(t?.stage, 'paid'); eq(t?.updatedAt, '2026-10-05T00:00:00.000Z');
+  });
+
+  await it('#5 undo cũ KHÔNG chạy khi task đã được nhận lại bằng giao dịch khác', () => {
+    seed([task()]);
+    const r1 = receiveTaskPayment({ taskId: 't1', amount: 100_000 });
+    ok(r1.ok, 'r1');
+    if (!r1.ok) return;
+    // Giả lập tab khác: undo rồi nhận lại → giao dịch mới
+    ok(undoReceiveTaskPayment(r1.undo), 'undo1');
+    const r2 = receiveTaskPayment({ taskId: 't1', amount: 120_000 });
+    ok(r2.ok, 'r2');
+    eq(undoReceiveTaskPayment(r1.undo), false, 'undo cũ bị chặn');
+    eq(useFinanceStore.getState().transactions.length, 1, 'giao dịch mới còn nguyên');
+    eq(useTaskStore.getState().tasks[0].stage, 'paid');
+  });
+
+  await it('#6 hoàn tác giao dịch lùi sang tháng trước → tính lại snapshot tháng đó', () => {
+    seed([task()]);
+    const calls: string[] = [];
+    const orig = useBudgetStore.getState().updateSnapshotTotals;
+    useBudgetStore.setState({ updateSnapshotTotals: (m: string) => { calls.push(m); } } as never);
+    try {
+      const back = new Date(); back.setDate(back.getDate() - 20);
+      const when = back.getMonth() !== new Date().getMonth() ? back : null;
+      if (!when) { console.log('    (bỏ qua: 20 ngày trước vẫn cùng tháng)'); return; }
+      const res = receiveTaskPayment({ taskId: 't1', amount: 100_000, receivedAt: when });
+      ok(res.ok, 'ok');
+      if (!res.ok) return;
+      const before = calls.length;
+      undoReceiveTaskPayment(res.undo);
+      ok(calls.length > before, 'removeTransaction gọi updateSnapshotTotals');
+    } finally {
+      useBudgetStore.setState({ updateSnapshotTotals: orig } as never);
+    }
+  });
+
+  await it('#8 completedAt = ngày nhận đã chọn (khớp giao dịch), updatedAt = bây giờ', () => {
+    seed([task()]);
+    const back = new Date(); back.setDate(back.getDate() - 5); back.setHours(12, 0, 0, 0);
+    const res = receiveTaskPayment({ taskId: 't1', amount: 100_000, receivedAt: back });
+    ok(res.ok, 'ok');
+    const t = useTaskStore.getState().tasks[0];
+    eq(t.completedAt, useFinanceStore.getState().transactions[0].date, 'trùng ngày giao dịch');
+    ok(Date.parse(t.updatedAt!) > Date.parse(t.completedAt!), 'updatedAt mới hơn');
+  });
+
+  await it('#11 hẹn trả dạng "YYYY-MM-DD" tính theo ngày máy', () => {
+    eq(getPaymentLateDays(task({ stage: 'awaiting_payment', paymentDueDate: dayKey(-2) })), 2);
+    eq(getPaymentLateDays(task({ stage: 'awaiting_payment', paymentDueDate: dayKey(0) })), 0);
+  });
+
+  await it('#15 kỳ vọng mẫu tính theo trang/giờ nhân số đơn vị điển hình', () => {
+    eq(suggestedAmount(getEarningTemplate('free-translate')!), 1_150_000, '10 trang × 115k');
+    eq(suggestedAmount(getEarningTemplate('weekend-cleaning')!), 300_000, '3 giờ × 100k');
   });
 
   console.log('');

@@ -100,6 +100,8 @@ export default function MoneyContent() {
 
   const activeTasks = tasks.filter((t) => !t.deletedAt && !t.completedAt);
   const owed = getOutstandingSummary(tasks);
+  // Hết việc nợ thì bộ lọc mất nghĩa: coi như tắt, và tắt hẳn để lần sau không âm thầm bật lại.
+  if (owedOnly && owed.count === 0) setOwedOnly(false);
   const visibleTasks = owedOnly && owed.count > 0
     ? activeTasks.filter((t) => getTaskStage(t) === 'awaiting_payment')
     : activeTasks;
@@ -218,7 +220,7 @@ export default function MoneyContent() {
 
   // Stats
   const completedCount = completedTasks.length;
-  const activeCount = activeTasks.filter((t) => getStatus(t) === 'active').length;
+  const activeCount = activeTasks.filter((t) => getStatus(t) === 'active' && getTaskStage(t) !== 'awaiting_payment').length;
   const overdueCount = activeTasks.filter((t) => getStatus(t) === 'overdue').length;
 
   return (

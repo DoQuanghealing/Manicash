@@ -11,7 +11,7 @@ import type { EarningTask, TaskStatus } from '@/types/task';
 import { calculateTaskXP, getTaskStage } from '@/types/task';
 import { useTaskStore } from '@/stores/useTaskStore';
 import { templateVisualForTask } from '@/data/earningTemplates';
-import { getPaymentLateDays } from '@/lib/tasks/receiveTaskPayment';
+import { getPaymentLateDays, parseLocalDate } from '@/lib/tasks/receiveTaskPayment';
 import { formatCurrency, formatCurrencyShort } from '@/utils/formatCurrency';
 import TaskEvalPanel from './TaskEvalPanel';
 import './earningTheme.css';
@@ -42,7 +42,8 @@ interface TaskCardProps {
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+  const d = parseLocalDate(iso);
+  return d ? d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }) : '';
 }
 
 function cardState(task: EarningTask, status: TaskStatus): CardState {

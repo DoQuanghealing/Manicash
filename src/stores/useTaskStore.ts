@@ -6,6 +6,7 @@ import { simulationAwareStorage } from '@/stores/simulationStorage';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { EarningTask, SubTask, TaskStage, TaskStatus, XPPenalty, OverdueReason, TaskAiEval } from '@/types/task';
 import { getTaskStage, PAYER_NAME_MAX } from '@/types/task';
+import { migrateTasksState } from '@/lib/tasks/migrateTasks';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { STORE_KEYS, STORE_VERSIONS, onRehydrateMark } from '@/stores/persistConfig';
 
@@ -36,24 +37,8 @@ function getTaskStatus(task: EarningTask): TaskStatus {
   return 'active';
 }
 
-/** v1 → v2: thêm `stage` + `updatedAt`. KHÔNG tạo bù giao dịch thu cho task đã xong —
- * người dùng có thể đã tự ghi tay, tạo bù là đếm đôi. Idempotent. */
-export function migrateTasksState(persisted: unknown): { tasks: EarningTask[]; xpPenalties: XPPenalty[] } {
-  const p = (persisted && typeof persisted === 'object' ? persisted : {}) as Record<string, unknown>;
-  const rawTasks = Array.isArray(p.tasks) ? (p.tasks as EarningTask[]) : [];
-  const tasks = rawTasks
-    .filter((t) => t && typeof t === 'object' && typeof t.id === 'string')
-    .map((t) => ({
-      ...t,
-      subTasks: Array.isArray(t.subTasks) ? t.subTasks : [],
-      stage: getTaskStage(t),
-      updatedAt: t.updatedAt ?? t.completedAt ?? t.deletedAt ?? t.createdAt,
-    }));
-  return {
-    tasks,
-    xpPenalties: Array.isArray(p.xpPenalties) ? (p.xpPenalties as XPPenalty[]) : [],
-  };
-}
+// v1 → v2: xem src/lib/tasks/migrateTasks.ts (module thuần — Money Sync dùng chung khi đọc cloud).
+export { migrateTasksState };
 
 type NewTaskInput = Pick<EarningTask, 'name' | 'expectedAmount' | 'startDate' | 'endDate'>
   & Partial<Pick<EarningTask, 'payerName' | 'paymentDueDate' | 'templateId'>>
@@ -75,7 +60,7 @@ interface TaskState {
   /** Đánh dấu ĐÃ NHẬN TIỀN + cộng XP TASK_COMPLETE. Chỉ ghi task — giao dịch thu do
    * `receiveTaskPayment` tạo rồi truyền `incomeTxnId` vào. Gọi lần 2 trên cùng task → false,
    * không cộng XP lần nữa. */
-  completeTask: (id: string, actualAmount: number, opts?: { incomeTxnId?: string }) => boolean;
+  completeTask: (id: string, actualAmount: number, opts?: { incomeTxnId?: string; receivedAt?: Date }) => boolean;
   deleteOverdueTask: (id: string, reason: OverdueReason) => void;
   /** Phase 5 (undo): xóa hẳn 1 task (dùng cho undo task vừa tạo). Trả false nếu không thấy. */
   removeTask: (id: string) => boolean;
@@ -199,7 +184,9 @@ export const useTaskStore = create<TaskState>()(
     const task = get().tasks.find((t) => t.id === id);
     // Chặn hoàn thành 2 lần (bấm đúp / chat + UI) → không cộng XP 2 lần.
     if (!task || task.completedAt || task.deletedAt) return false;
-    const completedAt = new Date();
+    const now = new Date();
+    // completedAt = NGÀY NHẬN TIỀN (có thể lùi theo giao dịch) để khớp Sổ sách; updatedAt luôn là bây giờ.
+    const completedAt = opts?.receivedAt && !Number.isNaN(opts.receivedAt.getTime()) ? opts.receivedAt : now;
     // Đã xong việc từ trước (Chờ thanh toán) → tính sớm/trễ theo lúc xong việc, không phải lúc khách trả.
     const doneAt = task.workDoneAt ? new Date(task.workDoneAt) : completedAt;
     const end = new Date(task.endDate);
@@ -213,7 +200,7 @@ export const useTaskStore = create<TaskState>()(
       return {
         tasks: s.tasks.map((t) =>
           t.id === id
-            ? { ...t, completedAt: completedAt.toISOString(), updatedAt: completedAt.toISOString(), actualAmount,
+            ? { ...t, completedAt: completedAt.toISOString(), updatedAt: now.toISOString(), actualAmount,
                 stage: 'paid' as const,
                 incomeTxnId: opts?.incomeTxnId,
                 subTasks: t.subTasks.map((st) => ({ ...st, isCompleted: true })) }

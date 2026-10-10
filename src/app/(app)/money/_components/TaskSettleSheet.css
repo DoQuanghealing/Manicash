@@ -142,6 +142,7 @@
 }
 
 .tss-field { display: flex; flex-direction: column; gap: 6px; }
+.tss-quick { display: flex; flex-wrap: wrap; gap: 6px; }
 
 .tss-cats { display: flex; flex-wrap: wrap; gap: 6px; }
 .tss-cat {

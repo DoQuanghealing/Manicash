@@ -427,6 +427,12 @@ export const useFinanceStore = create<FinanceState>()(
         cashBalance: cash,
       };
     });
+    // Đảo đúng addTransaction: giao dịch lùi về tháng trước thì tính lại snapshot tháng đó,
+    // nếu không báo cáo tháng cũ giữ khoản thu/chi ma sau khi hoàn tác.
+    const txnMonthKey = getMonthKeyFromDate(txn.date);
+    if (txnMonthKey !== get().getCurrentMonthKey()) {
+      useBudgetStore.getState().updateSnapshotTotals(txnMonthKey);
+    }
     return true;
   },
 

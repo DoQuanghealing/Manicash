@@ -49,11 +49,23 @@ function newerWins(
 
 type HasId = { id: string } & Record<string, unknown>;
 
+/** Task: lấy mốc MỚI NHẤT trong updatedAt/completedAt/deletedAt/createdAt. Máy cũ (v1) hoàn thành
+ * task mà không bump updatedAt → nếu chỉ đọc updatedAt, lần hoàn thành đó thua mọi sửa đổi cũ hơn. */
+function pickLatestTaskTimestamp(item: Record<string, unknown>): string | undefined {
+  let best: string | undefined;
+  for (const key of ['updatedAt', 'completedAt', 'deletedAt', 'createdAt']) {
+    const v = item[key];
+    if (typeof v === 'string' && (!best || Date.parse(v) > Date.parse(best))) best = v;
+  }
+  return best;
+}
+
 function mergeArrayById<T extends { id: string }>(
   local: T[],
   cloud: T[],
   fieldPrefix: string,
   conflicts: ConflictRecord[],
+  pickTs: (item: Record<string, unknown>) => string | undefined = pickTimestamp,
 ): T[] {
   const cloudMap = new Map(cloud.map((item) => [item.id, item]));
   const merged: T[] = [];
@@ -67,8 +79,8 @@ function mergeArrayById<T extends { id: string }>(
       continue;
     }
     // ID exists in both — resolve by timestamp
-    const lt = pickTimestamp(localItem as unknown as Record<string, unknown>);
-    const ct = pickTimestamp(cloudItem as unknown as Record<string, unknown>);
+    const lt = pickTs(localItem as unknown as Record<string, unknown>);
+    const ct = pickTs(cloudItem as unknown as Record<string, unknown>);
     if (!lt && !ct) {
       // No timestamp — local wins, record conflict
       merged.push(localItem);
@@ -237,6 +249,7 @@ function mergeTasks(
     cloud.tasks,
     'tasks.tasks',
     conflicts,
+    pickLatestTaskTimestamp,
   );
   // xpPenalties: local wins (client-side enforcement only, no id field)
   return {

@@ -9,10 +9,12 @@
 import type {
   CloudMoneyDocumentV1,
   CloudAuthProgressV1,
+  CloudTasksStateV1,
   LocalMoneyStatePatch,
   LocalMoneyStateInput,
 } from './cloudTypes';
 import type { UserProfile } from '@/types/user';
+import { migrateTasksState } from '@/lib/tasks/migrateTasks';
 
 const AUDIT_SERIALIZE_CAP = 200;
 
@@ -161,10 +163,11 @@ export function deserializeCloudMoneyDocument(doc: unknown): LocalMoneyStatePatc
       xpAtMonthStart: safeNumber(budget['xpAtMonthStart']),
     },
     goals: { goals: safeArray(goals['goals']) },
-    tasks: {
+    // Đợt 1: máy cũ (v1) có thể đẩy task thiếu stage/updatedAt → chuẩn hoá về v2 ngay khi đọc.
+    tasks: migrateTasksState({
       tasks: safeArray(tasks['tasks']),
       xpPenalties: safeArray(tasks['xpPenalties']),
-    },
+    }) as unknown as CloudTasksStateV1,
     authProgress: authObj ? (authObj as Partial<CloudAuthProgressV1>) : undefined,
     audit: { records: safeArray(audit['records']) },
   };

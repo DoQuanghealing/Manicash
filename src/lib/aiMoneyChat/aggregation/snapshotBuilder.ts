@@ -80,6 +80,8 @@ function deriveTaskStatus(
   if (task.completedAt) {
     return task.completedAt.slice(0, 7) === monthKey ? 'completed' : null;
   }
+  // Đợt 1: xong việc, chờ khách trả → không phải việc trễ của người dùng.
+  if (task.stage === 'awaiting_payment') return 'active';
   if (task.endDate) {
     const end = new Date(task.endDate);
     if (!Number.isNaN(end.getTime()) && end.getTime() < now.getTime()) return 'overdue';
@@ -149,6 +151,7 @@ export function validateClientSnapshot(raw: unknown): ClientSnapshotInput | null
         endDate: typeof task.endDate === 'string' ? task.endDate : undefined,
         completedAt: typeof task.completedAt === 'string' ? task.completedAt : undefined,
         deletedAt: typeof task.deletedAt === 'string' ? task.deletedAt : undefined,
+        stage: task.stage === 'doing' || task.stage === 'awaiting_payment' || task.stage === 'paid' ? task.stage : undefined,
         subTasks,
       };
     });

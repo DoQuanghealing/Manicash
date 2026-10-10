@@ -26,6 +26,8 @@ interface Props {
 export default function TaskUndoToast({ toast, onDismiss }: Props) {
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const mounted = useIsClient();
+  // Toast đang chạy hiệu ứng thoát vẫn bấm được → chặn gọi onUndo lần 2 cho cùng một toast.
+  const usedId = useRef<number | null>(null);
 
   useEffect(() => {
     clearTimeout(timer.current);
@@ -55,7 +57,12 @@ export default function TaskUndoToast({ toast, onDismiss }: Props) {
               <button
                 type="button"
                 className="tut-undo"
-                onClick={() => { toast.onUndo?.(); onDismiss(); }}
+                onClick={() => {
+                  if (usedId.current === toast.id) return;
+                  usedId.current = toast.id;
+                  toast.onUndo?.();
+                  onDismiss();
+                }}
               >
                 Hoàn tác
               </button>

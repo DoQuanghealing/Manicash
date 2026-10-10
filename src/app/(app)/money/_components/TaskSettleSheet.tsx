@@ -98,7 +98,8 @@ function SettleBody({ task, mode, onClose, onReceive, onAwait, onReschedule }: P
 
   // ── Chờ thanh toán / hẹn lại ──
   const [payer, setPayer] = useState(task.payerName ?? '');
-  const [dueKey, setDueKey] = useState(task.paymentDueDate?.slice(0, 10) ?? localKey(addDays(today, 3)));
+  // Không tự điền hẹn trả: ngày người dùng không chọn mà thẻ lại báo "Khách trễ hẹn" là sai.
+  const [dueKey, setDueKey] = useState(task.paymentDueDate ? localKey(new Date(task.paymentDueDate.length === 10 ? `${task.paymentDueDate}T12:00:00` : task.paymentDueDate)) : '');
 
   const parsed = Number(amount.replace(/\D/g, '')) || 0;
   const expected = task.expectedAmount || 0;
@@ -110,10 +111,15 @@ function SettleBody({ task, mode, onClose, onReceive, onAwait, onReschedule }: P
     : null;
 
   useEffect(() => {
+    // Nhớ nút đã mở sheet để đóng xong trả focus về đó (bàn phím / trình đọc màn hình).
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     panelRef.current?.focus({ preventScroll: true });
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      if (opener?.isConnected) opener.focus({ preventScroll: true });
+    };
   }, [onClose]);
 
   useEffect(() => {
@@ -283,6 +289,16 @@ function SettleBody({ task, mode, onClose, onReceive, onAwait, onReschedule }: P
                 min={step === 'reschedule' ? todayKey : undefined}
                 onChange={(e) => setDueKey(e.target.value)}
               />
+              <span className="tss-quick">
+                {[1, 3, 7].map((n) => (
+                  <button key={n} type="button" className="tss-cat" onClick={() => setDueKey(localKey(addDays(today, n)))}>
+                    +{n} ngày
+                  </button>
+                ))}
+                {dueKey && (
+                  <button type="button" className="tss-cat" onClick={() => setDueKey('')}>Bỏ hẹn</button>
+                )}
+              </span>
             </label>
             <p className="tss-hint">Việc chờ thanh toán không bị tính trễ hạn. Khách trả thì bấm “Đã nhận tiền”.</p>
             <button type="submit" className="tss-main tss-main--wait">
