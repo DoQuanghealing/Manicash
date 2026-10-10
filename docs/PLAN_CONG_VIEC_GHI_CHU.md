@@ -23,8 +23,13 @@
   - [~] UI — **PO chọn mẫu D (2026-10-09)**, đã dựng (chưa commit): `EarningIdeasSheet` · `TaskSettleSheet`
         (Xong việc → nhận luôn / chờ thanh toán / hẹn lại) · `TaskUndoToast` · `TaskCard` mẫu D theo giai đoạn ·
         form 3 trường + "Thêm chi tiết" · dòng "Khách còn nợ" (bấm để lọc) · trạng thái rỗng 6 chủ đề.
-        Nút "Xong" giờ đi `receiveTaskPayment`. Đã commit `ffc0a3b`. ⚠️ 2 vòng redteam (code + giao diện) bị DỪNG
-        giữa chừng khi phiên tắt, CHƯA có kết quả → chạy lại, sửa tới khi ĐẠT rồi mới mở PR / cho PO xem ảnh.
+        Nút "Xong" giờ đi `receiveTaskPayment`. Commit `ffc0a3b`.
+  - [x] Redteam CODE: vòng 1 CHƯA ĐẠT (2 HIGH: CFO/chat đếm "Chờ thanh toán" là trễ) → sửa `27d8f30`;
+        vòng 2 **ĐẠT** → sửa nốt MEDIUM/LOW `21c3d6f`. 31/31 test Đợt 1. Đã push.
+  - [~] Redteam GIAO DIỆN: đang chạy (dev server cổng 54596).
+  - ⚠️ TRƯỚC KHI BẬT MONEY SYNC: gộp giao dịch chưa có "bia mộ" → giao dịch đã Hoàn tác có thể sống lại
+        từ cloud → nhận lại thành thu 2 lần. Cần `deletedTxnIds` đồng bộ theo (lỗi cũ, Đợt 1 làm lộ rõ).
+  - Còn để lại: bẫy focus trong sheet (mới có trả focus).
         Trang xem thử tạm `src/app/(public)/zz-dot1-preview/` (chế độ giả lập, chỉ dev) — **KHÔNG commit, xoá khi xong**.
         ⚠️ Bộ chống spam IP trong RAM của dev server có thể chặn localhost khi tải trang dev nhiều → khởi động lại server.
 - `main` = `0b0e19a` (PR #38 đã lên prod).
