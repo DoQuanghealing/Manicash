@@ -11,8 +11,8 @@
   - [x] 0.3 Spec Đợt 1 `docs/SPEC_DOT_1_THU_VIEN_MAU.md` — **PO DUYỆT 2026-10-08**. Q1–Q4 PO chưa trả lời → dùng mặc định:
         Q1 giữ giá · Q2 tiền vào ví, chưa góp mục tiêu · Q3 đổi tên "Tài sản nhàn rỗi" · Q4 chat "khách chưa trả" để Đợt 2.
         Phát hiện: bấm "Xong" hiện KHÔNG tạo giao dịch thu + ghi actual = expected; task thiếu `updatedAt` (lỗi gộp sync).
-  - [~] 0.4 4 mẫu thử ĐÃ XONG `docs/design-probes/thu-vien-mau/so-sanh-4-mau.html` (A Sổ sách gọn · B Kính đêm · C Biên lai khoét · D Thẻ màu một tiêu điểm) — **chờ PO chọn**.
-- [~] **Đợt 1 — ĐANG LÀM**, nhánh `feat/earning-tasks-dot1` (tách từ `docs/tasks-notes-plan`, chưa push).
+  - [x] 0.4 4 mẫu thử `docs/design-probes/thu-vien-mau/so-sanh-4-mau.html` — **PO chọn D (2026-10-09)**.
+- [~] **Đợt 1 — ĐANG LÀM**, nhánh `feat/earning-tasks-dot1` — **ĐÃ PUSH 2026-10-10** (`ffc0a3b`, PO cho phép). CHƯA mở PR, CHƯA merge.
   - [x] Tầng dữ liệu + logic (chưa đụng UI): `EarningTask` v2 (stage/updatedAt/khách/hẹn trả/incomeTxnId/templateId,
         trường optional + `getTaskStage` suy từ completedAt) · store v2 + `migrateTasksState` · `markWorkDone`/`undoMarkWorkDone` ·
         `completeTask` chặn lần 2 · `src/lib/tasks/receiveTaskPayment.ts` (giao dịch thu + XP + popup + undo exact,
@@ -23,7 +23,8 @@
   - [~] UI — **PO chọn mẫu D (2026-10-09)**, đã dựng (chưa commit): `EarningIdeasSheet` · `TaskSettleSheet`
         (Xong việc → nhận luôn / chờ thanh toán / hẹn lại) · `TaskUndoToast` · `TaskCard` mẫu D theo giai đoạn ·
         form 3 trường + "Thêm chi tiết" · dòng "Khách còn nợ" (bấm để lọc) · trạng thái rỗng 6 chủ đề.
-        Nút "Xong" giờ đi `receiveTaskPayment`. Đang chạy 2 vòng redteam (code + giao diện) → sửa tới khi ĐẠT.
+        Nút "Xong" giờ đi `receiveTaskPayment`. Đã commit `ffc0a3b`. ⚠️ 2 vòng redteam (code + giao diện) bị DỪNG
+        giữa chừng khi phiên tắt, CHƯA có kết quả → chạy lại, sửa tới khi ĐẠT rồi mới mở PR / cho PO xem ảnh.
         Trang xem thử tạm `src/app/(public)/zz-dot1-preview/` (chế độ giả lập, chỉ dev) — **KHÔNG commit, xoá khi xong**.
         ⚠️ Bộ chống spam IP trong RAM của dev server có thể chặn localhost khi tải trang dev nhiều → khởi động lại server.
 - `main` = `0b0e19a` (PR #38 đã lên prod).
